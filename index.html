@@ -465,6 +465,11 @@ function generateOptions(correctAnswer, cidr, type) {
 function showHint() {
   const hint = document.getElementById("hint");
 
+  if (currentMode === "commandQuiz" || currentMode === "securityQuiz") {
+  hint.textContent = currentHintText;
+  return;
+}
+
   if (currentMode === "cidrToHosts") {
     const hostBits = 32 - currentCidr;
     hint.textContent = `Hint: Work out host bits first. 32 - ${currentCidr} = ${hostBits}. Then use 2^${hostBits} - 2.`;
