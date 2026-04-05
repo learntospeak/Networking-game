@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Subnet Quiz</title>
+  <style>
+    body {
+      font-family: Arial;
+      max-width: 700px;
+      margin: 40px auto;
+    }
+    button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .correct { color: green; }
+    .wrong { color: red; }
+    .hint {
+      color: #444;
+      margin-top: 10px;
+      font-style: italic;
+    }
+    .bits-row {
+      font-family: monospace;
+      font-size: 20px;
+      margin: 10px 0;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Subnet Quiz</h1>
+
+<select id="mode">
+  <option value="cidrToHosts">Network Bits → Hosts</option>
+  <option value="hostsToCidr">Hosts → Network Bits</option>
+  <option value="cidrToMask">Network Bits → Subnet Mask</option>
+  <option value="bitsToValue">Bits → Last Octet Value</option>
+  <option value="networkAddress">IP → Network Address</option>
+</select>
+
+<button onclick="startQuiz()">Start</button>
+
+<h2 id="question"></h2>
+<div id="diagram"></div>
+<div id="answers"></div>
+
+<p id="hint" class="hint"></p>
+<p id="feedback"></p>
+
+<button id="hintBtn" onclick="showHint()" style="display:none;">Hint</button>
+<button id="nextBtn" onclick="nextQuestion()" style="display:none;">Next</button>
+
+<h3>Score</h3>
+<p>Correct: <span id="correct">0</span></p>
+<p>Wrong: <span id="wrong">0</span></p>
+
+<script>
+const cidrs = [24, 25, 26, 27, 28, 29, 30];
+
+const masks = {
+  24: "255.255.255.0",
+  25: "255.255.255.128",
+  26: "255.255.255.192",
+  27: "255.255.255.224",
+  28: "255.255.255.240",
+  29: "255.255.255.248",
+  30: "255.255.255.252"
+};
+
+const bitValues = [128, 64, 32, 16, 8, 4, 2, 1];
+
+let currentAnswer = "";
+let currentMode = "";
+let currentCidr = 0;
+let currentBits = [];
+let correct = 0;
+let wrong = 0;
+
+function generateNetworkQuestion() {
+  const base = "192.168.1.";
+  const cidr = random(cidrs);
+  const blockSize = Math.pow(2, 32 - cidr);
+
+  const ip = Math.floor(Math.random() * 256);
+
+  const network = Math.floor(ip / blockSize) * blockSize;
+
+  currentAnswer = base + network;
+
+  document.getElementById("question").textContent =
+    `IP: ${base}${ip}  ${formatCidr(cidr)} → What is the network address?`;
+
+  let options = [currentAnswer];
+
+  const possible = [0, blockSize, blockSize * 2, blockSize * 3];
+
+  possible.forEach(n => {
+    const val = base + n;
+    if (!options.includes(val)) options.push(val);
+  });
+
+  options = shuffle(options).slice(0, 4);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+
+  currentCidr = cidr;
+}
+
+function formatCidr(cidr) {
+  const hostBits = 32 - cidr;
+  return `/${cidr} (${hostBits} host bits)`;
+}
+
+function hosts(cidr) {
+  return Math.pow(2, 32 - cidr) - 2;
+}
+
+function random(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function startQuiz() {
+  nextQuestion();
+}
+
+function nextQuestion() {
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("hint").textContent = "";
+  document.getElementById("feedback").className = "";
+  document.getElementById("nextBtn").style.display = "none";
+  document.getElementById("hintBtn").style.display = "inline-block";
+  document.getElementById("answers").innerHTML = "";
+  document.getElementById("diagram").innerHTML = "";
+
+  const mode = document.getElementById("mode").value;
+  const cidr = random(cidrs);
+
+  currentMode = mode;
+  currentCidr = cidr;
+  currentBits = [];
+
+  if (mode === "cidrToHosts") {
+    currentAnswer = hosts(cidr);
+    document.getElementById("question").textContent =
+      `How many usable hosts are available with ${formatCidr(cidr)}?`;
+
+    generateOptions(currentAnswer, cidr, "hosts");
+  }
+
+  if (mode === "hostsToCidr") {
+    currentAnswer = "/" + cidr;
+    document.getElementById("question").textContent =
+      `How many network bits are needed for ${hosts(cidr)} usable hosts?`;
+
+    generateOptions(currentAnswer, cidr, "cidr");
+  }
+
+  if (mode === "cidrToMask") {
+    currentAnswer = masks[cidr];
+    document.getElementById("question").textContent =
+      `What is the subnet mask for /${cidr}?`;
+
+    generateOptions(currentAnswer, cidr, "mask");
+  }
+
+  if (mode === "bitsToValue") {
+    generateBitsQuestion();
+  }
+
+  if (mode === "networkAddress") {
+  generateNetworkQuestion();
+}
+
+}
+
+function generateBitsQuestion() {
+  const onBits = Math.floor(Math.random() * 4) + 1; // 1 to 4 bits on
+  currentBits = Array(8).fill(0);
+
+  for (let i = 0; i < onBits; i++) {
+    currentBits[i] = 1;
+  }
+
+  currentAnswer = bitValues
+    .filter((_, i) => currentBits[i] === 1)
+    .reduce((sum, val) => sum + val, 0);
+
+  document.getElementById("question").textContent =
+    `What decimal value does this last octet represent?`;
+
+  const valuesLine = bitValues.map(v => String(v).padStart(3, " ")).join(" ");
+  const bitsLine = currentBits.map(v => String(v).padStart(3, " ")).join(" ");
+
+  document.getElementById("diagram").innerHTML = `
+    <div class="bits-row">${valuesLine}</div>
+    <div class="bits-row">${bitsLine}</div>
+  `;
+
+  let options = [currentAnswer];
+  while (options.length < 4) {
+    let wrongAnswer = currentAnswer + random([-64, -32, -16, 16, 32, 64, 8, -8]);
+    if (wrongAnswer >= 0 && wrongAnswer <= 255 && !options.includes(wrongAnswer)) {
+      options.push(wrongAnswer);
+    }
+  }
+
+  options = shuffle(options);
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+}
+
+function generateOptions(correctAnswer, cidr, type) {
+  let options = [correctAnswer];
+
+  while (options.length < 4) {
+    let c = random(cidrs);
+    let val;
+
+    if (type === "hosts") val = hosts(c);
+    if (type === "cidr") val = formatCidr(c);
+    if (type === "mask") val = masks[c];
+
+    if (!options.includes(val)) {
+      options.push(val);
+    }
+  }
+
+  options = shuffle(options);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+}
+
+function showHint() {
+  const hint = document.getElementById("hint");
+
+  if (currentMode === "cidrToHosts") {
+    const hostBits = 32 - currentCidr;
+    hint.textContent = `Hint: Work out host bits first. 32 - ${currentCidr} = ${hostBits}. Then use 2^${hostBits} - 2.`;
+  }
+
+  if (currentMode === "hostsToCidr") {
+    const hostBits = 32 - currentCidr;
+    hint.textContent = `Hint: ${hosts(currentCidr)} usable hosts means ${hostBits} host bits, so the answer is /${currentCidr}.`;
+  }
+
+  if (currentMode === "cidrToMask") {
+    const extraBits = currentCidr - 24;
+    const used = bitValues.slice(0, extraBits);
+    const sum = used.reduce((a, b) => a + b, 0);
+
+    hint.textContent =
+      `Hint: In the last octet, each place is a power of 2: 128, 64, 32, 16, 8, 4, 2, 1. /${currentCidr} means ${extraBits} bits are ON there, so add the first ${extraBits}: ${used.join(" + ")} = ${sum}.`;
+  }
+
+  if (currentMode === "bitsToValue") {
+    const used = bitValues.filter((_, i) => currentBits[i] === 1);
+    hint.textContent =
+      `Hint: Add the values where the bit is 1. Here that means ${used.join(" + ")}.`;
+  }
+
+  if (currentMode === "networkAddress") {
+  const blockSize = Math.pow(2, 32 - currentCidr);
+  hint.textContent =
+    `Hint: Block size = ${blockSize}. Subnets go 0, ${blockSize}, ${blockSize * 2}, ${blockSize * 3}. Find which range the IP fits into.`;
+}
+}
+
+function checkAnswer(answer) {
+  const feedback = document.getElementById("feedback");
+  let isCorrect = false;
+
+  if (currentMode === "hostsToCidr") {
+    isCorrect = typeof answer === "string" && answer.includes(currentAnswer);
+  } else {
+    isCorrect = answer == currentAnswer;
+  }
+
+  if (isCorrect) {
+    correct++;
+    feedback.textContent = "Correct";
+    feedback.className = "correct";
+  } else {
+    wrong++;
+    if (currentMode === "hostsToCidr") {
+      feedback.textContent = `Wrong (Correct: ${formatCidr(currentCidr)})`;
+    } else {
+      feedback.textContent = `Wrong (Correct: ${currentAnswer})`;
+    }
+    feedback.className = "wrong";
+  }
+
+  document.getElementById("correct").textContent = correct;
+  document.getElementById("wrong").textContent = wrong;
+  document.getElementById("nextBtn").style.display = "block";
+  document.getElementById("hintBtn").style.display = "none";
+}
+</script>
+
+</body>
+</html>
