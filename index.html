@@ -84,6 +84,7 @@
   <option value="cidrToMask">Network Bits → Subnet Mask</option>
   <option value="bitsToValue">Bits → Last Octet Value</option>
   <option value="networkAddress">IP → Network Address</option>
+  <option value="broadcastAddress">IP → Broadcast Address</option>
 </select>
 
 <button onclick="startQuiz()">Start</button>
@@ -123,31 +124,44 @@ let currentCidr = 0;
 let currentBits = [];
 let correct = 0;
 let wrong = 0;
+let currentIp = 0;
+let currentNetwork = 0;
+let currentBroadcast = 0;
+let currentBlockSize = 0;
 
 function generateNetworkQuestion() {
   const base = "192.168.1.";
   const cidr = random(cidrs);
-  const blockSize = Math.pow(2, 32 - cidr);
 
+  const blockSize = Math.pow(2, 32 - cidr);
   const ip = Math.floor(Math.random() * 256);
 
   const network = Math.floor(ip / blockSize) * blockSize;
+  const broadcast = network + blockSize - 1;
+
+  // store values
+  currentIp = ip;
+  currentCidr = cidr;
+  currentBlockSize = blockSize;
+  currentNetwork = network;
+  currentBroadcast = broadcast;
 
   currentAnswer = base + network;
 
   document.getElementById("question").textContent =
-    `IP: ${base}${ip}  ${formatCidr(cidr)} → What is the network address?`;
+    `IP: ${base}${ip} ${formatCidr(cidr)} → What is the network address?`;
 
-  let options = [currentAnswer];
-
-  const possible = [0, blockSize, blockSize * 2, blockSize * 3];
-
-  possible.forEach(n => {
-    const val = base + n;
-    if (!options.includes(val)) options.push(val);
+  let options = [
+    base + network,
+    base + (network + blockSize),
+    base + (network - blockSize),
+    base + (network + blockSize * 2)
+  ].filter(v => {
+    const n = parseInt(v.split(".")[3]);
+    return n >= 0 && n <= 255;
   });
 
-  options = shuffle(options).slice(0, 4);
+  options = shuffle([...new Set(options)]);
 
   options.forEach(opt => {
     let btn = document.createElement("button");
@@ -155,8 +169,6 @@ function generateNetworkQuestion() {
     btn.onclick = () => checkAnswer(opt);
     document.getElementById("answers").appendChild(btn);
   });
-
-  currentCidr = cidr;
 }
 
 function formatCidr(cidr) {
@@ -229,6 +241,10 @@ document.querySelectorAll("#answers button").forEach(btn => {
 
   if (mode === "networkAddress") {
   generateNetworkQuestion();
+}
+
+if (mode === "broadcastAddress") {
+  generateBroadcastQuestion();
 }
 
 }
@@ -332,6 +348,11 @@ function showHint() {
   hint.textContent =
     `Hint: Block size = ${blockSize}. Subnets go 0, ${blockSize}, ${blockSize * 2}, ${blockSize * 3}. Find which range the IP fits into.`;
 }
+
+if (currentMode === "broadcastAddress") {
+  hint.textContent =
+    `Hint: Find the network first (${currentNetwork}). Then add block size (${currentBlockSize}) - 1 → ${currentBroadcast}`;
+}
 }
 
 function checkAnswer(answer) {
@@ -376,6 +397,48 @@ function checkAnswer(answer) {
 
   document.getElementById("nextBtn").style.display = "block";
   document.getElementById("hintBtn").style.display = "none";
+}
+
+function generateBroadcastQuestion() {
+  const base = "192.168.1.";
+  const cidr = random(cidrs);
+
+  const blockSize = Math.pow(2, 32 - cidr);
+  const ip = Math.floor(Math.random() * 256);
+
+  const network = Math.floor(ip / blockSize) * blockSize;
+  const broadcast = network + blockSize - 1;
+
+  // store values
+  currentIp = ip;
+  currentCidr = cidr;
+  currentBlockSize = blockSize;
+  currentNetwork = network;
+  currentBroadcast = broadcast;
+
+  currentAnswer = base + broadcast;
+
+  document.getElementById("question").textContent =
+    `IP: ${base}${ip} ${formatCidr(cidr)} → What is the broadcast address?`;
+
+  let options = [
+    base + broadcast,
+    base + (network + blockSize - 2),
+    base + (network + blockSize),
+    base + network
+  ].filter(v => {
+    const n = parseInt(v.split(".")[3]);
+    return n >= 0 && n <= 255;
+  });
+
+  options = shuffle([...new Set(options)]);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
 }
 </script>
 
