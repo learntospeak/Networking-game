@@ -47,6 +47,16 @@
     background: #eaeaea;
   }
 
+  #modeButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#modeButtons button {
+  flex: 1 1 45%;
+}
+
   .correct-btn {
     background: #c8f7c5 !important;
     border-color: green;
@@ -78,15 +88,21 @@
 
 <h1>Subnet Quiz</h1>
 
-<select id="mode">
-  <option value="cidrToHosts">Network Bits → Hosts</option>
-  <option value="hostsToCidr">Hosts → Network Bits</option>
-  <option value="cidrToMask">Network Bits → Subnet Mask</option>
-  <option value="bitsToValue">Bits → Last Octet Value</option>
-  <option value="networkAddress">IP → Network Address</option>
-  <option value="broadcastAddress">IP → Broadcast Address</option>
-  <option value="usableRange">IP → Usable Range</option>
-</select>
+<div id="modeButtons">
+  <button onclick="setMode('cidrToHosts')">Hosts</button>
+  <button onclick="setMode('hostsToCidr')">Network Bits</button>
+  <button onclick="setMode('cidrToMask')">Subnet Mask</button>
+  <button onclick="setMode('bitsToValue')">Bits Value</button>
+  <button onclick="setMode('networkAddress')">Network Address</button>
+  <button onclick="setMode('broadcastAddress')">Broadcast</button>
+  <button onclick="setMode('usableRange')">Usable Range</button>
+</div>
+
+<hr>
+<h3>Commands & Security</h3>
+
+<button onclick="setMode('commandQuiz')">Commands</button>
+<button onclick="setMode('securityQuiz')">Security</button>
 
 <button onclick="startQuiz()">Start</button>
 
@@ -205,7 +221,7 @@ document.querySelectorAll("#answers button").forEach(btn => {
   btn.classList.remove("correct-btn", "wrong-btn");
   btn.disabled = false;
 });
-  const mode = document.getElementById("mode").value;
+  const mode = currentMode;
   const cidr = random(cidrs);
 
   currentMode = mode;
@@ -250,6 +266,14 @@ if (mode === "broadcastAddress") {
 
 if (mode === "usableRange") {
   generateUsableRangeQuestion();
+}
+
+if (mode === "commandQuiz") {
+  generateCommandQuestion();
+}
+
+if (mode === "securityQuiz") {
+  generateSecurityQuestion();
 }
 
 }
@@ -482,6 +506,52 @@ function generateUsableRangeQuestion() {
     `${base}${first} - ${base}${broadcast}`,          // includes broadcast (wrong)
     `${base}${network} - ${base}${last}`              // includes network (wrong)
   ];
+
+  options = shuffle(options);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  startQuiz();
+}
+
+function generateCommandQuestion() {
+  currentAnswer = "show ip interface brief";
+
+  document.getElementById("question").textContent =
+    "Which command shows interface status and IP addresses?";
+
+  let options = [
+    "show interface",
+    "show ip route",
+    "show ip interface brief",
+    "show ip interface"
+  ];
+
+  options = shuffle(options);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+}
+
+function generateSecurityQuestion() {
+  currentAnswer = "SSH";
+
+  document.getElementById("question").textContent =
+    "Which protocol is secure for remote access?";
+
+  let options = ["Telnet", "SSH"];
 
   options = shuffle(options);
 
