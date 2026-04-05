@@ -85,6 +85,7 @@
   <option value="bitsToValue">Bits → Last Octet Value</option>
   <option value="networkAddress">IP → Network Address</option>
   <option value="broadcastAddress">IP → Broadcast Address</option>
+  <option value="usableRange">IP → Usable Range</option>
 </select>
 
 <button onclick="startQuiz()">Start</button>
@@ -247,6 +248,10 @@ if (mode === "broadcastAddress") {
   generateBroadcastQuestion();
 }
 
+if (mode === "usableRange") {
+  generateUsableRangeQuestion();
+}
+
 }
 
 function generateBitsQuestion() {
@@ -353,6 +358,11 @@ if (currentMode === "broadcastAddress") {
   hint.textContent =
     `Hint: Find the network first (${currentNetwork}). Then add block size (${currentBlockSize}) - 1 → ${currentBroadcast}`;
 }
+
+if (currentMode === "usableRange") {
+  hint.textContent =
+    `Hint: Usable range = network + 1 to broadcast - 1 → ${currentNetwork + 1} - ${currentBroadcast - 1}`;
+}
 }
 
 function checkAnswer(answer) {
@@ -432,6 +442,48 @@ function generateBroadcastQuestion() {
   });
 
   options = shuffle([...new Set(options)]);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+}
+
+function generateUsableRangeQuestion() {
+  const base = "192.168.1.";
+  const cidr = random(cidrs);
+
+  const blockSize = Math.pow(2, 32 - cidr);
+  const ip = Math.floor(Math.random() * 256);
+
+  const network = Math.floor(ip / blockSize) * blockSize;
+  const broadcast = network + blockSize - 1;
+
+  const first = network + 1;
+  const last = broadcast - 1;
+
+  // store values
+  currentIp = ip;
+  currentCidr = cidr;
+  currentBlockSize = blockSize;
+  currentNetwork = network;
+  currentBroadcast = broadcast;
+
+  currentAnswer = `${base}${first} - ${base}${last}`;
+
+  document.getElementById("question").textContent =
+    `IP: ${base}${ip} ${formatCidr(cidr)} → What is the usable range?`;
+
+  let options = [
+    currentAnswer,
+    `${base}${network} - ${base}${broadcast}`,        // includes network/broadcast (wrong)
+    `${base}${first} - ${base}${broadcast}`,          // includes broadcast (wrong)
+    `${base}${network} - ${base}${last}`              // includes network (wrong)
+  ];
+
+  options = shuffle(options);
 
   options.forEach(opt => {
     let btn = document.createElement("button");
