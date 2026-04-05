@@ -10,28 +10,51 @@
     max-width: 700px;
     margin: 20px auto;
     padding: 0 12px;
-    box-sizing: border-box;
   }
 
-  h1, h2, h3, p {
-    word-wrap: break-word;
+  h1 {
+    text-align: center;
   }
 
-  select,
-  button {
+  select, button {
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    margin: 6px 0;
     padding: 12px;
+    margin: 6px 0;
     font-size: 16px;
-    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+
+  #question {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  #answers {
+    margin-top: 10px;
   }
 
   #answers button {
     display: block;
     width: 100%;
     text-align: left;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    transition: 0.2s;
+  }
+
+  #answers button:hover {
+    background: #eaeaea;
+  }
+
+  .correct-btn {
+    background: #c8f7c5 !important;
+    border-color: green;
+  }
+
+  .wrong-btn {
+    background: #f7c5c5 !important;
+    border-color: red;
   }
 
   .correct { color: green; }
@@ -48,20 +71,6 @@
     font-size: 16px;
     margin: 10px 0;
     white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  @media (min-width: 700px) {
-    select,
-    button {
-      width: auto;
-      min-width: 160px;
-    }
-
-    #answers button {
-      width: auto;
-      min-width: 220px;
-    }
   }
 </style>
 </head>
@@ -179,7 +188,10 @@ function nextQuestion() {
   document.getElementById("hintBtn").style.display = "inline-block";
   document.getElementById("answers").innerHTML = "";
   document.getElementById("diagram").innerHTML = "";
-
+document.querySelectorAll("#answers button").forEach(btn => {
+  btn.classList.remove("correct-btn", "wrong-btn");
+  btn.disabled = false;
+});
   const mode = document.getElementById("mode").value;
   const cidr = random(cidrs);
 
@@ -324,6 +336,8 @@ function showHint() {
 
 function checkAnswer(answer) {
   const feedback = document.getElementById("feedback");
+  const buttons = document.querySelectorAll("#answers button");
+
   let isCorrect = false;
 
   if (currentMode === "hostsToCidr") {
@@ -332,22 +346,34 @@ function checkAnswer(answer) {
     isCorrect = answer == currentAnswer;
   }
 
+  buttons.forEach(btn => {
+    if (
+      (currentMode === "hostsToCidr" && btn.textContent.includes(currentAnswer)) ||
+      btn.textContent == currentAnswer
+    ) {
+      btn.classList.add("correct-btn");
+    }
+
+    if (btn.textContent == answer && !isCorrect) {
+      btn.classList.add("wrong-btn");
+    }
+
+    btn.disabled = true;
+  });
+
   if (isCorrect) {
     correct++;
     feedback.textContent = "Correct";
     feedback.className = "correct";
   } else {
     wrong++;
-    if (currentMode === "hostsToCidr") {
-      feedback.textContent = `Wrong (Correct: ${formatCidr(currentCidr)})`;
-    } else {
-      feedback.textContent = `Wrong (Correct: ${currentAnswer})`;
-    }
+    feedback.textContent = `Wrong (Correct: ${currentAnswer})`;
     feedback.className = "wrong";
   }
 
   document.getElementById("correct").textContent = correct;
   document.getElementById("wrong").textContent = wrong;
+
   document.getElementById("nextBtn").style.display = "block";
   document.getElementById("hintBtn").style.display = "none";
 }
