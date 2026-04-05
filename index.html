@@ -100,9 +100,11 @@
 
 <hr>
 <h3>Commands & Security</h3>
+<div id="extraButtons">
+  <button onclick="setMode('commandQuiz')">Commands</button>
+  <button onclick="setMode('securityQuiz')">Security</button>
+</div>
 
-<button onclick="setMode('commandQuiz')">Commands</button>
-<button onclick="setMode('securityQuiz')">Security</button>
 
 <button onclick="startQuiz()">Start</button>
 
@@ -135,6 +137,121 @@ const masks = {
 
 const bitValues = [128, 64, 32, 16, 8, 4, 2, 1];
 
+const commandQuestions = [
+  {
+    question: "Which command shows the running configuration?",
+    options: ["show run", "show start", "show version", "show flash"],
+    answer: "show run",
+    hint: "This shows the current active config in RAM."
+  },
+  {
+    question: "Which command shows the startup configuration?",
+    options: ["show run", "show start", "show version", "show interface"],
+    answer: "show start",
+    hint: "This shows the saved config used at boot."
+  },
+  {
+    question: "Which command shows the IOS version and system details?",
+    options: ["show flash", "show version", "show run", "show ip route"],
+    answer: "show version",
+    hint: "Think operating system, model, RAM, flash."
+  },
+  {
+    question: "Which command helps you find what router interfaces are called?",
+    options: ["show interface", "show flash", "show start", "show vlan"],
+    answer: "show interface",
+    hint: "This shows interface details like Gigabit0/0, Gigabit0/1."
+  },
+  {
+    question: "Which command shows the files stored in flash memory?",
+    options: ["show interface", "show flash", "show version", "show run"],
+    answer: "show flash",
+    hint: "Flash is storage, not live config."
+  },
+  {
+    question: "Which command brings a Cisco interface back up?",
+    options: ["enable", "startup", "no shutdown", "power on"],
+    answer: "no shutdown",
+    hint: "It removes the shutdown state."
+  },
+  {
+    question: "Which command disables a Cisco interface?",
+    options: ["disable", "shutdown", "close", "no interface"],
+    answer: "shutdown",
+    hint: "Think of putting a padlock on a gate."
+  },
+  {
+    question: "Why do switches usually get an IP address?",
+    options: [
+      "To forward user traffic faster",
+      "For remote management",
+      "To replace the router",
+      "To give each port internet"
+    ],
+    answer: "For remote management",
+    hint: "A normal switch IP is for you, not for user traffic."
+  },
+  {
+    question: "Where is a normal switch management IP usually configured?",
+    options: [
+      "On every physical port",
+      "On a virtual interface",
+      "On the power supply",
+      "On the default gateway"
+    ],
+    answer: "On a virtual interface",
+    hint: "You do not waste a user port just for management."
+  },
+  {
+    question: "What is the default gateway for a normal switch management setup?",
+    options: [
+      "The switch itself",
+      "The router",
+      "The VLAN name",
+      "The flash memory"
+    ],
+    answer: "The router",
+    hint: "The switch is not the default gateway."
+  }
+];
+
+const securityQuestions = [
+  {
+    question: "Which protocol is secure for remote access?",
+    options: ["Telnet", "SSH"],
+    answer: "SSH",
+    hint: "This one encrypts the session."
+  },
+  {
+    question: "Which protocol sends usernames and passwords in clear text?",
+    options: ["SSH", "Telnet"],
+    answer: "Telnet",
+    hint: "Wireshark can read it easily."
+  },
+  {
+    question: "If you sniff Telnet traffic, what can you often see?",
+    options: [
+      "Only encrypted gibberish",
+      "The username and password in plain text",
+      "Nothing at all",
+      "Only the MAC address"
+    ],
+    answer: "The username and password in plain text",
+    hint: "That is why Telnet is insecure."
+  },
+  {
+    question: "Why is SSH preferred over Telnet?",
+    options: [
+      "It uses less bandwidth",
+      "It is encrypted",
+      "It does not need usernames",
+      "It works without IP"
+    ],
+    answer: "It is encrypted",
+    hint: "The conversation is protected."
+  }
+];
+
 let currentAnswer = "";
 let currentMode = "";
 let currentCidr = 0;
@@ -145,6 +262,7 @@ let currentIp = 0;
 let currentNetwork = 0;
 let currentBroadcast = 0;
 let currentBlockSize = 0;
+let currentHintText = "";
 
 function generateNetworkQuestion() {
   const base = "192.168.1.";
@@ -523,19 +641,15 @@ function setMode(mode) {
 }
 
 function generateCommandQuestion() {
-  currentAnswer = "show ip interface brief";
+  const q = random(commandQuestions);
 
-  document.getElementById("question").textContent =
-    "Which command shows interface status and IP addresses?";
+  currentAnswer = q.answer;
+  currentHintText = q.hint;
 
-  let options = [
-    "show interface",
-    "show ip route",
-    "show ip interface brief",
-    "show ip interface"
-  ];
+  document.getElementById("question").textContent = q.question;
+  document.getElementById("diagram").innerHTML = "";
 
-  options = shuffle(options);
+  let options = shuffle([...q.options]);
 
   options.forEach(opt => {
     let btn = document.createElement("button");
@@ -546,14 +660,15 @@ function generateCommandQuestion() {
 }
 
 function generateSecurityQuestion() {
-  currentAnswer = "SSH";
+  const q = random(securityQuestions);
 
-  document.getElementById("question").textContent =
-    "Which protocol is secure for remote access?";
+  currentAnswer = q.answer;
+  currentHintText = q.hint;
 
-  let options = ["Telnet", "SSH"];
+  document.getElementById("question").textContent = q.question;
+  document.getElementById("diagram").innerHTML = "";
 
-  options = shuffle(options);
+  let options = shuffle([...q.options]);
 
   options.forEach(opt => {
     let btn = document.createElement("button");
