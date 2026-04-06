@@ -6,46 +6,59 @@
   <title>Subnet Quiz</title>
   <style>
   body {
-    font-family: Arial, sans-serif;
-    max-width: 700px;
-    margin: 20px auto;
-    padding: 0 12px;
-  }
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 12px;
+}
 
-  h1 {
-    text-align: center;
-  }
+h1 {
+  text-align: center;
+  color: #38bdf8;
+}
 
-  select, button {
-    width: 100%;
-    padding: 12px;
-    margin: 6px 0;
-    font-size: 16px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-  }
+   select, button {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e5e7eb;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #334155;
+}
+
+button:active {
+  transform: scale(0.97);
+}
 
   #question {
-    margin-top: 20px;
-    margin-bottom: 10px;
-  }
+  margin-top: 20px;
+  margin-bottom: 10px;
+  background: #020617;
+  border: 1px solid #334155;
+  padding: 16px;
+  border-radius: 10px;
+}
 
   #answers {
     margin-top: 10px;
   }
 
   #answers button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-    transition: 0.2s;
-  }
-
-  #answers button:hover {
-    background: #eaeaea;
-  }
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #020617;
+  border: 1px solid #374151;
+}
 
   #modeButtons {
   display: flex;
@@ -58,14 +71,14 @@
 }
 
   .correct-btn {
-    background: #c8f7c5 !important;
-    border-color: green;
-  }
+  background: #16a34a !important;
+  color: white;
+}
 
-  .wrong-btn {
-    background: #f7c5c5 !important;
-    border-color: red;
-  }
+.wrong-btn {
+  background: #dc2626 !important;
+  color: white;
+}
 
   .correct { color: green; }
   .wrong { color: red; }
@@ -94,6 +107,10 @@
 
 #cheatSheetSection {
   line-height: 1.6;
+}
+
+h3 {
+  color: #38bdf8;
 }
 </style>
 </head>
