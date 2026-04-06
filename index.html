@@ -119,6 +119,7 @@
 <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Next</button>
 
 <h3>Score</h3>
+<p>Streak: <span id="streak">0</span></p>
 <p>Correct: <span id="correct">0</span></p>
 <p>Wrong: <span id="wrong">0</span></p>
 
@@ -212,7 +213,54 @@ const commandQuestions = [
     ],
     answer: "The router",
     hint: "The switch is not the default gateway."
-  }
+  },
+
+  {
+  question: "Which command shows the current active configuration in RAM?",
+  options: ["show start", "show run", "show flash", "show version"],
+  answer: "show run",
+  hint: "Running config = what is active right now."
+},
+{
+  question: "Which command shows the configuration used when the device boots?",
+  options: ["show run", "show start", "show interface", "show ip route"],
+  answer: "show start",
+  hint: "Startup config = saved config."
+},
+{
+  question: "Which command shows details about interfaces like errors and bandwidth?",
+  options: ["show ip route", "show interface", "show flash", "show version"],
+  answer: "show interface",
+  hint: "Think physical and data link info."
+},
+{
+  question: "What is the main purpose of giving a switch an IP address?",
+  options: [
+    "To route traffic",
+    "For remote management",
+    "To replace the router",
+    "To increase speed"
+  ],
+  answer: "For remote management",
+  hint: "You don’t use a switch IP for user traffic."
+},
+{
+  question: "Is a normal switch the default gateway?",
+  options: ["Yes", "No"],
+  answer: "No",
+  hint: "The router is the default gateway."
+},
+{
+  question: "Where is a switch management IP usually configured?",
+  options: [
+    "On a physical port",
+    "On a virtual interface",
+    "On the power supply",
+    "On the router"
+  ],
+  answer: "On a virtual interface",
+  hint: "You don’t waste a user port for management."
+}
 ];
 
 const securityQuestions = [
@@ -263,6 +311,7 @@ let currentNetwork = 0;
 let currentBroadcast = 0;
 let currentBlockSize = 0;
 let currentHintText = "";
+let streak = 0;
 
 function generateNetworkQuestion() {
   const base = "192.168.1.";
@@ -543,10 +592,12 @@ function checkAnswer(answer) {
     correct++;
     feedback.textContent = "Correct";
     feedback.className = "correct";
+    streak++;
   } else {
     wrong++;
     feedback.textContent = `Wrong (Correct: ${currentAnswer})`;
     feedback.className = "wrong";
+    streak = 0;
   }
 
   document.getElementById("correct").textContent = correct;
@@ -554,6 +605,7 @@ function checkAnswer(answer) {
 
   document.getElementById("nextBtn").style.display = "block";
   document.getElementById("hintBtn").style.display = "none";
+  document.getElementById("streak").textContent = streak;
 }
 
 function generateBroadcastQuestion() {
