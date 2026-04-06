@@ -396,6 +396,8 @@ let currentBroadcast = 0;
 let currentBlockSize = 0;
 let currentHintText = "";
 let streak = 0;
+let recentCommandQuestions = [];
+let recentSecurityQuestions = [];
 
 function generateNetworkQuestion() {
   const base = "192.168.1.";
@@ -791,7 +793,23 @@ function setMode(mode) {
 }
 
 function generateCommandQuestion() {
-  const q = random(commandQuestions);
+  let available = commandQuestions.filter(q => 
+    !recentCommandQuestions.includes(q.question)
+  );
+
+  // if we run out, reset
+  if (available.length === 0) {
+    recentCommandQuestions = [];
+    available = commandQuestions;
+  }
+
+  const q = random(available);
+
+  // track recent
+  recentCommandQuestions.push(q.question);
+  if (recentCommandQuestions.length > 3) {
+    recentCommandQuestions.shift(); // keep last 3 only
+  }
 
   currentAnswer = q.answer;
   currentHintText = q.hint;
@@ -810,7 +828,21 @@ function generateCommandQuestion() {
 }
 
 function generateSecurityQuestion() {
-  const q = random(securityQuestions);
+  let available = securityQuestions.filter(q => 
+    !recentSecurityQuestions.includes(q.question)
+  );
+
+  if (available.length === 0) {
+    recentSecurityQuestions = [];
+    available = securityQuestions;
+  }
+
+  const q = random(available);
+
+  recentSecurityQuestions.push(q.question);
+  if (recentSecurityQuestions.length > 3) {
+    recentSecurityQuestions.shift();
+  }
 
   currentAnswer = q.answer;
   currentHintText = q.hint;
