@@ -116,6 +116,7 @@
   <button onclick="setMode('networkAddress')">Network Address</button>
   <button onclick="setMode('broadcastAddress')">Broadcast</button>
   <button onclick="setMode('usableRange')">Usable Range</button>
+  <button onclick="setMode('hostRequirement')">Hosts Required</button>
 </div>
 
 <hr>
@@ -344,6 +345,61 @@ const commandQuestions = [
   ],
   answer: "On a virtual interface",
   hint: "You don’t waste a user port for management."
+},
+{
+  question: "You cannot access a device remotely. What should you check first?",
+  options: [
+    "Replace the device",
+    "Check interface status",
+    "Reinstall the OS",
+    "Shutdown the network"
+  ],
+  answer: "Check interface status",
+  hint: "Always check if the interface is up."
+},
+{
+  question: "An interface shows 'administratively down'. What should you do?",
+  options: [
+    "Replace cable",
+    "Run show version",
+    "Use no shutdown",
+    "Restart router"
+  ],
+  answer: "Use no shutdown",
+  hint: "This state means it was manually disabled."
+},
+{
+  question: "Which command helps you quickly see if interfaces are up or down?",
+  options: [
+    "show ip interface brief",
+    "show flash",
+    "show version",
+    "show run"
+  ],
+  answer: "show ip interface brief",
+  hint: "This gives a quick summary."
+},
+{
+  question: "A device has no IP address configured. What command would confirm this?",
+  options: [
+    "show ip interface brief",
+    "show flash",
+    "show start",
+    "show version"
+  ],
+  answer: "show ip interface brief",
+  hint: "Look for missing IP addresses."
+},
+{
+  question: "You fix a network issue. What should you do next?",
+  options: [
+    "Ignore it",
+    "Restart everything",
+    "Document the fix",
+    "Log out"
+  ],
+  answer: "Document the fix",
+  hint: "Think about future troubleshooting."
 }
 ];
 
@@ -381,7 +437,41 @@ const securityQuestions = [
     ],
     answer: "It is encrypted",
     hint: "The conversation is protected."
-  }
+  },
+  {
+  question: "Which protocol would expose passwords in Wireshark?",
+  options: ["SSH", "Telnet"],
+  answer: "Telnet",
+  hint: "It sends data in plain text."
+},
+{
+  question: "Which protocol encrypts traffic between devices?",
+  options: ["Telnet", "SSH"],
+  answer: "SSH",
+  hint: "Encryption = secure."
+},
+{
+  question: "Why is Telnet considered insecure?",
+  options: [
+    "It is slow",
+    "It uses too much bandwidth",
+    "It sends data in plain text",
+    "It does not work on routers"
+  ],
+  answer: "It sends data in plain text",
+  hint: "Anyone can read the traffic."
+},
+{
+  question: "What is the main advantage of SSH over Telnet?",
+  options: [
+    "Faster speed",
+    "Encryption",
+    "Less configuration",
+    "Uses less power"
+  ],
+  answer: "Encryption",
+  hint: "Security is the key difference."
+}
 ];
 
 let currentAnswer = "";
@@ -521,6 +611,10 @@ if (mode === "usableRange") {
   generateUsableRangeQuestion();
 }
 
+if (mode === "hostRequirement") {
+  generateHostRequirementQuestion();
+}
+
 if (mode === "commandQuiz") {
   generateCommandQuestion();
 }
@@ -528,6 +622,8 @@ if (mode === "commandQuiz") {
 if (mode === "securityQuiz") {
   generateSecurityQuestion();
 }
+
+
 
 }
 
@@ -645,6 +741,12 @@ if (currentMode === "usableRange") {
   hint.textContent =
     `Hint: Usable range = network + 1 to broadcast - 1 → ${currentNetwork + 1} - ${currentBroadcast - 1}`;
 }
+
+if (currentMode === "hostRequirement") {
+  hint.textContent =
+    `Hint: Choose the smallest subnet that fits. /24=254, /25=126, /26=62, /27=30, /28=14, /29=6, /30=2.`;
+}
+
 }
 
 function checkAnswer(answer) {
@@ -653,19 +755,20 @@ function checkAnswer(answer) {
 
   let isCorrect = false;
 
-  if (currentMode === "hostsToCidr") {
-    isCorrect = typeof answer === "string" && answer.includes(currentAnswer);
-  } else {
-    isCorrect = answer == currentAnswer;
-  }
+ if (currentMode === "hostsToCidr" || currentMode === "hostRequirement") {
+  isCorrect = typeof answer === "string" && answer.includes(currentAnswer);
+} else {
+  isCorrect = answer == currentAnswer;
+}
 
   buttons.forEach(btn => {
-    if (
-      (currentMode === "hostsToCidr" && btn.textContent.includes(currentAnswer)) ||
-      btn.textContent == currentAnswer
-    ) {
-      btn.classList.add("correct-btn");
-    }
+   if (
+  ((currentMode === "hostsToCidr" || currentMode === "hostRequirement") &&
+    btn.textContent.includes(currentAnswer)) ||
+  btn.textContent == currentAnswer
+) {
+  btn.classList.add("correct-btn");
+}
 
     if (btn.textContent == answer && !isCorrect) {
       btn.classList.add("wrong-btn");
@@ -767,6 +870,44 @@ function generateUsableRangeQuestion() {
     `${base}${first} - ${base}${broadcast}`,          // includes broadcast (wrong)
     `${base}${network} - ${base}${last}`              // includes network (wrong)
   ];
+
+  options = shuffle(options);
+
+  options.forEach(opt => {
+    let btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("answers").appendChild(btn);
+  });
+}
+
+function generateHostRequirementQuestion() {
+  const cidr = random(cidrs);
+  const maxHosts = hosts(cidr);
+
+  let minNeeded = 2;
+  if (cidr < 30) {
+    minNeeded = Math.max(2, hosts(cidr + 1) + 1);
+  }
+
+  const requiredHosts = Math.floor(Math.random() * (maxHosts - minNeeded + 1)) + minNeeded;
+
+  currentCidr = cidr;
+  currentAnswer = formatCidr(cidr);
+
+  document.getElementById("question").textContent =
+    `You need ${requiredHosts} usable hosts. Which subnet should you use?`;
+
+  let options = [formatCidr(cidr)];
+
+  while (options.length < 4) {
+    const wrongCidr = random(cidrs);
+    const wrongOption = formatCidr(wrongCidr);
+
+    if (!options.includes(wrongOption)) {
+      options.push(wrongOption);
+    }
+  }
 
   options = shuffle(options);
 
