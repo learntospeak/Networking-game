@@ -8,6 +8,18 @@
   <script src="./script.js" defer></script>
 </head>
 <body>
+  <div class="rack-room">
+    <div class="router-shell">
+      <div class="router-top">
+        <div class="router-brand">NET-LAB SWITCH PANEL</div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
   <h1>Networking Quiz</h1>
 
   <div id="topButtons">
@@ -39,6 +51,7 @@
       <button id="examModeBtn" class="section-btn exam-btn" type="button">Exam Mode</button>
     </div>
 
+    <div class="display-panel">
     <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
     <p id="examStatus" hidden></p>
     <div id="diagram"></div>
@@ -52,6 +65,7 @@
       <button id="nextBtn" type="button" hidden>Next</button>
       <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
       <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
+    </div>
     </div>
 
     <div class="scoreboard">
@@ -122,6 +136,19 @@
       SSH = secure and encrypted<br>
       Telnet = insecure and clear text
     </p>
+  </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port"></div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
