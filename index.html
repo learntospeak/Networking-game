@@ -146,7 +146,7 @@ h3 {
 
 <button onclick="startQuiz()">Start</button>
 
-<h2 id="question"></h2>
+<h2 id="question" style="opacity: 0.7;">Select a mode to begin</h2>
 <div id="diagram"></div>
 <div id="answers"></div>
 
@@ -938,6 +938,9 @@ function generateHostRequirementQuestion() {
 function showPractice() {
   document.getElementById("practiceSection").style.display = "block";
   document.getElementById("cheatSheetSection").style.display = "none";
+  document.getElementById("question").textContent = "Select a mode to begin";
+document.getElementById("answers").innerHTML = "";
+document.getElementById("feedback").textContent = "";
 }
 
 function showCheatSheet() {
