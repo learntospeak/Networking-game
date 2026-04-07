@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protocol Lab</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./protocol-sim.css">
+  <script src="./protocol-sim.js" defer></script>
+</head>
+<body>
+  <div class="rack-room">
+    <div class="router-shell protocol-shell">
+      <div class="router-top">
+        <div>
+          <div class="router-brand">NET-LAB PROTOCOL PANEL</div>
+          <div class="router-subbrand">Communication flow trainer</div>
+        </div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <div class="protocol-header">
+        <div>
+          <p class="eyebrow">Protocol and Communication Simulations</p>
+          <h1>Protocol Lab</h1>
+          <p class="protocol-intro">
+            Step through real network decisions. Pick the correct next action, watch the path light up,
+            and learn what actually happens on the wire.
+          </p>
+        </div>
+
+        <a class="nav-link" href="./index.html">Back to Quiz</a>
+      </div>
+
+      <div class="protocol-layout">
+        <section class="lab-panel selector-panel">
+          <h2>Protocol Scenarios</h2>
+          <p class="panel-copy">Choose a guided flow and work through it one step at a time.</p>
+          <div id="scenarioSelector" class="selector-grid"></div>
+        </section>
+
+        <section class="lab-panel simulation-panel">
+          <div class="display-panel simulation-display">
+            <div class="sim-top">
+              <div>
+                <p id="scenarioTag" class="sim-tag">Scenario</p>
+                <h2 id="scenarioTitle" class="sim-title">ARP on Same Subnet</h2>
+              </div>
+              <div id="scenarioProgress" class="scenario-progress">Step 1 of 3</div>
+            </div>
+
+            <div id="networkMap" class="network-map"></div>
+            <div id="flowLabel" class="flow-label">Choose the correct next packet action.</div>
+
+            <div class="prompt-panel">
+              <h3>Next Action</h3>
+              <p id="stepPrompt">
+                A PC wants to reach another host on the same subnet. What should happen first?
+              </p>
+            </div>
+
+            <div id="stepOptions" class="step-options"></div>
+
+            <div class="sim-controls">
+              <button id="nextStepBtn" type="button" hidden>Next Step</button>
+              <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="lab-panel explanation-panel">
+          <h2>Result Panel</h2>
+          <div id="statusBadge" class="status-badge idle">Awaiting selection</div>
+          <p id="resultText" class="result-text">
+            Pick an action to see whether it matches the real communication flow.
+          </p>
+
+          <div class="why-panel">
+            <h3>Why?</h3>
+            <p id="whyText">
+              The explanation will stay short and practical so you can connect the protocol to the network path.
+            </p>
+          </div>
+
+          <div class="summary-panel">
+            <h3>Scenario Goal</h3>
+            <p id="summaryText">
+              ARP is used to discover a MAC address on the local LAN before an IP packet can be delivered inside an Ethernet frame.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <div class="protocol-sections">
+        <section class="lab-panel usecase-panel">
+          <h2>Protocol Use Cases</h2>
+          <p class="panel-copy">Pick the protocol that best fits the task.</p>
+          <div id="useCaseGrid" class="usecase-grid"></div>
+        </section>
+
+        <section class="lab-panel compare-panel">
+          <h2>Protocol Compare</h2>
+          <div class="compare-grid">
+            <article class="compare-card">
+              <h3>TCP vs UDP</h3>
+              <div class="compare-row">
+                <div>
+                  <p class="compare-label">TCP</p>
+                  <p>Reliable, ordered, acknowledgment-based. Good for web sessions, file transfer, and anything that must arrive intact.</p>
+                </div>
+                <div>
+                  <p class="compare-label">UDP</p>
+                  <p>Faster and lighter. Good for streaming, voice, and traffic where speed matters more than guaranteed delivery.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="compare-card">
+              <h3>HTTP vs HTTPS</h3>
+              <div class="compare-row">
+                <div>
+                  <p class="compare-label">HTTP</p>
+                  <p>Web traffic without encryption. Fine for basic concepts, but not for protecting passwords or sensitive data.</p>
+                </div>
+                <div>
+                  <p class="compare-label">HTTPS</p>
+                  <p>Encrypted web traffic. Use it when browsing securely, logging in, or sending data you do not want exposed.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="compare-card">
+              <h3>SSH vs Telnet</h3>
+              <div class="compare-row">
+                <div>
+                  <p class="compare-label">SSH</p>
+                  <p>Secure remote administration. Encrypts both credentials and the remote session.</p>
+                </div>
+                <div>
+                  <p class="compare-label">Telnet</p>
+                  <p>Legacy remote administration without encryption. Credentials can be exposed on the network.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
