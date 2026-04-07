@@ -188,6 +188,116 @@ const commandQuestions = [
     ],
     answer: "Document the fix",
     hint: "Think about future troubleshooting."
+  },
+  {
+    question: "A device is reachable but very slow. Which command helps check interface errors?",
+    options: [
+      "show interface",
+      "show version",
+      "show flash",
+      "show run"
+    ],
+    answer: "show interface",
+    hint: "Look for errors, collisions, drops."
+  },
+  {
+    question: "Which command shows both IP addresses and interface status quickly?",
+    options: [
+      "show ip interface brief",
+      "show flash",
+      "show start",
+      "show version"
+    ],
+    answer: "show ip interface brief",
+    hint: "This is the fastest summary command."
+  },
+  {
+    question: "You reboot a router and lose your config. What likely happened?",
+    options: [
+      "You didn't save it",
+      "Hardware failure",
+      "Wrong cable",
+      "Interface down"
+    ],
+    answer: "You didn't save it",
+    hint: "Running config must be saved."
+  },
+  {
+    question: "Which command shows the saved configuration?",
+    options: [
+      "show start",
+      "show run",
+      "show version",
+      "show flash"
+    ],
+    answer: "show start",
+    hint: "Startup config = saved config."
+  },
+  {
+    question: "Which command helps confirm the IOS version running on a device?",
+    options: [
+      "show version",
+      "show run",
+      "show flash",
+      "show ip interface brief"
+    ],
+    answer: "show version",
+    hint: "Includes system details."
+  },
+  {
+    question: "A port is up but no traffic is passing. What should you check?",
+    options: [
+      "Interface errors",
+      "Flash memory",
+      "IOS version",
+      "Hostname"
+    ],
+    answer: "Interface errors",
+    hint: "Look for drops or collisions."
+  },
+  {
+    question: "Which command would help you verify if an interface has an IP assigned?",
+    options: [
+      "show ip interface brief",
+      "show version",
+      "show flash",
+      "show run"
+    ],
+    answer: "show ip interface brief",
+    hint: "Quick IP check."
+  },
+  {
+    question: "You need to check files stored on the device. Which command?",
+    options: [
+      "show flash",
+      "show version",
+      "show run",
+      "show interface"
+    ],
+    answer: "show flash",
+    hint: "Flash = storage."
+  },
+  {
+    question: "Which command would you use to verify current active configuration?",
+    options: [
+      "show run",
+      "show start",
+      "show flash",
+      "show version"
+    ],
+    answer: "show run",
+    hint: "Running config = active config."
+  },
+  {
+    question: "An interface is down/down. What is the most likely issue?",
+    options: [
+      "Physical problem",
+      "Configuration saved incorrectly",
+      "Wrong IOS version",
+      "Flash full"
+    ],
+    answer: "Physical problem",
+    hint: "Down/down usually means cable or hardware."
   }
 ];
 
@@ -259,6 +369,116 @@ const securityQuestions = [
     ],
     answer: "Encryption",
     hint: "Security is the key difference."
+  },
+  {
+    question: "If you capture Telnet traffic, what sensitive data can you see?",
+    options: [
+      "Passwords",
+      "Nothing",
+      "Encrypted packets",
+      "Only IP addresses"
+    ],
+    answer: "Passwords",
+    hint: "Telnet is plain text."
+  },
+  {
+    question: "Why is SSH preferred over Telnet in production networks?",
+    options: [
+      "It encrypts traffic",
+      "It is faster",
+      "It uses less CPU",
+      "It requires less config"
+    ],
+    answer: "It encrypts traffic",
+    hint: "Security is the key reason."
+  },
+  {
+    question: "Which protocol is safest for remote administration?",
+    options: [
+      "SSH",
+      "Telnet",
+      "FTP",
+      "HTTP"
+    ],
+    answer: "SSH",
+    hint: "Only one encrypts sessions."
+  },
+  {
+    question: "What is the main risk of using Telnet?",
+    options: [
+      "Credentials can be intercepted",
+      "Slow performance",
+      "High bandwidth usage",
+      "Device crashes"
+    ],
+    answer: "Credentials can be intercepted",
+    hint: "Think packet capture."
+  },
+  {
+    question: "Which type of attack benefits most from plain-text protocols?",
+    options: [
+      "Packet sniffing",
+      "DDoS",
+      "Brute force",
+      "Routing loops"
+    ],
+    answer: "Packet sniffing",
+    hint: "Reading traffic directly."
+  },
+  {
+    question: "Which protocol protects data in transit?",
+    options: [
+      "SSH",
+      "Telnet",
+      "Ping",
+      "ARP"
+    ],
+    answer: "SSH",
+    hint: "Encryption."
+  },
+  {
+    question: "A network admin logs in remotely over Telnet. What is the biggest concern?",
+    options: [
+      "Credentials exposed",
+      "Slow login",
+      "Wrong IP",
+      "Packet loss"
+    ],
+    answer: "Credentials exposed",
+    hint: "Plain text traffic."
+  },
+  {
+    question: "Which protocol should NOT be used on untrusted networks?",
+    options: [
+      "Telnet",
+      "SSH",
+      "HTTPS",
+      "VPN"
+    ],
+    answer: "Telnet",
+    hint: "It has no encryption."
+  },
+  {
+    question: "What is a key benefit of encrypted protocols?",
+    options: [
+      "Prevents data interception",
+      "Faster speeds",
+      "Less CPU usage",
+      "Simpler configs"
+    ],
+    answer: "Prevents data interception",
+    hint: "Security benefit."
+  },
+  {
+    question: "If an attacker captures SSH traffic, what can they see?",
+    options: [
+      "Encrypted data",
+      "Passwords in plain text",
+      "Full commands readable",
+      "Device configs"
+    ],
+    answer: "Encrypted data",
+    hint: "They can't read it easily."
   }
 ];
 
