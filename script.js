@@ -298,6 +298,116 @@ const commandQuestions = [
     ],
     answer: "Physical problem",
     hint: "Down/down usually means cable or hardware."
+  },
+  {
+    question: "A user cannot access the network. What is the FIRST thing you should check?",
+    options: [
+      "Replace the router",
+      "Check if the interface is up",
+      "Reinstall the OS",
+      "Check flash memory"
+    ],
+    answer: "Check if the interface is up",
+    hint: "Always start simple."
+  },
+  {
+    question: "You suspect an interface is misconfigured. What command should you run?",
+    options: [
+      "show run",
+      "show flash",
+      "show version",
+      "ping"
+    ],
+    answer: "show run",
+    hint: "Check current configuration."
+  },
+  {
+    question: "A device is not reachable over the network. What should you check first?",
+    options: [
+      "IP configuration",
+      "Flash storage",
+      "IOS version",
+      "Hostname"
+    ],
+    answer: "IP configuration",
+    hint: "No IP = no communication."
+  },
+  {
+    question: "An interface shows 'administratively down'. What is the issue?",
+    options: [
+      "Hardware failure",
+      "Disabled in config",
+      "Wrong subnet",
+      "Cable unplugged"
+    ],
+    answer: "Disabled in config",
+    hint: "Think 'shutdown' command."
+  },
+  {
+    question: "You fix a network issue. What is the BEST next step?",
+    options: [
+      "Ignore it",
+      "Restart the device",
+      "Document the solution",
+      "Log out"
+    ],
+    answer: "Document the solution",
+    hint: "Future troubleshooting depends on this."
+  },
+  {
+    question: "A port is up but no traffic is flowing. What should you check?",
+    options: [
+      "Interface errors",
+      "Flash memory",
+      "Hostname",
+      "IOS version"
+    ],
+    answer: "Interface errors",
+    hint: "Look for drops or collisions."
+  },
+  {
+    question: "You need to quickly see if all interfaces are up. Which command?",
+    options: [
+      "show ip interface brief",
+      "show run",
+      "show flash",
+      "show version"
+    ],
+    answer: "show ip interface brief",
+    hint: "Quick overview command."
+  },
+  {
+    question: "A switch cannot be managed remotely. What is a likely issue?",
+    options: [
+      "No management IP configured",
+      "Wrong hostname",
+      "Flash is empty",
+      "IOS missing"
+    ],
+    answer: "No management IP configured",
+    hint: "Switch needs an IP for remote access."
+  },
+  {
+    question: "You reboot a device and lose your config. Why?",
+    options: [
+      "Not saved to startup config",
+      "Hardware issue",
+      "Wrong cable",
+      "Interface error"
+    ],
+    answer: "Not saved to startup config",
+    hint: "Running config is temporary."
+  },
+  {
+    question: "A cable is unplugged from an interface. What status would you expect?",
+    options: [
+      "down/down",
+      "up/up",
+      "administratively down",
+      "up/down"
+    ],
+    answer: "down/down",
+    hint: "Physical issue."
   }
 ];
 
@@ -479,6 +589,116 @@ const securityQuestions = [
     ],
     answer: "Encrypted data",
     hint: "They can't read it easily."
+  },
+  {
+    question: "An attacker is capturing traffic on the network. Which protocol exposes credentials?",
+    options: [
+      "Telnet",
+      "SSH",
+      "HTTPS",
+      "VPN"
+    ],
+    answer: "Telnet",
+    hint: "No encryption."
+  },
+  {
+    question: "Which protocol would protect login credentials from being read on the network?",
+    options: [
+      "SSH",
+      "Telnet",
+      "FTP",
+      "HTTP"
+    ],
+    answer: "SSH",
+    hint: "Encrypted session."
+  },
+  {
+    question: "What is the main weakness of plain-text protocols?",
+    options: [
+      "Data can be read easily",
+      "Slow performance",
+      "High CPU usage",
+      "Limited compatibility"
+    ],
+    answer: "Data can be read easily",
+    hint: "Think packet sniffing."
+  },
+  {
+    question: "Which type of attack involves capturing packets to read sensitive data?",
+    options: [
+      "Sniffing",
+      "DDoS",
+      "Brute force",
+      "Spoofing"
+    ],
+    answer: "Sniffing",
+    hint: "Reading traffic directly."
+  },
+  {
+    question: "Which protocol ensures confidentiality of transmitted data?",
+    options: [
+      "SSH",
+      "Telnet",
+      "Ping",
+      "ARP"
+    ],
+    answer: "SSH",
+    hint: "Encryption protects data."
+  },
+  {
+    question: "If credentials are visible in Wireshark, what protocol is likely being used?",
+    options: [
+      "Telnet",
+      "SSH",
+      "HTTPS",
+      "VPN"
+    ],
+    answer: "Telnet",
+    hint: "Plain text protocol."
+  },
+  {
+    question: "Which protocol should be disabled on secure networks?",
+    options: [
+      "Telnet",
+      "SSH",
+      "HTTPS",
+      "VPN"
+    ],
+    answer: "Telnet",
+    hint: "Insecure protocol."
+  },
+  {
+    question: "What is the main benefit of encryption in networking?",
+    options: [
+      "Protects data from interception",
+      "Faster speeds",
+      "Simpler configs",
+      "Lower bandwidth"
+    ],
+    answer: "Protects data from interception",
+    hint: "Security benefit."
+  },
+  {
+    question: "An attacker captures SSH traffic. What can they read?",
+    options: [
+      "Encrypted data",
+      "Passwords in plain text",
+      "Commands clearly",
+      "Full config"
+    ],
+    answer: "Encrypted data",
+    hint: "Not readable easily."
+  },
+  {
+    question: "Which protocol is safest for remote login over the internet?",
+    options: [
+      "SSH",
+      "Telnet",
+      "FTP",
+      "HTTP"
+    ],
+    answer: "SSH",
+    hint: "Secure remote access."
   }
 ];
 
