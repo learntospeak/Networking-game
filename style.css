@@ -47,6 +47,10 @@ button:active {
   gap: 6px;
 }
 
+#topButtons {
+  margin-bottom: 14px;
+}
+
 #topButtons button,
 #extraButtons button,
 #actionButtons button {
@@ -62,6 +66,27 @@ button:active {
   background: #0ea5e9;
   border-color: #38bdf8;
   color: #f8fafc;
+}
+
+.section-btn {
+  min-height: 56px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
+  border-color: #60a5fa;
+  color: #eff6ff;
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.18);
+}
+
+.section-btn:hover {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.section-btn.active {
+  background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%);
+  border-color: #bae6fd;
+  color: #082f49;
 }
 
 #question {
