@@ -1,1026 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Subnet Quiz</title>
-  <style>
-  body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: #e5e7eb;
-  max-width: 700px;
-  margin: 20px auto;
-  padding: 12px;
-}
-
-h1 {
-  text-align: center;
-  color: #38bdf8;
-}
-
-   select, button {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0;
-  font-size: 16px;
-  border-radius: 8px;
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: #e5e7eb;
-  transition: 0.2s;
-}
-
-button:hover {
-  background: #334155;
-}
-
-button:active {
-  transform: scale(0.97);
-}
-
-  #question {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  background: #020617;
-  border: 1px solid #334155;
-  padding: 16px;
-  border-radius: 10px;
-}
-
-  #answers {
-    margin-top: 10px;
-  }
-
-  #answers button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: #020617;
-  border: 1px solid #374151;
-}
-
-  #modeButtons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-#modeButtons button {
-  flex: 1 1 45%;
-}
-
-  .correct-btn {
-  background: #16a34a !important;
-  color: white;
-}
-
-.wrong-btn {
-  background: #dc2626 !important;
-  color: white;
-}
-
-  .correct { color: green; }
-  .wrong { color: red; }
-
-  .hint {
-    color: #444;
-    margin-top: 10px;
-    font-style: italic;
-  }
-
-  .bits-row {
-    font-family: monospace;
-    font-size: 16px;
-    margin: 10px 0;
-    white-space: pre-wrap;
-  }
-  #topButtons {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-#topButtons button {
-  flex: 1;
-}
-
-#cheatSheetSection {
-  line-height: 1.6;
-}
-
-h3 {
-  color: #38bdf8;
-}
-</style>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./script.js" defer></script>
 </head>
 <body>
-
-<h1>Networking Quiz</h1>
-
-<div>
-  <button onclick="showPractice()">Practice</button>
-  <button onclick="showCheatSheet()">Cheat Sheet</button>
-</div>
-
-<div id="practiceSection">
-
-<div id="modeButtons">
-  <button onclick="setMode('cidrToHosts')">Hosts</button>
-  <button onclick="setMode('hostsToCidr')">Network Bits</button>
-  <button onclick="setMode('cidrToMask')">Subnet Mask</button>
-  <button onclick="setMode('bitsToValue')">Bits Value</button>
-  <button onclick="setMode('networkAddress')">Network Address</button>
-  <button onclick="setMode('broadcastAddress')">Broadcast</button>
-  <button onclick="setMode('usableRange')">Usable Range</button>
-  <button onclick="setMode('hostRequirement')">Hosts Required</button>
-</div>
-
-<hr>
-<h3>Commands & Security</h3>
-<div id="extraButtons">
-  <button onclick="setMode('commandQuiz')">Commands</button>
-  <button onclick="setMode('securityQuiz')">Security</button>
-</div>
-
-
-<button onclick="startQuiz()">Start</button>
-
-<h2 id="question" style="opacity: 0.7;" align="center">Select a mode to begin</h2>
-<div id="diagram"></div>
-<div id="answers"></div>
-
-<p id="hint" class="hint"></p>
-<p id="feedback"></p>
-
-<button id="hintBtn" onclick="showHint()" style="display:none;">Hint</button>
-<button id="nextBtn" onclick="nextQuestion()" style="display:none;">Next</button>
-
-<h3>Score</h3>
-<p>Streak: <span id="streak">0</span></p>
-<p>Correct: <span id="correct">0</span></p>
-<p>Wrong: <span id="wrong">0</span></p>
-</div>
-
-</div>
-
-<div id="cheatSheetSection" style="display:none;">
-  <h2>Cheat Sheet</h2>
-
-  <h3>Subnet Basics</h3>
-  <p>
-    Network = first address in the subnet<br>
-    Broadcast = last address in the subnet<br>
-    Usable range = everything in between
-  </p>
-
-  <h3>Host Sizes</h3>
-  <p>
-    /24 = 254 hosts<br>
-    /25 = 126 hosts<br>
-    /26 = 62 hosts<br>
-    /27 = 30 hosts<br>
-    /28 = 14 hosts<br>
-    /29 = 6 hosts<br>
-    /30 = 2 hosts
-  </p>
-
-  <h3>Block Sizes</h3>
-  <p>
-    /25 = 128<br>
-    /26 = 64<br>
-    /27 = 32<br>
-    /28 = 16<br>
-    /29 = 8<br>
-    /30 = 4
-  </p>
-
-  <h3>Quick Rules</h3>
-  <p>
-    Network = multiples of the block size<br>
-    Broadcast = network + block size - 1<br>
-    First usable = network + 1<br>
-    Last usable = broadcast - 1
-  </p>
-
-  <h3>Commands</h3>
-  <p>
-    show run = current active config<br>
-    show start = saved startup config<br>
-    show version = IOS version and system details<br>
-    show interface = interface details, errors, bandwidth<br>
-    show flash = files stored in flash memory
-  </p>
-
-  <h3>Switch Management</h3>
-  <p>
-    A normal switch IP is for remote management only<br>
-    A normal switch is not the default gateway<br>
-    Switch management IP is usually on a virtual interface
-  </p>
-
-  <h3>Security</h3>
-  <p>
-    SSH = secure and encrypted<br>
-    Telnet = insecure and clear text
-  </p>
-</div>
-<script>
-const cidrs = [24, 25, 26, 27, 28, 29, 30];
-
-const masks = {
-  24: "255.255.255.0",
-  25: "255.255.255.128",
-  26: "255.255.255.192",
-  27: "255.255.255.224",
-  28: "255.255.255.240",
-  29: "255.255.255.248",
-  30: "255.255.255.252"
-};
-
-const bitValues = [128, 64, 32, 16, 8, 4, 2, 1];
-
-const commandQuestions = [
-  {
-    question: "Which command shows the running configuration?",
-    options: ["show run", "show start", "show version", "show flash"],
-    answer: "show run",
-    hint: "This shows the current active config in RAM."
-  },
-  {
-    question: "Which command shows the startup configuration?",
-    options: ["show run", "show start", "show version", "show interface"],
-    answer: "show start",
-    hint: "This shows the saved config used at boot."
-  },
-  {
-    question: "Which command shows the IOS version and system details?",
-    options: ["show flash", "show version", "show run", "show ip route"],
-    answer: "show version",
-    hint: "Think operating system, model, RAM, flash."
-  },
-  {
-    question: "Which command helps you find what router interfaces are called?",
-    options: ["show interface", "show flash", "show start", "show vlan"],
-    answer: "show interface",
-    hint: "This shows interface details like Gigabit0/0, Gigabit0/1."
-  },
-  {
-    question: "Which command shows the files stored in flash memory?",
-    options: ["show interface", "show flash", "show version", "show run"],
-    answer: "show flash",
-    hint: "Flash is storage, not live config."
-  },
-  {
-    question: "Which command brings a Cisco interface back up?",
-    options: ["enable", "startup", "no shutdown", "power on"],
-    answer: "no shutdown",
-    hint: "It removes the shutdown state."
-  },
-  {
-    question: "Which command disables a Cisco interface?",
-    options: ["disable", "shutdown", "close", "no interface"],
-    answer: "shutdown",
-    hint: "Think of putting a padlock on a gate."
-  },
-  {
-    question: "Why do switches usually get an IP address?",
-    options: [
-      "To forward user traffic faster",
-      "For remote management",
-      "To replace the router",
-      "To give each port internet"
-    ],
-    answer: "For remote management",
-    hint: "A normal switch IP is for you, not for user traffic."
-  },
-  {
-    question: "Where is a normal switch management IP usually configured?",
-    options: [
-      "On every physical port",
-      "On a virtual interface",
-      "On the power supply",
-      "On the default gateway"
-    ],
-    answer: "On a virtual interface",
-    hint: "You do not waste a user port just for management."
-  },
-  {
-    question: "What is the default gateway for a normal switch management setup?",
-    options: [
-      "The switch itself",
-      "The router",
-      "The VLAN name",
-      "The flash memory"
-    ],
-    answer: "The router",
-    hint: "The switch is not the default gateway."
-  },
-
-  {
-  question: "Which command shows the current active configuration in RAM?",
-  options: ["show start", "show run", "show flash", "show version"],
-  answer: "show run",
-  hint: "Running config = what is active right now."
-},
-{
-  question: "Which command shows the configuration used when the device boots?",
-  options: ["show run", "show start", "show interface", "show ip route"],
-  answer: "show start",
-  hint: "Startup config = saved config."
-},
-{
-  question: "Which command shows details about interfaces like errors and bandwidth?",
-  options: ["show ip route", "show interface", "show flash", "show version"],
-  answer: "show interface",
-  hint: "Think physical and data link info."
-},
-{
-  question: "What is the main purpose of giving a switch an IP address?",
-  options: [
-    "To route traffic",
-    "For remote management",
-    "To replace the router",
-    "To increase speed"
-  ],
-  answer: "For remote management",
-  hint: "You don’t use a switch IP for user traffic."
-},
-{
-  question: "Is a normal switch the default gateway?",
-  options: ["Yes", "No"],
-  answer: "No",
-  hint: "The router is the default gateway."
-},
-{
-  question: "Where is a switch management IP usually configured?",
-  options: [
-    "On a physical port",
-    "On a virtual interface",
-    "On the power supply",
-    "On the router"
-  ],
-  answer: "On a virtual interface",
-  hint: "You don’t waste a user port for management."
-},
-{
-  question: "You cannot access a device remotely. What should you check first?",
-  options: [
-    "Replace the device",
-    "Check interface status",
-    "Reinstall the OS",
-    "Shutdown the network"
-  ],
-  answer: "Check interface status",
-  hint: "Always check if the interface is up."
-},
-{
-  question: "An interface shows 'administratively down'. What should you do?",
-  options: [
-    "Replace cable",
-    "Run show version",
-    "Use no shutdown",
-    "Restart router"
-  ],
-  answer: "Use no shutdown",
-  hint: "This state means it was manually disabled."
-},
-{
-  question: "Which command helps you quickly see if interfaces are up or down?",
-  options: [
-    "show ip interface brief",
-    "show flash",
-    "show version",
-    "show run"
-  ],
-  answer: "show ip interface brief",
-  hint: "This gives a quick summary."
-},
-{
-  question: "A device has no IP address configured. What command would confirm this?",
-  options: [
-    "show ip interface brief",
-    "show flash",
-    "show start",
-    "show version"
-  ],
-  answer: "show ip interface brief",
-  hint: "Look for missing IP addresses."
-},
-{
-  question: "You fix a network issue. What should you do next?",
-  options: [
-    "Ignore it",
-    "Restart everything",
-    "Document the fix",
-    "Log out"
-  ],
-  answer: "Document the fix",
-  hint: "Think about future troubleshooting."
-}
-];
-
-const securityQuestions = [
-  {
-    question: "Which protocol is secure for remote access?",
-    options: ["Telnet", "SSH"],
-    answer: "SSH",
-    hint: "This one encrypts the session."
-  },
-  {
-    question: "Which protocol sends usernames and passwords in clear text?",
-    options: ["SSH", "Telnet"],
-    answer: "Telnet",
-    hint: "Wireshark can read it easily."
-  },
-  {
-    question: "If you sniff Telnet traffic, what can you often see?",
-    options: [
-      "Only encrypted gibberish",
-      "The username and password in plain text",
-      "Nothing at all",
-      "Only the MAC address"
-    ],
-    answer: "The username and password in plain text",
-    hint: "That is why Telnet is insecure."
-  },
-  {
-    question: "Why is SSH preferred over Telnet?",
-    options: [
-      "It uses less bandwidth",
-      "It is encrypted",
-      "It does not need usernames",
-      "It works without IP"
-    ],
-    answer: "It is encrypted",
-    hint: "The conversation is protected."
-  },
-  {
-  question: "Which protocol would expose passwords in Wireshark?",
-  options: ["SSH", "Telnet"],
-  answer: "Telnet",
-  hint: "It sends data in plain text."
-},
-{
-  question: "Which protocol encrypts traffic between devices?",
-  options: ["Telnet", "SSH"],
-  answer: "SSH",
-  hint: "Encryption = secure."
-},
-{
-  question: "Why is Telnet considered insecure?",
-  options: [
-    "It is slow",
-    "It uses too much bandwidth",
-    "It sends data in plain text",
-    "It does not work on routers"
-  ],
-  answer: "It sends data in plain text",
-  hint: "Anyone can read the traffic."
-},
-{
-  question: "What is the main advantage of SSH over Telnet?",
-  options: [
-    "Faster speed",
-    "Encryption",
-    "Less configuration",
-    "Uses less power"
-  ],
-  answer: "Encryption",
-  hint: "Security is the key difference."
-}
-];
-
-let currentAnswer = "";
-let currentMode = "";
-let currentCidr = 0;
-let currentBits = [];
-let correct = 0;
-let wrong = 0;
-let currentIp = 0;
-let currentNetwork = 0;
-let currentBroadcast = 0;
-let currentBlockSize = 0;
-let currentHintText = "";
-let streak = 0;
-let recentCommandQuestions = [];
-let recentSecurityQuestions = [];
-
-function generateNetworkQuestion() {
-  const base = "192.168.1.";
-  const cidr = random(cidrs);
-
-  const blockSize = Math.pow(2, 32 - cidr);
-  const ip = Math.floor(Math.random() * 256);
-
-  const network = Math.floor(ip / blockSize) * blockSize;
-  const broadcast = network + blockSize - 1;
-
-  // store values
-  currentIp = ip;
-  currentCidr = cidr;
-  currentBlockSize = blockSize;
-  currentNetwork = network;
-  currentBroadcast = broadcast;
-
-  currentAnswer = base + network;
-
-  document.getElementById("question").textContent =
-    `IP: ${base}${ip} ${formatCidr(cidr)} → What is the network address?`;
-
-  let options = [
-    base + network,
-    base + (network + blockSize),
-    base + (network - blockSize),
-    base + (network + blockSize * 2)
-  ].filter(v => {
-    const n = parseInt(v.split(".")[3]);
-    return n >= 0 && n <= 255;
-  });
-
-  options = shuffle([...new Set(options)]);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-
-function formatCidr(cidr) {
-  const hostBits = 32 - cidr;
-  return `/${cidr} (${hostBits} host bits)`;
-}
-
-function hosts(cidr) {
-  return Math.pow(2, 32 - cidr) - 2;
-}
-
-function random(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function shuffle(arr) {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-function startQuiz() {
-  nextQuestion();
-}
-
-function nextQuestion() {
-  document.getElementById("feedback").textContent = "";
-  document.getElementById("hint").textContent = "";
-  document.getElementById("feedback").className = "";
-  document.getElementById("nextBtn").style.display = "none";
-  document.getElementById("hintBtn").style.display = "inline-block";
-  document.getElementById("answers").innerHTML = "";
-  document.getElementById("diagram").innerHTML = "";
-document.querySelectorAll("#answers button").forEach(btn => {
-  btn.classList.remove("correct-btn", "wrong-btn");
-  btn.disabled = false;
-});
-  const mode = currentMode;
-  const cidr = random(cidrs);
-
-  currentMode = mode;
-  currentCidr = cidr;
-  currentBits = [];
-
-  if (mode === "cidrToHosts") {
-    currentAnswer = hosts(cidr);
-    document.getElementById("question").textContent =
-      `How many usable hosts are available with ${formatCidr(cidr)}?`;
-
-    generateOptions(currentAnswer, cidr, "hosts");
-  }
-
-  if (mode === "hostsToCidr") {
-    currentAnswer = "/" + cidr;
-    document.getElementById("question").textContent =
-      `How many network bits are needed for ${hosts(cidr)} usable hosts?`;
-
-    generateOptions(currentAnswer, cidr, "cidr");
-  }
-
-  if (mode === "cidrToMask") {
-    currentAnswer = masks[cidr];
-    document.getElementById("question").textContent =
-      `What is the subnet mask for /${cidr}?`;
-
-    generateOptions(currentAnswer, cidr, "mask");
-  }
-
-  if (mode === "bitsToValue") {
-    generateBitsQuestion();
-  }
-
-  if (mode === "networkAddress") {
-  generateNetworkQuestion();
-}
-
-if (mode === "broadcastAddress") {
-  generateBroadcastQuestion();
-}
-
-if (mode === "usableRange") {
-  generateUsableRangeQuestion();
-}
-
-if (mode === "hostRequirement") {
-  generateHostRequirementQuestion();
-}
-
-if (mode === "commandQuiz") {
-  generateCommandQuestion();
-}
-
-if (mode === "securityQuiz") {
-  generateSecurityQuestion();
-}
-
-
-
-}
-
-function generateBitsQuestion() {
-  const onBits = Math.floor(Math.random() * 4) + 1; // 1 to 4 bits on
-  currentBits = Array(8).fill(0);
-
-  for (let i = 0; i < onBits; i++) {
-    currentBits[i] = 1;
-  }
-
-  currentAnswer = bitValues
-    .filter((_, i) => currentBits[i] === 1)
-    .reduce((sum, val) => sum + val, 0);
-
-  document.getElementById("question").textContent =
-    `What decimal value does this last octet represent?`;
-
-  const valuesLine = bitValues.map(v => String(v).padStart(3, " ")).join(" ");
-  const bitsLine = currentBits.map(v => String(v).padStart(3, " ")).join(" ");
-
-  document.getElementById("diagram").innerHTML = `
-    <div class="bits-row">${valuesLine}</div>
-    <div class="bits-row">${bitsLine}</div>
-  `;
-
-  let options = [currentAnswer];
-  while (options.length < 4) {
-    let wrongAnswer = currentAnswer + random([-64, -32, -16, 16, 32, 64, 8, -8]);
-    if (wrongAnswer >= 0 && wrongAnswer <= 255 && !options.includes(wrongAnswer)) {
-      options.push(wrongAnswer);
-    }
-  }
-
-  options = shuffle(options);
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-
-function generateOptions(correctAnswer, cidr, type) {
-  let options = [correctAnswer];
-
-  while (options.length < 4) {
-    let c = random(cidrs);
-    let val;
-
-    if (type === "hosts") val = hosts(c);
-    if (type === "cidr") val = formatCidr(c);
-    if (type === "mask") val = masks[c];
-
-    if (!options.includes(val)) {
-      options.push(val);
-    }
-  }
-
-  options = shuffle(options);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-
-function showHint() {
-  const hint = document.getElementById("hint");
-
-  if (currentMode === "commandQuiz" || currentMode === "securityQuiz") {
-  hint.textContent = currentHintText;
-  return;
-}
-
-  if (currentMode === "cidrToHosts") {
-    const hostBits = 32 - currentCidr;
-    hint.textContent = `Hint: Work out host bits first. 32 - ${currentCidr} = ${hostBits}. Then use 2^${hostBits} - 2.`;
-  }
-
-  if (currentMode === "hostsToCidr") {
-    const hostBits = 32 - currentCidr;
-    hint.textContent = `Hint: ${hosts(currentCidr)} usable hosts means ${hostBits} host bits, so the answer is /${currentCidr}.`;
-  }
-
-  if (currentMode === "cidrToMask") {
-    const extraBits = currentCidr - 24;
-    const used = bitValues.slice(0, extraBits);
-    const sum = used.reduce((a, b) => a + b, 0);
-
-    hint.textContent =
-      `Hint: In the last octet, each place is a power of 2: 128, 64, 32, 16, 8, 4, 2, 1. /${currentCidr} means ${extraBits} bits are ON there, so add the first ${extraBits}: ${used.join(" + ")} = ${sum}.`;
-  }
-
-  if (currentMode === "bitsToValue") {
-    const used = bitValues.filter((_, i) => currentBits[i] === 1);
-    hint.textContent =
-      `Hint: Add the values where the bit is 1. Here that means ${used.join(" + ")}.`;
-  }
-
-  if (currentMode === "networkAddress") {
-  const blockSize = Math.pow(2, 32 - currentCidr);
-  hint.textContent =
-    `Hint: Block size = ${blockSize}. Subnets go 0, ${blockSize}, ${blockSize * 2}, ${blockSize * 3}. Find which range the IP fits into.`;
-}
-
-if (currentMode === "broadcastAddress") {
-  hint.textContent =
-    `Hint: Find the network first (${currentNetwork}). Then add block size (${currentBlockSize}) - 1 → ${currentBroadcast}`;
-}
-
-if (currentMode === "usableRange") {
-  hint.textContent =
-    `Hint: Usable range = network + 1 to broadcast - 1 → ${currentNetwork + 1} - ${currentBroadcast - 1}`;
-}
-
-if (currentMode === "hostRequirement") {
-  hint.textContent =
-    `Hint: Choose the smallest subnet that fits. /24=254, /25=126, /26=62, /27=30, /28=14, /29=6, /30=2.`;
-}
-
-}
-
-function checkAnswer(answer) {
-  const feedback = document.getElementById("feedback");
-  const buttons = document.querySelectorAll("#answers button");
-
-  let isCorrect = false;
-
- if (currentMode === "hostsToCidr" || currentMode === "hostRequirement") {
-  isCorrect = typeof answer === "string" && answer.includes(currentAnswer);
-} else {
-  isCorrect = answer == currentAnswer;
-}
-
-  buttons.forEach(btn => {
-   if (
-  ((currentMode === "hostsToCidr" || currentMode === "hostRequirement") &&
-    btn.textContent.includes(currentAnswer)) ||
-  btn.textContent == currentAnswer
-) {
-  btn.classList.add("correct-btn");
-}
-
-    if (btn.textContent == answer && !isCorrect) {
-      btn.classList.add("wrong-btn");
-    }
-
-    btn.disabled = true;
-  });
-
-  if (isCorrect) {
-    correct++;
-    feedback.textContent = "Correct";
-    feedback.className = "correct";
-    streak++;
-  } else {
-    wrong++;
-    feedback.textContent = `Wrong (Correct: ${currentAnswer})`;
-    feedback.className = "wrong";
-    streak = 0;
-  }
-
-  document.getElementById("correct").textContent = correct;
-  document.getElementById("wrong").textContent = wrong;
-
-  document.getElementById("nextBtn").style.display = "block";
-  document.getElementById("hintBtn").style.display = "none";
-  document.getElementById("streak").textContent = streak;
-}
-
-function generateBroadcastQuestion() {
-  const base = "192.168.1.";
-  const cidr = random(cidrs);
-
-  const blockSize = Math.pow(2, 32 - cidr);
-  const ip = Math.floor(Math.random() * 256);
-
-  const network = Math.floor(ip / blockSize) * blockSize;
-  const broadcast = network + blockSize - 1;
-
-  // store values
-  currentIp = ip;
-  currentCidr = cidr;
-  currentBlockSize = blockSize;
-  currentNetwork = network;
-  currentBroadcast = broadcast;
-
-  currentAnswer = base + broadcast;
-
-  document.getElementById("question").textContent =
-    `IP: ${base}${ip} ${formatCidr(cidr)} → What is the broadcast address?`;
-
-  let options = [
-    base + broadcast,
-    base + (network + blockSize - 2),
-    base + (network + blockSize),
-    base + network
-  ].filter(v => {
-    const n = parseInt(v.split(".")[3]);
-    return n >= 0 && n <= 255;
-  });
-
-  options = shuffle([...new Set(options)]);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-
-function generateUsableRangeQuestion() {
-  const base = "192.168.1.";
-  const cidr = random(cidrs);
-
-  const blockSize = Math.pow(2, 32 - cidr);
-  const ip = Math.floor(Math.random() * 256);
-
-  const network = Math.floor(ip / blockSize) * blockSize;
-  const broadcast = network + blockSize - 1;
-
-  const first = network + 1;
-  const last = broadcast - 1;
-
-  // store values
-  currentIp = ip;
-  currentCidr = cidr;
-  currentBlockSize = blockSize;
-  currentNetwork = network;
-  currentBroadcast = broadcast;
-
-  currentAnswer = `${base}${first} - ${base}${last}`;
-
-  document.getElementById("question").textContent =
-    `IP: ${base}${ip} ${formatCidr(cidr)} → What is the usable range?`;
-
-  let options = [
-    currentAnswer,
-    `${base}${network} - ${base}${broadcast}`,        // includes network/broadcast (wrong)
-    `${base}${first} - ${base}${broadcast}`,          // includes broadcast (wrong)
-    `${base}${network} - ${base}${last}`              // includes network (wrong)
-  ];
-
-  options = shuffle(options);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-
-function generateHostRequirementQuestion() {
-  const cidr = random(cidrs);
-  const maxHosts = hosts(cidr);
-
-  let minNeeded = 2;
-  if (cidr < 30) {
-    minNeeded = Math.max(2, hosts(cidr + 1) + 1);
-  }
-
-  const requiredHosts = Math.floor(Math.random() * (maxHosts - minNeeded + 1)) + minNeeded;
-
-  currentCidr = cidr;
-  currentAnswer = formatCidr(cidr);
-
-  document.getElementById("question").textContent =
-    `You need ${requiredHosts} usable hosts. Which subnet should you use?`;
-
-  let options = [formatCidr(cidr)];
-
-  while (options.length < 4) {
-    const wrongCidr = random(cidrs);
-    const wrongOption = formatCidr(wrongCidr);
-
-    if (!options.includes(wrongOption)) {
-      options.push(wrongOption);
-    }
-  }
-
-  options = shuffle(options);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-function showPractice() {
-  document.getElementById("practiceSection").style.display = "block";
-  document.getElementById("cheatSheetSection").style.display = "none";
-  document.getElementById("question").textContent = "Select a mode to begin";
-document.getElementById("answers").innerHTML = "";
-document.getElementById("feedback").textContent = "";
-}
-
-function showCheatSheet() {
-  document.getElementById("practiceSection").style.display = "none";
-  document.getElementById("cheatSheetSection").style.display = "block";
-}
-
-function setMode(mode) {
-  currentMode = mode;
-  startQuiz();
-}
-
-function generateCommandQuestion() {
-  let available = commandQuestions.filter(q => 
-    !recentCommandQuestions.includes(q.question)
-  );
-
-  // if we run out, reset
-  if (available.length === 0) {
-    recentCommandQuestions = [];
-    available = commandQuestions;
-  }
-
-  const q = random(available);
-
-  // track recent
-  recentCommandQuestions.push(q.question);
-  if (recentCommandQuestions.length > 3) {
-    recentCommandQuestions.shift(); // keep last 3 only
-  }
-
-  currentAnswer = q.answer;
-  currentHintText = q.hint;
-
-  document.getElementById("question").textContent = q.question;
-  document.getElementById("diagram").innerHTML = "";
-
-  let options = shuffle([...q.options]);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-
-function generateSecurityQuestion() {
-  let available = securityQuestions.filter(q => 
-    !recentSecurityQuestions.includes(q.question)
-  );
-
-  if (available.length === 0) {
-    recentSecurityQuestions = [];
-    available = securityQuestions;
-  }
-
-  const q = random(available);
-
-  recentSecurityQuestions.push(q.question);
-  if (recentSecurityQuestions.length > 3) {
-    recentSecurityQuestions.shift();
-  }
-
-  currentAnswer = q.answer;
-  currentHintText = q.hint;
-
-  document.getElementById("question").textContent = q.question;
-  document.getElementById("diagram").innerHTML = "";
-
-  let options = shuffle([...q.options]);
-
-  options.forEach(opt => {
-    let btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(opt);
-    document.getElementById("answers").appendChild(btn);
-  });
-}
-</script>
-
+  <h1>Networking Quiz</h1>
+
+  <div id="topButtons">
+    <button id="practiceToggle" class="section-btn active" type="button">Practice</button>
+    <button id="cheatSheetToggle" class="section-btn" type="button">Cheat Sheet</button>
+  </div>
+
+  <div id="practiceSection">
+    <div id="modeButtons">
+      <button class="mode-btn" data-mode="cidrToHosts" type="button">Hosts</button>
+      <button class="mode-btn" data-mode="hostsToCidr" type="button">Network Bits</button>
+      <button class="mode-btn" data-mode="cidrToMask" type="button">Subnet Mask</button>
+      <button class="mode-btn" data-mode="bitsToValue" type="button">Bits Value</button>
+      <button class="mode-btn" data-mode="networkAddress" type="button">Network Address</button>
+      <button class="mode-btn" data-mode="broadcastAddress" type="button">Broadcast</button>
+      <button class="mode-btn" data-mode="usableRange" type="button">Usable Range</button>
+      <button class="mode-btn" data-mode="hostRequirement" type="button">Hosts Required</button>
+    </div>
+
+    <hr>
+
+    <h3>Commands & Security</h3>
+    <div id="extraButtons">
+      <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
+      <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
+    </div>
+
+    <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
+    <div id="diagram"></div>
+    <div id="answers"></div>
+
+    <p id="hint" class="hint"></p>
+    <p id="feedback"></p>
+
+    <div id="actionButtons">
+      <button id="hintBtn" type="button" hidden>Hint</button>
+      <button id="nextBtn" type="button" hidden>Next</button>
+    </div>
+
+    <div class="scoreboard">
+      <h3>Score</h3>
+      <p>Streak: <span id="streak">0</span></p>
+      <p>Correct: <span id="correct">0</span></p>
+      <p>Wrong: <span id="wrong">0</span></p>
+    </div>
+  </div>
+
+  <div id="cheatSheetSection" hidden>
+    <h2>Cheat Sheet</h2>
+
+    <h3>Subnet Basics</h3>
+    <p>
+      Network = first address in the subnet<br>
+      Broadcast = last address in the subnet<br>
+      Usable range = everything in between
+    </p>
+
+    <h3>Host Sizes</h3>
+    <p>
+      /24 = 254 hosts<br>
+      /25 = 126 hosts<br>
+      /26 = 62 hosts<br>
+      /27 = 30 hosts<br>
+      /28 = 14 hosts<br>
+      /29 = 6 hosts<br>
+      /30 = 2 hosts
+    </p>
+
+    <h3>Block Sizes</h3>
+    <p>
+      /25 = 128<br>
+      /26 = 64<br>
+      /27 = 32<br>
+      /28 = 16<br>
+      /29 = 8<br>
+      /30 = 4
+    </p>
+
+    <h3>Quick Rules</h3>
+    <p>
+      Network = multiples of the block size<br>
+      Broadcast = network + block size - 1<br>
+      First usable = network + 1<br>
+      Last usable = broadcast - 1
+    </p>
+
+    <h3>Commands</h3>
+    <p>
+      show run = current active config<br>
+      show start = saved startup config<br>
+      show version = IOS version and system details<br>
+      show interface = interface details, errors, bandwidth<br>
+      show flash = files stored in flash memory
+    </p>
+
+    <h3>Switch Management</h3>
+    <p>
+      A normal switch IP is for remote management only<br>
+      A normal switch is not the default gateway<br>
+      Switch management IP is usually on a virtual interface
+    </p>
+
+    <h3>Security</h3>
+    <p>
+      SSH = secure and encrypted<br>
+      Telnet = insecure and clear text
+    </p>
+  </div>
 </body>
 </html>

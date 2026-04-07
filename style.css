@@ -1,0 +1,163 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 12px;
+}
+
+h1 {
+  text-align: center;
+  color: #38bdf8;
+  margin-bottom: 18px;
+}
+
+h3 {
+  color: #38bdf8;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e5e7eb;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #334155;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+#topButtons,
+#modeButtons,
+#extraButtons,
+#actionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#topButtons button,
+#extraButtons button,
+#actionButtons button {
+  flex: 1;
+}
+
+#modeButtons button {
+  flex: 1 1 45%;
+}
+
+.section-btn.active,
+.mode-btn.active {
+  background: #0ea5e9;
+  border-color: #38bdf8;
+  color: #f8fafc;
+}
+
+#question {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  background: #020617;
+  border: 1px solid #334155;
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+#question.question-placeholder {
+  opacity: 0.7;
+}
+
+#diagram {
+  margin-bottom: 10px;
+}
+
+#answers {
+  margin-top: 10px;
+}
+
+#answers button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #020617;
+  border: 1px solid #374151;
+}
+
+.correct-btn {
+  background: #16a34a !important;
+  color: #ffffff;
+}
+
+.wrong-btn {
+  background: #dc2626 !important;
+  color: #ffffff;
+}
+
+#feedback {
+  min-height: 24px;
+  font-weight: 700;
+}
+
+.correct {
+  color: #22c55e;
+}
+
+.wrong {
+  color: #f87171;
+}
+
+.hint {
+  color: #94a3b8;
+  margin-top: 10px;
+  font-style: italic;
+  min-height: 24px;
+}
+
+.bits-row {
+  font-family: monospace;
+  font-size: 16px;
+  margin: 10px 0;
+  white-space: pre-wrap;
+}
+
+.scoreboard {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #020617;
+  border: 1px solid #334155;
+}
+
+.scoreboard p {
+  margin: 6px 0;
+}
+
+#cheatSheetSection {
+  line-height: 1.6;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #334155;
+  margin: 16px 0;
+}
+
+@media (max-width: 520px) {
+  #modeButtons button,
+  #extraButtons button,
+  #topButtons button,
+  #actionButtons button {
+    flex: 1 1 100%;
+  }
+}
