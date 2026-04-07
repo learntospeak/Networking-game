@@ -48,6 +48,17 @@ button:active {
   transform: scale(0.97);
 }
 
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button:disabled::before {
+  opacity: 0.45;
+}
+
 button::before {
   content: "";
   position: absolute;
@@ -89,6 +100,14 @@ button::before {
 
 #modeButtons button {
   flex: 1 1 45%;
+}
+
+#examModeRow {
+  margin-top: 12px;
+}
+
+#examModeBtn {
+  width: 100%;
 }
 
 .section-btn.active,
@@ -173,6 +192,25 @@ button::before {
     0 0 16px rgba(34, 197, 94, 0.6);
 }
 
+.exam-btn {
+  min-height: 54px;
+  background: linear-gradient(180deg, #3f6212 0%, #1f2937 100%);
+  border-color: #84cc16;
+  color: #f7fee7;
+}
+
+.exam-btn:hover {
+  background: linear-gradient(180deg, #4d7c0f 0%, #1f2937 100%);
+  border-color: #a3e635;
+}
+
+.exam-btn::before {
+  background: #ef4444;
+  box-shadow:
+    0 0 0 2px rgba(239, 68, 68, 0.14),
+    0 0 16px rgba(239, 68, 68, 0.55);
+}
+
 #question {
   margin-top: 20px;
   margin-bottom: 10px;
@@ -218,6 +256,20 @@ button::before {
     0 0 16px rgba(34, 197, 94, 0.6);
 }
 
+#restartExamBtn::before {
+  background: #22c55e;
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.14),
+    0 0 16px rgba(34, 197, 94, 0.6);
+}
+
+#exitExamBtn::before {
+  background: #ef4444;
+  box-shadow:
+    0 0 0 2px rgba(239, 68, 68, 0.14),
+    0 0 16px rgba(239, 68, 68, 0.6);
+}
+
 .correct-btn {
   background: linear-gradient(180deg, #166534 0%, #14532d 100%) !important;
   border-color: #22c55e !important;
@@ -250,11 +302,66 @@ button::before {
   min-height: 24px;
 }
 
+#examStatus {
+  margin: 10px 0 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #334155;
+  color: #facc15;
+  font-weight: 700;
+  text-align: center;
+}
+
 .bits-row {
   font-family: monospace;
   font-size: 16px;
   margin: 10px 0;
   white-space: pre-wrap;
+}
+
+.exam-result {
+  margin-top: 12px;
+  padding: 18px 16px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: linear-gradient(180deg, #111827 0%, #020617 100%);
+  text-align: center;
+}
+
+.exam-result.pass {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18);
+}
+
+.exam-result.fail {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.18);
+}
+
+.exam-result-score {
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.exam-result-percent {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.exam-result-outcome {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.exam-result.pass .exam-result-outcome {
+  color: #22c55e;
+}
+
+.exam-result.fail .exam-result-outcome {
+  color: #ef4444;
 }
 
 .scoreboard {

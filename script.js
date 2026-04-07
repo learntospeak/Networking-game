@@ -707,6 +707,8 @@ const els = {
   cheatSheetToggle: document.getElementById("cheatSheetToggle"),
   practiceSection: document.getElementById("practiceSection"),
   cheatSheetSection: document.getElementById("cheatSheetSection"),
+  examModeBtn: document.getElementById("examModeBtn"),
+  examStatus: document.getElementById("examStatus"),
   question: document.getElementById("question"),
   diagram: document.getElementById("diagram"),
   answers: document.getElementById("answers"),
@@ -714,12 +716,25 @@ const els = {
   feedback: document.getElementById("feedback"),
   hintBtn: document.getElementById("hintBtn"),
   nextBtn: document.getElementById("nextBtn"),
+  restartExamBtn: document.getElementById("restartExamBtn"),
+  exitExamBtn: document.getElementById("exitExamBtn"),
   streak: document.getElementById("streak"),
   correct: document.getElementById("correct"),
-  wrong: document.getElementById("wrong")
+  wrong: document.getElementById("wrong"),
+  scoreboard: document.querySelector(".scoreboard")
 };
 
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
+const subnetExamModes = [
+  "cidrToHosts",
+  "hostsToCidr",
+  "cidrToMask",
+  "bitsToValue",
+  "networkAddress",
+  "broadcastAddress",
+  "usableRange",
+  "hostRequirement"
+];
 
 const state = {
   currentAnswer: "",
@@ -735,7 +750,14 @@ const state = {
   currentHintText: "",
   streak: 0,
   recentCommandQuestions: [],
-  recentSecurityQuestions: []
+  recentSecurityQuestions: [],
+  examModeActive: false,
+  examFinished: false,
+  examQuestions: [],
+  examIndex: 0,
+  examScore: 0,
+  examQuestionCount: 10,
+  usedExamQuestions: new Set()
 };
 
 function formatCidr(cidr) {
@@ -779,18 +801,26 @@ function updateActiveMode(mode) {
   });
 }
 
-function showPractice() {
+function showPractice(force = false) {
+  if (state.examModeActive && !force) return;
+
   els.practiceSection.hidden = false;
   els.cheatSheetSection.hidden = true;
   els.practiceToggle.classList.add("active");
   els.cheatSheetToggle.classList.remove("active");
 
-  if (!state.currentMode) {
+  if (!state.examModeActive) {
+    els.scoreboard.hidden = false;
+  }
+
+  if (!state.currentMode && !state.examModeActive) {
     resetIntroState();
   }
 }
 
 function showCheatSheet() {
+  if (state.examModeActive) return;
+
   els.practiceSection.hidden = true;
   els.cheatSheetSection.hidden = false;
   els.practiceToggle.classList.remove("active");
@@ -806,16 +836,24 @@ function resetIntroState() {
   els.feedback.className = "";
   els.hintBtn.hidden = true;
   els.nextBtn.hidden = true;
+  els.nextBtn.textContent = "Next";
+  els.examStatus.hidden = true;
+  els.restartExamBtn.hidden = true;
+  els.exitExamBtn.hidden = true;
 }
 
-function resetQuestionUi() {
+function resetQuestionUi({ showHint = true } = {}) {
   els.feedback.textContent = "";
   els.feedback.className = "";
   els.hint.textContent = "";
   els.diagram.innerHTML = "";
   els.answers.innerHTML = "";
-  els.hintBtn.hidden = false;
+  els.hintBtn.hidden = !showHint;
   els.nextBtn.hidden = true;
+  els.nextBtn.textContent = "Next";
+  els.examStatus.hidden = true;
+  els.restartExamBtn.hidden = true;
+  els.exitExamBtn.hidden = true;
   state.currentHintText = "";
   state.currentBits = [];
 }
@@ -830,6 +868,257 @@ function renderAnswerOptions(options) {
     btn.addEventListener("click", () => checkAnswer(option));
     els.answers.appendChild(btn);
   });
+}
+
+function renderQuestionObject(question, mode) {
+  state.currentMode = mode;
+  state.currentAnswer = question.answer;
+  state.currentHintText = question.hint;
+  setQuestion(question.question);
+  renderAnswerOptions(shuffle(question.options));
+}
+
+function renderCurrentModeQuestion(mode) {
+  const cidr = random(cidrs);
+  state.currentCidr = cidr;
+  state.currentMode = mode;
+
+  switch (mode) {
+    case "cidrToHosts":
+      state.currentAnswer = hosts(cidr);
+      setQuestion(`How many usable hosts are available with ${formatCidr(cidr)}?`);
+      generateOptions(state.currentAnswer, cidr, "hosts");
+      break;
+    case "hostsToCidr":
+      state.currentAnswer = `/${cidr}`;
+      setQuestion(`How many network bits are needed for ${hosts(cidr)} usable hosts?`);
+      generateOptions(state.currentAnswer, cidr, "cidr");
+      break;
+    case "cidrToMask":
+      state.currentAnswer = masks[cidr];
+      setQuestion(`What is the subnet mask for /${cidr}?`);
+      generateOptions(state.currentAnswer, cidr, "mask");
+      break;
+    case "bitsToValue":
+      generateBitsQuestion();
+      break;
+    case "networkAddress":
+      generateNetworkQuestion();
+      break;
+    case "broadcastAddress":
+      generateBroadcastQuestion();
+      break;
+    case "usableRange":
+      generateUsableRangeQuestion();
+      break;
+    case "hostRequirement":
+      generateHostRequirementQuestion();
+      break;
+    case "commandQuiz":
+      generateCommandQuestion();
+      break;
+    case "securityQuiz":
+      generateSecurityQuestion();
+      break;
+    default:
+      resetIntroState();
+  }
+}
+
+function setExamControlsDisabled(disabled) {
+  els.practiceToggle.disabled = disabled;
+  els.cheatSheetToggle.disabled = disabled;
+  els.examModeBtn.disabled = disabled;
+
+  modeButtons.forEach((button) => {
+    button.disabled = disabled;
+  });
+}
+
+function updateExamStatus() {
+  if (!state.examModeActive || state.examFinished) {
+    els.examStatus.hidden = true;
+    return;
+  }
+
+  els.examStatus.hidden = false;
+  els.examStatus.textContent = `Question ${state.examIndex + 1} of ${state.examQuestionCount}`;
+}
+
+function takeRandomItems(list, count) {
+  return shuffle(list).slice(0, Math.min(count, list.length));
+}
+
+function uniqueQuestionsByText(list) {
+  const seen = new Set();
+
+  return list.filter((item) => {
+    if (seen.has(item.question)) return false;
+    seen.add(item.question);
+    return true;
+  });
+}
+
+function buildExamQuestions() {
+  state.usedExamQuestions = new Set();
+
+  const subnetPart = takeRandomItems(subnetExamModes, 4).map((mode) => {
+    const id = `subnet:${mode}`;
+    state.usedExamQuestions.add(id);
+    return { id, type: "subnet", mode };
+  });
+
+  const commandPart = takeRandomItems(uniqueQuestionsByText(commandQuestions), 3).map((question) => {
+    const id = `command:${question.question}`;
+    state.usedExamQuestions.add(id);
+    return { id, type: "command", data: question };
+  });
+
+  const securityPart = takeRandomItems(uniqueQuestionsByText(securityQuestions), 3).map((question) => {
+    const id = `security:${question.question}`;
+    state.usedExamQuestions.add(id);
+    return { id, type: "security", data: question };
+  });
+
+  return shuffle([...subnetPart, ...commandPart, ...securityPart]);
+}
+
+function startExamMode() {
+  showPractice(true);
+
+  state.examModeActive = true;
+  state.examFinished = false;
+  state.examIndex = 0;
+  state.examScore = 0;
+  state.examQuestions = buildExamQuestions();
+  state.examQuestionCount = state.examQuestions.length;
+  state.currentMode = "";
+
+  updateActiveMode("");
+  setExamControlsDisabled(true);
+  els.scoreboard.hidden = true;
+
+  generateExamQuestion();
+}
+
+function generateExamQuestion() {
+  if (!state.examModeActive) return;
+
+  if (state.examIndex >= state.examQuestionCount) {
+    finishExamMode();
+    return;
+  }
+
+  resetQuestionUi({ showHint: false });
+  showPractice(true);
+  updateExamStatus();
+
+  const currentExamQuestion = state.examQuestions[state.examIndex];
+
+  if (currentExamQuestion.type === "command") {
+    renderQuestionObject(currentExamQuestion.data, "commandQuiz");
+    return;
+  }
+
+  if (currentExamQuestion.type === "security") {
+    renderQuestionObject(currentExamQuestion.data, "securityQuiz");
+    return;
+  }
+
+  renderCurrentModeQuestion(currentExamQuestion.mode);
+}
+
+function markAnswerButtons(answer, isCorrect) {
+  const buttons = Array.from(els.answers.querySelectorAll("button"));
+
+  buttons.forEach((button) => {
+    const matchesCorrect = answerUsesPartialMatch()
+      ? button.textContent.includes(state.currentAnswer)
+      : button.textContent == state.currentAnswer;
+
+    if (matchesCorrect) {
+      button.classList.add("correct-btn");
+    }
+
+    if (button.textContent === String(answer) && !isCorrect) {
+      button.classList.add("wrong-btn");
+    }
+
+    button.disabled = true;
+  });
+}
+
+function submitExamAnswer(answer) {
+  const isCorrect = answerUsesPartialMatch()
+    ? typeof answer === "string" && answer.includes(state.currentAnswer)
+    : answer == state.currentAnswer;
+
+  markAnswerButtons(answer, isCorrect);
+
+  if (isCorrect) {
+    state.examScore += 1;
+    els.feedback.textContent = "Correct";
+    els.feedback.className = "correct";
+  } else {
+    els.feedback.textContent = `Wrong (Correct: ${state.currentAnswer})`;
+    els.feedback.className = "wrong";
+  }
+
+  els.hintBtn.hidden = true;
+  els.nextBtn.hidden = false;
+  els.nextBtn.textContent =
+    state.examIndex === state.examQuestionCount - 1 ? "Finish Exam" : "Next Question";
+}
+
+function advanceExamQuestion() {
+  if (!state.examModeActive || state.examFinished) return;
+
+  state.examIndex += 1;
+  generateExamQuestion();
+}
+
+function finishExamMode() {
+  state.examFinished = true;
+
+  const percentage = Math.round((state.examScore / state.examQuestionCount) * 100);
+  const passed = percentage >= 70;
+
+  setQuestion("Exam Complete");
+  els.examStatus.hidden = true;
+  els.answers.innerHTML = "";
+  els.feedback.textContent = "";
+  els.feedback.className = "";
+  els.hint.textContent = "";
+  els.hintBtn.hidden = true;
+  els.nextBtn.hidden = true;
+
+  els.diagram.innerHTML = `
+    <div class="exam-result ${passed ? "pass" : "fail"}">
+      <div class="exam-result-score">${state.examScore} / ${state.examQuestionCount}</div>
+      <div class="exam-result-percent">${percentage}%</div>
+      <div class="exam-result-outcome">${passed ? "PASS" : "FAIL"}</div>
+    </div>
+  `;
+
+  els.restartExamBtn.hidden = false;
+  els.exitExamBtn.hidden = false;
+}
+
+function exitExamMode() {
+  state.examModeActive = false;
+  state.examFinished = false;
+  state.examQuestions = [];
+  state.examIndex = 0;
+  state.examScore = 0;
+  state.usedExamQuestions = new Set();
+  state.currentMode = "";
+
+  setExamControlsDisabled(false);
+  updateActiveMode("");
+  els.scoreboard.hidden = false;
+
+  showPractice(true);
+  resetIntroState();
 }
 
 function setSubnetState({ cidr, ip, blockSize, network, broadcast }) {
@@ -1013,22 +1302,12 @@ function pickRecentQuestion(questions, recentList) {
 
 function generateCommandQuestion() {
   const question = pickRecentQuestion(commandQuestions, state.recentCommandQuestions);
-
-  state.currentAnswer = question.answer;
-  state.currentHintText = question.hint;
-  setQuestion(question.question);
-
-  renderAnswerOptions(shuffle(question.options));
+  renderQuestionObject(question, "commandQuiz");
 }
 
 function generateSecurityQuestion() {
   const question = pickRecentQuestion(securityQuestions, state.recentSecurityQuestions);
-
-  state.currentAnswer = question.answer;
-  state.currentHintText = question.hint;
-  setQuestion(question.question);
-
-  renderAnswerOptions(shuffle(question.options));
+  renderQuestionObject(question, "securityQuiz");
 }
 
 function startQuiz() {
@@ -1041,57 +1320,16 @@ function startQuiz() {
 }
 
 function nextQuestion() {
+  if (state.examModeActive) return;
+
   if (!state.currentMode) {
     resetIntroState();
     return;
   }
 
   showPractice();
-  resetQuestionUi();
-
-  const cidr = random(cidrs);
-  state.currentCidr = cidr;
-
-  switch (state.currentMode) {
-    case "cidrToHosts":
-      state.currentAnswer = hosts(cidr);
-      setQuestion(`How many usable hosts are available with ${formatCidr(cidr)}?`);
-      generateOptions(state.currentAnswer, cidr, "hosts");
-      break;
-    case "hostsToCidr":
-      state.currentAnswer = `/${cidr}`;
-      setQuestion(`How many network bits are needed for ${hosts(cidr)} usable hosts?`);
-      generateOptions(state.currentAnswer, cidr, "cidr");
-      break;
-    case "cidrToMask":
-      state.currentAnswer = masks[cidr];
-      setQuestion(`What is the subnet mask for /${cidr}?`);
-      generateOptions(state.currentAnswer, cidr, "mask");
-      break;
-    case "bitsToValue":
-      generateBitsQuestion();
-      break;
-    case "networkAddress":
-      generateNetworkQuestion();
-      break;
-    case "broadcastAddress":
-      generateBroadcastQuestion();
-      break;
-    case "usableRange":
-      generateUsableRangeQuestion();
-      break;
-    case "hostRequirement":
-      generateHostRequirementQuestion();
-      break;
-    case "commandQuiz":
-      generateCommandQuestion();
-      break;
-    case "securityQuiz":
-      generateSecurityQuestion();
-      break;
-    default:
-      resetIntroState();
-  }
+  resetQuestionUi({ showHint: true });
+  renderCurrentModeQuestion(state.currentMode);
 }
 
 function showHint() {
@@ -1156,26 +1394,16 @@ function answerUsesPartialMatch() {
 }
 
 function checkAnswer(answer) {
-  const buttons = Array.from(els.answers.querySelectorAll("button"));
+  if (state.examModeActive && !state.examFinished) {
+    submitExamAnswer(answer);
+    return;
+  }
+
   const isCorrect = answerUsesPartialMatch()
     ? typeof answer === "string" && answer.includes(state.currentAnswer)
     : answer == state.currentAnswer;
 
-  buttons.forEach((button) => {
-    const matchesCorrect = answerUsesPartialMatch()
-      ? button.textContent.includes(state.currentAnswer)
-      : button.textContent == state.currentAnswer;
-
-    if (matchesCorrect) {
-      button.classList.add("correct-btn");
-    }
-
-    if (button.textContent === String(answer) && !isCorrect) {
-      button.classList.add("wrong-btn");
-    }
-
-    button.disabled = true;
-  });
+  markAnswerButtons(answer, isCorrect);
 
   if (isCorrect) {
     state.correct += 1;
@@ -1195,6 +1423,8 @@ function checkAnswer(answer) {
 }
 
 function setMode(mode) {
+  if (state.examModeActive) return;
+
   state.currentMode = mode;
   updateActiveMode(mode);
   showPractice();
@@ -1202,10 +1432,22 @@ function setMode(mode) {
 }
 
 function bindEvents() {
-  els.practiceToggle.addEventListener("click", showPractice);
+  els.practiceToggle.addEventListener("click", () => showPractice());
   els.cheatSheetToggle.addEventListener("click", showCheatSheet);
   els.hintBtn.addEventListener("click", showHint);
-  els.nextBtn.addEventListener("click", nextQuestion);
+
+  els.nextBtn.addEventListener("click", () => {
+    if (state.examModeActive && !state.examFinished) {
+      advanceExamQuestion();
+      return;
+    }
+
+    nextQuestion();
+  });
+
+  els.examModeBtn.addEventListener("click", startExamMode);
+  els.restartExamBtn.addEventListener("click", startExamMode);
+  els.exitExamBtn.addEventListener("click", exitExamMode);
 
   modeButtons.forEach((button) => {
     button.addEventListener("click", () => setMode(button.dataset.mode));

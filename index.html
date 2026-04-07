@@ -29,13 +29,18 @@
 
     <hr>
 
-    <h3>Commands & Security</h3>
+    <h3 align="center">Commands & Security</h3>
     <div id="extraButtons">
       <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
       <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
     </div>
 
+    <div id="examModeRow">
+      <button id="examModeBtn" class="section-btn exam-btn" type="button">Exam Mode</button>
+    </div>
+
     <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
+    <p id="examStatus" hidden></p>
     <div id="diagram"></div>
     <div id="answers"></div>
 
@@ -45,6 +50,8 @@
     <div id="actionButtons">
       <button id="hintBtn" type="button" hidden>Hint</button>
       <button id="nextBtn" type="button" hidden>Next</button>
+      <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
+      <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
     </div>
 
     <div class="scoreboard">
