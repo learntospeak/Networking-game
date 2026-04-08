@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protocol Flow Lab</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./protocol-flow.css">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  >
+  <script src="./protocol-flow.js" defer></script>
+</head>
+<body>
+  <div class="rack-room">
+    <div class="router-shell flow-shell">
+      <div class="router-top">
+        <div>
+          <div class="router-brand">NET-LAB FLOW PANEL</div>
+          <div class="flow-subbrand">Guided protocol motion trainer</div>
+        </div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <header class="flow-header">
+        <div>
+          <p class="flow-kicker">Signal Path Visualizer</p>
+          <h1>Protocol Flow Lab</h1>
+          <p class="flow-intro">
+            Watch how traffic moves through the network. Pick the correct next action,
+            light up the right path, and see which devices are actually involved.
+          </p>
+        </div>
+        <a class="flow-nav-link" href="./index.html">Back to Main App</a>
+      </header>
+
+      <section class="flow-panel scenario-panel">
+        <div class="flow-panel-head">
+          <h2>Scenarios</h2>
+          <div id="scenarioStatus" class="flow-status idle">Ready</div>
+        </div>
+        <div id="scenarioTabs" class="scenario-tabs"></div>
+      </section>
+
+      <div class="flow-layout">
+        <section class="flow-panel diagram-panel">
+          <div class="display-panel flow-display">
+            <div class="flow-display-head">
+              <div>
+                <p id="scenarioLabel" class="scenario-label">ARP Flow</p>
+                <h2 id="scenarioName" class="scenario-name">ARP on Same Subnet</h2>
+              </div>
+              <div id="stepBadge" class="step-badge">Step 1 of 3</div>
+            </div>
+
+            <div class="diagram-shell">
+              <div id="diagramStage" class="diagram-stage">
+                <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
+                <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
+                <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
+                <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
+
+                <div id="devicePc" class="device-node" data-device="pc">
+                  <div class="device-icon-wrap">
+                    <i class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
+                  </div>
+                  <p class="device-title">PC A</p>
+                  <p id="devicePcMeta" class="device-meta">Source host</p>
+                </div>
+
+                <div id="deviceSwitch" class="device-node" data-device="switch">
+                  <div class="device-icon-wrap">
+                    <i class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
+                  </div>
+                  <p class="device-title">Switch</p>
+                  <p id="deviceSwitchMeta" class="device-meta">Local forwarding</p>
+                </div>
+
+                <div id="deviceRouter" class="device-node" data-device="router">
+                  <div class="device-icon-wrap">
+                    <i class="fa-solid fa-router device-icon" aria-hidden="true"></i>
+                  </div>
+                  <p class="device-title">Router</p>
+                  <p id="deviceRouterMeta" class="device-meta">Gateway</p>
+                </div>
+
+                <div id="deviceServer" class="device-node" data-device="server">
+                  <div class="device-icon-wrap">
+                    <i class="fa-solid fa-server device-icon" aria-hidden="true"></i>
+                  </div>
+                  <p class="device-title">Server</p>
+                  <p id="deviceServerMeta" class="device-meta">Destination service</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="legend-row">
+              <span class="legend-pill legend-broadcast">Broadcast</span>
+              <span class="legend-pill legend-unicast">Unicast</span>
+              <span class="legend-pill legend-secure">Secure</span>
+              <span class="legend-pill legend-warning">Insecure</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="flow-panel interaction-panel">
+          <h2>Choose the Next Action</h2>
+          <p id="stepPrompt" class="step-prompt">
+            A local host needs to reach another device on the same subnet. What happens first?
+          </p>
+
+          <div id="actionButtons" class="action-buttons"></div>
+
+          <div class="flow-controls">
+            <button id="nextStepBtn" type="button" hidden>Next Step</button>
+            <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+          </div>
+        </section>
+
+        <aside class="flow-panel explanation-panel">
+          <h2>Explanation</h2>
+          <div id="trafficMode" class="traffic-mode idle">No traffic active</div>
+          <p id="explanationText" class="explanation-text">
+            Select an action to highlight the correct path and see what the devices should do next.
+          </p>
+
+          <div class="why-card">
+            <h3>Why This Matters</h3>
+            <p id="whyText">
+              Protocols make more sense when you can see which path is used and which device actually responds.
+            </p>
+          </div>
+
+          <div class="scenario-summary">
+            <h3>Scenario Focus</h3>
+            <p id="scenarioSummary">
+              Same-subnet ARP is about learning the destination MAC on the local LAN before data can move.
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
