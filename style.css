@@ -110,6 +110,21 @@ button::before {
   width: 100%;
 }
 
+#protocolLabRow {
+  margin-top: 10px;
+}
+
+.panel-link {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
 .section-btn.active,
 .mode-btn.active {
   background: linear-gradient(180deg, #1f2937 0%, #0f172a 100%);
@@ -209,6 +224,25 @@ button::before {
   box-shadow:
     0 0 0 2px rgba(239, 68, 68, 0.14),
     0 0 16px rgba(239, 68, 68, 0.55);
+}
+
+.protocol-link {
+  min-height: 54px;
+  background: linear-gradient(180deg, #0f3b46 0%, #1f2937 100%);
+  border-color: #38bdf8;
+  color: #e0f2fe;
+}
+
+.protocol-link:hover {
+  background: linear-gradient(180deg, #155e75 0%, #1f2937 100%);
+  border-color: #7dd3fc;
+}
+
+.protocol-link::before {
+  background: #38bdf8;
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.14),
+    0 0 16px rgba(56, 189, 248, 0.55);
 }
 
 #question {
