@@ -114,6 +114,10 @@ button::before {
   margin-top: 10px;
 }
 
+#protocolMergeRow {
+  margin-top: 10px;
+}
+
 .panel-link {
   position: relative;
   overflow: hidden;
