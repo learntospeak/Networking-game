@@ -116,6 +116,16 @@
   opacity: 0.42;
 }
 
+@keyframes cablePulseVertical {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
+}
+
 @media (max-width: 1400px) {
   .merge-page .rack-room {
     max-width: 1360px;
@@ -137,6 +147,134 @@
 }
 
 @media (max-width: 760px) {
+  .merge-page .flow-display-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .merge-page .step-badge {
+    align-self: flex-start;
+  }
+
+  .merge-page .diagram-stage {
+    height: 694px;
+  }
+
+  .merge-page .device-node {
+    left: 50%;
+    width: min(188px, calc(100% - 72px));
+    min-height: 118px;
+    transform: translateX(-50%);
+  }
+
+  .merge-page .device-node[data-device="pc"] {
+    top: 28px;
+  }
+
+  .merge-page .device-node[data-device="switch"] {
+    top: 190px;
+  }
+
+  .merge-page .device-node[data-device="router"] {
+    top: 352px;
+  }
+
+  .merge-page .device-node[data-device="server"] {
+    top: 514px;
+  }
+
+  .merge-page .flow-cable {
+    background: linear-gradient(180deg, rgba(71, 85, 105, 0.65), rgba(100, 116, 139, 0.65));
+  }
+
+  .merge-page .flow-cable::before {
+    transform: translateY(-100%);
+  }
+
+  .merge-page .flow-cable.active::before,
+  .merge-page .flow-cable.broadcast::before,
+  .merge-page .flow-cable.secure::before,
+  .merge-page .flow-cable.warning::before {
+    animation: cablePulseVertical 1.3s linear infinite;
+  }
+
+  .merge-page .flow-cable.active::before {
+    background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.85), transparent);
+  }
+
+  .merge-page .flow-cable.broadcast::before {
+    background: linear-gradient(180deg, transparent, rgba(245, 158, 11, 0.9), transparent);
+  }
+
+  .merge-page .flow-cable.secure::before {
+    background: linear-gradient(180deg, transparent, rgba(34, 197, 94, 0.9), transparent);
+  }
+
+  .merge-page .flow-cable.warning::before {
+    background: linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.9), transparent);
+  }
+
+  .merge-page #cablePcSwitch,
+  .merge-page #cableSwitchRouter,
+  .merge-page #cableRouterServer {
+    left: 50%;
+    width: 6px;
+    height: 44px;
+    transform: translateX(-50%);
+  }
+
+  .merge-page #cablePcSwitch {
+    top: 146px;
+  }
+
+  .merge-page #cableSwitchRouter {
+    top: 308px;
+  }
+
+  .merge-page #cableRouterServer {
+    top: 470px;
+  }
+
+  .merge-page .flow-cable-bypass {
+    left: calc(50% + 88px);
+    top: 308px;
+    width: 6px;
+    height: 206px;
+    border-radius: 999px;
+  }
+
+  .merge-page .flow-cable-bypass::after {
+    content: "";
+    position: absolute;
+    left: -52px;
+    top: 0;
+    width: 52px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(71, 85, 105, 0.65);
+    box-shadow: 0 206px 0 rgba(71, 85, 105, 0.65);
+  }
+
+  .merge-page .flow-cable-bypass.active::after {
+    background: rgba(56, 189, 248, 0.8);
+    box-shadow: 0 206px 0 rgba(56, 189, 248, 0.8);
+  }
+
+  .merge-page .flow-cable-bypass.broadcast::after {
+    background: rgba(245, 158, 11, 0.8);
+    box-shadow: 0 206px 0 rgba(245, 158, 11, 0.8);
+  }
+
+  .merge-page .flow-cable-bypass.secure::after {
+    background: rgba(34, 197, 94, 0.8);
+    box-shadow: 0 206px 0 rgba(34, 197, 94, 0.8);
+  }
+
+  .merge-page .flow-cable-bypass.warning::after {
+    background: rgba(239, 68, 68, 0.8);
+    box-shadow: 0 206px 0 rgba(239, 68, 68, 0.8);
+  }
+
   .usecase-grid,
   .compare-row {
     grid-template-columns: 1fr;
