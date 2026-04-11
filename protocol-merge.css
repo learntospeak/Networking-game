@@ -163,7 +163,7 @@
   .merge-page .device-node {
     left: 50%;
     width: min(124px, calc(100% - 140px));
-    min-height: 88px;
+    min-height: 96px;
     padding: 10px 8px;
     border-radius: 14px;
     transform: translateX(-50%);
@@ -191,11 +191,11 @@
   }
 
   .merge-page .device-node[data-device="pc"] {
-    top: 28px;
+    top: 24px;
   }
 
   .merge-page .device-node[data-device="switch"] {
-    top: 190px;
+    top: 188px;
   }
 
   .merge-page .device-node[data-device="router"] {
@@ -203,7 +203,7 @@
   }
 
   .merge-page .device-node[data-device="server"] {
-    top: 514px;
+    top: 516px;
   }
 
   .merge-page .flow-cable {
@@ -242,60 +242,60 @@
   .merge-page #cableRouterServer {
     left: 50%;
     width: 6px;
-    height: 44px;
+    height: 68px;
     transform: translateX(-50%);
   }
 
   .merge-page #cablePcSwitch {
-    top: 146px;
+    top: 120px;
   }
 
   .merge-page #cableSwitchRouter {
-    top: 308px;
+    top: 284px;
   }
 
   .merge-page #cableRouterServer {
-    top: 470px;
+    top: 448px;
   }
 
   .merge-page .flow-cable-bypass {
-    left: calc(50% + 88px);
-    top: 308px;
+    left: calc(50% + 74px);
+    top: 236px;
     width: 6px;
-    height: 206px;
+    height: 328px;
     border-radius: 999px;
   }
 
   .merge-page .flow-cable-bypass::after {
     content: "";
     position: absolute;
-    left: -52px;
+    left: -12px;
     top: 0;
-    width: 52px;
+    width: 12px;
     height: 6px;
     border-radius: 999px;
     background: rgba(71, 85, 105, 0.65);
-    box-shadow: 0 206px 0 rgba(71, 85, 105, 0.65);
+    box-shadow: 0 328px 0 rgba(71, 85, 105, 0.65);
   }
 
   .merge-page .flow-cable-bypass.active::after {
     background: rgba(56, 189, 248, 0.8);
-    box-shadow: 0 206px 0 rgba(56, 189, 248, 0.8);
+    box-shadow: 0 328px 0 rgba(56, 189, 248, 0.8);
   }
 
   .merge-page .flow-cable-bypass.broadcast::after {
     background: rgba(245, 158, 11, 0.8);
-    box-shadow: 0 206px 0 rgba(245, 158, 11, 0.8);
+    box-shadow: 0 328px 0 rgba(245, 158, 11, 0.8);
   }
 
   .merge-page .flow-cable-bypass.secure::after {
     background: rgba(34, 197, 94, 0.8);
-    box-shadow: 0 206px 0 rgba(34, 197, 94, 0.8);
+    box-shadow: 0 328px 0 rgba(34, 197, 94, 0.8);
   }
 
   .merge-page .flow-cable-bypass.warning::after {
     background: rgba(239, 68, 68, 0.8);
-    box-shadow: 0 206px 0 rgba(239, 68, 68, 0.8);
+    box-shadow: 0 328px 0 rgba(239, 68, 68, 0.8);
   }
 
   .usecase-grid,
