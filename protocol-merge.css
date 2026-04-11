@@ -259,21 +259,21 @@
   }
 
   .merge-page .flow-cable-bypass {
-    left: calc(50% + 74px);
+    left: calc(50% + 78px);
     top: 236px;
     width: 6px;
     height: 328px;
-    border-radius: 999px;
+    border-radius: 0;
   }
 
   .merge-page .flow-cable-bypass::after {
     content: "";
     position: absolute;
-    left: -12px;
+    left: -16px;
     top: 0;
-    width: 12px;
+    width: 16px;
     height: 6px;
-    border-radius: 999px;
+    border-radius: 0;
     background: rgba(71, 85, 105, 0.65);
     box-shadow: 0 328px 0 rgba(71, 85, 105, 0.65);
   }
