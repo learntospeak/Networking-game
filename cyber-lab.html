@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber Lab</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./cyber-lab.css">
+  <script src="./cyberLabData.js" defer></script>
+  <script src="./cyberLabLogic.js" defer></script>
+</head>
+<body class="cyber-page">
+  <div class="rack-room">
+    <div class="router-shell cyber-shell">
+      <div class="router-top">
+        <div>
+          <div class="router-brand">NET-LAB CYBER PANEL</div>
+          <div class="cyber-subbrand">Progressive recon, exploitation, and access training</div>
+        </div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <header class="cyber-header">
+        <div>
+          <p class="cyber-kicker">Practical Engagement Training</p>
+          <h1>Cyber Lab</h1>
+          <p class="cyber-intro">Train the next action in real lab workflows across recon, enumeration, exploitation, and post-exploit access.</p>
+        </div>
+        <a class="cyber-nav-link" href="./index.html">Back to Main App</a>
+      </header>
+
+      <section class="lab-panel mode-panel">
+        <div class="mode-panel-head">
+          <div>
+            <h2>Training Modes</h2>
+            <p class="panel-copy">Move from decision-based scenarios into direct commands, flag usage, and full engagement workflows.</p>
+          </div>
+          <div class="status-cluster">
+            <div id="modeBadge" class="status-badge status-badge-blue">Scenario Mode</div>
+            <div id="progressBadge" class="status-badge">Scenario 1 of 44</div>
+          </div>
+        </div>
+
+        <div id="modeTabs" class="mode-tabs">
+          <button class="mode-tab-btn active" data-mode="scenario" type="button">Scenario Mode</button>
+          <button class="mode-tab-btn" data-mode="command" type="button">Command Mode</button>
+          <button class="mode-tab-btn" data-mode="flag" type="button">Flag Mode</button>
+          <button class="mode-tab-btn" data-mode="workflow" type="button">Workflow Mode</button>
+        </div>
+      </section>
+
+      <div class="cyber-layout">
+        <section class="lab-panel trainer-panel">
+          <div class="display-panel trainer-display">
+            <div class="terminal-strip">
+              <span class="terminal-host">kali@ops</span>
+              <span class="terminal-separator">:</span>
+              <span class="terminal-path">~/engagements/cyber-lab</span>
+              <span class="terminal-prompt">$</span>
+            </div>
+
+            <div class="task-head">
+              <div>
+                <p id="taskEyebrow" class="task-eyebrow">Scenario Mode</p>
+                <h2 id="taskTitle" class="task-title">Choose the next practical move</h2>
+              </div>
+              <div id="stepMiniBadge" class="mini-badge">Beginner</div>
+            </div>
+
+            <p id="taskPrompt" class="task-prompt">
+              You are testing a target machine and need the first useful scanning action.
+            </p>
+
+            <div id="taskContext" class="task-context">
+              Start with a clean port discovery step before you move into exploitation logic.
+            </div>
+
+            <p id="hintText" class="hint-text"></p>
+
+            <div class="mode-surface">
+              <div id="choiceOptions" class="choice-options"></div>
+            </div>
+
+            <div class="feedback-row">
+              <div id="feedbackBadge" class="feedback-badge idle">Awaiting answer</div>
+            </div>
+
+            <p id="feedbackText" class="feedback-text">
+              Pick the next useful action and the lab will explain why it fits.
+            </p>
+
+            <div class="why-box">
+              <h3>Why</h3>
+              <p id="whyText">
+                Strong lab work is sequencing. You move from discovery to confirmation to exploitation, not straight to random commands.
+              </p>
+            </div>
+
+            <div class="trainer-controls">
+              <button id="hintBtn" type="button">Hint</button>
+              <button id="nextTaskBtn" type="button" hidden>Next</button>
+              <button id="resetModeBtn" type="button">Reset Mode</button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="lab-panel support-panel">
+          <h2>Engagement Progression</h2>
+
+          <div id="sectionGrid" class="section-grid"></div>
+
+          <div class="focus-box">
+            <h3>Current Section</h3>
+            <p id="sectionName" class="focus-title">Recon &amp; Scanning</p>
+            <p id="sectionCopy" class="focus-copy">Map hosts, ports, services, and scope before moving deeper.</p>
+            <p id="focusText" class="panel-copy">Use the next action that reduces uncertainty without skipping ahead.</p>
+          </div>
+
+          <div class="workflow-box">
+            <div class="workflow-head">
+              <h3 id="referenceTitle">Mode Focus</h3>
+              <p id="referenceDescription">The panel shifts between tactical reminders and full workflow steps.</p>
+            </div>
+            <ol id="referenceList" class="workflow-reference"></ol>
+          </div>
+        </aside>
+      </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

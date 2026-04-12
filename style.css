@@ -118,6 +118,10 @@ button::before {
   margin-top: 10px;
 }
 
+#cyberLabRow {
+  margin-top: 10px;
+}
+
 .panel-link {
   position: relative;
   overflow: hidden;
@@ -266,6 +270,25 @@ button::before {
   box-shadow:
     0 0 0 2px rgba(52, 211, 153, 0.14),
     0 0 16px rgba(52, 211, 153, 0.55);
+}
+
+.cyber-link {
+  min-height: 54px;
+  background: linear-gradient(180deg, #4a1d0d 0%, #1f2937 100%);
+  border-color: #f97316;
+  color: #fff7ed;
+}
+
+.cyber-link:hover {
+  background: linear-gradient(180deg, #7c2d12 0%, #1f2937 100%);
+  border-color: #fdba74;
+}
+
+.cyber-link::before {
+  background: #f97316;
+  box-shadow:
+    0 0 0 2px rgba(249, 115, 22, 0.14),
+    0 0 16px rgba(249, 115, 22, 0.55);
 }
 
 #question {
