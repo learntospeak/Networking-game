@@ -110,11 +110,11 @@ button::before {
   width: 100%;
 }
 
-#protocolLabRow {
+#protocolMergeRow {
   margin-top: 10px;
 }
 
-#protocolMergeRow {
+#linuxLabRow {
   margin-top: 10px;
 }
 
@@ -247,6 +247,25 @@ button::before {
   box-shadow:
     0 0 0 2px rgba(56, 189, 248, 0.14),
     0 0 16px rgba(56, 189, 248, 0.55);
+}
+
+.linux-link {
+  min-height: 54px;
+  background: linear-gradient(180deg, #103726 0%, #1f2937 100%);
+  border-color: #34d399;
+  color: #ecfdf5;
+}
+
+.linux-link:hover {
+  background: linear-gradient(180deg, #166534 0%, #1f2937 100%);
+  border-color: #6ee7b7;
+}
+
+.linux-link::before {
+  background: #34d399;
+  box-shadow:
+    0 0 0 2px rgba(52, 211, 153, 0.14),
+    0 0 16px rgba(52, 211, 153, 0.55);
 }
 
 #question {
