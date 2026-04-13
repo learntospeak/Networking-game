@@ -815,3 +815,114 @@ h3 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 768px) {
+  body {
+    margin: 0;
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  button {
+    margin: 4px 0;
+    padding: 10px 10px 10px 38px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  button::before {
+    left: 12px;
+    width: 10px;
+    height: 10px;
+  }
+
+  #topButtons,
+  #modeButtons,
+  #extraButtons,
+  #actionButtons {
+    gap: 8px;
+  }
+
+  #topButtons {
+    padding: 6px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+  }
+
+  #modeButtons button {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .section-btn,
+  .protocol-link,
+  .linux-link,
+  .cyber-link,
+  .terminal-link,
+  .exam-btn {
+    min-height: 46px;
+    padding-left: 42px;
+    font-size: 14px;
+  }
+
+  .mode-btn {
+    min-height: 42px;
+    font-size: 14px;
+  }
+
+  .router-shell {
+    padding: 14px 14px 18px;
+    border-radius: 20px;
+  }
+
+  .router-top {
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .router-brand {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  h1 {
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  #practiceSection,
+  #cheatSheetSection,
+  .display-panel,
+  .scoreboard {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .display-panel,
+  .scoreboard {
+    margin-top: 12px;
+  }
+
+  #question {
+    margin-bottom: 10px;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: clamp(18px, 5vw, 24px);
+  }
+
+  .router-ports {
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  .port {
+    height: 28px;
+  }
+
+  .port::before {
+    inset: 6px;
+  }
+}

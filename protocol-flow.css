@@ -715,50 +715,101 @@
 
 @media (max-width: 768px) {
   .flow-page {
-    --flow-mobile-dock-space: calc(320px + env(safe-area-inset-bottom));
+    --flow-mobile-dock-space: calc(236px + env(safe-area-inset-bottom));
   }
 
   .flow-shell {
-    padding-bottom: calc(var(--flow-mobile-dock-space) + 24px);
+    padding-bottom: calc(var(--flow-mobile-dock-space) + 16px);
   }
 
   .flow-header {
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .flow-intro {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .flow-nav-link {
+    min-height: 44px;
+    padding: 0 14px 0 38px;
+    font-size: 14px;
+  }
+
+  .flow-nav-link::before {
+    left: 12px;
+    width: 10px;
+    height: 10px;
+  }
+
+  .flow-panel {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .flow-panel-head {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .flow-status,
+  .traffic-mode {
+    min-height: 32px;
+    padding: 6px 10px 6px 28px;
+    font-size: 12px;
+  }
+
+  .flow-status::before,
+  .traffic-mode::before {
+    left: 10px;
+    width: 8px;
+    height: 8px;
   }
 
   .scenario-tabs {
     grid-auto-flow: column;
-    grid-auto-columns: minmax(240px, 78vw);
+    grid-auto-columns: minmax(216px, 72vw);
     overflow-x: auto;
     padding-bottom: 4px;
     -webkit-overflow-scrolling: touch;
+    gap: 10px;
   }
 
   .flow-layout {
-    gap: 16px;
-    margin-top: 18px;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .flow-display,
+  .flow-visual-panel {
+    gap: 12px;
   }
 
   .flow-diagram-scroll {
     overflow-x: auto;
+    padding-bottom: 0;
   }
 
   .flow-page:not(.merge-page) .diagram-stage {
-    min-width: 720px;
+    min-width: 640px;
+    height: 320px;
   }
 
   .interaction-panel {
     position: fixed;
     left: 50%;
-    bottom: calc(env(safe-area-inset-bottom) + 8px);
+    bottom: calc(env(safe-area-inset-bottom) + 6px);
     z-index: 45;
-    width: min(calc(100vw - 16px), 980px);
-    max-height: min(46dvh, 360px);
+    width: min(calc(100vw - 12px), 980px);
+    max-height: min(34dvh, 270px);
     overflow-y: auto;
     transform: translateX(-50%);
+    padding: 12px;
     border: 1px solid rgba(71, 85, 105, 0.72);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow:
       0 18px 40px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(56, 189, 248, 0.08);
@@ -778,26 +829,53 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 8px;
   }
 
   .step-prompt {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    line-height: 1.5;
   }
 
   .action-buttons {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .action-buttons button,
   .flow-controls button {
-    min-height: 52px;
-    font-size: 15px;
+    min-height: 44px;
+    padding: 10px 12px 10px 36px;
+    font-size: 14px;
   }
 
   .flow-controls {
-    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .explanation-text {
+    margin-bottom: 12px;
+    line-height: 1.55;
+  }
+
+  .why-card,
+  .scenario-summary {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .explanation-panel {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .action-buttons,
+  .flow-controls {
+    grid-template-columns: 1fr;
   }
 }

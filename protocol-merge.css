@@ -148,6 +148,31 @@
 }
 
 @media (max-width: 768px) {
+  .merge-sections {
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .merge-panel-head {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .scenario-subtitle {
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .usecase-card,
+  .compare-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .usecase-feedback {
+    min-height: auto;
+  }
+
   .merge-page .flow-display-head {
     flex-direction: column;
     align-items: flex-start;
@@ -158,7 +183,7 @@
   }
 
   .merge-page .diagram-stage {
-    height: 694px;
+    height: 640px;
   }
 
   .merge-page .device-node {
@@ -192,19 +217,19 @@
   }
 
   .merge-page .device-node[data-device="pc"] {
-    top: 24px;
+    top: 18px;
   }
 
   .merge-page .device-node[data-device="switch"] {
-    top: 188px;
+    top: 170px;
   }
 
   .merge-page .device-node[data-device="router"] {
-    top: 352px;
+    top: 322px;
   }
 
   .merge-page .device-node[data-device="server"] {
-    top: 516px;
+    top: 474px;
   }
 
   .merge-page .flow-cable {
@@ -243,27 +268,27 @@
   .merge-page #cableRouterServer {
     left: 50%;
     width: 6px;
-    height: 68px;
+    height: 56px;
     transform: translateX(-50%);
   }
 
   .merge-page #cablePcSwitch {
-    top: 120px;
+    top: 108px;
   }
 
   .merge-page #cableSwitchRouter {
-    top: 284px;
+    top: 260px;
   }
 
   .merge-page #cableRouterServer {
-    top: 448px;
+    top: 412px;
   }
 
   .merge-page .flow-cable-bypass {
-    left: calc(50% + 78px);
-    top: 236px;
+    left: calc(50% + 72px);
+    top: 214px;
     width: 6px;
-    height: 328px;
+    height: 282px;
     border-radius: 0;
   }
 
@@ -276,43 +301,38 @@
     height: 6px;
     border-radius: 0;
     background: rgba(71, 85, 105, 0.65);
-    box-shadow: 0 328px 0 rgba(71, 85, 105, 0.65);
+    box-shadow: 0 282px 0 rgba(71, 85, 105, 0.65);
   }
 
   .merge-page .flow-cable-bypass.active::after {
     background: rgba(56, 189, 248, 0.8);
-    box-shadow: 0 328px 0 rgba(56, 189, 248, 0.8);
+    box-shadow: 0 282px 0 rgba(56, 189, 248, 0.8);
   }
 
   .merge-page .flow-cable-bypass.broadcast::after {
     background: rgba(245, 158, 11, 0.8);
-    box-shadow: 0 328px 0 rgba(245, 158, 11, 0.8);
+    box-shadow: 0 282px 0 rgba(245, 158, 11, 0.8);
   }
 
   .merge-page .flow-cable-bypass.secure::after {
     background: rgba(34, 197, 94, 0.8);
-    box-shadow: 0 328px 0 rgba(34, 197, 94, 0.8);
+    box-shadow: 0 282px 0 rgba(34, 197, 94, 0.8);
   }
 
   .merge-page .flow-cable-bypass.warning::after {
     background: rgba(239, 68, 68, 0.8);
-    box-shadow: 0 328px 0 rgba(239, 68, 68, 0.8);
+    box-shadow: 0 282px 0 rgba(239, 68, 68, 0.8);
   }
 
   .usecase-grid,
   .compare-row {
     grid-template-columns: 1fr;
   }
-
-  .merge-sections {
-    gap: 16px;
-    margin-top: 18px;
-  }
 }
 
 @media (max-width: 520px) {
   .merge-page .diagram-stage {
-    height: 640px;
+    height: 580px;
   }
 
   .merge-page .device-node {
@@ -320,59 +340,59 @@
   }
 
   .merge-page .device-node[data-device="pc"] {
-    top: 18px;
+    top: 16px;
   }
 
   .merge-page .device-node[data-device="switch"] {
-    top: 170px;
+    top: 152px;
   }
 
   .merge-page .device-node[data-device="router"] {
-    top: 322px;
+    top: 288px;
   }
 
   .merge-page .device-node[data-device="server"] {
-    top: 474px;
+    top: 424px;
   }
 
   .merge-page #cablePcSwitch {
-    top: 108px;
-    height: 56px;
+    top: 96px;
+    height: 50px;
   }
 
   .merge-page #cableSwitchRouter {
-    top: 260px;
-    height: 56px;
+    top: 232px;
+    height: 50px;
   }
 
   .merge-page #cableRouterServer {
-    top: 412px;
-    height: 56px;
+    top: 368px;
+    height: 50px;
   }
 
   .merge-page .flow-cable-bypass {
-    left: calc(50% + 72px);
-    top: 214px;
-    height: 282px;
+    left: calc(50% + 68px);
+    top: 188px;
+    height: 240px;
   }
 
   .merge-page .flow-cable-bypass::after {
-    box-shadow: 0 282px 0 rgba(71, 85, 105, 0.65);
+    box-shadow: 0 240px 0 rgba(71, 85, 105, 0.65);
   }
 
   .merge-page .flow-cable-bypass.active::after {
-    box-shadow: 0 282px 0 rgba(56, 189, 248, 0.8);
+    box-shadow: 0 240px 0 rgba(56, 189, 248, 0.8);
   }
 
   .merge-page .flow-cable-bypass.broadcast::after {
-    box-shadow: 0 282px 0 rgba(245, 158, 11, 0.8);
+    box-shadow: 0 240px 0 rgba(245, 158, 11, 0.8);
   }
 
   .merge-page .flow-cable-bypass.secure::after {
-    box-shadow: 0 282px 0 rgba(34, 197, 94, 0.8);
+    box-shadow: 0 240px 0 rgba(34, 197, 94, 0.8);
   }
 
   .merge-page .flow-cable-bypass.warning::after {
-    box-shadow: 0 282px 0 rgba(239, 68, 68, 0.8);
+    box-shadow: 0 240px 0 rgba(239, 68, 68, 0.8);
   }
 }

@@ -363,7 +363,7 @@
 
 @media (max-width: 768px) {
   .terminal-page {
-    --terminal-mobile-dock-space: calc(304px + env(safe-area-inset-bottom));
+    --terminal-mobile-dock-space: calc(232px + env(safe-area-inset-bottom));
   }
 
   .terminal-page .rack-room {
@@ -371,83 +371,132 @@
   }
 
   .terminal-shell {
-    padding-bottom: calc(var(--terminal-mobile-dock-space) + 24px);
+    padding-bottom: calc(var(--terminal-mobile-dock-space) + 16px);
   }
 
   .terminal-header,
   .terminal-meta-panel {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
 
   .terminal-layout {
-    gap: 16px;
+    gap: 12px;
   }
 
   .scenario-card,
   .support-card {
-    padding: 14px;
+    padding: 12px;
+    border-radius: 14px;
   }
 
   .scenario-support-grid {
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .scenario-objective,
+  .scenario-flex {
+    margin-bottom: 10px;
+  }
+
+  .scenario-flex {
+    padding: 10px 12px;
   }
 
   .terminal-panel {
-    min-height: clamp(360px, 54vh, 520px);
+    min-height: 0;
+  }
+
+  .terminal-output-shell {
+    min-height: min(38dvh, 320px);
   }
 
   .terminal-output {
-    padding: 16px;
-    padding-bottom: 28px;
-    font-size: 13px;
-    max-height: calc(100dvh - 390px);
+    padding: 14px;
+    padding-bottom: 18px;
+    font-size: 12.5px;
+    max-height: min(40dvh, 300px);
   }
 
   .terminal-mobile-dock {
+    gap: 10px;
+    padding: 12px;
     position: fixed;
     left: 50%;
-    bottom: calc(env(safe-area-inset-bottom) + 8px);
+    bottom: calc(env(safe-area-inset-bottom) + 6px);
     z-index: 40;
-    width: min(calc(100vw - 16px), 980px);
-    max-height: min(46dvh, 360px);
+    width: min(calc(100vw - 12px), 980px);
+    max-height: min(34dvh, 272px);
     overflow-y: auto;
     transform: translateX(-50%);
     border: 1px solid rgba(71, 85, 105, 0.72);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow:
       0 18px 40px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(56, 189, 248, 0.08);
     backdrop-filter: blur(18px);
   }
 
+  .terminal-mobile-context {
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .terminal-mobile-objective {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .terminal-mobile-signal {
+    font-size: 12.5px;
+  }
+
+  .terminal-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
   .terminal-input-shell {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .terminal-prompt-label {
+    grid-column: 1 / -1;
+    font-size: 12px;
+  }
+
+  .terminal-input {
+    min-height: 46px;
+    padding: 10px 12px;
   }
 
   .terminal-controls button,
   .terminal-run-btn {
-    min-height: 54px;
+    min-height: 44px;
+    padding: 10px 12px 10px 38px;
+    font-size: 14px;
   }
 
   .terminal-run-btn {
-    width: 100%;
-    min-width: 0;
+    width: auto;
+    min-width: 96px;
   }
 }
 
 @media (max-width: 520px) {
   .terminal-mobile-dock {
-    gap: 12px;
-    padding: 14px;
-    max-height: min(50dvh, 390px);
+    max-height: min(36dvh, 284px);
   }
 
   .terminal-mobile-context {
-    padding: 12px 14px;
+    padding: 10px 12px;
   }
 
   .terminal-controls {
-    flex-direction: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

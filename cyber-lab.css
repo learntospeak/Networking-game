@@ -501,3 +501,146 @@
     box-sizing: border-box;
   }
 }
+
+@media (max-width: 768px) {
+  .cyber-header {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .cyber-intro {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .cyber-nav-link {
+    min-height: 44px;
+    padding: 0 14px 0 38px;
+    font-size: 14px;
+  }
+
+  .cyber-nav-link::before {
+    left: 12px;
+    width: 10px;
+    height: 10px;
+  }
+
+  .lab-panel {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .mode-panel-head,
+  .task-head {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .status-cluster {
+    gap: 8px;
+  }
+
+  .status-badge,
+  .feedback-badge,
+  .mini-badge {
+    min-height: 32px;
+    padding: 6px 10px 6px 28px;
+    font-size: 12px;
+  }
+
+  .status-badge::before,
+  .feedback-badge::before {
+    left: 10px;
+    width: 8px;
+    height: 8px;
+  }
+
+  .mode-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mode-tab-btn {
+    min-height: 46px;
+    padding-left: 40px;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+  }
+
+  .cyber-layout {
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .terminal-strip {
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+  }
+
+  .task-eyebrow {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+
+  .task-prompt {
+    margin-bottom: 12px;
+    line-height: 1.55;
+  }
+
+  .task-context,
+  .hint-text,
+  .why-box,
+  .focus-box,
+  .section-card,
+  .workflow-reference li {
+    padding: 10px 12px;
+  }
+
+  .task-context,
+  .hint-text,
+  .focus-box,
+  .section-grid {
+    margin-bottom: 12px;
+  }
+
+  .feedback-text {
+    margin-bottom: 12px;
+    min-height: auto;
+    line-height: 1.55;
+  }
+
+  .choice-options {
+    gap: 8px;
+  }
+
+  .choice-options button,
+  .trainer-controls button {
+    min-height: 46px;
+    padding: 10px 12px 10px 36px;
+    font-size: 14px;
+  }
+
+  .trainer-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .section-grid,
+  .workflow-reference {
+    gap: 8px;
+  }
+
+  .workflow-reference {
+    padding-left: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .mode-tabs,
+  .trainer-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
