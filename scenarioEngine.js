@@ -879,8 +879,8 @@
       category: "Networking basics",
       level: "Intermediate",
       shell: "linux",
-      objective: "Confirm the target is reachable, check its web port, and identify the web service version.",
-      allowedFlexibility: "Stay on the target host and move from basic connectivity into targeted scan evidence.",
+      objective: "Confirm that metasploitable2 (192.168.56.102) is reachable, check its web port, and identify the web service version.",
+      allowedFlexibility: "Stay on the named target host and move from basic connectivity into targeted scan evidence. You can use either the hostname or the IP.",
       environment: linuxEnv({
         cwd: "/home/student",
         files: [],
@@ -889,32 +889,44 @@
       steps: [
         step({
           objective: "Check whether the target responds on the network.",
-          context: "Start with reachability. Before you spend time on ports or services, verify that the host responds at all.",
-          hints: ["Start with a reachability test.", "Use the ICMP tool against 192.168.56.102.", "Try `ping 192.168.56.102`."],
+          context: "Start with reachability. The target for this task is metasploitable2 at 192.168.56.102, so verify that it responds before you spend time on ports or services.",
+          hints: ["Start with a reachability test.", "Use the ICMP tool against metasploitable2 or 192.168.56.102.", "Try `ping metasploitable2` or `ping 192.168.56.102`."],
           explanation: "A reachability check is the cleanest way to confirm the host is there before you spend time scanning it.",
           whyThisMatters: "Reachability is the first gate. If the host is down, deeper scans only create noise.",
           successFeedback: "You confirmed the host is reachable.",
-          accepts: [rawMatch(/^ping\s+192\.168\.56\.102$/i)]
+          accepts: [
+            rawMatch(/^ping\s+192\.168\.56\.102$/i),
+            rawMatch(/^ping\s+metasploitable2$/i),
+            rawMatch(/^ping\s+target$/i)
+          ]
         }),
         step({
           objective: "Check only the web port on the target.",
-          context: "Now move from reachability to a narrow service check. A focused port scan is more disciplined than a broad scan when you already know which service matters.",
-          hints: ["Do not run a full version sweep yet.", "Target port 80 directly with a focused port scan.", "Try `nmap -p 80 192.168.56.102`."],
+          context: "Now move from reachability to a narrow service check. Stay on the same target, metasploitable2 (192.168.56.102), and check only the web port first.",
+          hints: ["Do not run a full version sweep yet.", "Target port 80 directly with a focused port scan.", "Try `nmap -p 80 metasploitable2` or `nmap -p 80 192.168.56.102`."],
           explanation: "A focused port check is the next efficient move when you only need to know whether the web service is exposed.",
           whyThisMatters: "Targeted scans are faster to interpret and teach you to narrow your question before you collect more data.",
           successFeedback: "You verified the web port state.",
-          accepts: [rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i)]
+          accepts: [
+            rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+target$/i)
+          ]
         }),
         step({
           objective: "Identify the web service version on that port.",
-          context: "An open port tells you a service exists. Version detection with -sV turns that into usable evidence about what is actually running.",
-          hints: ["Now move from open-port status to service evidence.", "Use Nmap version detection on port 80.", "Try `nmap -sV -p 80 192.168.56.102`."],
+          context: "An open port tells you a service exists. Now use version detection on the same target, metasploitable2 (192.168.56.102), so the open port becomes usable evidence.",
+          hints: ["Now move from open-port status to service evidence.", "Use Nmap version detection on port 80.", "Try `nmap -sV -p 80 metasploitable2` or `nmap -sV -p 80 192.168.56.102`."],
           explanation: "Version evidence is what turns a reachable web port into something you can actually analyze.",
           whyThisMatters: "Version evidence is what lets you compare a live service to documentation, fixes, and vulnerabilities.",
           successFeedback: "You identified the web service version.",
           accepts: [
             rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i),
-            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i)
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+target$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+target$/i)
           ]
         })
       ]
