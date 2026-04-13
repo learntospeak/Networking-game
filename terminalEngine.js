@@ -304,6 +304,7 @@
     const redirectIndex = tokens.findIndex((token) => token === ">" || token === ">>");
     let redirect = null;
     let workingTokens = tokens;
+    const windowsShell = StateManager.isWindowsState(session.state);
 
     if (redirectIndex !== -1) {
       redirect = {
@@ -331,7 +332,7 @@
         return;
       }
 
-      if (/^\/[A-Za-z0-9?]+$/.test(token)) {
+      if (windowsShell && /^\/[A-Za-z0-9?]+$/.test(token)) {
         flags.push(token.toUpperCase());
         flagsExpanded.push(token.toUpperCase());
         return;

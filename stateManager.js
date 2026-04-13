@@ -107,6 +107,20 @@
 
     const windows = isWindowsState(state);
     const root = getRootPath(state);
+
+    if (!state.fs[root]) {
+      state.fs[root] = {
+        type: "dir",
+        path: root,
+        name: windows ? (state.drive || "C:") : "/",
+        hidden: false
+      };
+    }
+
+    if (normalized === root) {
+      return state.fs[root];
+    }
+
     const prefix = windows ? normalized.slice(0, 2) : "";
     const remainder = windows ? normalized.slice(3) : normalized.slice(1);
     const parts = splitPath(remainder);
