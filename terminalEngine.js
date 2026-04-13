@@ -445,6 +445,19 @@
       };
     }
 
+    if (filename === "toolkit.tar.gz") {
+      return {
+        path: filename,
+        content: "",
+        downloaded: true,
+        archiveEntries: [
+          { path: "toolkit", type: "dir" },
+          { path: "toolkit/README.md", content: "Toolkit bundle for lab validation\n" },
+          { path: "toolkit/scanner.conf", content: "threads=8\nmode=quick\n" }
+        ]
+      };
+    }
+
     return {
       path: filename,
       content: `Downloaded from ${url}\n`,

@@ -189,6 +189,27 @@
     return "Use discovery commands first. pwd and ls reduce path mistakes before you read, create, or move anything.";
   }
 
+  function extractStepUrl(stepConfig) {
+    const hintUrl = (stepConfig.hints || [])
+      .map((hint) => {
+        const match = String(hint).match(/https?:\/\/[^\s`]+/i);
+        return match ? match[0] : "";
+      })
+      .find(Boolean);
+
+    if (hintUrl) return hintUrl;
+
+    const acceptUrl = (stepConfig.accepts || [])
+      .map((rule) => {
+        if (!rule || !(rule.raw instanceof RegExp)) return "";
+        const match = rule.raw.source.match(/https?:\\\/\\\/[^\\s)]+/i);
+        return match ? match[0].replace(/\\\//g, "/") : "";
+      })
+      .find(Boolean);
+
+    return acceptUrl || "";
+  }
+
   function inferCommandContext(scenario, stepConfig) {
     const objective = stepConfig.objective.toLowerCase();
 
@@ -233,6 +254,10 @@
     }
 
     if (/download/.test(objective) && /wget/.test(stepConfig.hints.join(" ").toLowerCase())) {
+      const url = extractStepUrl(stepConfig);
+      if (url) {
+        return `wget retrieves a remote file over HTTP or HTTPS. In this lab, the archive is hosted at ${url}. Use -O when you want a clean local filename instead of the server default.`;
+      }
       return "wget retrieves a remote file over HTTP or HTTPS. Use -O when you want a clean local filename instead of the server default.";
     }
 
