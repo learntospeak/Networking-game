@@ -115,13 +115,15 @@
     els.scenarioFlex.textContent = `Allowed flexibility: ${scenario.allowedFlexibility || "Use any valid workflow that reaches the objective."}`;
     els.stepObjective.textContent = step.objective;
     els.progressSummary.textContent = `${session.completedScenarioIds.size} scenarios completed in this session.`;
-    els.mobileScenarioTitle.textContent = `${scenario.title} · Task ${session.stepIndex + 1}/${scenario.steps.length}`;
+    els.mobileScenarioTitle.textContent = `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
     els.mobileStepObjective.textContent = step.objective;
 
     if (session.scenarioCompleted) {
       els.coachSignal.textContent = "Scenario complete. Move to the next scenario or reset this one and run it cleaner.";
     } else if (session.attemptsForStep > 0) {
       els.coachSignal.textContent = "Stay on the current objective. Use the output you already produced before you widen the workflow.";
+    } else if (step.context) {
+      els.coachSignal.textContent = step.context;
     } else {
       els.coachSignal.textContent = "Work from evidence. Good operators confirm context before they act.";
     }
@@ -139,6 +141,9 @@
     printLine(`[${scenario.category}] ${scenario.title}`, "system");
     printLine(`Objective: ${scenario.objective}`, "dim");
     printLine(`Environment: ${shellLabel()} shell`, "dim");
+    if (step.context) {
+      printLine(`Context: ${step.context}`, "dim");
+    }
     printLine(`Current task: ${step.objective}`, "coach");
   }
 
@@ -177,6 +182,9 @@
     session.stepIndex += 1;
     session.attemptsForStep = 0;
     session.hintLevel = -1;
+    if (currentStep().context) {
+      printLine(`Context: ${currentStep().context}`, "dim");
+    }
     printLine(`Next task: ${currentStep().objective}`, "coach");
     renderPanel();
   }
@@ -1200,16 +1208,19 @@
 
   function evaluateCurrentStep(execution) {
     const step = currentStep();
-    session.attemptsForStep += 1;
 
     const evaluation = CoachEngine.evaluateAttempt(
       step,
       execution,
       session.state,
-      session.attemptsForStep
+      session.attemptsForStep + 1
     );
 
-    if (!evaluation.success) {
+    if (!evaluation.success && evaluation.countsAsAttempt !== false) {
+      session.attemptsForStep += 1;
+    }
+
+    if (!evaluation.success && evaluation.classification !== "exploration") {
       const genericPartial = inferGenericPartial(step, execution);
       if (genericPartial) {
         evaluation.classification = genericPartial.classification;
@@ -1221,12 +1232,21 @@
     if (evaluation.success) {
       printLine(evaluation.feedback, "success");
       printLine(evaluation.coach, "coach");
+      if (step.whyThisMatters) {
+        printLine(`Why this matters: ${step.whyThisMatters}`, "dim");
+      }
       advanceStep();
       return;
     }
 
-    session.hintLevel = Math.max(session.hintLevel, CoachEngine.getHintTierFromAttempts(session.attemptsForStep));
-    printLine(evaluation.feedback, evaluation.classification === "invalid_command" ? "error" : "coach");
+    if (evaluation.countsAsAttempt !== false) {
+      session.hintLevel = Math.max(session.hintLevel, CoachEngine.getHintTierFromAttempts(session.attemptsForStep));
+    }
+
+    printLine(
+      evaluation.feedback,
+      evaluation.classification === "invalid_command" ? "error" : evaluation.classification === "exploration" ? "system" : "coach"
+    );
     printLine(evaluation.coach, "dim");
     if (evaluation.hint) {
       printLine(`Hint: ${evaluation.hint}`, "coach");

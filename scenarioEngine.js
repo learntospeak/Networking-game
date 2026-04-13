@@ -7,10 +7,13 @@
     return {
       objective: config.objective,
       hints: config.hints || [],
+      context: config.context || "",
       explanation: config.explanation,
+      whyThisMatters: config.whyThisMatters || "",
       successFeedback: config.successFeedback || "That command moves the task forward.",
       accepts: config.accepts || [],
-      partials: config.partials || []
+      partials: config.partials || [],
+      exploration: config.exploration || []
     };
   }
 
@@ -120,6 +123,7 @@
   function cwdMatch(target, extras = {}) {
     return {
       command: "cd",
+      finalCwd: target,
       postCheck: (_, state) => state.cwd === target,
       ...extras
     };
@@ -127,6 +131,7 @@
 
   function fileExistsMatch(path, extras = {}) {
     return {
+      fileExists: path,
       postCheck: (_, state) => Boolean(window.StateManager.getNode(state, path)),
       ...extras
     };
@@ -134,6 +139,266 @@
 
   function listenerPortMatch(port, extras = {}) {
     return { listenerPort: port, ...extras };
+  }
+
+  function explorationRule(match, feedback, coach) {
+    return {
+      match,
+      classification: "exploration",
+      countsAsAttempt: false,
+      feedback,
+      coach
+    };
+  }
+
+  function firstSentence(text) {
+    if (!text) return "";
+    const match = text.match(/^[^.!?]+[.!?]?/);
+    return match ? match[0].trim() : text.trim();
+  }
+
+  function getTargetPath(stepConfig) {
+    const rule = (stepConfig.accepts || []).find((item) => item && (item.finalCwd || item.fileExists));
+    if (!rule) return "";
+    return rule.finalCwd || rule.fileExists || "";
+  }
+
+  function inferPathContext(path, shell) {
+    if (!path) return "";
+
+    if (shell === "cmd") {
+      if (/\/logs/i.test(path)) {
+        return "On Windows labs, logs and notes are usually kept in named working folders. Use dir to inspect those folders before you move.";
+      }
+
+      return "In CMD, dir is your main discovery command. Use it to inspect folders before you commit to a path change or file read.";
+    }
+
+    if (path.startsWith("/srv")) {
+      return "On Linux, service-owned application data often lives under /srv. If the exact path is new to you, explore from / with ls and move one level at a time.";
+    }
+
+    if (path.startsWith("/var/log")) {
+      return "On Linux, system and service logs commonly live under /var/log. A quick pwd or ls keeps you oriented before you open files.";
+    }
+
+    if (path.startsWith("/etc")) {
+      return "On Linux, configuration files often live under /etc. Explore the tree with ls before you assume a filename or folder.";
+    }
+
+    return "Use discovery commands first. pwd and ls reduce path mistakes before you read, create, or move anything.";
+  }
+
+  function inferCommandContext(scenario, stepConfig) {
+    const objective = stepConfig.objective.toLowerCase();
+
+    if (/hidden/.test(objective)) {
+      return "On Linux, files that begin with a dot are hidden from a normal listing. Use ls -a when you suspect a hidden config or state file.";
+    }
+
+    if (/version/.test(objective) && /nmap/.test(objective)) {
+      return "In Nmap, -sV asks open services to identify themselves. Use it when an open port alone is not enough evidence.";
+    }
+
+    if (/\bos\b|operating system/.test(objective)) {
+      return "Nmap uses -O for operating-system fingerprinting. It belongs after you have confirmed the host is reachable.";
+    }
+
+    if (/udp/.test(objective)) {
+      return "Use -sU when the service is expected on UDP instead of TCP. That changes how Nmap probes the target.";
+    }
+
+    if (/xml output/.test(objective)) {
+      return "Nmap uses -oX when you want XML output for another tool or parser.";
+    }
+
+    if (/all standard output formats/.test(objective)) {
+      return "Nmap uses -oA with a base name when you want normal, XML, and grepable output together.";
+    }
+
+    if (/exclude/.test(objective)) {
+      return "Use --exclude when you want to keep a known infrastructure host out of a wider sweep.";
+    }
+
+    if (/from file/.test(objective)) {
+      return "Nmap uses -iL to read targets from a file. This is the normal way to scale a scan beyond one host.";
+    }
+
+    if (/top-ports/.test(objective)) {
+      return "The --top-ports option is a quick-triage tool. It scans the most common ports before you go deeper.";
+    }
+
+    if (/extract/.test(objective) && /tar/.test(stepConfig.hints.join(" ").toLowerCase() + stepConfig.explanation.toLowerCase())) {
+      return "For .tar.gz archives, tar -xvzf is a common extraction form: x extracts, v shows files, z handles gzip, and f points at the archive name.";
+    }
+
+    if (/download/.test(objective) && /wget/.test(stepConfig.hints.join(" ").toLowerCase())) {
+      return "wget retrieves a remote file over HTTP or HTTPS. Use -O when you want a clean local filename instead of the server default.";
+    }
+
+    if (/listener/.test(objective)) {
+      return "With Netcat, -l means listen locally. Use it when you expect the remote side to call back to you.";
+    }
+
+    if (/connect to smtp/.test(objective)) {
+      return "Netcat can open a raw TCP session so you can speak a protocol by hand. SMTP on port 25 is a good example.";
+    }
+
+    if (/ehlo|mail from|rcpt to|data|quit/.test(objective)) {
+      return "SMTP is an ordered conversation. Start with EHLO, then set sender and recipient, then DATA, and quit cleanly when done.";
+    }
+
+    if (/search the local exploit database/.test(objective)) {
+      return "Exploit research should come after you have solid service or version evidence. searchsploit is for narrowing that evidence into candidate references.";
+    }
+
+    if (/open metasploit/.test(objective)) {
+      return "Move into Metasploit after you have enough evidence to justify an exploit path. The framework is for controlled execution, not guessing.";
+    }
+
+    if (/search for .*module|search for samba|search for vsftpd/.test(objective)) {
+      return "Inside msfconsole, search is how you locate candidate modules before you try to use one.";
+    }
+
+    if (/load the .*module|select the .*module|use exploit/.test(objective)) {
+      return "Inside msfconsole, use selects a module and changes the current context to that exploit.";
+    }
+
+    if (/set the remote target host|set rhosts/.test(objective)) {
+      return "Metasploit modules need target options such as RHOSTS before execution makes sense.";
+    }
+
+    if (/run the exploit|execute the loaded exploit/.test(objective)) {
+      return "Run belongs at the end of the chain, after module selection and target configuration are already correct.";
+    }
+
+    if (/filter/.test(objective)) {
+      return scenario.shell === "cmd"
+        ? "Use findstr after you have seen the raw file once. Filtering is how you reduce noise to the lines that matter."
+        : "Use grep after you have seen the raw file once. Filtering is how you reduce noise to the lines that matter.";
+    }
+
+    if (/terminate|kill|stop/.test(objective)) {
+      return "Only kill a process after you have evidence for the exact PID. Good operators gather before they act.";
+    }
+
+    if (/reachable|reachability|responds on the network/.test(objective)) {
+      return "Start with reachability before deeper service work. A fast connectivity check prevents wasted scanning.";
+    }
+
+    return "";
+  }
+
+  function inferStepContext(scenario, stepConfig) {
+    if (stepConfig.context) return stepConfig.context;
+
+    const pathContext = inferPathContext(getTargetPath(stepConfig), scenario.shell);
+    if (pathContext) return pathContext;
+
+    const commandContext = inferCommandContext(scenario, stepConfig);
+    if (commandContext) return commandContext;
+
+    if (scenario.level === "Beginner") {
+      return "Start by gathering evidence from the terminal. Use simple discovery commands and let the output tell you what to do next.";
+    }
+
+    if (scenario.level === "Intermediate") {
+      return "Use the command output you already have to justify the next move. This step is meant to be reasoned through, not guessed.";
+    }
+
+    return "At this level, treat the shell output as evidence. Explore just enough to support the next action instead of memorising a fixed path.";
+  }
+
+  function ensureProgressiveHints(stepConfig, scenario) {
+    const hints = Array.isArray(stepConfig.hints) ? stepConfig.hints.filter(Boolean) : [];
+    if (hints.length >= 3) return hints.slice(0, 3);
+
+    const context = inferStepContext(scenario, stepConfig) || "Use what the terminal already shows you to narrow the next move.";
+    while (hints.length < 3) {
+      if (hints.length === 0) {
+        hints.push("Start with discovery. Use the terminal to reduce guesswork before you act.");
+      } else if (hints.length === 1) {
+        hints.push(context);
+      } else {
+        hints.push("Use the command family that best matches the current objective and the evidence you already have.");
+      }
+    }
+
+    return hints.slice(0, 3);
+  }
+
+  function inferWhyThisMatters(stepConfig) {
+    return stepConfig.whyThisMatters || firstSentence(stepConfig.explanation);
+  }
+
+  function buildExplorationRules(scenario, stepConfig) {
+    const rules = [];
+    const objective = stepConfig.objective.toLowerCase();
+    const category = scenario.category.toLowerCase();
+
+    if (scenario.shell === "linux") {
+      rules.push(
+        explorationRule(commandMatch("pwd"), "Good context check. Knowing your current path reduces wrong turns before you act.", "Use the printed path to decide whether you should stay here or move somewhere more relevant."),
+        explorationRule(commandMatch("ls"), "Good discovery step. Listings are how you reduce guessing in a live filesystem.", "Use the listing to identify the directory or file name that best matches the objective."),
+        explorationRule(rawMatch(/^ls\s+\/.*$/i), "Useful exploration. Checking another directory is a valid way to discover where data or logs live.", "Walk the tree one level at a time so you can justify the next move instead of memorising paths."),
+        explorationRule(commandMatch("cd"), "Exploration is valid. If you move into a candidate directory, confirm it with pwd or ls.", "Real operators often probe the tree before they commit to a final path."),
+        explorationRule(commandMatch("cat"), "Reading a file can be useful once you have narrowed the path.", "Use file reads to confirm clues after discovery has reduced the search space.")
+      );
+    } else {
+      rules.push(
+        explorationRule(commandMatch("dir"), "Good discovery step. dir is how you inspect the current Windows workspace before changing state.", "Use the listing to decide which folder or file actually matches the task."),
+        explorationRule(commandMatch("cd"), "Exploration is valid. Moving into a candidate folder is fine if you verify what is inside it next.", "In CMD, directory changes are part of discovery when the exact path is not yet obvious."),
+        explorationRule(commandMatch("type"), "Reading a file is a valid way to gather evidence after you have found the right location.", "Use type to confirm clues from a specific note or log once the path is narrowed."),
+        explorationRule(commandMatch("findstr"), "Filtering is a sensible move once you already know which Windows file contains the signal.", "Use findstr after you have read or located the right file.")
+      );
+    }
+
+    if (category.includes("nmap") || category.includes("networking") || category.includes("exploitation") || category.includes("netcat") || category.includes("metasploit")) {
+      rules.push(
+        explorationRule(commandMatch("ping"), "That is a valid discovery move. Reachability checks often come before deeper service work.", "Use the result to decide whether you should keep scanning, narrow ports, or change approach."),
+        explorationRule(commandMatch("nmap"), "That is in the right tool family. Use what the scan gives you to justify the next, more targeted step.", "Good operators move from broad evidence to narrow evidence instead of guessing."),
+        explorationRule(commandMatch("searchsploit"), "Research is valid once you have enough evidence to justify it.", "Tie exploit research back to a confirmed service or version so the workflow stays disciplined.")
+      );
+    }
+
+    if (category.includes("metasploit")) {
+      rules.push(
+        explorationRule(rawMatch(/^search\s+/i), "Searching inside Metasploit is a valid way to discover module names before you select one.", "Use search results to justify the module path you choose next."),
+        explorationRule(rawMatch(/^show options$/i), "Reviewing module options is a sensible move once a module is loaded.", "Use the option list to see which settings still need to be configured.")
+      );
+    }
+
+    if (category.includes("troubleshooting")) {
+      rules.push(
+        explorationRule(commandMatch("ps"), "Good evidence-gathering step. Process listings are how you verify which PID you should care about.", "Use the output to isolate the exact process before you kill anything."),
+        explorationRule(commandMatch("tasklist"), "Good evidence-gathering step. Task listings are how you verify the exact Windows process before you stop it.", "Use the output to isolate the right PID before you terminate anything.")
+      );
+    }
+
+    if (/filter/.test(objective) || category.includes("text processing")) {
+      rules.push(
+        explorationRule(scenario.shell === "cmd" ? commandMatch("type") : commandMatch("cat"), "Reading the full file first is a sensible discovery move.", "Look at the raw content, then choose the filter that isolates the signal.")
+      );
+    }
+
+    return rules;
+  }
+
+  function refineStep(stepConfig, scenario) {
+    return {
+      ...stepConfig,
+      hints: ensureProgressiveHints(stepConfig, scenario),
+      context: inferStepContext(scenario, stepConfig),
+      whyThisMatters: inferWhyThisMatters(stepConfig),
+      exploration: [...buildExplorationRules(scenario, stepConfig), ...(stepConfig.exploration || [])]
+    };
+  }
+
+  function refineScenario(scenario) {
+    return {
+      ...scenario,
+      steps: scenario.steps.map((stepConfig) => refineStep(stepConfig, scenario))
+    };
   }
 
   const exampleScenarios = [
@@ -156,12 +421,14 @@
       steps: [
         step({
           objective: "Confirm your current location before you start moving.",
+          context: "Start by orienting yourself. When a path outside your home directory is involved, the first job is to confirm where the shell currently is.",
           hints: [
             "Check where the shell currently is.",
             "Use the command that prints the working directory.",
             "Try `pwd`."
           ],
           explanation: "Strong operators confirm context before they start navigating the filesystem.",
+          whyThisMatters: "Path mistakes compound quickly. Confirming location first prevents blind navigation.",
           successFeedback: "You verified the current directory.",
           accepts: [commandMatch("pwd")],
           partials: [
@@ -174,12 +441,14 @@
         }),
         step({
           objective: "Move into the application log directory.",
+          context: "In this lab, service-owned application data lives under /srv. If that path is unfamiliar, explore from / with ls and then move one level at a time.",
           hints: [
-            "The logs are under the application path in /srv.",
-            "You need to change into /srv/apps/api/logs.",
+            "The logs are outside your home directory in a service-owned area.",
+            "Check common Linux service locations such as /srv if you need discovery before moving.",
             "Try `cd /srv/apps/api/logs`."
           ],
           explanation: "Changing into the exact log directory narrows the problem space before you inspect files.",
+          whyThisMatters: "Linux service data is often separated from user home directories. Knowing where to look reduces guesswork.",
           successFeedback: "You moved into the log directory.",
           accepts: [cwdMatch("/srv/apps/api/logs")],
           partials: [
@@ -192,12 +461,14 @@
         }),
         step({
           objective: "List the files so you can see the rotated log set.",
+          context: "Once you reach the service directory, list before you read. Logs are often rotated, and the older file may contain the real crash evidence.",
           hints: [
             "Now inspect the contents of the directory.",
             "Use the standard Linux listing command.",
             "Try `ls`."
           ],
           explanation: "Listing first gives you the file names and shows that a rotated log exists.",
+          whyThisMatters: "Discovery commands tell you which artifact is most likely to contain the clue before you open anything.",
           successFeedback: "You inspected the directory contents.",
           accepts: [commandMatch("ls")],
           partials: [
@@ -210,12 +481,14 @@
         }),
         step({
           objective: "Open the rotated log that contains the previous crash.",
+          context: "The active log may only show the current clean restart. Rotated logs often preserve the actual failure that happened just before the restart.",
           hints: [
             "The interesting clues are in the older log file.",
             "Read the rotated file rather than the active one.",
             "Try `cat app.log.1`."
           ],
           explanation: "The rotated log often contains the failure that caused the current process to restart cleanly.",
+          whyThisMatters: "Administrators often inspect rotated logs because the current log may no longer contain the crash event they care about.",
           successFeedback: "You inspected the rotated crash log.",
           accepts: [
             rawMatch(/^cat\s+app\.log\.1$/i),
@@ -250,19 +523,23 @@
       steps: [
         step({
           objective: "Move into the site project directory.",
-          hints: ["The target folder is named site.", "Change into the site directory.", "Try `cd site`."],
+          context: "Stay in the project workspace and move one level at a time. Discovery is allowed, so use ls first if you want to confirm the folder name.",
+          hints: ["The target folder is named site.", "Confirm the project folder name with ls if needed, then move into it.", "Try `cd site`."],
           explanation: "Start by entering the project folder so your file operations stay scoped.",
+          whyThisMatters: "Moving into the right project first keeps later file reads and listings clean and predictable.",
           successFeedback: "You entered the project directory.",
           accepts: [cwdMatch("/home/student/projects/site")]
         }),
         step({
           objective: "List hidden files so the config becomes visible.",
+          context: "Many Linux applications store local settings in dotfiles such as .env. A normal ls will hide them, so use the hidden-file view when you suspect local configuration.",
           hints: [
             "A normal listing will miss the file you need.",
-            "Use the listing command with the hidden-file flag.",
+            "Use the listing command with the flag that reveals dotfiles.",
             "Try `ls -a`."
           ],
           explanation: "Hidden files are common for local configuration. You need the hidden-file flag to see them.",
+          whyThisMatters: "Dotfiles are a normal place for Linux configuration, so knowing how to reveal them is part of practical shell work.",
           successFeedback: "You exposed the hidden files.",
           accepts: [commandMatch("ls", { flagsAny: ["a"] })],
           partials: [
@@ -275,8 +552,10 @@
         }),
         step({
           objective: "Read the hidden environment file.",
+          context: "Once a hidden config is visible, read it directly to confirm what the project is using instead of guessing from filenames alone.",
           hints: ["The file begins with a dot.", "Read the .env file directly.", "Try `cat .env`."],
           explanation: "Once the hidden file is visible, reading it confirms what settings the project is using.",
+          whyThisMatters: "Reading the discovered config file turns a hidden artifact into usable evidence.",
           successFeedback: "You inspected the hidden environment file.",
           accepts: [
             rawMatch(/^cat\s+\.env$/i),
@@ -346,19 +625,23 @@
       steps: [
         step({
           objective: "List the downloads directory so you can confirm the archive name.",
+          context: "Before you extract anything, verify the archive name in the current directory. Real systems often contain several similar bundles.",
           hints: ["Check what is in the current directory.", "Use the standard listing command.", "Try `ls`."],
           explanation: "Confirming the archive name before extraction prevents mistakes on similarly named packages.",
+          whyThisMatters: "A quick listing avoids extracting the wrong package just because the filename looked familiar.",
           successFeedback: "You confirmed the archive file is present.",
           accepts: [commandMatch("ls")]
         }),
         step({
           objective: "Extract the tar.gz archive.",
+          context: "For .tar.gz files, tar -xvzf is a common extraction form: x extracts, v shows progress, z handles gzip compression, and f points tar at the archive file name.",
           hints: [
             "This is a gzip-compressed tar archive.",
-            "Use tar with extract, verbose, gzip, and file flags.",
+            "Use tar with the extraction flags that handle gzip and the archive file name.",
             "Try `tar -xvzf release-pack.tar.gz`."
           ],
           explanation: "The tar extraction step creates the working folder you need to inspect the release content.",
+          whyThisMatters: "Archive extraction is a routine admin task, and understanding the tar flags helps you reason instead of memorising.",
           successFeedback: "You extracted the archive.",
           accepts: [
             rawMatch(/^tar\s+-xvzf\s+release-pack\.tar\.gz$/i),
@@ -367,15 +650,19 @@
         }),
         step({
           objective: "Change into the extracted release directory.",
+          context: "Extraction usually creates a new directory named after the bundle. List first if you want to confirm exactly what the archive created.",
           hints: ["The archive created a release-pack folder.", "Move into the new directory.", "Try `cd release-pack`."],
           explanation: "Moving into the extracted directory keeps the rest of the review targeted and clean.",
+          whyThisMatters: "Working inside the extracted folder reduces path clutter and keeps later file reads precise.",
           successFeedback: "You entered the extracted release directory.",
           accepts: [cwdMatch("/home/student/downloads/release-pack")]
         }),
         step({
           objective: "Read the release notes.",
+          context: "README or release-note files are usually the fastest way to understand what changed after you extract a package.",
           hints: ["The file is named README.txt.", "Open the README in the extracted directory.", "Try `cat README.txt`."],
           explanation: "Reading the release notes is the first check after extraction because it tells you what changed in the build.",
+          whyThisMatters: "Reading release notes first turns the archive into a documented change set instead of an unexplained folder.",
           successFeedback: "You reviewed the release notes.",
           accepts: [rawMatch(/^cat\s+README\.txt$/i)]
         })
@@ -571,22 +858,28 @@
       steps: [
         step({
           objective: "Check whether the target responds on the network.",
+          context: "Start with reachability. Before you spend time on ports or services, verify that the host responds at all.",
           hints: ["Start with a reachability test.", "Use the ICMP tool against 192.168.56.102.", "Try `ping 192.168.56.102`."],
           explanation: "A reachability check is the cleanest way to confirm the host is there before you spend time scanning it.",
+          whyThisMatters: "Reachability is the first gate. If the host is down, deeper scans only create noise.",
           successFeedback: "You confirmed the host is reachable.",
           accepts: [rawMatch(/^ping\s+192\.168\.56\.102$/i)]
         }),
         step({
           objective: "Check only the web port on the target.",
-          hints: ["Do not run a full version sweep yet.", "Target port 80 directly.", "Try `nmap -p 80 192.168.56.102`."],
+          context: "Now move from reachability to a narrow service check. A focused port scan is more disciplined than a broad scan when you already know which service matters.",
+          hints: ["Do not run a full version sweep yet.", "Target port 80 directly with a focused port scan.", "Try `nmap -p 80 192.168.56.102`."],
           explanation: "A focused port check is the next efficient move when you only need to know whether the web service is exposed.",
+          whyThisMatters: "Targeted scans are faster to interpret and teach you to narrow your question before you collect more data.",
           successFeedback: "You verified the web port state.",
           accepts: [rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i)]
         }),
         step({
           objective: "Identify the web service version on that port.",
-          hints: ["Now move from open-port status to service evidence.", "Use version detection on port 80.", "Try `nmap -sV -p 80 192.168.56.102`."],
+          context: "An open port tells you a service exists. Version detection with -sV turns that into usable evidence about what is actually running.",
+          hints: ["Now move from open-port status to service evidence.", "Use Nmap version detection on port 80.", "Try `nmap -sV -p 80 192.168.56.102`."],
           explanation: "Version evidence is what turns a reachable web port into something you can actually analyze.",
+          whyThisMatters: "Version evidence is what lets you compare a live service to documentation, fixes, and vulnerabilities.",
           successFeedback: "You identified the web service version.",
           accepts: [
             rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i),
@@ -811,43 +1104,55 @@
       steps: [
         step({
           objective: "Confirm the FTP version before you open the framework.",
+          context: "Do not open an exploitation framework until you have evidence. Here the evidence is the version of the FTP service on port 21.",
           hints: ["Do not skip evidence gathering.", "Use version detection on port 21.", "Try `nmap -sV -p 21 192.168.56.102`."],
           explanation: "Version confirmation is what justifies the exploit path. Skipping it turns exploitation into guesswork.",
+          whyThisMatters: "Evidence first keeps exploitation tied to reality instead of hope.",
           successFeedback: "You verified the FTP version.",
           accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+21\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+21\s+-sV\s+192\.168\.56\.102$/i)]
         }),
         step({
           objective: "Open Metasploit.",
+          context: "Metasploit is the execution environment, not the discovery tool. Move into it only after you have enough evidence to justify a specific exploit path.",
           hints: ["Move into the framework now.", "Launch the console.", "Try `msfconsole`."],
           explanation: "Once you have evidence, msfconsole is the next environment for controlled exploitation work.",
+          whyThisMatters: "Good operators separate reconnaissance from exploitation so each decision has evidence behind it.",
           successFeedback: "You opened Metasploit.",
           accepts: [rawMatch(/^msfconsole$/i)]
         }),
         step({
           objective: "Search for the relevant vsftpd module inside Metasploit.",
+          context: "Inside Metasploit, search is the discovery step. It lets you verify the module name before you select anything.",
           hints: ["Search before you try to use a module.", "Look for vsftpd.", "Try `search vsftpd`."],
           explanation: "Searching inside Metasploit confirms the module path before you select it.",
+          whyThisMatters: "Searching first keeps module selection evidence-based instead of relying on memory alone.",
           successFeedback: "You found the relevant module family.",
           accepts: [rawMatch(/^search\s+vsftpd$/i)]
         }),
         step({
           objective: "Load the vsftpd backdoor module.",
+          context: "Once search has shown the module family, use selects the exact module and changes your working context inside Metasploit.",
           hints: ["Use the full module path.", "Load the unix FTP vsftpd module.", "Try `use exploit/unix/ftp/vsftpd_234_backdoor`."],
           explanation: "Loading the correct module is what turns the search result into an actionable exploit context.",
+          whyThisMatters: "Selecting the exact module proves you can move from evidence to the right execution context.",
           successFeedback: "You selected the vsftpd exploit module.",
           accepts: [rawMatch(/^use\s+exploit\/unix\/ftp\/vsftpd_234_backdoor$/i)]
         }),
         step({
           objective: "Set the target host for the module.",
+          context: "Exploit modules need target options before they can run. In Metasploit, RHOSTS tells the module which remote host to attack.",
           hints: ["Point the module at the right IP.", "Set RHOSTS to 192.168.56.102.", "Try `set RHOSTS 192.168.56.102`."],
           explanation: "The module needs a target before it can run. Setting RHOSTS is that control point.",
+          whyThisMatters: "Module configuration is what turns a loaded exploit into a controlled action instead of a blind launch.",
           successFeedback: "You configured the target host.",
           accepts: [rawMatch(/^set\s+RHOSTS\s+192\.168\.56\.102$/i)]
         }),
         step({
           objective: "Execute the loaded exploit.",
+          context: "Run belongs at the end of the chain. At this point you have evidence, a selected module, and a configured target.",
           hints: ["The module and target are ready.", "Use the execution command.", "Try `run`."],
           explanation: "Only after selecting the module and setting the target should you run the exploit.",
+          whyThisMatters: "This step reinforces that execution is the last decision in the chain, not the first.",
           successFeedback: "You launched the exploit chain.",
           accepts: [rawMatch(/^run$/i)]
         })
@@ -1619,20 +1924,34 @@
     })
   ];
 
+  const refinedExampleScenarios = exampleScenarios.map(refineScenario);
+  const refinedNavigationScenarios = generatedNavigationScenarios.map(refineScenario);
+  const refinedFileManipScenarios = generatedFileManipScenarios.map(refineScenario);
+  const refinedTextScenarios = generatedTextScenarios.map(refineScenario);
+  const refinedArchiveScenarios = generatedArchiveScenarios.map(refineScenario);
+  const refinedNetworkScenarios = generatedNetworkScenarios.map(refineScenario);
+  const refinedNmapScenarios = generatedNmapScenarios.map(refineScenario);
+  const refinedNetcatScenarios = generatedNetcatScenarios.map(refineScenario);
+  const refinedPythonScenarios = generatedPythonScenarios.map(refineScenario);
+  const refinedExploitScenarios = generatedExploitScenarios.map(refineScenario);
+  const refinedMetasploitScenarios = generatedMetasploitScenarios.map(refineScenario);
+  const refinedTroubleshootScenarios = generatedTroubleshootScenarios.map(refineScenario);
+  const refinedMixedScenarios = generatedMixedScenarios.map(refineScenario);
+
   const scenarios = [
-    ...exampleScenarios,
-    ...generatedNavigationScenarios,
-    ...generatedFileManipScenarios,
-    ...generatedTextScenarios,
-    ...generatedArchiveScenarios,
-    ...generatedNetworkScenarios,
-    ...generatedNmapScenarios,
-    ...generatedNetcatScenarios,
-    ...generatedPythonScenarios,
-    ...generatedExploitScenarios,
-    ...generatedMetasploitScenarios,
-    ...generatedTroubleshootScenarios,
-    ...generatedMixedScenarios
+    ...refinedExampleScenarios,
+    ...refinedNavigationScenarios,
+    ...refinedFileManipScenarios,
+    ...refinedTextScenarios,
+    ...refinedArchiveScenarios,
+    ...refinedNetworkScenarios,
+    ...refinedNmapScenarios,
+    ...refinedNetcatScenarios,
+    ...refinedPythonScenarios,
+    ...refinedExploitScenarios,
+    ...refinedMetasploitScenarios,
+    ...refinedTroubleshootScenarios,
+    ...refinedMixedScenarios
   ];
 
   const scalingGuidance = [
@@ -1640,12 +1959,45 @@
     "Keep each scenario between 3 and 8 steps so the learner solves a real workflow instead of isolated trivia.",
     "Reuse the shared target library and archive/file builders so new scenarios inherit realistic state automatically.",
     "Prefer multiple valid accept rules and targeted partial-feedback rules over single exact-command matches.",
-    "Scale difficulty by increasing ambiguity, output interpretation, and recovery decisions rather than just adding flags."
+    "Every new step should satisfy discovery, taught context, or logical inference before it asks the learner to act.",
+    "Use exploration rules to reward ls, dir, pwd, cat, type, and scoped scans when the learner is trying to gather evidence.",
+    "Scale difficulty by reducing scaffolding gradually, not by reintroducing hidden knowledge or path memorisation."
   ];
+
+  const scenarioStructure = {
+    id: "string",
+    title: "string",
+    category: "string",
+    level: "Beginner | Intermediate | Advanced",
+    shell: "linux | cmd | metasploit",
+    objective: "string",
+    allowedFlexibility: "string",
+    environment: {
+      cwd: "string",
+      directories: ["string"],
+      files: [{ path: "string", content: "string" }],
+      processes: [{ pid: 1234, name: "string" }],
+      targets: [{ ip: "string", hostname: "string", ports: [{ port: 80, proto: "tcp", service: "http" }] }]
+    },
+    steps: [
+      {
+        objective: "string",
+        context: "string",
+        hints: ["hint 1", "hint 2", "hint 3"],
+        explanation: "string",
+        whyThisMatters: "string",
+        successFeedback: "string",
+        accepts: ["match rules"],
+        partials: ["partial feedback rules"],
+        exploration: ["non-penalized discovery rules"]
+      }
+    ]
+  };
 
   window.ScenarioEngine = {
     scenarios,
-    exampleScenarios: exampleScenarios.slice(0, 15),
+    exampleScenarios: refinedExampleScenarios.slice(0, 15),
+    scenarioStructure,
     scalingGuidance,
     totalScenarios: scenarios.length
   };

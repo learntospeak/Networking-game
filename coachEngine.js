@@ -76,8 +76,9 @@
       return {
         classification: partial.classification || "inefficient",
         feedback: partial.feedback,
-        coach: partial.coach || step.explanation,
-        hint: getHint(step, getHintTierFromAttempts(attempts))
+        coach: partial.coach || step.context || step.explanation,
+        hint: partial.countsAsAttempt === false ? null : getHint(step, getHintTierFromAttempts(attempts)),
+        countsAsAttempt: partial.countsAsAttempt !== false
       };
     }
 
@@ -85,8 +86,9 @@
       return {
         classification,
         feedback: "That command is not available in this training shell.",
-        coach: "Stay inside the tools and commands that fit the current platform and scenario.",
-        hint: getHint(step, getHintTierFromAttempts(attempts))
+        coach: step.context || "Stay inside the tools and commands that fit the current platform and scenario.",
+        hint: getHint(step, getHintTierFromAttempts(attempts)),
+        countsAsAttempt: true
       };
     }
 
@@ -94,22 +96,25 @@
       return {
         classification,
         feedback: "The command is recognized, but the syntax or arguments are off.",
-        coach: "Look at the flags, argument order, or the target you passed in.",
-        hint: getHint(step, getHintTierFromAttempts(attempts))
+        coach: step.context || "Look at the flags, argument order, or the target you passed in.",
+        hint: getHint(step, getHintTierFromAttempts(attempts)),
+        countsAsAttempt: true
       };
     }
 
     return {
       classification,
       feedback: "That command is valid, but it does not move this scenario forward.",
-      coach: "Use the current objective and the terminal output to decide the next practical move.",
-      hint: getHint(step, getHintTierFromAttempts(attempts))
+      coach: step.context || "Use the current objective and the terminal output to decide the next practical move.",
+      hint: getHint(step, getHintTierFromAttempts(attempts)),
+      countsAsAttempt: true
     };
   }
 
   function evaluateAttempt(step, execution, state, attempts) {
     const accepts = step.accepts || [];
     const partials = step.partials || [];
+    const exploration = step.exploration || [];
 
     const matchedSuccess = accepts.find((rule) => matchRule(rule, execution, state));
     if (matchedSuccess) {
@@ -118,7 +123,20 @@
         classification: "success",
         feedback: step.successFeedback || "That command works for this task.",
         coach: step.explanation,
-        hint: null
+        hint: null,
+        countsAsAttempt: false
+      };
+    }
+
+    const matchedExploration = exploration.find((entry) => matchRule(entry.match, execution, state));
+    if (matchedExploration) {
+      return {
+        success: false,
+        classification: matchedExploration.classification || "exploration",
+        feedback: matchedExploration.feedback,
+        coach: matchedExploration.coach || step.context || step.explanation,
+        hint: matchedExploration.hint || null,
+        countsAsAttempt: false
       };
     }
 
