@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Coach</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./terminal-coach.css">
+  <script src="./stateManager.js" defer></script>
+  <script src="./coachEngine.js" defer></script>
+  <script src="./scenarioEngine.js" defer></script>
+  <script src="./terminalEngine.js" defer></script>
+</head>
+<body class="terminal-page">
+  <div class="rack-room">
+    <div class="router-shell terminal-shell">
+      <div class="router-top">
+        <div>
+          <div class="router-brand">NET-LAB TERMINAL COACH</div>
+          <div class="terminal-subbrand">Typed workflows, adaptive coaching, and stateful command practice</div>
+        </div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <header class="terminal-header">
+        <div>
+          <p class="terminal-kicker">Core Skill Builder</p>
+          <h1>Master Terminal Coach</h1>
+          <p class="terminal-intro">Type real commands, work through multi-stage scenarios, and get context-aware coaching that reacts to mistakes, syntax, and workflow quality.</p>
+        </div>
+        <a class="terminal-nav-link" href="./index.html">Back to Main App</a>
+      </header>
+
+      <section class="lab-panel terminal-meta-panel">
+        <div class="mode-panel-head">
+          <div>
+            <h2>Scenario Progress</h2>
+            <p class="panel-copy">This trainer keeps environment state, accepts multiple valid workflows, and coaches you through mistakes instead of collapsing into multiple choice.</p>
+          </div>
+          <div class="status-cluster">
+            <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
+            <div id="stepCountBadge" class="status-badge">Task 1 / 4</div>
+            <div id="shellBadge" class="status-badge">Linux</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="terminal-layout">
+        <aside class="lab-panel scenario-panel">
+          <div class="scenario-card">
+            <p id="scenarioCategory" class="scenario-category">File System Navigation</p>
+            <h2 id="scenarioTitle" class="scenario-title">Log Triage on a Linux Host</h2>
+            <p id="scenarioLevel" class="scenario-level">Beginner</p>
+            <p id="scenarioObjective" class="scenario-objective">Move into the right directory, find the rotated log, and inspect the crash clues without leaving the terminal.</p>
+            <div id="scenarioFlex" class="scenario-flex">Allowed flexibility: any valid path form is acceptable as long as it reaches the right result.</div>
+          </div>
+
+          <div class="scenario-support-grid">
+            <article class="support-card">
+              <h3>Current Task</h3>
+              <p id="stepObjective">Identify your working directory before you move deeper into the host.</p>
+            </article>
+
+            <article class="support-card">
+              <h3>Mentor Signal</h3>
+              <p id="coachSignal">Strong operators confirm context before they touch files, processes, or services.</p>
+            </article>
+
+            <article class="support-card">
+              <h3>Hint Ladder</h3>
+              <ol id="hintLadder" class="hint-ladder">
+                <li>Vague</li>
+                <li>Directional</li>
+                <li>Near answer</li>
+              </ol>
+            </article>
+
+            <article class="support-card">
+              <h3>Progress</h3>
+              <p id="progressSummary">0 scenarios completed in this session.</p>
+            </article>
+          </div>
+
+          <div class="trainer-controls terminal-controls">
+            <button id="hintBtn" type="button">Hint</button>
+            <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+            <button id="nextScenarioBtn" type="button">Next Scenario</button>
+          </div>
+        </aside>
+
+        <section class="lab-panel terminal-panel">
+          <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
+
+          <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
+            <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">student@lab:~$</label>
+            <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none">
+            <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
+          </form>
+        </section>
+      </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

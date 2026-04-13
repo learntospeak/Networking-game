@@ -122,6 +122,10 @@ button::before {
   margin-top: 10px;
 }
 
+#terminalCoachRow {
+  margin-top: 10px;
+}
+
 .panel-link {
   position: relative;
   overflow: hidden;
@@ -289,6 +293,25 @@ button::before {
   box-shadow:
     0 0 0 2px rgba(249, 115, 22, 0.14),
     0 0 16px rgba(249, 115, 22, 0.55);
+}
+
+.terminal-link {
+  min-height: 54px;
+  background: linear-gradient(180deg, #0f3c33 0%, #111827 100%);
+  border-color: #22c55e;
+  color: #ecfdf5;
+}
+
+.terminal-link:hover {
+  background: linear-gradient(180deg, #14532d 0%, #111827 100%);
+  border-color: #86efac;
+}
+
+.terminal-link::before {
+  background: #22c55e;
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.14),
+    0 0 16px rgba(34, 197, 94, 0.55);
 }
 
 #question {
