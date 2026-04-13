@@ -86,21 +86,32 @@
             </article>
           </div>
 
-          <div class="trainer-controls terminal-controls">
-            <button id="hintBtn" type="button">Hint</button>
-            <button id="resetScenarioBtn" type="button">Reset Scenario</button>
-            <button id="nextScenarioBtn" type="button">Next Scenario</button>
-          </div>
         </aside>
 
         <section class="lab-panel terminal-panel">
-          <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
+          <div class="terminal-output-shell">
+            <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
+          </div>
 
-          <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
-            <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">student@lab:~$</label>
-            <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none">
-            <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
-          </form>
+          <div class="terminal-mobile-dock">
+            <div class="terminal-mobile-context">
+              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
+              <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>
+              <p id="mobileCoachSignal" class="terminal-mobile-signal">Work from evidence. Good operators confirm context before they act.</p>
+            </div>
+
+            <div class="trainer-controls terminal-controls">
+              <button id="hintBtn" type="button">Hint</button>
+              <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+              <button id="nextScenarioBtn" type="button">Next Scenario</button>
+            </div>
+
+            <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
+              <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">student@lab:~$</label>
+              <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none">
+              <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
+            </form>
+          </div>
         </section>
       </div>
 

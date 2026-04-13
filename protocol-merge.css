@@ -10,6 +10,7 @@
 .scenario-subtitle {
   margin: 0 0 18px;
   color: #94a3b8;
+  font-size: clamp(14px, 1.35vw, 15px);
   line-height: 1.6;
 }
 
@@ -146,7 +147,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .merge-page .flow-display-head {
     flex-direction: column;
     align-items: flex-start;
@@ -301,5 +302,77 @@
   .usecase-grid,
   .compare-row {
     grid-template-columns: 1fr;
+  }
+
+  .merge-sections {
+    gap: 16px;
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .merge-page .diagram-stage {
+    height: 640px;
+  }
+
+  .merge-page .device-node {
+    width: min(116px, calc(100% - 110px));
+  }
+
+  .merge-page .device-node[data-device="pc"] {
+    top: 18px;
+  }
+
+  .merge-page .device-node[data-device="switch"] {
+    top: 170px;
+  }
+
+  .merge-page .device-node[data-device="router"] {
+    top: 322px;
+  }
+
+  .merge-page .device-node[data-device="server"] {
+    top: 474px;
+  }
+
+  .merge-page #cablePcSwitch {
+    top: 108px;
+    height: 56px;
+  }
+
+  .merge-page #cableSwitchRouter {
+    top: 260px;
+    height: 56px;
+  }
+
+  .merge-page #cableRouterServer {
+    top: 412px;
+    height: 56px;
+  }
+
+  .merge-page .flow-cable-bypass {
+    left: calc(50% + 72px);
+    top: 214px;
+    height: 282px;
+  }
+
+  .merge-page .flow-cable-bypass::after {
+    box-shadow: 0 282px 0 rgba(71, 85, 105, 0.65);
+  }
+
+  .merge-page .flow-cable-bypass.active::after {
+    box-shadow: 0 282px 0 rgba(56, 189, 248, 0.8);
+  }
+
+  .merge-page .flow-cable-bypass.broadcast::after {
+    box-shadow: 0 282px 0 rgba(245, 158, 11, 0.8);
+  }
+
+  .merge-page .flow-cable-bypass.secure::after {
+    box-shadow: 0 282px 0 rgba(34, 197, 94, 0.8);
+  }
+
+  .merge-page .flow-cable-bypass.warning::after {
+    box-shadow: 0 282px 0 rgba(239, 68, 68, 0.8);
   }
 }

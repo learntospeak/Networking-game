@@ -360,6 +360,10 @@ const els = {
   scenarioTag: document.getElementById("scenarioTag"),
   scenarioTitle: document.getElementById("scenarioTitle"),
   scenarioProgress: document.getElementById("scenarioProgress"),
+  mobileScenarioTitle: document.getElementById("mobileScenarioTitle"),
+  mobileScenarioProgress: document.getElementById("mobileScenarioProgress"),
+  mobileStatusEcho: document.getElementById("mobileStatusEcho"),
+  mobileResultEcho: document.getElementById("mobileResultEcho"),
   networkMap: document.getElementById("networkMap"),
   flowLabel: document.getElementById("flowLabel"),
   stepPrompt: document.getElementById("stepPrompt"),
@@ -387,6 +391,8 @@ function getScenario() {
 function setStatus(type, text) {
   els.statusBadge.className = `status-badge ${type}`;
   els.statusBadge.textContent = text;
+  els.mobileStatusEcho.className = `simulation-mobile-status ${type}`;
+  els.mobileStatusEcho.textContent = text;
 }
 
 function renderScenarioButtons() {
@@ -483,11 +489,14 @@ function renderScenario() {
   els.scenarioTag.textContent = scenario.tag;
   els.scenarioTitle.textContent = scenario.title;
   els.scenarioProgress.textContent = `Step ${state.stepIndex + 1} of ${scenario.steps.length}`;
+  els.mobileScenarioTitle.textContent = scenario.title;
+  els.mobileScenarioProgress.textContent = `Step ${state.stepIndex + 1} of ${scenario.steps.length}`;
   els.flowLabel.textContent = step.flow;
   els.stepPrompt.textContent = step.prompt;
   els.summaryText.textContent = scenario.summary;
   els.resultText.textContent = "Pick the action that matches the real network behavior.";
   els.whyText.textContent = "Correct and incorrect choices will explain what should happen next and why.";
+  els.mobileResultEcho.textContent = "Pick the next action. Feedback will stay visible here on mobile.";
   setStatus("idle", "Awaiting selection");
   els.nextStepBtn.hidden = true;
   els.nextStepBtn.textContent = "Next Step";
@@ -506,6 +515,7 @@ function finishScenario() {
   setStatus("good", "Scenario complete");
   els.resultText.textContent = `${scenario.title} complete. You walked the traffic in the correct order.`;
   els.whyText.textContent = scenario.summary;
+  els.mobileResultEcho.textContent = scenario.summary;
   els.nextStepBtn.hidden = true;
 }
 
@@ -523,6 +533,7 @@ function handleStepChoice(optionIndex, clickedButton) {
     setStatus("good", "Correct next action");
     els.resultText.textContent = "That matches the protocol flow.";
     els.whyText.textContent = option.why;
+    els.mobileResultEcho.textContent = option.why;
 
     if (state.stepIndex < scenario.steps.length - 1) {
       els.nextStepBtn.hidden = false;
@@ -539,6 +550,7 @@ function handleStepChoice(optionIndex, clickedButton) {
   setStatus("bad", "Try again");
   els.resultText.textContent = "That is not the right next action for this step.";
   els.whyText.textContent = option.why;
+  els.mobileResultEcho.textContent = option.why;
 }
 
 function goToNextStep() {

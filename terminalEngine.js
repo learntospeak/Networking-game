@@ -18,6 +18,9 @@
     coachSignal: document.getElementById("coachSignal"),
     hintLadder: document.getElementById("hintLadder"),
     progressSummary: document.getElementById("progressSummary"),
+    mobileScenarioTitle: document.getElementById("mobileScenarioTitle"),
+    mobileStepObjective: document.getElementById("mobileStepObjective"),
+    mobileCoachSignal: document.getElementById("mobileCoachSignal"),
     terminalOutput: document.getElementById("terminalOutput"),
     terminalForm: document.getElementById("terminalForm"),
     terminalPrompt: document.getElementById("terminalPrompt"),
@@ -112,6 +115,8 @@
     els.scenarioFlex.textContent = `Allowed flexibility: ${scenario.allowedFlexibility || "Use any valid workflow that reaches the objective."}`;
     els.stepObjective.textContent = step.objective;
     els.progressSummary.textContent = `${session.completedScenarioIds.size} scenarios completed in this session.`;
+    els.mobileScenarioTitle.textContent = `${scenario.title} · Task ${session.stepIndex + 1}/${scenario.steps.length}`;
+    els.mobileStepObjective.textContent = step.objective;
 
     if (session.scenarioCompleted) {
       els.coachSignal.textContent = "Scenario complete. Move to the next scenario or reset this one and run it cleaner.";
@@ -120,6 +125,8 @@
     } else {
       els.coachSignal.textContent = "Work from evidence. Good operators confirm context before they act.";
     }
+
+    els.mobileCoachSignal.textContent = els.coachSignal.textContent;
 
     renderHintLadder();
     updatePrompt();

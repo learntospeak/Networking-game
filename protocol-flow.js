@@ -260,6 +260,10 @@ const els = {
   scenarioLabel: document.getElementById("scenarioLabel"),
   scenarioName: document.getElementById("scenarioName"),
   stepBadge: document.getElementById("stepBadge"),
+  mobileScenarioName: document.getElementById("mobileScenarioName"),
+  mobileStepBadge: document.getElementById("mobileStepBadge"),
+  mobileFeedbackState: document.getElementById("mobileFeedbackState"),
+  mobileFeedbackText: document.getElementById("mobileFeedbackText"),
   stepPrompt: document.getElementById("stepPrompt"),
   actionButtons: document.getElementById("actionButtons"),
   nextStepBtn: document.getElementById("nextStepBtn"),
@@ -311,6 +315,8 @@ function clearVisualState() {
 function updateScenarioStatus(type, text) {
   els.scenarioStatus.className = `flow-status ${type}`;
   els.scenarioStatus.textContent = text;
+  els.mobileFeedbackState.className = `interaction-feedback-state ${type}`;
+  els.mobileFeedbackState.textContent = text;
 }
 
 function updateTrafficMode(type, text) {
@@ -389,9 +395,12 @@ function renderStep() {
   els.scenarioLabel.textContent = scenario.label;
   els.scenarioName.textContent = scenario.name;
   els.stepBadge.textContent = `Step ${state.stepIndex + 1} of ${scenario.steps.length}`;
+  els.mobileScenarioName.textContent = scenario.name;
+  els.mobileStepBadge.textContent = `Step ${state.stepIndex + 1} of ${scenario.steps.length}`;
   els.stepPrompt.textContent = step.prompt;
   els.explanationText.textContent = "Select the action that matches the next protocol move.";
   els.whyText.textContent = "The right answer will light the correct devices and cables so the path becomes visible.";
+  els.mobileFeedbackText.textContent = "Pick the next protocol move. Feedback will stay pinned here on mobile.";
   els.scenarioSummary.textContent = scenario.summary;
   els.nextStepBtn.hidden = true;
   els.nextStepBtn.textContent = "Next Step";
@@ -422,6 +431,7 @@ function handleAnswer(index, button) {
     updateScenarioStatus("good", "Correct path");
     els.explanationText.textContent = step.explanation;
     els.whyText.textContent = step.explanation;
+    els.mobileFeedbackText.textContent = step.explanation;
 
     if (state.stepIndex < scenario.steps.length - 1) {
       els.nextStepBtn.hidden = false;
@@ -440,6 +450,7 @@ function handleAnswer(index, button) {
   updateScenarioStatus("bad", "Try again");
   els.explanationText.textContent = `Not quite. Think about what the sender needs before ${step.options[step.correct].toLowerCase()}.`;
   els.whyText.textContent = "Wrong answers stay visible so you can compare them against the correct protocol path.";
+  els.mobileFeedbackText.textContent = `Not quite. Think about what the sender needs before ${step.options[step.correct].toLowerCase()}.`;
 }
 
 function loadScenario(index) {

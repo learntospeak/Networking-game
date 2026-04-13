@@ -51,68 +51,82 @@
       <div class="flow-layout">
         <section class="flow-panel diagram-panel">
           <div class="display-panel flow-display">
-            <div class="flow-display-head">
-              <div>
-                <p id="scenarioLabel" class="scenario-label">ARP Flow</p>
-                <h2 id="scenarioName" class="scenario-name">ARP on Same Subnet</h2>
+            <div class="flow-visual-panel">
+              <div class="flow-display-head">
+                <div>
+                  <p id="scenarioLabel" class="scenario-label">ARP Flow</p>
+                  <h2 id="scenarioName" class="scenario-name">ARP on Same Subnet</h2>
+                </div>
+                <div id="stepBadge" class="step-badge">Step 1 of 3</div>
               </div>
-              <div id="stepBadge" class="step-badge">Step 1 of 3</div>
-            </div>
 
-            <div class="diagram-shell">
-              <div id="diagramStage" class="diagram-stage">
-                <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
-                <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
-                <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
-                <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
+              <div class="flow-diagram-scroll">
+                <div class="diagram-shell">
+                  <div id="diagramStage" class="diagram-stage">
+                    <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
+                    <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
+                    <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
+                    <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
 
-                <div id="devicePc" class="device-node" data-device="pc">
-                  <div class="device-icon-wrap">
-                    <i class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
+                    <div id="devicePc" class="device-node" data-device="pc">
+                      <div class="device-icon-wrap">
+                        <i class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p class="device-title">PC A</p>
+                      <p id="devicePcMeta" class="device-meta">Source host</p>
+                    </div>
+
+                    <div id="deviceSwitch" class="device-node" data-device="switch">
+                      <div class="device-icon-wrap">
+                        <i class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p class="device-title">Switch</p>
+                      <p id="deviceSwitchMeta" class="device-meta">Local forwarding</p>
+                    </div>
+
+                    <div id="deviceRouter" class="device-node" data-device="router">
+                      <div class="device-icon-wrap">
+                        <i class="fa-solid fa-router device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p class="device-title">Router</p>
+                      <p id="deviceRouterMeta" class="device-meta">Gateway</p>
+                    </div>
+
+                    <div id="deviceServer" class="device-node" data-device="server">
+                      <div class="device-icon-wrap">
+                        <i class="fa-solid fa-server device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p class="device-title">Server</p>
+                      <p id="deviceServerMeta" class="device-meta">Destination service</p>
+                    </div>
                   </div>
-                  <p class="device-title">PC A</p>
-                  <p id="devicePcMeta" class="device-meta">Source host</p>
-                </div>
-
-                <div id="deviceSwitch" class="device-node" data-device="switch">
-                  <div class="device-icon-wrap">
-                    <i class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
-                  </div>
-                  <p class="device-title">Switch</p>
-                  <p id="deviceSwitchMeta" class="device-meta">Local forwarding</p>
-                </div>
-
-                <div id="deviceRouter" class="device-node" data-device="router">
-                  <div class="device-icon-wrap">
-                    <i class="fa-solid fa-router device-icon" aria-hidden="true"></i>
-                  </div>
-                  <p class="device-title">Router</p>
-                  <p id="deviceRouterMeta" class="device-meta">Gateway</p>
-                </div>
-
-                <div id="deviceServer" class="device-node" data-device="server">
-                  <div class="device-icon-wrap">
-                    <i class="fa-solid fa-server device-icon" aria-hidden="true"></i>
-                  </div>
-                  <p class="device-title">Server</p>
-                  <p id="deviceServerMeta" class="device-meta">Destination service</p>
                 </div>
               </div>
-            </div>
 
-            <div class="legend-row">
-              <span class="legend-pill legend-broadcast">Broadcast</span>
-              <span class="legend-pill legend-unicast">Unicast</span>
-              <span class="legend-pill legend-secure">Secure</span>
-              <span class="legend-pill legend-warning">Insecure</span>
+              <div class="legend-row">
+                <span class="legend-pill legend-broadcast">Broadcast</span>
+                <span class="legend-pill legend-unicast">Unicast</span>
+                <span class="legend-pill legend-secure">Secure</span>
+                <span class="legend-pill legend-warning">Insecure</span>
+              </div>
             </div>
           </div>
         </section>
 
         <section class="flow-panel interaction-panel">
+          <div class="interaction-summary">
+            <div>
+              <p id="mobileScenarioName" class="interaction-scenario-title">ARP on Same Subnet</p>
+              <p id="mobileStepBadge" class="interaction-step-badge">Step 1 of 3</p>
+            </div>
+            <div id="mobileFeedbackState" class="interaction-feedback-state idle">Waiting for action</div>
+          </div>
           <h2>Choose the Next Action</h2>
           <p id="stepPrompt" class="step-prompt">
             A local host needs to reach another device on the same subnet. What happens first?
+          </p>
+          <p id="mobileFeedbackText" class="mobile-feedback-text">
+            Pick the next protocol move. Feedback will stay pinned here on mobile.
           </p>
 
           <div id="actionButtons" class="action-buttons"></div>

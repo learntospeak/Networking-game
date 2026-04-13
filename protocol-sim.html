@@ -46,29 +46,47 @@
 
         <section class="lab-panel simulation-panel">
           <div class="display-panel simulation-display">
-            <div class="sim-top">
-              <div>
-                <p id="scenarioTag" class="sim-tag">Scenario</p>
-                <h2 id="scenarioTitle" class="sim-title">ARP on Same Subnet</h2>
+            <div class="simulation-visual-panel">
+              <div class="sim-top">
+                <div>
+                  <p id="scenarioTag" class="sim-tag">Scenario</p>
+                  <h2 id="scenarioTitle" class="sim-title">ARP on Same Subnet</h2>
+                </div>
+                <div id="scenarioProgress" class="scenario-progress">Step 1 of 3</div>
               </div>
-              <div id="scenarioProgress" class="scenario-progress">Step 1 of 3</div>
+
+              <div class="network-map-scroll">
+                <div id="networkMap" class="network-map"></div>
+              </div>
+              <div id="flowLabel" class="flow-label">Choose the correct next packet action.</div>
             </div>
 
-            <div id="networkMap" class="network-map"></div>
-            <div id="flowLabel" class="flow-label">Choose the correct next packet action.</div>
+            <div class="simulation-action-panel">
+              <div class="simulation-mobile-summary">
+                <div>
+                  <p id="mobileScenarioTitle" class="simulation-mobile-title">ARP on Same Subnet</p>
+                  <p id="mobileScenarioProgress" class="simulation-mobile-progress">Step 1 of 3</p>
+                </div>
+                <div id="mobileStatusEcho" class="simulation-mobile-status idle">Awaiting selection</div>
+              </div>
 
-            <div class="prompt-panel">
-              <h3>Next Action</h3>
-              <p id="stepPrompt">
-                A PC wants to reach another host on the same subnet. What should happen first?
+              <div class="prompt-panel">
+                <h3>Next Action</h3>
+                <p id="stepPrompt">
+                  A PC wants to reach another host on the same subnet. What should happen first?
+                </p>
+              </div>
+
+              <p id="mobileResultEcho" class="simulation-mobile-result">
+                Pick an action to keep feedback and the next move visible on mobile.
               </p>
-            </div>
 
-            <div id="stepOptions" class="step-options"></div>
+              <div id="stepOptions" class="step-options"></div>
 
-            <div class="sim-controls">
-              <button id="nextStepBtn" type="button" hidden>Next Step</button>
-              <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+              <div class="sim-controls">
+                <button id="nextStepBtn" type="button" hidden>Next Step</button>
+                <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+              </div>
             </div>
           </div>
         </section>
