@@ -170,14 +170,24 @@
 }
 
 .terminal-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .terminal-controls button {
-  flex: 1 1 160px;
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 10px 9px 32px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.terminal-controls button::before {
+  left: 10px;
+  width: 9px;
+  height: 9px;
 }
 
 .terminal-panel {
@@ -330,6 +340,27 @@
   box-shadow:
     0 0 0 2px rgba(56, 189, 248, 0.16),
     0 0 16px rgba(56, 189, 248, 0.55);
+}
+
+#previousScenarioBtn::before {
+  background: #60a5fa;
+  box-shadow:
+    0 0 0 2px rgba(96, 165, 250, 0.16),
+    0 0 14px rgba(96, 165, 250, 0.5);
+}
+
+#resetScenarioBtn::before {
+  background: #f59e0b;
+  box-shadow:
+    0 0 0 2px rgba(245, 158, 11, 0.14),
+    0 0 14px rgba(245, 158, 11, 0.46);
+}
+
+#nextScenarioBtn::before {
+  background: #22c55e;
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.14),
+    0 0 14px rgba(34, 197, 94, 0.46);
 }
 
 .command-sheet-open {
@@ -798,8 +829,7 @@
   }
 
   .terminal-controls {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-top: 12px;
   }
@@ -822,9 +852,9 @@
 
   .terminal-controls button,
   .terminal-run-btn {
-    min-height: 44px;
-    padding: 10px 12px 10px 38px;
-    font-size: 14px;
+    min-height: 40px;
+    padding: 9px 10px 9px 30px;
+    font-size: 13px;
   }
 
   .terminal-run-btn {

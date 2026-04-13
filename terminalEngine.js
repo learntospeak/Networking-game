@@ -26,6 +26,7 @@
     terminalPrompt: document.getElementById("terminalPrompt"),
     terminalInput: document.getElementById("terminalInput"),
     hintBtn: document.getElementById("hintBtn"),
+    previousScenarioBtn: document.getElementById("previousScenarioBtn"),
     resetScenarioBtn: document.getElementById("resetScenarioBtn"),
     nextScenarioBtn: document.getElementById("nextScenarioBtn")
   };
@@ -1327,9 +1328,14 @@
     loadScenario(session.scenarioIndex + 1);
   }
 
+  function previousScenario() {
+    loadScenario(session.scenarioIndex - 1);
+  }
+
   function bindEvents() {
     els.terminalForm.addEventListener("submit", runSubmittedCommand);
     els.hintBtn.addEventListener("click", showHint);
+    els.previousScenarioBtn.addEventListener("click", previousScenario);
     els.resetScenarioBtn.addEventListener("click", resetScenario);
     els.nextScenarioBtn.addEventListener("click", nextScenario);
 
