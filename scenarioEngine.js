@@ -937,8 +937,8 @@
       category: "Nmap scanning workflows",
       level: "Intermediate",
       shell: "linux",
-      objective: "Discover the FTP service, confirm its version, and move into evidence-based research.",
-      allowedFlexibility: "Any valid Nmap ordering is fine as long as the scan intent is correct.",
+      objective: "Discover the FTP service on metasploitable2 (192.168.56.102), confirm its version, and move into evidence-based research.",
+      allowedFlexibility: "Stay on metasploitable2 and use a focused Nmap workflow. You can refer to the host by hostname or IP.",
       environment: linuxEnv({
         cwd: "/home/student",
         files: [],
@@ -947,19 +947,29 @@
       steps: [
         step({
           objective: "Check whether FTP is open on the target.",
-          hints: ["You only need one service port right now.", "Target port 21 directly.", "Try `nmap -p 21 192.168.56.102`."],
+          context: "The target for this workflow is metasploitable2 at 192.168.56.102. Start with the FTP port only instead of widening the scan too early.",
+          hints: ["You only need one service port right now.", "Target port 21 on metasploitable2 directly.", "Try `nmap -p 21 metasploitable2` or `nmap -p 21 192.168.56.102`."],
           explanation: "A focused check on the FTP port is the cleanest first move when you already know which service you care about.",
           successFeedback: "You checked the FTP port.",
-          accepts: [rawMatch(/^nmap\s+-p\s+21\s+192\.168\.56\.102$/i)]
+          accepts: [
+            rawMatch(/^nmap\s+-p\s+21\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+target$/i)
+          ]
         }),
         step({
           objective: "Identify the FTP service version.",
-          hints: ["Now turn the open port into service evidence.", "Use version detection on port 21.", "Try `nmap -sV -p 21 192.168.56.102`."],
+          context: "Stay on metasploitable2 and turn the FTP port state into real service evidence with version detection.",
+          hints: ["Now turn the open port into service evidence.", "Use version detection on port 21.", "Try `nmap -sV -p 21 metasploitable2` or `nmap -sV -p 21 192.168.56.102`."],
           explanation: "Version detection is the bridge between a port number and a credible exploit-research path.",
           successFeedback: "You identified the FTP service version.",
           accepts: [
             rawMatch(/^nmap\s+-sV\s+-p\s+21\s+192\.168\.56\.102$/i),
-            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+192\.168\.56\.102$/i)
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+target$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+target$/i)
           ]
         }),
         step({
@@ -977,8 +987,8 @@
       category: "Netcat workflows",
       level: "Intermediate",
       shell: "linux",
-      objective: "Connect to SMTP with Netcat, identify the service, and move through the opening protocol flow correctly.",
-      allowedFlexibility: "Stay within the live SMTP session and send the correct protocol verbs in order.",
+      objective: "Connect to SMTP on metasploitable2 (192.168.56.102) with Netcat, identify the service, and move through the opening protocol flow correctly.",
+      allowedFlexibility: "Stay within the live SMTP session on metasploitable2 and send the correct protocol verbs in order.",
       environment: linuxEnv({
         cwd: "/home/student",
         targets: commonTargets()
@@ -986,10 +996,15 @@
       steps: [
         step({
           objective: "Open a direct TCP session to SMTP on the target.",
-          hints: ["Use a raw TCP client, not another scan.", "Connect to port 25 with Netcat.", "Try `nc -nv 192.168.56.102 25`."],
+          context: "The SMTP service in this lab lives on metasploitable2 at 192.168.56.102. Open a raw TCP session to port 25 instead of scanning again.",
+          hints: ["Use a raw TCP client, not another scan.", "Connect to port 25 with Netcat.", "Try `nc -nv metasploitable2 25` or `nc -nv 192.168.56.102 25`."],
           explanation: "Netcat gives you a direct protocol session so you can observe the service and interact with it manually.",
           successFeedback: "You opened the SMTP session.",
-          accepts: [rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i)]
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i),
+            rawMatch(/^nc\s+-nv\s+metasploitable2\s+25$/i),
+            rawMatch(/^nc\s+-nv\s+target\s+25$/i)
+          ]
         }),
         step({
           objective: "Greet the SMTP service correctly after the banner appears.",
@@ -1138,7 +1153,7 @@
       category: "Metasploit workflows",
       level: "Advanced",
       shell: "linux",
-      objective: "Move from a version-confirmed FTP finding into a disciplined Metasploit execution chain.",
+      objective: "Move from a version-confirmed FTP finding on metasploitable2 (192.168.56.102) into a disciplined Metasploit execution chain.",
       allowedFlexibility: "Stay inside the proper order: evidence, framework, search, module selection, targeting, execution.",
       environment: linuxEnv({
         cwd: "/home/student",
@@ -1147,12 +1162,19 @@
       steps: [
         step({
           objective: "Confirm the FTP version before you open the framework.",
-          context: "Do not open an exploitation framework until you have evidence. Here the evidence is the version of the FTP service on port 21.",
-          hints: ["Do not skip evidence gathering.", "Use version detection on port 21.", "Try `nmap -sV -p 21 192.168.56.102`."],
+          context: "Do not open an exploitation framework until you have evidence. Here the evidence is the version of the FTP service on port 21 of metasploitable2 at 192.168.56.102.",
+          hints: ["Do not skip evidence gathering.", "Use version detection on port 21.", "Try `nmap -sV -p 21 metasploitable2` or `nmap -sV -p 21 192.168.56.102`."],
           explanation: "Version confirmation is what justifies the exploit path. Skipping it turns exploitation into guesswork.",
           whyThisMatters: "Evidence first keeps exploitation tied to reality instead of hope.",
           successFeedback: "You verified the FTP version.",
-          accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+21\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+21\s+-sV\s+192\.168\.56\.102$/i)]
+          accepts: [
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+target$/i),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+target$/i)
+          ]
         }),
         step({
           objective: "Open Metasploit.",
@@ -1183,12 +1205,16 @@
         }),
         step({
           objective: "Set the target host for the module.",
-          context: "Exploit modules need target options before they can run. In Metasploit, RHOSTS tells the module which remote host to attack.",
-          hints: ["Point the module at the right IP.", "Set RHOSTS to 192.168.56.102.", "Try `set RHOSTS 192.168.56.102`."],
+          context: "Exploit modules need target options before they can run. In Metasploit, RHOSTS tells the module which remote host to attack. In this lab that host is metasploitable2 at 192.168.56.102.",
+          hints: ["Point the module at the right target host.", "Set RHOSTS to metasploitable2 or 192.168.56.102.", "Try `set RHOSTS metasploitable2` or `set RHOSTS 192.168.56.102`."],
           explanation: "The module needs a target before it can run. Setting RHOSTS is that control point.",
           whyThisMatters: "Module configuration is what turns a loaded exploit into a controlled action instead of a blind launch.",
           successFeedback: "You configured the target host.",
-          accepts: [rawMatch(/^set\s+RHOSTS\s+192\.168\.56\.102$/i)]
+          accepts: [
+            rawMatch(/^set\s+RHOSTS\s+192\.168\.56\.102$/i),
+            rawMatch(/^set\s+RHOSTS\s+metasploitable2$/i),
+            rawMatch(/^set\s+RHOSTS\s+target$/i)
+          ]
         }),
         step({
           objective: "Execute the loaded exploit.",
@@ -1207,7 +1233,7 @@
       category: "Nmap scanning workflows",
       level: "Intermediate",
       shell: "linux",
-      objective: "Run a version scan, save the output to a normal file, and inspect the saved report from the shell.",
+      objective: "Run a version scan of metasploitable2 (192.168.56.102), save the output to a normal file, and inspect the saved report from the shell.",
       allowedFlexibility: "The output filename can be different, but the scan must save to disk and the saved report must be read back.",
       environment: linuxEnv({
         cwd: "/home/student"
@@ -1215,10 +1241,18 @@
       steps: [
         step({
           objective: "Run a version scan against the target and save it to baseline.txt.",
-          hints: ["Combine version detection with a normal output file.", "Use -sV and save with -oN.", "Try `nmap -sV -oN baseline.txt 192.168.56.102`."],
+          context: "The target for this reporting workflow is metasploitable2 at 192.168.56.102. Capture the version evidence and save it directly to disk.",
+          hints: ["Combine version detection with a normal output file.", "Use -sV and save with -oN.", "Try `nmap -sV -oN baseline.txt metasploitable2` or `nmap -sV -oN baseline.txt 192.168.56.102`."],
           explanation: "Saving the scan output is the right move when you want evidence you can review, compare, or hand off later.",
           successFeedback: "You captured the scan output to disk.",
-          accepts: [rawMatch(/^nmap\s+-sV\s+-oN\s+baseline\.txt\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-oN\s+baseline\.txt\s+-sV\s+192\.168\.56\.102$/i)]
+          accepts: [
+            rawMatch(/^nmap\s+-sV\s+-oN\s+baseline\.txt\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-oN\s+baseline\.txt\s+-sV\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-sV\s+-oN\s+baseline\.txt\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-oN\s+baseline\.txt\s+-sV\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-sV\s+-oN\s+baseline\.txt\s+target$/i),
+            rawMatch(/^nmap\s+-oN\s+baseline\.txt\s+-sV\s+target$/i)
+          ]
         }),
         step({
           objective: "List the directory so you can verify the report file exists.",
@@ -1652,12 +1686,12 @@
       title: "Top Ports Triage",
       category: "Nmap scanning workflows",
       level: "Intermediate",
-      objective: "Start with a top-ports sweep, then narrow into service versioning on the interesting target.",
+      objective: "Start with a top-ports sweep against metasploitable2 (192.168.56.102), then narrow into service versioning on the interesting target.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Run a top-ports scan against the target.", hints: ["Use the top-ports option with a small count.", "Scan the most common ports first.", "Try `nmap --top-ports 20 192.168.56.102`."], explanation: "A top-ports sweep is a fast way to triage the exposed surface before deeper work.", accepts: [rawMatch(/^nmap\s+--top-ports\s+20\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Focus on the web service once the quick sweep is done.", hints: ["Now check port 80 directly.", "Use the single web port scan.", "Try `nmap -p 80 192.168.56.102`."], explanation: "A focused follow-up after a top-ports sweep is how you turn broad discovery into targeted evidence.", accepts: [rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Identify the web service version.", hints: ["Add service version detection.", "Use -sV with port 80.", "Try `nmap -sV -p 80 192.168.56.102`."], explanation: "The version check is what makes the web finding useful for real follow-up decisions.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i)] })
+        step({ objective: "Run a top-ports scan against the target.", context: "This triage run is against metasploitable2 at 192.168.56.102. Start broad, but still keep the scan bounded to common ports.", hints: ["Use the top-ports option with a small count.", "Scan the most common ports first.", "Try `nmap --top-ports 20 metasploitable2` or `nmap --top-ports 20 192.168.56.102`."], explanation: "A top-ports sweep is a fast way to triage the exposed surface before deeper work.", accepts: [rawMatch(/^nmap\s+--top-ports\s+20\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+--top-ports\s+20\s+metasploitable2$/i), rawMatch(/^nmap\s+--top-ports\s+20\s+target$/i)] }),
+        step({ objective: "Focus on the web service once the quick sweep is done.", context: "Stay on metasploitable2 and narrow the follow-up to the web port only.", hints: ["Now check port 80 directly.", "Use the single web port scan.", "Try `nmap -p 80 metasploitable2` or `nmap -p 80 192.168.56.102`."], explanation: "A focused follow-up after a top-ports sweep is how you turn broad discovery into targeted evidence.", accepts: [rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+80\s+metasploitable2$/i), rawMatch(/^nmap\s+-p\s+80\s+target$/i)] }),
+        step({ objective: "Identify the web service version.", context: "Use service version detection against the same web port on metasploitable2 so the open port becomes actionable evidence.", hints: ["Add service version detection.", "Use -sV with port 80.", "Try `nmap -sV -p 80 metasploitable2` or `nmap -sV -p 80 192.168.56.102`."], explanation: "The version check is what makes the web finding useful for real follow-up decisions.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+metasploitable2$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+metasploitable2$/i), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+target$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+target$/i)] })
       ]
     }),
     linuxScenario({
@@ -1665,11 +1699,11 @@
       title: "XML Report Generation",
       category: "Nmap scanning workflows",
       level: "Intermediate",
-      objective: "Run a version scan and preserve the result in XML for tooling.",
+      objective: "Run a version scan of metasploitable2 (192.168.56.102) and preserve the result in XML for tooling.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Run a version scan of the target.", hints: ["Start with a full service version pass.", "Use Nmap -sV against the target.", "Try `nmap -sV 192.168.56.102`."], explanation: "Version scanning produces the service evidence you want to preserve in a structured report.", accepts: [rawMatch(/^nmap\s+-sV\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Save a scan to XML output.", hints: ["Use the XML output flag and a filename.", "Write the report to scan.xml.", "Try `nmap -oX scan.xml 192.168.56.102`."], explanation: "XML output is useful when another tool or parser will consume the scan results.", accepts: [rawMatch(/^nmap\s+-oX\s+scan\.xml\s+192\.168\.56\.102$/i)] }),
+        step({ objective: "Run a version scan of the target.", context: "The report target here is metasploitable2 at 192.168.56.102. Start by collecting service evidence before you choose the output format.", hints: ["Start with a full service version pass.", "Use Nmap -sV against the target.", "Try `nmap -sV metasploitable2` or `nmap -sV 192.168.56.102`."], explanation: "Version scanning produces the service evidence you want to preserve in a structured report.", accepts: [rawMatch(/^nmap\s+-sV\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-sV\s+metasploitable2$/i), rawMatch(/^nmap\s+-sV\s+target$/i)] }),
+        step({ objective: "Save a scan to XML output.", context: "Keep the same target, metasploitable2, and write the XML report directly to disk for later tooling.", hints: ["Use the XML output flag and a filename.", "Write the report to scan.xml.", "Try `nmap -oX scan.xml metasploitable2` or `nmap -oX scan.xml 192.168.56.102`."], explanation: "XML output is useful when another tool or parser will consume the scan results.", accepts: [rawMatch(/^nmap\s+-oX\s+scan\.xml\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-oX\s+scan\.xml\s+metasploitable2$/i), rawMatch(/^nmap\s+-oX\s+scan\.xml\s+target$/i)] }),
         step({ objective: "List the directory to confirm the XML file exists.", hints: ["Verify the report file is there.", "Use ls.", "Try `ls`."], explanation: "Checking the report file is part of preserving evidence instead of assuming the output was written.", accepts: [commandMatch("ls")] })
       ]
     }),
@@ -1691,12 +1725,12 @@
       title: "UDP Services Check",
       category: "Nmap scanning workflows",
       level: "Advanced",
-      objective: "Check DNS and SNMP with targeted UDP scans instead of jumping straight into exploitation.",
+      objective: "Check DNS and SNMP on metasploitable2 (192.168.56.102) with targeted UDP scans instead of jumping straight into exploitation.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Run a general host scan first.", hints: ["Do not assume which services matter yet.", "Start with a basic Nmap scan.", "Try `nmap 192.168.56.102`."], explanation: "A general scan still provides the broad context before you decide to focus on UDP services.", accepts: [rawMatch(/^nmap\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Target UDP 53 directly.", hints: ["Use the UDP scan type on port 53.", "Check the DNS service.", "Try `nmap -sU -p 53 192.168.56.102`."], explanation: "Targeted UDP service checks are the practical way to confirm DNS without broad UDP noise.", accepts: [rawMatch(/^nmap\s+-sU\s+-p\s+53\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Expand the UDP check to 53 and 161.", hints: ["Add the SNMP port too.", "Use a comma-separated port list.", "Try `nmap -sU -p 53,161 192.168.56.102`."], explanation: "Adding SNMP is a normal next step when you want the likely UDP services in one focused pass.", accepts: [rawMatch(/^nmap\s+-sU\s+-p\s+53,161\s+192\.168\.56\.102$/i)] })
+        step({ objective: "Run a general host scan first.", context: "This UDP workflow is against metasploitable2 at 192.168.56.102. Start broad so you have host context before you focus on UDP services.", hints: ["Do not assume which services matter yet.", "Start with a basic Nmap scan.", "Try `nmap metasploitable2` or `nmap 192.168.56.102`."], explanation: "A general scan still provides the broad context before you decide to focus on UDP services.", accepts: [rawMatch(/^nmap\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+metasploitable2$/i), rawMatch(/^nmap\s+target$/i)] }),
+        step({ objective: "Target UDP 53 directly.", context: "Stay on metasploitable2 and check only DNS first so the UDP evidence stays narrow.", hints: ["Use the UDP scan type on port 53.", "Check the DNS service.", "Try `nmap -sU -p 53 metasploitable2` or `nmap -sU -p 53 192.168.56.102`."], explanation: "Targeted UDP service checks are the practical way to confirm DNS without broad UDP noise.", accepts: [rawMatch(/^nmap\s+-sU\s+-p\s+53\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-sU\s+-p\s+53\s+metasploitable2$/i), rawMatch(/^nmap\s+-sU\s+-p\s+53\s+target$/i)] }),
+        step({ objective: "Expand the UDP check to 53 and 161.", context: "Keep the same target, metasploitable2, and expand the UDP evidence to include SNMP.", hints: ["Add the SNMP port too.", "Use a comma-separated port list.", "Try `nmap -sU -p 53,161 metasploitable2` or `nmap -sU -p 53,161 192.168.56.102`."], explanation: "Adding SNMP is a normal next step when you want the likely UDP services in one focused pass.", accepts: [rawMatch(/^nmap\s+-sU\s+-p\s+53,161\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-sU\s+-p\s+53,161\s+metasploitable2$/i), rawMatch(/^nmap\s+-sU\s+-p\s+53,161\s+target$/i)] })
       ]
     })
   ];
@@ -1707,10 +1741,10 @@
       title: "SMTP Full Mail Flow",
       category: "Netcat workflows",
       level: "Advanced",
-      objective: "Connect to SMTP and progress through sender, recipient, data, and session close.",
+      objective: "Connect to SMTP on metasploitable2 (192.168.56.102) and progress through sender, recipient, data, and session close.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Connect to SMTP on the target.", hints: ["Use Netcat against port 25.", "Connect to the service directly.", "Try `nc -nv 192.168.56.102 25`."], explanation: "A raw TCP connection is what gives you manual protocol control over SMTP.", accepts: [rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i)] }),
+        step({ objective: "Connect to SMTP on the target.", context: "The SMTP host for this workflow is metasploitable2 at 192.168.56.102. Open a raw TCP session to port 25.", hints: ["Use Netcat against port 25.", "Connect to the service directly.", "Try `nc -nv metasploitable2 25` or `nc -nv 192.168.56.102 25`."], explanation: "A raw TCP connection is what gives you manual protocol control over SMTP.", accepts: [rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i), rawMatch(/^nc\s+-nv\s+metasploitable2\s+25$/i), rawMatch(/^nc\s+-nv\s+target\s+25$/i)] }),
         step({ objective: "Start the session with EHLO.", hints: ["Use the SMTP greeting command.", "Identify your client first.", "Try `EHLO lab.local`."], explanation: "EHLO is the correct opening protocol verb after the service banner.", accepts: [rawMatch(/^EHLO\s+lab\.local$/i)] }),
         step({ objective: "Set the sender address.", hints: ["Use the sender verb.", "Define the sender before the recipient.", "Try `MAIL FROM:<kali@lab.local>`."], explanation: "The sender must be defined before you can address the message to a recipient.", accepts: [rawMatch(/^MAIL FROM:<kali@lab\.local>$/i)] }),
         step({ objective: "Set the recipient address.", hints: ["Use the recipient verb next.", "Name the target mailbox.", "Try `RCPT TO:<admin@lab.local>`."], explanation: "RCPT TO tells the SMTP service who the message is for.", accepts: [rawMatch(/^RCPT TO:<admin@lab\.local>$/i)] }),
@@ -1736,7 +1770,7 @@
       title: "Bind Shell Connect",
       category: "Netcat workflows",
       level: "Advanced",
-      objective: "Treat the bind shell as a remote listener and connect to it directly rather than preparing a callback receiver.",
+      objective: "Treat the bind shell on metasploitable2 (192.168.56.102) as a remote listener and connect to it directly rather than preparing a callback receiver.",
       environment: {
         cwd: "/home/student",
         targets: [{
@@ -1749,8 +1783,8 @@
         }]
       },
       steps: [
-        step({ objective: "Check that the host is reachable before you try the shell port.", hints: ["A quick connectivity check still matters.", "Ping the host first.", "Try `ping 192.168.56.102`."], explanation: "Even when you expect a shell, confirming the host is reachable is still good operating discipline.", accepts: [rawMatch(/^ping\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Connect to the bind shell on TCP 4444.", hints: ["This is a direct outbound connection, not a local listener.", "Use Netcat against 4444.", "Try `nc -nv 192.168.56.102 4444`."], explanation: "A bind shell means the target is already listening. Your job is to connect to it.", accepts: [rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+4444$/i)] }),
+        step({ objective: "Check that the host is reachable before you try the shell port.", context: "The bind shell host here is metasploitable2 at 192.168.56.102. Verify it is up before you try the shell port.", hints: ["A quick connectivity check still matters.", "Ping the host first.", "Try `ping metasploitable2` or `ping 192.168.56.102`."], explanation: "Even when you expect a shell, confirming the host is reachable is still good operating discipline.", accepts: [rawMatch(/^ping\s+192\.168\.56\.102$/i), rawMatch(/^ping\s+metasploitable2$/i), rawMatch(/^ping\s+target$/i)] }),
+        step({ objective: "Connect to the bind shell on TCP 4444.", context: "This is a direct outbound connection to metasploitable2, not a local listener setup.", hints: ["This is a direct outbound connection, not a local listener.", "Use Netcat against 4444.", "Try `nc -nv metasploitable2 4444` or `nc -nv 192.168.56.102 4444`."], explanation: "A bind shell means the target is already listening. Your job is to connect to it.", accepts: [rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+4444$/i), rawMatch(/^nc\s+-nv\s+metasploitable2\s+4444$/i), rawMatch(/^nc\s+-nv\s+target\s+4444$/i)] }),
         step({ objective: "Exit the shell session cleanly.", hints: ["Close the active session instead of abandoning it.", "Use the standard exit command.", "Try `exit`."], explanation: "Exiting the session cleanly keeps the workflow controlled and predictable.", accepts: [rawMatch(/^exit$/i)] })
       ]
     })
@@ -1821,11 +1855,11 @@
       title: "Samba Research Path",
       category: "Exploitation thinking",
       level: "Advanced",
-      objective: "Confirm SMB evidence before you search for a Samba exploit path.",
+      objective: "Confirm SMB evidence on fileserver (192.168.56.20) before you search for a Samba exploit path.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Check the SMB ports on the file server.", hints: ["Focus on 139 and 445.", "Use Nmap with those ports.", "Try `nmap -p 139,445 192.168.56.20`."], explanation: "A focused SMB port check is the right first move when the scenario already points at file-sharing exposure.", accepts: [rawMatch(/^nmap\s+-p\s+139,445\s+192\.168\.56\.20$/i)] }),
-        step({ objective: "Identify the SMB service versions on those ports.", hints: ["Add service version detection to the same ports.", "Use -sV with 139,445.", "Try `nmap -sV -p 139,445 192.168.56.20`."], explanation: "Version evidence is what turns the open SMB ports into a credible exploit-research path.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+192\.168\.56\.20$/i)] }),
+        step({ objective: "Check the SMB ports on the file server.", context: "The file server in this lab is fileserver at 192.168.56.20. Focus on the SMB ports only.", hints: ["Focus on 139 and 445.", "Use Nmap with those ports.", "Try `nmap -p 139,445 fileserver` or `nmap -p 139,445 192.168.56.20`."], explanation: "A focused SMB port check is the right first move when the scenario already points at file-sharing exposure.", accepts: [rawMatch(/^nmap\s+-p\s+139,445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+139,445\s+fileserver$/i)] }),
+        step({ objective: "Identify the SMB service versions on those ports.", context: "Stay on fileserver and turn the SMB port state into version evidence before you research exploits.", hints: ["Add service version detection to the same ports.", "Use -sV with 139,445.", "Try `nmap -sV -p 139,445 fileserver` or `nmap -sV -p 139,445 192.168.56.20`."], explanation: "Version evidence is what turns the open SMB ports into a credible exploit-research path.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+fileserver$/i), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+fileserver$/i)] }),
         step({ objective: "Search the local exploit database for Samba.", hints: ["Research comes after version evidence.", "Use the local exploit search tool.", "Try `searchsploit samba`."], explanation: "Local exploit research is the disciplined next move once you have confirmed the target service family and version.", accepts: [rawMatch(/^searchsploit\s+samba$/i)] })
       ]
     }),
@@ -1834,12 +1868,12 @@
       title: "OS and Service Evidence",
       category: "Exploitation thinking",
       level: "Advanced",
-      objective: "Collect host OS evidence and service version evidence before you commit to an exploit path.",
+      objective: "Collect host OS evidence and service version evidence on metasploitable2 (192.168.56.102) before you commit to an exploit path.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Run a general host scan first.", hints: ["Start broad before fingerprinting.", "Use a basic Nmap scan.", "Try `nmap 192.168.56.102`."], explanation: "A general host scan is still the right first move before deeper fingerprinting and exploit research.", accepts: [rawMatch(/^nmap\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Collect operating system clues.", hints: ["Use the OS detection flag.", "Fingerprint the target host.", "Try `nmap -O 192.168.56.102`."], explanation: "OS evidence gives you host-level context that helps you judge which exploit paths are even plausible.", accepts: [rawMatch(/^nmap\s+-O\s+192\.168\.56\.102$/i)] }),
-        step({ objective: "Collect service version evidence.", hints: ["Run a full version detection pass.", "Use Nmap -sV against the target.", "Try `nmap -sV 192.168.56.102`."], explanation: "Service version evidence is what moves you from curiosity into a responsible exploit decision path.", accepts: [rawMatch(/^nmap\s+-sV\s+192\.168\.56\.102$/i)] })
+        step({ objective: "Run a general host scan first.", context: "The target for this evidence chain is metasploitable2 at 192.168.56.102. Start broad before you fingerprint anything.", hints: ["Start broad before fingerprinting.", "Use a basic Nmap scan.", "Try `nmap metasploitable2` or `nmap 192.168.56.102`."], explanation: "A general host scan is still the right first move before deeper fingerprinting and exploit research.", accepts: [rawMatch(/^nmap\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+metasploitable2$/i), rawMatch(/^nmap\s+target$/i)] }),
+        step({ objective: "Collect operating system clues.", context: "Stay on metasploitable2 and use OS fingerprinting once you have the broad host picture.", hints: ["Use the OS detection flag.", "Fingerprint the target host.", "Try `nmap -O metasploitable2` or `nmap -O 192.168.56.102`."], explanation: "OS evidence gives you host-level context that helps you judge which exploit paths are even plausible.", accepts: [rawMatch(/^nmap\s+-O\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-O\s+metasploitable2$/i), rawMatch(/^nmap\s+-O\s+target$/i)] }),
+        step({ objective: "Collect service version evidence.", context: "Finish the evidence chain on metasploitable2 with a full version-detection pass.", hints: ["Run a full version detection pass.", "Use Nmap -sV against the target.", "Try `nmap -sV metasploitable2` or `nmap -sV 192.168.56.102`."], explanation: "Service version evidence is what moves you from curiosity into a responsible exploit decision path.", accepts: [rawMatch(/^nmap\s+-sV\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-sV\s+metasploitable2$/i), rawMatch(/^nmap\s+-sV\s+target$/i)] })
       ]
     })
   ];
@@ -1863,12 +1897,12 @@
       title: "Metasploit Target and Run",
       category: "Metasploit workflows",
       level: "Advanced",
-      objective: "Open Metasploit, load the vsftpd module, set the target, and execute it.",
+      objective: "Open Metasploit, load the vsftpd module, set metasploitable2 (192.168.56.102) as the target, and execute it.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
         step({ objective: "Open Metasploit.", hints: ["Launch the framework first.", "Start msfconsole.", "Try `msfconsole`."], explanation: "You need the Metasploit console before you can select or run modules.", accepts: [rawMatch(/^msfconsole$/i)] }),
         step({ objective: "Load the vsftpd exploit module.", hints: ["Use the full module path.", "Load the unix FTP module.", "Try `use exploit/unix/ftp/vsftpd_234_backdoor`."], explanation: "Loading the module creates the exploit context you will configure.", accepts: [rawMatch(/^use\s+exploit\/unix\/ftp\/vsftpd_234_backdoor$/i)] }),
-        step({ objective: "Set the remote target host.", hints: ["Point the module at 192.168.56.102.", "Set RHOSTS correctly.", "Try `set RHOSTS 192.168.56.102`."], explanation: "The exploit context is incomplete until the target host is configured.", accepts: [rawMatch(/^set\s+RHOSTS\s+192\.168\.56\.102$/i)] }),
+        step({ objective: "Set the remote target host.", context: "The host for this exploit path is metasploitable2 at 192.168.56.102. Configure RHOSTS before you run the module.", hints: ["Point the module at metasploitable2 or 192.168.56.102.", "Set RHOSTS correctly.", "Try `set RHOSTS metasploitable2` or `set RHOSTS 192.168.56.102`."], explanation: "The exploit context is incomplete until the target host is configured.", accepts: [rawMatch(/^set\s+RHOSTS\s+192\.168\.56\.102$/i), rawMatch(/^set\s+RHOSTS\s+metasploitable2$/i), rawMatch(/^set\s+RHOSTS\s+target$/i)] }),
         step({ objective: "Run the exploit module.", hints: ["The target is configured.", "Use the execution command.", "Try `run`."], explanation: "Execution comes only after the module and target are both in place.", accepts: [rawMatch(/^run$/i)] })
       ]
     })

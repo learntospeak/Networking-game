@@ -1,5 +1,5 @@
 (function () {
-  const { StateManager, CoachEngine, ScenarioEngine } = window;
+  const { StateManager, CoachEngine, ScenarioEngine, CommandsData } = window;
 
   if (!StateManager || !CoachEngine || !ScenarioEngine) {
     return;
@@ -52,6 +52,14 @@
 
   function totalScenarios() {
     return ScenarioEngine.scenarios.length;
+  }
+
+  function getCommandReference(rawInput) {
+    if (!CommandsData || typeof CommandsData.lookupForInput !== "function") {
+      return null;
+    }
+
+    return CommandsData.lookupForInput(rawInput);
   }
 
   function scrollTerminal() {
@@ -1269,6 +1277,12 @@
     printLine(evaluation.coach, "dim");
     if (evaluation.hint) {
       printLine(`Hint: ${evaluation.hint}`, "coach");
+    }
+    if (execution.status === "syntax_error" || execution.status === "invalid_command") {
+      const reference = getCommandReference(execution.raw);
+      if (reference) {
+        printLine(`Reference: ${reference.command} -> ${reference.meaning}`, "dim");
+      }
     }
     renderPanel();
   }
