@@ -3,12 +3,41 @@
     return (raw || "").trim();
   }
 
+  function toComparableFlags(values) {
+    const expanded = new Set();
+
+    (values || []).forEach((value) => {
+      if (typeof value !== "string" || !value) return;
+
+      expanded.add(value);
+
+      if (value.startsWith("--")) return;
+
+      if (value.startsWith("-") && value.length > 1) {
+        expanded.add(value.slice(1));
+        return;
+      }
+
+      if (value.startsWith("/") && value.length > 1) {
+        expanded.add(value.toUpperCase());
+        expanded.add(value.slice(1).toUpperCase());
+        return;
+      }
+
+      expanded.add(`-${value}`);
+    });
+
+    return Array.from(expanded);
+  }
+
   function includesAll(values, required) {
-    return required.every((item) => values.includes(item));
+    const comparableValues = toComparableFlags(values);
+    return required.every((item) => comparableValues.includes(item));
   }
 
   function includesAny(values, required) {
-    return required.some((item) => values.includes(item));
+    const comparableValues = toComparableFlags(values);
+    return required.some((item) => comparableValues.includes(item));
   }
 
   function matchRule(rule, execution, state) {

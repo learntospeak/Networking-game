@@ -183,6 +183,7 @@
 .terminal-panel {
   display: flex;
   flex-direction: column;
+  height: clamp(620px, 72vh, 860px);
   min-height: 760px;
   padding: 0;
   overflow: hidden;
@@ -330,6 +331,7 @@
   }
 
   .terminal-panel {
+    height: clamp(560px, 66vh, 760px);
     min-height: 640px;
   }
 }
@@ -403,6 +405,7 @@
   }
 
   .terminal-panel {
+    height: auto;
     min-height: 0;
   }
 
