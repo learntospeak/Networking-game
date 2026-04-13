@@ -775,16 +775,19 @@
         }),
         step({
           objective: "Filter the process output down to the api-worker process.",
+          context: "Use a label that is actually visible in the process list. In this lab, the service label and the script name both point to the same worker.",
           hints: [
             "Do not scan the whole list by eye if you can filter it.",
-            "Use grep with the process name.",
-            "Try `ps | grep api-worker`."
+            "Use grep with the worker label you can see in the ps output.",
+            "Try `ps | grep api-worker` or `ps | grep api_worker`."
           ],
           explanation: "Filtering the process table is the cleanest way to isolate the one runaway process you care about.",
           successFeedback: "You isolated the api-worker process.",
           accepts: [
             rawMatch(/^ps\s*\|\s*grep\s+api-worker$/i),
-            rawMatch(/^ps\s+\|\s+grep\s+api-worker$/i)
+            rawMatch(/^ps\s+\|\s+grep\s+api-worker$/i),
+            rawMatch(/^ps\s*\|\s*grep\s+api_worker$/i),
+            rawMatch(/^ps\s+\|\s+grep\s+api_worker$/i)
           ]
         }),
         step({

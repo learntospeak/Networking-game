@@ -407,7 +407,12 @@
 
     return [
       "  PID USER       %CPU %MEM COMMAND",
-      ...processes.map((process) => `${String(process.pid).padStart(5)} ${String(process.user || "student").padEnd(10)} ${(process.cpu || "0.0").padStart(4)} ${(process.memory || "0.1").padStart(4)} ${process.command || process.name}`)
+      ...processes.map((process) => {
+        const descriptor = process.command && process.command !== process.name
+          ? `${process.name} | ${process.command}`
+          : (process.command || process.name);
+        return `${String(process.pid).padStart(5)} ${String(process.user || "student").padEnd(10)} ${(process.cpu || "0.0").padStart(4)} ${(process.memory || "0.1").padStart(4)} ${descriptor}`;
+      })
     ];
   }
 
