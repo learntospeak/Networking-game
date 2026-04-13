@@ -859,11 +859,14 @@
         }),
         step({
           objective: "Confirm that spoolsvc.exe is no longer running.",
-          hints: ["Check the task list again.", "A second task list is enough here.", "Try `tasklist`."],
-          explanation: "Verification matters on Windows just as much as on Linux. You need to confirm that the process actually disappeared.",
+          hints: ["Check the task list again.", "Use a fresh process listing to verify the PID is gone.", "Try `tasklist` or `ps`."],
+          explanation: "Verification matters on Windows just as much as on Linux. You need to confirm that the process actually disappeared with a current process listing.",
           successFeedback: "You verified that the process is gone.",
           accepts: [
             commandMatch("tasklist", {
+              postCheck: (_, state) => !state.processes.some((process) => process.pid === 884)
+            }),
+            commandMatch("ps", {
               postCheck: (_, state) => !state.processes.some((process) => process.pid === 884)
             })
           ]
