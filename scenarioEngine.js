@@ -1020,17 +1020,19 @@
         }),
         step({
           objective: "Greet the SMTP service correctly after the banner appears.",
-          hints: ["Use the SMTP greeting verb.", "Identify your client first.", "Try `EHLO lab.local`."],
-          explanation: "EHLO is the correct first protocol command after the SMTP banner because it starts the session cleanly.",
+          context: "After the SMTP banner, identify your client with EHLO or HELO. The client name can be any sensible local name; `lab.local` is only an example.",
+          hints: ["Use the SMTP greeting verb.", "Identify your client first.", "Try `EHLO lab.local` or `HELO lab.local`."],
+          explanation: "EHLO or HELO is the correct opening protocol step after the SMTP banner because it starts the conversation cleanly.",
           successFeedback: "You started the SMTP conversation.",
-          accepts: [rawMatch(/^EHLO\s+lab\.local$/i)]
+          accepts: [rawMatch(/^(EHLO|HELO)\s+[A-Za-z0-9.-]+$/i)]
         }),
         step({
           objective: "Set the sender address for the test message.",
+          context: "Now define the envelope sender with MAIL FROM. Any syntactically valid email address is acceptable here; `kali@lab.local` is just an example.",
           hints: ["The sender comes before the recipient.", "Use the SMTP sender verb.", "Try `MAIL FROM:<kali@lab.local>`."],
           explanation: "MAIL FROM defines the envelope sender and must happen before you identify the recipient.",
           successFeedback: "You set the sender address.",
-          accepts: [rawMatch(/^MAIL FROM:<kali@lab\.local>$/i)]
+          accepts: [rawMatch(/^MAIL FROM:\s*<[^>\s]+@[^>\s]+>$/i)]
         }),
         step({
           objective: "Close the SMTP session cleanly.",
@@ -1757,9 +1759,9 @@
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
         step({ objective: "Connect to SMTP on the target.", context: "The SMTP host for this workflow is metasploitable2 at 192.168.56.102. Open a raw TCP session to port 25.", hints: ["Use Netcat against port 25.", "Connect to the service directly.", "Try `nc -nv metasploitable2 25` or `nc -nv 192.168.56.102 25`."], explanation: "A raw TCP connection is what gives you manual protocol control over SMTP.", accepts: [rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i), rawMatch(/^nc\s+-nv\s+metasploitable2\s+25$/i), rawMatch(/^nc\s+-nv\s+target\s+25$/i)] }),
-        step({ objective: "Start the session with EHLO.", hints: ["Use the SMTP greeting command.", "Identify your client first.", "Try `EHLO lab.local`."], explanation: "EHLO is the correct opening protocol verb after the service banner.", accepts: [rawMatch(/^EHLO\s+lab\.local$/i)] }),
-        step({ objective: "Set the sender address.", hints: ["Use the sender verb.", "Define the sender before the recipient.", "Try `MAIL FROM:<kali@lab.local>`."], explanation: "The sender must be defined before you can address the message to a recipient.", accepts: [rawMatch(/^MAIL FROM:<kali@lab\.local>$/i)] }),
-        step({ objective: "Set the recipient address.", hints: ["Use the recipient verb next.", "Name the target mailbox.", "Try `RCPT TO:<admin@lab.local>`."], explanation: "RCPT TO tells the SMTP service who the message is for.", accepts: [rawMatch(/^RCPT TO:<admin@lab\.local>$/i)] }),
+        step({ objective: "Start the session with EHLO.", context: "After the banner, identify your client with EHLO or HELO. The client label can be any sensible local name; `lab.local` is only an example.", hints: ["Use the SMTP greeting command.", "Identify your client first.", "Try `EHLO lab.local` or `HELO lab.local`."], explanation: "EHLO or HELO is the correct opening protocol verb after the service banner.", accepts: [rawMatch(/^(EHLO|HELO)\s+[A-Za-z0-9.-]+$/i)] }),
+        step({ objective: "Set the sender address.", context: "Define the envelope sender with MAIL FROM. Any syntactically valid sender address is acceptable here.", hints: ["Use the sender verb.", "Define the sender before the recipient.", "Try `MAIL FROM:<kali@lab.local>`."], explanation: "The sender must be defined before you can address the message to a recipient.", accepts: [rawMatch(/^MAIL FROM:\s*<[^>\s]+@[^>\s]+>$/i)] }),
+        step({ objective: "Set the recipient address.", context: "Now identify the destination mailbox with RCPT TO. Any syntactically valid recipient address is acceptable here.", hints: ["Use the recipient verb next.", "Name the target mailbox.", "Try `RCPT TO:<admin@lab.local>`."], explanation: "RCPT TO tells the SMTP service who the message is for.", accepts: [rawMatch(/^RCPT TO:\s*<[^>\s]+@[^>\s]+>$/i)] }),
         step({ objective: "Switch the session into message-body mode.", hints: ["Use the content-entry verb.", "This comes after the recipient.", "Try `DATA`."], explanation: "DATA is what tells the SMTP server to expect the message body next.", accepts: [rawMatch(/^DATA$/i)] }),
         step({ objective: "Close the session cleanly.", hints: ["End the conversation correctly.", "Use the SMTP exit verb.", "Try `QUIT`."], explanation: "QUIT closes the session cleanly instead of leaving the service waiting on the socket.", accepts: [rawMatch(/^QUIT$/i)] })
       ]

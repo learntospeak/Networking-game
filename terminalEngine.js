@@ -922,7 +922,7 @@
     }
 
     if (connection.type === "smtp") {
-      if (/^EHLO\s+/i.test(raw)) {
+      if (/^(EHLO|HELO)\s+/i.test(raw)) {
         connection.stage = "ehlo";
         return okResult([
           "250-metasploitable2 Hello lab.local",
