@@ -150,10 +150,11 @@
       return {
         success: true,
         classification: "success",
-        feedback: step.successFeedback || "That command works for this task.",
-        coach: step.explanation,
+        feedback: matchedSuccess.feedback || step.successFeedback || "That command works for this task.",
+        coach: matchedSuccess.coach || step.explanation,
         hint: null,
-        countsAsAttempt: false
+        countsAsAttempt: false,
+        advanceBy: matchedSuccess.advanceBy || 1
       };
     }
 

@@ -180,17 +180,24 @@
     renderPanel();
   }
 
-  function advanceStep() {
+  function advanceStep(count = 1) {
     const scenario = currentScenario();
+    const skipCount = Math.max(1, Number(count) || 1);
 
-    if (session.stepIndex >= scenario.steps.length - 1) {
-      markScenarioComplete();
-      return;
+    for (let index = 0; index < skipCount; index += 1) {
+      if (session.stepIndex >= scenario.steps.length - 1) {
+        markScenarioComplete();
+        return;
+      }
+
+      session.stepIndex += 1;
     }
 
-    session.stepIndex += 1;
     session.attemptsForStep = 0;
     session.hintLevel = -1;
+    if (skipCount > 1) {
+      printLine("You already collected the deeper evidence, so the coach skipped the redundant intermediate task.", "success");
+    }
     if (currentStep().context) {
       printLine(`Context: ${currentStep().context}`, "dim");
     }
@@ -1263,7 +1270,7 @@
       if (step.whyThisMatters) {
         printLine(`Why this matters: ${step.whyThisMatters}`, "dim");
       }
-      advanceStep();
+      advanceStep(evaluation.advanceBy || 1);
       return;
     }
 

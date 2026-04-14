@@ -116,8 +116,8 @@
     return { command, ...extras };
   }
 
-  function rawMatch(regex) {
-    return { raw: regex };
+  function rawMatch(regex, extras = {}) {
+    return { raw: regex, ...extras };
   }
 
   function cwdMatch(target, extras = {}) {
@@ -910,7 +910,13 @@
           accepts: [
             rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i),
             rawMatch(/^nmap\s+-p\s+80\s+metasploitable2$/i),
-            rawMatch(/^nmap\s+-p\s+80\s+target$/i)
+            rawMatch(/^nmap\s+-p\s+80\s+target$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i, { advanceBy: 2, feedback: "You checked the web port and already collected the version evidence." }),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i, { advanceBy: 2, feedback: "You checked the web port and already collected the version evidence." }),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+metasploitable2$/i, { advanceBy: 2, feedback: "You checked the web port and already collected the version evidence." }),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+metasploitable2$/i, { advanceBy: 2, feedback: "You checked the web port and already collected the version evidence." }),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+target$/i, { advanceBy: 2, feedback: "You checked the web port and already collected the version evidence." }),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+target$/i, { advanceBy: 2, feedback: "You checked the web port and already collected the version evidence." })
           ]
         }),
         step({
@@ -954,7 +960,13 @@
           accepts: [
             rawMatch(/^nmap\s+-p\s+21\s+192\.168\.56\.102$/i),
             rawMatch(/^nmap\s+-p\s+21\s+metasploitable2$/i),
-            rawMatch(/^nmap\s+-p\s+21\s+target$/i)
+            rawMatch(/^nmap\s+-p\s+21\s+target$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+192\.168\.56\.102$/i, { advanceBy: 2, feedback: "You confirmed the FTP port and already pulled the version evidence." }),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+192\.168\.56\.102$/i, { advanceBy: 2, feedback: "You confirmed the FTP port and already pulled the version evidence." }),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+metasploitable2$/i, { advanceBy: 2, feedback: "You confirmed the FTP port and already pulled the version evidence." }),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+metasploitable2$/i, { advanceBy: 2, feedback: "You confirmed the FTP port and already pulled the version evidence." }),
+            rawMatch(/^nmap\s+-sV\s+-p\s+21\s+target$/i, { advanceBy: 2, feedback: "You confirmed the FTP port and already pulled the version evidence." }),
+            rawMatch(/^nmap\s+-p\s+21\s+-sV\s+target$/i, { advanceBy: 2, feedback: "You confirmed the FTP port and already pulled the version evidence." })
           ]
         }),
         step({
@@ -1631,7 +1643,7 @@
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
         step({ objective: "Check whether 192.168.56.10 is reachable.", hints: ["Start with ICMP reachability.", "Ping the web-lab host.", "Try `ping 192.168.56.10`."], explanation: "Reachability checks come before service work so you know the host is actually there.", accepts: [rawMatch(/^ping\s+192\.168\.56\.10$/i)] }),
-        step({ objective: "Check only port 443 on the host.", hints: ["Focus on HTTPS only.", "Use Nmap with port 443.", "Try `nmap -p 443 192.168.56.10`."], explanation: "A focused port check is the fastest path when you care about one service.", accepts: [rawMatch(/^nmap\s+-p\s+443\s+192\.168\.56\.10$/i)] }),
+        step({ objective: "Check only port 443 on the host.", hints: ["Focus on HTTPS only.", "Use Nmap with port 443.", "Try `nmap -p 443 192.168.56.10`."], explanation: "A focused port check is the fastest path when you care about one service.", accepts: [rawMatch(/^nmap\s+-p\s+443\s+192\.168\.56\.10$/i), rawMatch(/^nmap\s+-sV\s+-p\s+443\s+192\.168\.56\.10$/i, { advanceBy: 2, feedback: "You checked the HTTPS port and already collected the version evidence." }), rawMatch(/^nmap\s+-p\s+443\s+-sV\s+192\.168\.56\.10$/i, { advanceBy: 2, feedback: "You checked the HTTPS port and already collected the version evidence." })] }),
         step({ objective: "Identify the version of the HTTPS service.", hints: ["Now move from open-port state to service evidence.", "Use version detection on port 443.", "Try `nmap -sV -p 443 192.168.56.10`."], explanation: "Version evidence is what turns an open web port into something you can actually analyze.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+443\s+192\.168\.56\.10$/i), rawMatch(/^nmap\s+-p\s+443\s+-sV\s+192\.168\.56\.10$/i)] })
       ]
     }),
@@ -1644,7 +1656,7 @@
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
         step({ objective: "Check whether 192.168.56.20 is reachable.", hints: ["Use a ping test first.", "Target 192.168.56.20.", "Try `ping 192.168.56.20`."], explanation: "Connectivity comes first because service work is pointless against a host that is not responding.", accepts: [rawMatch(/^ping\s+192\.168\.56\.20$/i)] }),
-        step({ objective: "Check SMB on port 445.", hints: ["Focus on the SMB port only.", "Use Nmap with port 445.", "Try `nmap -p 445 192.168.56.20`."], explanation: "Targeting the exact SMB port keeps the task narrow and efficient.", accepts: [rawMatch(/^nmap\s+-p\s+445\s+192\.168\.56\.20$/i)] }),
+        step({ objective: "Check SMB on port 445.", hints: ["Focus on the SMB port only.", "Use Nmap with port 445.", "Try `nmap -p 445 192.168.56.20`."], explanation: "Targeting the exact SMB port keeps the task narrow and efficient.", accepts: [rawMatch(/^nmap\s+-p\s+445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-sV\s+-p\s+445\s+192\.168\.56\.20$/i, { advanceBy: 2, feedback: "You checked the SMB port and already collected the version evidence." }), rawMatch(/^nmap\s+-p\s+445\s+-sV\s+192\.168\.56\.20$/i, { advanceBy: 2, feedback: "You checked the SMB port and already collected the version evidence." })] }),
         step({ objective: "Identify the SMB service version.", hints: ["Use service version detection on port 445.", "Add -sV to the port scan.", "Try `nmap -sV -p 445 192.168.56.20`."], explanation: "Version detection on SMB is what turns a port state into something you can research or exploit responsibly.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+445\s+-sV\s+192\.168\.56\.20$/i)] })
       ]
     }),
@@ -1674,7 +1686,7 @@
       },
       steps: [
         step({ objective: "Read the target file once so you know what it contains.", hints: ["Inspect the file directly first.", "Open targets.txt.", "Try `cat targets.txt`."], explanation: "Reading the target list first confirms the host scope before you scan it.", accepts: [rawMatch(/^cat\s+targets\.txt$/i)] }),
-        step({ objective: "Scan the targets from file on ports 80 and 443.", hints: ["Use the file-input flag and web ports.", "Keep the scan focused on 80 and 443.", "Try `nmap -iL targets.txt -p 80,443`."], explanation: "Loading targets from file and narrowing to web ports is the clean way to scale a focused web check.", accepts: [rawMatch(/^nmap\s+-iL\s+targets\.txt\s+-p\s+80,443$/i)] }),
+        step({ objective: "Scan the targets from file on ports 80 and 443.", hints: ["Use the file-input flag and web ports.", "Keep the scan focused on 80 and 443.", "Try `nmap -iL targets.txt -p 80,443`."], explanation: "Loading targets from file and narrowing to web ports is the clean way to scale a focused web check.", accepts: [rawMatch(/^nmap\s+-iL\s+targets\.txt\s+-p\s+80,443$/i), rawMatch(/^nmap\s+-iL\s+targets\.txt\s+-p\s+80,443\s+-sV$/i, { advanceBy: 2, feedback: "You ran the file-based web scan and already collected version evidence." }), rawMatch(/^nmap\s+-iL\s+targets\.txt\s+-sV\s+-p\s+80,443$/i, { advanceBy: 2, feedback: "You ran the file-based web scan and already collected version evidence." })] }),
         step({ objective: "Add service version detection to the same file-based web scan.", hints: ["Keep the same scan scope and add -sV.", "Use the same host list and ports.", "Try `nmap -iL targets.txt -p 80,443 -sV`."], explanation: "Version detection is what makes the file-based web scan actionable instead of just enumerative.", accepts: [rawMatch(/^nmap\s+-iL\s+targets\.txt\s+-p\s+80,443\s+-sV$/i), rawMatch(/^nmap\s+-iL\s+targets\.txt\s+-sV\s+-p\s+80,443$/i)] })
       ]
     })
@@ -1690,7 +1702,7 @@
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
         step({ objective: "Run a top-ports scan against the target.", context: "This triage run is against metasploitable2 at 192.168.56.102. Start broad, but still keep the scan bounded to common ports.", hints: ["Use the top-ports option with a small count.", "Scan the most common ports first.", "Try `nmap --top-ports 20 metasploitable2` or `nmap --top-ports 20 192.168.56.102`."], explanation: "A top-ports sweep is a fast way to triage the exposed surface before deeper work.", accepts: [rawMatch(/^nmap\s+--top-ports\s+20\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+--top-ports\s+20\s+metasploitable2$/i), rawMatch(/^nmap\s+--top-ports\s+20\s+target$/i)] }),
-        step({ objective: "Focus on the web service once the quick sweep is done.", context: "Stay on metasploitable2 and narrow the follow-up to the web port only.", hints: ["Now check port 80 directly.", "Use the single web port scan.", "Try `nmap -p 80 metasploitable2` or `nmap -p 80 192.168.56.102`."], explanation: "A focused follow-up after a top-ports sweep is how you turn broad discovery into targeted evidence.", accepts: [rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+80\s+metasploitable2$/i), rawMatch(/^nmap\s+-p\s+80\s+target$/i)] }),
+        step({ objective: "Focus on the web service once the quick sweep is done.", context: "Stay on metasploitable2 and narrow the follow-up to the web port only.", hints: ["Now check port 80 directly.", "Use the single web port scan.", "Try `nmap -p 80 metasploitable2` or `nmap -p 80 192.168.56.102`."], explanation: "A focused follow-up after a top-ports sweep is how you turn broad discovery into targeted evidence.", accepts: [rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+80\s+metasploitable2$/i), rawMatch(/^nmap\s+-p\s+80\s+target$/i), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i, { advanceBy: 2, feedback: "You focused the web port and already pulled the service version." }), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i, { advanceBy: 2, feedback: "You focused the web port and already pulled the service version." }), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+metasploitable2$/i, { advanceBy: 2, feedback: "You focused the web port and already pulled the service version." }), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+metasploitable2$/i, { advanceBy: 2, feedback: "You focused the web port and already pulled the service version." }), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+target$/i, { advanceBy: 2, feedback: "You focused the web port and already pulled the service version." }), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+target$/i, { advanceBy: 2, feedback: "You focused the web port and already pulled the service version." })] }),
         step({ objective: "Identify the web service version.", context: "Use service version detection against the same web port on metasploitable2 so the open port becomes actionable evidence.", hints: ["Add service version detection.", "Use -sV with port 80.", "Try `nmap -sV -p 80 metasploitable2` or `nmap -sV -p 80 192.168.56.102`."], explanation: "The version check is what makes the web finding useful for real follow-up decisions.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.102$/i), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+metasploitable2$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+metasploitable2$/i), rawMatch(/^nmap\s+-sV\s+-p\s+80\s+target$/i), rawMatch(/^nmap\s+-p\s+80\s+-sV\s+target$/i)] })
       ]
     }),
@@ -1858,7 +1870,7 @@
       objective: "Confirm SMB evidence on fileserver (192.168.56.20) before you search for a Samba exploit path.",
       environment: { cwd: "/home/student", targets: commonTargets() },
       steps: [
-        step({ objective: "Check the SMB ports on the file server.", context: "The file server in this lab is fileserver at 192.168.56.20. Focus on the SMB ports only.", hints: ["Focus on 139 and 445.", "Use Nmap with those ports.", "Try `nmap -p 139,445 fileserver` or `nmap -p 139,445 192.168.56.20`."], explanation: "A focused SMB port check is the right first move when the scenario already points at file-sharing exposure.", accepts: [rawMatch(/^nmap\s+-p\s+139,445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+139,445\s+fileserver$/i)] }),
+        step({ objective: "Check the SMB ports on the file server.", context: "The file server in this lab is fileserver at 192.168.56.20. Focus on the SMB ports only.", hints: ["Focus on 139 and 445.", "Use Nmap with those ports.", "Try `nmap -p 139,445 fileserver` or `nmap -p 139,445 192.168.56.20`."], explanation: "A focused SMB port check is the right first move when the scenario already points at file-sharing exposure.", accepts: [rawMatch(/^nmap\s+-p\s+139,445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+139,445\s+fileserver$/i), rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+192\.168\.56\.20$/i, { advanceBy: 2, feedback: "You checked the SMB ports and already collected the version evidence." }), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+192\.168\.56\.20$/i, { advanceBy: 2, feedback: "You checked the SMB ports and already collected the version evidence." }), rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+fileserver$/i, { advanceBy: 2, feedback: "You checked the SMB ports and already collected the version evidence." }), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+fileserver$/i, { advanceBy: 2, feedback: "You checked the SMB ports and already collected the version evidence." })] }),
         step({ objective: "Identify the SMB service versions on those ports.", context: "Stay on fileserver and turn the SMB port state into version evidence before you research exploits.", hints: ["Add service version detection to the same ports.", "Use -sV with 139,445.", "Try `nmap -sV -p 139,445 fileserver` or `nmap -sV -p 139,445 192.168.56.20`."], explanation: "Version evidence is what turns the open SMB ports into a credible exploit-research path.", accepts: [rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+192\.168\.56\.20$/i), rawMatch(/^nmap\s+-sV\s+-p\s+139,445\s+fileserver$/i), rawMatch(/^nmap\s+-p\s+139,445\s+-sV\s+fileserver$/i)] }),
         step({ objective: "Search the local exploit database for Samba.", hints: ["Research comes after version evidence.", "Use the local exploit search tool.", "Try `searchsploit samba`."], explanation: "Local exploit research is the disciplined next move once you have confirmed the target service family and version.", accepts: [rawMatch(/^searchsploit\s+samba$/i)] })
       ]
