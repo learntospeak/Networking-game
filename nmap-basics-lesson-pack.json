@@ -1,0 +1,129 @@
+{
+  "id": "nmap-basics",
+  "title": "Nmap Basics",
+  "lessonSummary": "Nmap is a network scanner used to discover hosts, identify open ports, and gather service clues before deeper investigation. This lesson teaches how to approach host discovery, focused port checks, broader scans, saved output, and basic result interpretation without relying on memorised one-liners.",
+  "coreCommands": [
+    {
+      "command": "nmap <target>",
+      "meaning": "Run a basic scan against a host to discover common open ports.",
+      "example": "nmap 192.168.56.102"
+    },
+    {
+      "command": "nmap -p <port> <target>",
+      "meaning": "Check a specific port when you already have a service hypothesis.",
+      "example": "nmap -p 80 192.168.56.102"
+    },
+    {
+      "command": "nmap -p- <target>",
+      "meaning": "Scan the full TCP port range when the default scan is not enough.",
+      "example": "nmap -p- 192.168.56.102"
+    },
+    {
+      "command": "nmap -T4 <target>",
+      "meaning": "Increase scan speed for a responsive lab target.",
+      "example": "nmap -T4 192.168.56.102"
+    },
+    {
+      "command": "nmap -oN scan.txt <target>",
+      "meaning": "Save readable output so findings can be reviewed or reused later.",
+      "example": "nmap -oN scan.txt 192.168.56.102"
+    }
+  ],
+  "terminalScenarios": [
+    {
+      "title": "Unknown Host on a Lab Segment",
+      "objective": "Work out whether a target on your lab network is alive before spending time on deeper scanning.",
+      "environment": "You have been handed a single target IP. You have no port data yet and no guarantee the host is online.",
+      "expectedUserAction": "Use a host-discovery style scan or reachability check that gives you confidence the target is responding.",
+      "successCondition": "The learner confirms the host is up and can justify moving to port discovery.",
+      "hints": {
+        "hint1": "Before hunting services, confirm the host is answering at all.",
+        "hint2": "Start with a lightweight scan rather than a full sweep.",
+        "hint3": "Use a basic scan against the target IP to see whether it responds."
+      }
+    },
+    {
+      "title": "Web Server Hypothesis",
+      "objective": "Test whether a target is offering a web service without scanning every port first.",
+      "environment": "A teammate thinks the host is running HTTP, but you only need to validate that one assumption quickly.",
+      "expectedUserAction": "Run a targeted check against the likely web port instead of defaulting to a wide scan.",
+      "successCondition": "The learner verifies whether the suspected web port is open and explains what that result means.",
+      "hints": {
+        "hint1": "You already have a likely service in mind.",
+        "hint2": "A narrow scan is faster than checking the usual port set.",
+        "hint3": "Specify the likely web port directly in the scan."
+      }
+    },
+    {
+      "title": "Default Scan Was Not Enough",
+      "objective": "Decide what to do when the basic scan misses the service you expected to find.",
+      "environment": "A normal scan showed nothing useful, but the lab notes suggest the host may expose a service on a non-standard port.",
+      "expectedUserAction": "Escalate from the default port set to a broader TCP scan that removes the top-ports limitation.",
+      "successCondition": "The learner chooses a full-range scan and can explain why the default scan was insufficient.",
+      "hints": {
+        "hint1": "The problem is scope, not just speed.",
+        "hint2": "You need more than Nmap's default port selection.",
+        "hint3": "Use the option that checks the full TCP range."
+      }
+    },
+    {
+      "title": "Fast Triage in a Lab Window",
+      "objective": "Balance scan coverage with time when working against a responsive internal lab host.",
+      "environment": "You are on a stable lab network and want to speed up your initial reconnaissance without making the scan reckless.",
+      "expectedUserAction": "Apply a faster timing profile appropriate for a controlled environment.",
+      "successCondition": "The learner selects a reasonable timing adjustment and explains why it fits a lab target.",
+      "hints": {
+        "hint1": "This is about tuning scan pace, not changing what gets scanned.",
+        "hint2": "Nmap has timing templates for faster or slower behavior.",
+        "hint3": "Use the common lab-friendly timing option that speeds up the scan."
+      }
+    },
+    {
+      "title": "Evidence You Need to Keep",
+      "objective": "Record scan findings so you can review them after the terminal output scrolls away.",
+      "environment": "You are about to scan a host for common services and want a local artifact you can reference in later tasks.",
+      "expectedUserAction": "Send the scan results to a normal text output file while scanning the target.",
+      "successCondition": "The learner preserves readable Nmap output in a file and can explain why that helps workflow.",
+      "hints": {
+        "hint1": "Think about preserving evidence, not changing the scan target.",
+        "hint2": "Nmap can write output in several formats.",
+        "hint3": "Use the normal-text output option and name a local file."
+      }
+    },
+    {
+      "title": "Reading the Result, Not Just Running the Tool",
+      "objective": "Interpret a scan result and choose the next sensible move based on what Nmap shows.",
+      "environment": "A scan shows one port open and another filtered. You need to decide where to focus next instead of rescanning blindly.",
+      "expectedUserAction": "Identify the meaningful open service, separate it from blocked or filtered results, and choose follow-up investigation on the live service.",
+      "successCondition": "The learner distinguishes open from filtered results and prioritises the service that actually answered.",
+      "hints": {
+        "hint1": "Not every listed port deserves the same attention.",
+        "hint2": "Focus on services that truly responded, not uncertain blocked paths.",
+        "hint3": "Treat the open service as the next lead and avoid chasing the filtered one first."
+      }
+    }
+  ],
+  "commonMistakes": [
+    "Scanning the wrong IP because the operator copied a stale target value from earlier output.",
+    "Treating a filtered port as confirmed closed instead of recognising that traffic may be blocked on the path.",
+    "Relying on the default scan when the task clearly calls for full-range coverage.",
+    "Adding speed or extra flags without understanding why the scan is being tuned.",
+    "Reading the output as a list of ports only and missing the real next action suggested by the open service."
+  ],
+  "miniChallenge": {
+    "title": "Open Port to Action",
+    "objective": "Discover open ports on a target, identify one meaningful service, and decide the next investigation move.",
+    "environment": "You have a single reachable lab host and no prior service inventory.",
+    "successCondition": "The learner produces enough evidence to name at least one open port, identify the service tied to it, and justify a next step based on that result.",
+    "constraints": [
+      "Do not assume the default scan shows everything.",
+      "Do not jump to exploitation before confirming what is actually open.",
+      "Base the next action on observed output, not guesswork."
+    ],
+    "hints": {
+      "hint1": "Start by discovering what is exposed before deciding what to investigate.",
+      "hint2": "If the first scan feels too narrow, expand your coverage intentionally.",
+      "hint3": "Use the open service result to choose a focused follow-up, not another blind scan."
+    }
+  }
+}

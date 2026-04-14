@@ -494,12 +494,18 @@ const state = {
   visualRunId: 0
 };
 
+const MESSAGE_TIME_SCALE = 1.4;
+
 function getScenario() {
   return scenarios[state.scenarioIndex];
 }
 
+function scaleMs(ms) {
+  return Math.round(ms * MESSAGE_TIME_SCALE);
+}
+
 function delay(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
+  return new Promise((resolve) => window.setTimeout(resolve, scaleMs(ms)));
 }
 
 function stageRect() {
@@ -518,6 +524,123 @@ function getRelativeRect(element) {
     right: rect.right - stage.left,
     bottom: rect.bottom - stage.top
   };
+}
+
+function overlapMidpoint(startA, endA, startB, endB) {
+  const overlapStart = Math.max(startA, startB);
+  const overlapEnd = Math.min(endA, endB);
+
+  if (overlapEnd > overlapStart) {
+    return overlapStart + (overlapEnd - overlapStart) / 2;
+  }
+
+  return (startA + endA + startB + endB) / 4;
+}
+
+function setCableBox(element, { left, top, width, height, transform = "none" }) {
+  if (!element) return;
+
+  element.style.left = `${left}px`;
+  element.style.top = `${top}px`;
+  element.style.width = `${Math.max(width, 0)}px`;
+  element.style.height = `${Math.max(height, 0)}px`;
+  element.style.transform = transform;
+}
+
+function isStackedMergeLayout() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function updateMergeCableGeometry() {
+  const pcRect = getRelativeRect(deviceElements.pc);
+  const switchRect = getRelativeRect(deviceElements.switch);
+  const routerRect = getRelativeRect(deviceElements.router);
+  const serverRect = getRelativeRect(deviceElements.server);
+  const lineThickness = 6;
+  const lineOffset = lineThickness / 2;
+
+  if (isStackedMergeLayout()) {
+    const pcSwitchX = overlapMidpoint(pcRect.left, pcRect.right, switchRect.left, switchRect.right);
+    const switchRouterX = overlapMidpoint(switchRect.left, switchRect.right, routerRect.left, routerRect.right);
+    const routerServerX = overlapMidpoint(routerRect.left, routerRect.right, serverRect.left, serverRect.right);
+    const bypassAnchorX = Math.max(switchRect.right, serverRect.right) + 22;
+    const switchY = switchRect.top + switchRect.height / 2;
+    const serverY = serverRect.top + serverRect.height / 2;
+    const bypassHeight = Math.max(12, serverY - switchY);
+    const stubLength = Math.max(14, bypassAnchorX - Math.max(switchRect.right, serverRect.right));
+
+    setCableBox(cableElements["pc-switch"], {
+      left: pcSwitchX - lineOffset,
+      top: pcRect.bottom,
+      width: lineThickness,
+      height: switchRect.top - pcRect.bottom
+    });
+
+    setCableBox(cableElements["switch-router"], {
+      left: switchRouterX - lineOffset,
+      top: switchRect.bottom,
+      width: lineThickness,
+      height: routerRect.top - switchRect.bottom
+    });
+
+    setCableBox(cableElements["router-server"], {
+      left: routerServerX - lineOffset,
+      top: routerRect.bottom,
+      width: lineThickness,
+      height: serverRect.top - routerRect.bottom
+    });
+
+    setCableBox(cableElements["switch-server"], {
+      left: bypassAnchorX - lineOffset,
+      top: switchY,
+      width: lineThickness,
+      height: bypassHeight
+    });
+
+    cableElements["switch-server"]?.style.setProperty("--merge-bypass-stub-length", `${stubLength}px`);
+    cableElements["switch-server"]?.style.setProperty("--merge-bypass-span", `${bypassHeight}px`);
+    return;
+  }
+
+  const pcSwitchY = overlapMidpoint(pcRect.top, pcRect.bottom, switchRect.top, switchRect.bottom);
+  const switchRouterY = overlapMidpoint(switchRect.top, switchRect.bottom, routerRect.top, routerRect.bottom);
+  const routerServerY = overlapMidpoint(routerRect.top, routerRect.bottom, serverRect.top, serverRect.bottom);
+  const bypassY = overlapMidpoint(switchRect.top, switchRect.bottom, serverRect.top, serverRect.bottom);
+  const bypassLaneY = Math.max(switchRect.bottom, serverRect.bottom) + 26;
+  const bypassWidth = Math.max(14, serverRect.left - switchRect.right);
+  const bypassStemHeight = Math.max(10, bypassLaneY - bypassY);
+
+  setCableBox(cableElements["pc-switch"], {
+    left: pcRect.right,
+    top: pcSwitchY - lineOffset,
+    width: switchRect.left - pcRect.right,
+    height: lineThickness
+  });
+
+  setCableBox(cableElements["switch-router"], {
+    left: switchRect.right,
+    top: switchRouterY - lineOffset,
+    width: routerRect.left - switchRect.right,
+    height: lineThickness
+  });
+
+  setCableBox(cableElements["router-server"], {
+    left: routerRect.right,
+    top: routerServerY - lineOffset,
+    width: serverRect.left - routerRect.right,
+    height: lineThickness
+  });
+
+  setCableBox(cableElements["switch-server"], {
+    left: switchRect.right,
+    top: bypassLaneY - lineOffset,
+    width: bypassWidth,
+    height: lineThickness
+  });
+
+  cableElements["switch-server"]?.style.setProperty("--merge-bypass-span", `${Math.max(0, bypassWidth - 3)}px`);
+  cableElements["switch-server"]?.style.setProperty("--merge-bypass-stem-top", `${-bypassStemHeight}px`);
+  cableElements["switch-server"]?.style.setProperty("--merge-bypass-stem-height", `${bypassStemHeight}px`);
 }
 
 function getNodeCenter(nodeId) {
@@ -617,9 +740,40 @@ function getBypassWaypoints(fromId, toId) {
   const bypassRect = getRelativeRect(bypass);
   const from = getNodeCenter(fromId);
   const to = getNodeCenter(toId);
+  const switchRect = getRelativeRect(deviceElements.switch);
+  const serverRect = getRelativeRect(deviceElements.server);
+
+  if (isStackedMergeLayout()) {
+    const laneX = bypassRect.left + bypassRect.width / 2;
+    const switchY = switchRect.top + switchRect.height / 2;
+    const serverY = serverRect.top + serverRect.height / 2;
+    const switchEdgeX = switchRect.right;
+    const serverEdgeX = serverRect.right;
+
+    if (fromId === "switch" && toId === "server") {
+      return [
+        { x: switchEdgeX, y: switchY },
+        { x: laneX, y: switchY },
+        { x: laneX, y: serverY },
+        { x: serverEdgeX, y: serverY }
+      ];
+    }
+
+    if (fromId === "server" && toId === "switch") {
+      return [
+        { x: serverEdgeX, y: serverY },
+        { x: laneX, y: serverY },
+        { x: laneX, y: switchY },
+        { x: switchEdgeX, y: switchY }
+      ];
+    }
+
+    return [];
+  }
+
   const laneY = bypassRect.top + bypassRect.height / 2;
-  const leftX = bypassRect.left + 10;
-  const rightX = bypassRect.right - 10;
+  const leftX = switchRect.right;
+  const rightX = serverRect.left;
 
   if (fromId === "switch" && toId === "server") {
     return [
@@ -677,7 +831,7 @@ function createStatusIndicator(nodeId, text, type) {
 
 function travelDuration(fromPoint, toPoint) {
   const distance = Math.hypot(toPoint.x - fromPoint.x, toPoint.y - fromPoint.y);
-  return Math.max(260, Math.min(620, Math.round(distance * 2.8)));
+  return scaleMs(Math.max(260, Math.min(620, Math.round(distance * 2.8))));
 }
 
 function transitionTo(element, point, duration) {
@@ -702,7 +856,7 @@ function transitionTo(element, point, duration) {
       setPosition(element, point);
     });
 
-    window.setTimeout(finish, duration + 48);
+    window.setTimeout(finish, duration + scaleMs(48));
   });
 }
 
@@ -1003,6 +1157,7 @@ function renderStep() {
   state.stepResolved = false;
   updateScenarioTabs();
   applyDeviceState(scenario);
+  updateMergeCableGeometry();
   clearVisualState();
   updateScenarioStatus("idle", "Waiting for action");
   updateTrafficMode("idle", "No traffic active");
@@ -1157,6 +1312,7 @@ function bindEvents() {
 
   window.addEventListener("resize", () => {
     clearVisualState();
+    updateMergeCableGeometry();
 
     if (!state.stepResolved) return;
 
