@@ -6,6 +6,12 @@ const scenarios = [
     note: "Local host to local host",
     summary:
       "ARP on the same subnet is a local LAN process. The sender broadcasts to learn the destination MAC, then uses unicast frames for the real traffic.",
+    deviceTitles: {
+      pc: "PC A",
+      switch: "Switch",
+      router: "Router",
+      server: "PC B"
+    },
     deviceMeta: {
       pc: "192.168.1.10 /24",
       switch: "Floods local broadcasts",
@@ -74,6 +80,12 @@ const scenarios = [
     note: "Local PC to remote network",
     summary:
       "When the destination is off-net, the sender does not ARP for the remote host. It ARPs for the default gateway, then forwards the packet to the router.",
+    deviceTitles: {
+      pc: "PC A",
+      switch: "Switch",
+      router: "Gateway",
+      server: "Remote Host"
+    },
     deviceMeta: {
       pc: "192.168.1.10 /24",
       switch: "Local access switch",
@@ -142,6 +154,12 @@ const scenarios = [
     note: "Resolve before secure web access",
     summary:
       "Name resolution comes first. The client asks DNS for the website IP, then starts the HTTPS connection after it knows where to send the secure web traffic.",
+    deviceTitles: {
+      pc: "Client",
+      switch: "Switch",
+      router: "Router",
+      server: "Server"
+    },
     deviceMeta: {
       pc: "User opens a secure website",
       switch: "Access path on the LAN",
@@ -209,6 +227,12 @@ const scenarios = [
     note: "Secure or insecure admin traffic",
     summary:
       "SSH is the safe choice for remote administration because the session is encrypted. Telnet exposes credentials and commands in plain text.",
+    deviceTitles: {
+      pc: "Admin PC",
+      switch: "Switch",
+      router: "Managed Device",
+      server: "Server"
+    },
     deviceMeta: {
       pc: "Admin workstation",
       switch: "LAN forwarding path",
@@ -272,6 +296,12 @@ const els = {
   whyText: document.getElementById("whyText"),
   trafficMode: document.getElementById("trafficMode"),
   scenarioSummary: document.getElementById("scenarioSummary"),
+  diagramStage: document.getElementById("diagramStage"),
+  messageLayer: document.getElementById("messageLayer"),
+  devicePcTitle: document.getElementById("devicePcTitle"),
+  deviceSwitchTitle: document.getElementById("deviceSwitchTitle"),
+  deviceRouterTitle: document.getElementById("deviceRouterTitle"),
+  deviceServerTitle: document.getElementById("deviceServerTitle"),
   devicePcMeta: document.getElementById("devicePcMeta"),
   deviceSwitchMeta: document.getElementById("deviceSwitchMeta"),
   deviceRouterMeta: document.getElementById("deviceRouterMeta"),
@@ -295,21 +325,437 @@ const cableElements = {
 const state = {
   scenarioIndex: 0,
   stepIndex: 0,
-  stepResolved: false
+  stepResolved: false,
+  visualRunId: 0
 };
 
 function getScenario() {
   return scenarios[state.scenarioIndex];
 }
 
-function clearVisualState() {
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function stageRect() {
+  return els.diagramStage.getBoundingClientRect();
+}
+
+function getRelativeRect(element) {
+  const stage = stageRect();
+  const rect = element.getBoundingClientRect();
+
+  return {
+    left: rect.left - stage.left,
+    top: rect.top - stage.top,
+    width: rect.width,
+    height: rect.height,
+    right: rect.right - stage.left,
+    bottom: rect.bottom - stage.top
+  };
+}
+
+function getNodeCenter(nodeId) {
+  const rect = getRelativeRect(deviceElements[nodeId]);
+
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
+}
+
+function getNodeStatusPoint(nodeId) {
+  const rect = getRelativeRect(deviceElements[nodeId]);
+
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top - 12
+  };
+}
+
+function activeRun() {
+  state.visualRunId += 1;
+  return state.visualRunId;
+}
+
+function isRunCurrent(runId) {
+  return runId === state.visualRunId;
+}
+
+function clearVisualState({ preserveRun = false } = {}) {
+  if (!preserveRun) {
+    activeRun();
+  }
+
   Object.values(deviceElements).forEach((element) => {
-    element.classList.remove("active", "broadcast", "secure", "warning");
+    element.classList.remove(
+      "active",
+      "broadcast",
+      "secure",
+      "warning",
+      "node-active",
+      "node-verify",
+      "node-broadcast",
+      "node-unicast",
+      "node-reply",
+      "node-warning"
+    );
   });
 
   Object.values(cableElements).forEach((element) => {
     element.classList.remove("active", "broadcast", "secure", "warning");
   });
+
+  if (els.messageLayer) {
+    els.messageLayer.innerHTML = "";
+  }
+}
+
+function packetTone(type) {
+  if (type === "secure") return "reply";
+  if (type === "active") return "unicast";
+  return type || "unicast";
+}
+
+function nodeTone(type) {
+  if (type === "secure") return "reply";
+  return type || "unicast";
+}
+
+function cableTone(type) {
+  if (type === "unicast") return "active";
+  if (type === "reply" || type === "secure") return "secure";
+  if (type === "warning") return "warning";
+  return "broadcast";
+}
+
+function resolveCableId(fromId, toId) {
+  const map = {
+    "pc:switch": "pc-switch",
+    "switch:pc": "pc-switch",
+    "switch:router": "switch-router",
+    "router:switch": "switch-router",
+    "router:server": "router-server",
+    "server:router": "router-server",
+    "switch:server": "switch-server",
+    "server:switch": "switch-server"
+  };
+
+  return map[`${fromId}:${toId}`] || null;
+}
+
+function getBypassWaypoints(fromId, toId) {
+  const bypass = cableElements["switch-server"];
+
+  if (!bypass) return [];
+
+  const bypassRect = getRelativeRect(bypass);
+  const from = getNodeCenter(fromId);
+  const to = getNodeCenter(toId);
+  const laneY = bypassRect.top + bypassRect.height / 2;
+  const leftX = bypassRect.left + 10;
+  const rightX = bypassRect.right - 10;
+
+  if (fromId === "switch" && toId === "server") {
+    return [
+      { x: leftX, y: from.y },
+      { x: leftX, y: laneY },
+      { x: rightX, y: laneY },
+      { x: rightX, y: to.y }
+    ];
+  }
+
+  if (fromId === "server" && toId === "switch") {
+    return [
+      { x: rightX, y: from.y },
+      { x: rightX, y: laneY },
+      { x: leftX, y: laneY },
+      { x: leftX, y: to.y }
+    ];
+  }
+
+  return [];
+}
+
+function highlightCables(cableIds, type) {
+  const toneClass = cableTone(type);
+
+  cableIds.forEach((cableId) => {
+    const element = cableElements[cableId];
+    if (element) {
+      element.classList.add(toneClass);
+    }
+  });
+}
+
+function setPosition(element, point) {
+  element.style.left = `${point.x}px`;
+  element.style.top = `${point.y}px`;
+}
+
+function createMessage(label, type) {
+  const element = document.createElement("div");
+  element.className = `message-dot message-${packetTone(type)}`;
+  element.textContent = label;
+  els.messageLayer.appendChild(element);
+  return element;
+}
+
+function createStatusIndicator(nodeId, text, type) {
+  const element = document.createElement("div");
+  element.className = `status-indicator ${nodeTone(type)}`;
+  element.textContent = text;
+  els.messageLayer.appendChild(element);
+  setPosition(element, getNodeStatusPoint(nodeId));
+  return element;
+}
+
+function travelDuration(fromPoint, toPoint) {
+  const distance = Math.hypot(toPoint.x - fromPoint.x, toPoint.y - fromPoint.y);
+  return Math.max(220, Math.min(540, Math.round(distance * 2.4)));
+}
+
+function transitionTo(element, point, duration) {
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      resolve();
+    };
+
+    const handleEnd = () => {
+      element.removeEventListener("transitionend", handleEnd);
+      finish();
+    };
+
+    element.addEventListener("transitionend", handleEnd, { once: true });
+    element.style.transition = `left ${duration}ms cubic-bezier(0.22, 1, 0.36, 1), top ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+
+    window.requestAnimationFrame(() => {
+      setPosition(element, point);
+    });
+
+    window.setTimeout(finish, duration + 48);
+  });
+}
+
+async function moveMessage(fromId, toId, label, type, runId, options = {}) {
+  const points = [getNodeCenter(fromId), ...(options.via || []), getNodeCenter(toId)];
+  const element = createMessage(label, type);
+
+  setPosition(element, points[0]);
+  await delay(40);
+
+  for (let index = 1; index < points.length; index += 1) {
+    if (!isRunCurrent(runId)) {
+      element.remove();
+      return null;
+    }
+
+    await transitionTo(element, points[index], travelDuration(points[index - 1], points[index]));
+    await delay(40);
+  }
+
+  return element;
+}
+
+async function flashNode(nodeId, statusText, type, runId, options = {}) {
+  if (!isRunCurrent(runId)) return;
+
+  const element = deviceElements[nodeId];
+  const toneClass = `node-${nodeTone(type)}`;
+  const indicator = createStatusIndicator(nodeId, statusText, type);
+
+  element.classList.add("node-active", "node-verify", toneClass);
+  await delay(options.hold || 320);
+
+  indicator.remove();
+  element.classList.remove("node-verify");
+
+  if (!options.persist) {
+    await delay(80);
+    element.classList.remove("node-active", toneClass);
+  }
+}
+
+async function travelAndVerify(fromId, toId, label, type, statusText, runId, options = {}) {
+  const cableId = resolveCableId(fromId, toId);
+
+  if (cableId) {
+    highlightCables([cableId], type);
+  }
+
+  const element = await moveMessage(fromId, toId, label, type, runId, options);
+
+  if (!element || !isRunCurrent(runId)) return;
+
+  await flashNode(toId, statusText, options.nodeType || type, runId, { hold: options.hold });
+  element.remove();
+}
+
+async function animateBroadcast(fromId, targetIds, label, runId, options = {}) {
+  const stagger = options.stagger || 110;
+
+  await Promise.all(
+    targetIds.map((targetId, index) =>
+      (async () => {
+        await delay(index * stagger);
+
+        const packet = await moveMessage(fromId, targetId, label, "broadcast", runId, {
+          via: options.pathMap?.[targetId] || []
+        });
+
+        if (!packet || !isRunCurrent(runId)) return;
+
+        await flashNode(
+          targetId,
+          options.statusMap?.[targetId] || "RX",
+          options.toneMap?.[targetId] || "broadcast",
+          runId,
+          { hold: options.hold || 320 }
+        );
+
+        packet.remove();
+      })()
+    )
+  );
+}
+
+async function runArpSameSubnetFlow(stepIndex, visualAction, runId) {
+  if (stepIndex === 0) {
+    updateTrafficMode("broadcast", visualAction.trafficLabel);
+    await flashNode("pc", "TX", "broadcast", runId, { hold: 240 });
+    await travelAndVerify("pc", "switch", "ARP?", "broadcast", "RX", runId);
+    await flashNode("switch", "FLOOD", "broadcast", runId, { hold: 250 });
+    highlightCables(["switch-router", "switch-server"], "broadcast");
+    await animateBroadcast("switch", ["router", "server"], "ARP?", runId, {
+      toneMap: { router: "warning", server: "broadcast" },
+      statusMap: { router: "RX", server: "IP match" },
+      pathMap: { server: getBypassWaypoints("switch", "server") },
+      stagger: 140
+    });
+    return;
+  }
+
+  if (stepIndex === 1) {
+    updateTrafficMode("reply", visualAction.trafficLabel);
+    await flashNode("server", "Reply", "reply", runId, { hold: 250 });
+    await travelAndVerify("server", "switch", "MAC", "reply", "RX", runId, {
+      via: getBypassWaypoints("server", "switch"),
+      nodeType: "reply"
+    });
+    await flashNode("switch", "FWD", "reply", runId, { hold: 220 });
+    await travelAndVerify("switch", "pc", "MAC", "reply", "OK", runId, {
+      nodeType: "reply"
+    });
+    return;
+  }
+
+  updateTrafficMode("unicast", visualAction.trafficLabel);
+  await flashNode("pc", "DATA", "unicast", runId, { hold: 240 });
+  await travelAndVerify("pc", "switch", "DATA", "unicast", "FWD", runId);
+  await travelAndVerify("switch", "server", "DATA", "unicast", "RX", runId, {
+    via: getBypassWaypoints("switch", "server"),
+    nodeType: "unicast"
+  });
+}
+
+async function runArpGatewayFlow(stepIndex, visualAction, runId) {
+  if (stepIndex === 0) {
+    updateTrafficMode("broadcast", visualAction.trafficLabel);
+    await flashNode("pc", "Remote", "warning", runId, { hold: 240 });
+    await travelAndVerify("pc", "switch", "ARP GW?", "broadcast", "RX", runId);
+    await flashNode("switch", "LOCAL", "broadcast", runId, { hold: 240 });
+    await animateBroadcast("switch", ["router"], "ARP GW?", runId, {
+      toneMap: { router: "broadcast" },
+      statusMap: { router: "GW IP" }
+    });
+    return;
+  }
+
+  if (stepIndex === 1) {
+    updateTrafficMode("reply", visualAction.trafficLabel);
+    await flashNode("router", "Reply", "reply", runId, { hold: 250 });
+    await travelAndVerify("router", "switch", "GW MAC", "reply", "RX", runId, {
+      nodeType: "reply"
+    });
+    await flashNode("switch", "FWD", "reply", runId, { hold: 220 });
+    await travelAndVerify("switch", "pc", "GW MAC", "reply", "OK", runId, {
+      nodeType: "reply"
+    });
+    return;
+  }
+
+  updateTrafficMode("unicast", visualAction.trafficLabel);
+  await flashNode("pc", "DATA", "unicast", runId, { hold: 220 });
+  await travelAndVerify("pc", "switch", "DATA", "unicast", "FWD", runId);
+  await travelAndVerify("switch", "router", "DATA", "unicast", "FWD", runId);
+  await travelAndVerify("router", "server", "FWD", "unicast", "RX", runId);
+}
+
+async function runGenericVisualAction(visualAction, runId) {
+  const devices = visualAction.devices || [];
+  const tone = packetTone(visualAction.mode);
+
+  updateTrafficMode(visualAction.mode, visualAction.trafficLabel);
+
+  visualAction.cables.forEach((cableId) => {
+    const element = cableElements[cableId];
+    if (element) {
+      element.classList.add(cableTone(visualAction.mode));
+    }
+  });
+
+  if (devices.length < 2) {
+    devices.forEach((deviceId) => {
+      const element = deviceElements[deviceId];
+      if (element) {
+        element.classList.add(`node-${nodeTone(tone)}`, "node-active");
+      }
+    });
+    return;
+  }
+
+  await flashNode(devices[0], "TX", tone, runId, { hold: 220 });
+
+  for (let index = 1; index < devices.length; index += 1) {
+    if (!isRunCurrent(runId)) return;
+
+    const fromId = devices[index - 1];
+    const toId = devices[index];
+    const via = fromId === "switch" && toId === "server"
+      ? getBypassWaypoints("switch", "server")
+      : fromId === "server" && toId === "switch"
+        ? getBypassWaypoints("server", "switch")
+        : [];
+    const statusText = index === devices.length - 1 ? "RX" : "FWD";
+
+    await travelAndVerify(fromId, toId, tone === "reply" ? "Reply" : "DATA", tone, statusText, runId, {
+      via,
+      nodeType: tone
+    });
+  }
+}
+
+async function runVisualAction(visualAction) {
+  const runId = activeRun();
+  clearVisualState({ preserveRun: true });
+
+  const scenario = getScenario();
+
+  if (scenario.id === "arp-local") {
+    await runArpSameSubnetFlow(state.stepIndex, visualAction, runId);
+    return;
+  }
+
+  if (scenario.id === "arp-gateway") {
+    await runArpGatewayFlow(state.stepIndex, visualAction, runId);
+    return;
+  }
+
+  await runGenericVisualAction(visualAction, runId);
 }
 
 function updateScenarioStatus(type, text) {
@@ -355,24 +801,11 @@ function applyDeviceMeta(meta) {
   els.deviceServerMeta.textContent = meta.server;
 }
 
-function runVisualAction(visualAction) {
-  clearVisualState();
-
-  visualAction.devices.forEach((deviceId) => {
-    const element = deviceElements[deviceId];
-    if (element) {
-      element.classList.add(visualAction.mode === "unicast" ? "active" : visualAction.mode);
-    }
-  });
-
-  visualAction.cables.forEach((cableId) => {
-    const element = cableElements[cableId];
-    if (element) {
-      element.classList.add(visualAction.mode === "unicast" ? "active" : visualAction.mode);
-    }
-  });
-
-  updateTrafficMode(visualAction.mode, visualAction.trafficLabel);
+function applyDeviceTitles(titles = {}) {
+  els.devicePcTitle.textContent = titles.pc || "PC A";
+  els.deviceSwitchTitle.textContent = titles.switch || "Switch";
+  els.deviceRouterTitle.textContent = titles.router || "Router";
+  els.deviceServerTitle.textContent = titles.server || "Server";
 }
 
 function disableOptionButtons() {
@@ -387,6 +820,7 @@ function renderStep() {
 
   state.stepResolved = false;
   updateScenarioTabs();
+  applyDeviceTitles(scenario.deviceTitles);
   applyDeviceMeta(scenario.deviceMeta);
   clearVisualState();
   updateScenarioStatus("idle", "Waiting for action");
@@ -417,7 +851,7 @@ function renderStep() {
   });
 }
 
-function handleAnswer(index, button) {
+async function handleAnswer(index, button) {
   if (state.stepResolved) return;
 
   const scenario = getScenario();
@@ -427,13 +861,19 @@ function handleAnswer(index, button) {
     state.stepResolved = true;
     button.classList.add("correct-btn");
     disableOptionButtons();
-    runVisualAction(step.visualAction);
-    updateScenarioStatus("good", "Correct path");
     els.explanationText.textContent = step.explanation;
     els.whyText.textContent = step.explanation;
     els.mobileFeedbackText.textContent = step.explanation;
+    updateScenarioStatus("good", "Running flow");
+
+    await runVisualAction(step.visualAction);
+
+    if (!state.stepResolved) {
+      return;
+    }
 
     if (state.stepIndex < scenario.steps.length - 1) {
+      updateScenarioStatus("good", "Correct path");
       els.nextStepBtn.hidden = false;
       els.nextStepBtn.textContent = "Next Step";
     } else {
@@ -481,6 +921,17 @@ function resetScenario() {
 function bindEvents() {
   els.nextStepBtn.addEventListener("click", goToNextStep);
   els.resetScenarioBtn.addEventListener("click", resetScenario);
+
+  window.addEventListener("resize", () => {
+    clearVisualState();
+
+    if (!state.stepResolved) return;
+
+    const scenario = getScenario();
+    const step = scenario.steps[state.stepIndex];
+
+    runVisualAction(step.visualAction).catch(() => {});
+  });
 }
 
 renderScenarioTabs();
