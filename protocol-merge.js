@@ -10,7 +10,7 @@ const scenarios = [
     devices: {
       pc: { label: "PC A", meta: "192.168.1.10 /24", icon: "fa-desktop" },
       switch: { label: "Switch", meta: "Access switch on the local LAN", icon: "fa-network-wired" },
-      router: { label: "Router", meta: "Visible on the LAN, not used for forwarding", icon: "fa-router" },
+      router: { label: "Router", meta: "Visible on the LAN, not used for forwarding", icon: "fa-route" },
       server: { label: "Destination Host", meta: "192.168.1.20 /24", icon: "fa-desktop" }
     },
     steps: [
@@ -111,7 +111,7 @@ const scenarios = [
     devices: {
       pc: { label: "PC A", meta: "192.168.1.10 /24", icon: "fa-desktop" },
       switch: { label: "Switch", meta: "Local LAN forwarding", icon: "fa-network-wired" },
-      router: { label: "Default Gateway", meta: "192.168.1.1", icon: "fa-router" },
+      router: { label: "Default Gateway", meta: "192.168.1.1", icon: "fa-route" },
       server: { label: "Remote Server", meta: "10.0.0.50 /24", icon: "fa-server" }
     },
     steps: [
@@ -212,7 +212,7 @@ const scenarios = [
     devices: {
       pc: { label: "User PC", meta: "Wants https://learn.lab", icon: "fa-desktop" },
       switch: { label: "Access Switch", meta: "Local LAN path", icon: "fa-network-wired" },
-      router: { label: "Default Gateway", meta: "Path to remote services", icon: "fa-router" },
+      router: { label: "Default Gateway", meta: "Path to remote services", icon: "fa-route" },
       server: { label: "DNS / Web Service", meta: "DNS answer first, then HTTPS target", icon: "fa-server" }
     },
     steps: [
@@ -314,7 +314,7 @@ const scenarios = [
     devices: {
       pc: { label: "Admin PC", meta: "Remote management source", icon: "fa-desktop" },
       switch: { label: "Access Switch", meta: "Forwarding path", icon: "fa-network-wired" },
-      router: { label: "Managed Router", meta: "Target device", icon: "fa-router" },
+      router: { label: "Managed Router", meta: "Target device", icon: "fa-route" },
       server: { label: "Server", meta: "Not involved in this path", icon: "fa-server" }
     },
     steps: [
@@ -563,11 +563,12 @@ function updateMergeCableGeometry() {
     const pcSwitchX = overlapMidpoint(pcRect.left, pcRect.right, switchRect.left, switchRect.right);
     const switchRouterX = overlapMidpoint(switchRect.left, switchRect.right, routerRect.left, routerRect.right);
     const routerServerX = overlapMidpoint(routerRect.left, routerRect.right, serverRect.left, serverRect.right);
-    const bypassAnchorX = Math.max(switchRect.right, serverRect.right) + 22;
     const switchY = switchRect.top + switchRect.height / 2;
     const serverY = serverRect.top + serverRect.height / 2;
+    const bypassAnchorX = Math.max(switchRect.right, serverRect.right) + 22;
     const bypassHeight = Math.max(12, serverY - switchY);
-    const stubLength = Math.max(14, bypassAnchorX - Math.max(switchRect.right, serverRect.right));
+    const switchStubLength = Math.max(14, bypassAnchorX - switchRect.right);
+    const serverStubLength = Math.max(14, bypassAnchorX - serverRect.right);
 
     setCableBox(cableElements["pc-switch"], {
       left: pcSwitchX - lineOffset,
@@ -597,7 +598,8 @@ function updateMergeCableGeometry() {
       height: bypassHeight
     });
 
-    cableElements["switch-server"]?.style.setProperty("--merge-bypass-stub-length", `${stubLength}px`);
+    cableElements["switch-server"]?.style.setProperty("--merge-bypass-top-stub", `${switchStubLength}px`);
+    cableElements["switch-server"]?.style.setProperty("--merge-bypass-bottom-stub", `${serverStubLength}px`);
     cableElements["switch-server"]?.style.setProperty("--merge-bypass-span", `${bypassHeight}px`);
     return;
   }
@@ -605,10 +607,12 @@ function updateMergeCableGeometry() {
   const pcSwitchY = overlapMidpoint(pcRect.top, pcRect.bottom, switchRect.top, switchRect.bottom);
   const switchRouterY = overlapMidpoint(switchRect.top, switchRect.bottom, routerRect.top, routerRect.bottom);
   const routerServerY = overlapMidpoint(routerRect.top, routerRect.bottom, serverRect.top, serverRect.bottom);
-  const bypassY = overlapMidpoint(switchRect.top, switchRect.bottom, serverRect.top, serverRect.bottom);
+  const switchY = switchRect.top + switchRect.height / 2;
+  const serverY = serverRect.top + serverRect.height / 2;
   const bypassLaneY = Math.max(switchRect.bottom, serverRect.bottom) + 26;
   const bypassWidth = Math.max(14, serverRect.left - switchRect.right);
-  const bypassStemHeight = Math.max(10, bypassLaneY - bypassY);
+  const leftStemHeight = Math.max(10, bypassLaneY - switchY);
+  const rightStemHeight = Math.max(10, bypassLaneY - serverY);
 
   setCableBox(cableElements["pc-switch"], {
     left: pcRect.right,
@@ -638,9 +642,8 @@ function updateMergeCableGeometry() {
     height: lineThickness
   });
 
-  cableElements["switch-server"]?.style.setProperty("--merge-bypass-span", `${Math.max(0, bypassWidth - 3)}px`);
-  cableElements["switch-server"]?.style.setProperty("--merge-bypass-stem-top", `${-bypassStemHeight}px`);
-  cableElements["switch-server"]?.style.setProperty("--merge-bypass-stem-height", `${bypassStemHeight}px`);
+  cableElements["switch-server"]?.style.setProperty("--merge-bypass-left-stem", `${leftStemHeight}px`);
+  cableElements["switch-server"]?.style.setProperty("--merge-bypass-right-stem", `${rightStemHeight}px`);
 }
 
 function getNodeCenter(nodeId) {
