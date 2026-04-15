@@ -484,7 +484,9 @@ const cableElements = {
   "pc-switch": document.getElementById("cablePcSwitch"),
   "switch-router": document.getElementById("cableSwitchRouter"),
   "router-server": document.getElementById("cableRouterServer"),
-  "switch-server": document.getElementById("cableSwitchServer")
+  "switch-server": document.getElementById("cableSwitchServer"),
+  "switch-server-start": document.getElementById("cableSwitchServerStart"),
+  "switch-server-end": document.getElementById("cableSwitchServerEnd")
 };
 
 const state = {
@@ -598,9 +600,19 @@ function updateMergeCableGeometry() {
       height: bypassHeight
     });
 
-    cableElements["switch-server"]?.style.setProperty("--merge-bypass-top-stub", `${switchStubLength}px`);
-    cableElements["switch-server"]?.style.setProperty("--merge-bypass-bottom-stub", `${serverStubLength}px`);
-    cableElements["switch-server"]?.style.setProperty("--merge-bypass-span", `${bypassHeight}px`);
+    setCableBox(cableElements["switch-server-start"], {
+      left: switchRect.right,
+      top: switchY - lineOffset,
+      width: switchStubLength,
+      height: lineThickness
+    });
+
+    setCableBox(cableElements["switch-server-end"], {
+      left: serverRect.right,
+      top: serverY - lineOffset,
+      width: serverStubLength,
+      height: lineThickness
+    });
     return;
   }
 
@@ -644,8 +656,19 @@ function updateMergeCableGeometry() {
     height: lineThickness
   });
 
-  cableElements["switch-server"]?.style.setProperty("--merge-bypass-left-stem", `${leftStemHeight}px`);
-  cableElements["switch-server"]?.style.setProperty("--merge-bypass-right-stem", `${rightStemHeight}px`);
+  setCableBox(cableElements["switch-server-start"], {
+    left: switchX - lineOffset,
+    top: switchBottom,
+    width: lineThickness,
+    height: leftStemHeight
+  });
+
+  setCableBox(cableElements["switch-server-end"], {
+    left: serverX - lineOffset,
+    top: serverBottom,
+    width: lineThickness,
+    height: rightStemHeight
+  });
 }
 
 function getNodeCenter(nodeId) {
@@ -811,10 +834,16 @@ function highlightCables(cableIds, type) {
   const toneClass = cableTone(type);
 
   cableIds.forEach((cableId) => {
-    const element = cableElements[cableId];
-    if (element) {
-      element.classList.add(toneClass);
-    }
+    const relatedCableIds = cableId === "switch-server"
+      ? ["switch-server", "switch-server-start", "switch-server-end"]
+      : [cableId];
+
+    relatedCableIds.forEach((relatedId) => {
+      const element = cableElements[relatedId];
+      if (element) {
+        element.classList.add(toneClass);
+      }
+    });
   });
 }
 
