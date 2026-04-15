@@ -1698,6 +1698,235 @@
 
   const generatedNmapScenarios = [
     linuxScenario({
+      id: "nmap-basics-host-check",
+      title: "Nmap Basics Host Check",
+      category: "Nmap scanning workflows",
+      level: "Beginner",
+      objective: "Confirm that a newly assigned target is alive before you spend time on deeper service scans.",
+      allowedFlexibility: "A lightweight reachability check or a basic Nmap host scan is acceptable if it proves the target is responding.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Confirm that metasploitable2 (192.168.56.102) is responding.",
+          context: "You have a target IP but no port evidence yet. Prove the host is alive before you move into service discovery.",
+          hints: [
+            "Before hunting services, confirm the host is answering at all.",
+            "Start with a lightweight scan rather than a full sweep.",
+            "Use a basic scan or reachability check against metasploitable2."
+          ],
+          explanation: "The right first move is to prove the host is actually there. That keeps the rest of the workflow grounded in evidence instead of assumption.",
+          whyThisMatters: "Host confirmation prevents wasted scanning against the wrong or offline target.",
+          successFeedback: "You confirmed the target is responding.",
+          accepts: [
+            rawMatch(/^nmap\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+target$/i),
+            rawMatch(/^ping\s+192\.168\.56\.102$/i),
+            rawMatch(/^ping\s+metasploitable2$/i),
+            rawMatch(/^ping\s+target$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nmap-basics-web-hypothesis",
+      title: "Nmap Basics Web Hypothesis",
+      category: "Nmap scanning workflows",
+      level: "Beginner",
+      objective: "Test a web-service hypothesis quickly without defaulting to a broad scan.",
+      allowedFlexibility: "A focused web-port check is the goal. Adding version detection is acceptable if you still stay on the likely port.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Check whether web-lab (192.168.56.10) is offering HTTP on port 80.",
+          context: "A teammate suspects the target is serving HTTP. Validate that idea directly instead of scanning unrelated ports first.",
+          hints: [
+            "You already have a likely service in mind.",
+            "A narrow scan is faster than checking the usual port set.",
+            "Specify the likely web port directly in the scan."
+          ],
+          explanation: "When the service hypothesis is already narrow, a focused port check is the cleanest way to validate it.",
+          whyThisMatters: "Operators narrow scope on purpose when they already have a credible lead.",
+          successFeedback: "You tested the web-service hypothesis directly.",
+          accepts: [
+            rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.10$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+web-lab$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+web$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.10$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.10$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+web-lab$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+web-lab$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+web$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+web$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nmap-basics-full-range",
+      title: "Nmap Basics Full Range Decision",
+      category: "Nmap scanning workflows",
+      level: "Intermediate",
+      objective: "Escalate to a full-range scan when the default scan is too narrow for the task.",
+      allowedFlexibility: "Any full TCP range scan is acceptable. Faster timing is fine if the command still clearly expands coverage to all ports.",
+      environment: {
+        cwd: "/home/student",
+        targets: [
+          ...commonTargets(),
+          {
+            ip: "192.168.56.30",
+            hostname: "custom-app",
+            aliases: ["staging-app", "target"],
+            reachable: true,
+            os: "Ubuntu Linux",
+            ports: [
+              { port: 8088, proto: "tcp", service: "http-alt", version: "gunicorn 20.1.0", banner: "HTTP/1.1 200 OK" }
+            ]
+          }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Run a full TCP port scan against custom-app (192.168.56.30).",
+          context: "A basic scan did not show the expected service. The target may be listening on a non-standard port, so you need to expand coverage instead of guessing.",
+          hints: [
+            "The problem is scope, not just speed.",
+            "You need more than Nmap's default port selection.",
+            "Use the option that checks the full TCP range."
+          ],
+          explanation: "When the default scan misses the expected service, the correct next move is to widen the search space to all TCP ports.",
+          whyThisMatters: "Coverage decisions matter. A narrow scan can hide the very service you are trying to prove exists.",
+          successFeedback: "You escalated to full-range coverage instead of guessing.",
+          accepts: [
+            rawMatch(/^nmap\s+-p-\s+192\.168\.56\.30$/i),
+            rawMatch(/^nmap\s+-p-\s+custom-app$/i),
+            rawMatch(/^nmap\s+-p-\s+staging-app$/i),
+            rawMatch(/^nmap\s+-p-\s+target$/i),
+            rawMatch(/^nmap\s+-T4\s+-p-\s+192\.168\.56\.30$/i),
+            rawMatch(/^nmap\s+-T4\s+-p-\s+custom-app$/i),
+            rawMatch(/^nmap\s+-T4\s+-p-\s+staging-app$/i),
+            rawMatch(/^nmap\s+-T4\s+-p-\s+target$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nmap-basics-fast-triage",
+      title: "Nmap Basics Fast Triage",
+      category: "Nmap scanning workflows",
+      level: "Intermediate",
+      objective: "Use a faster timing profile appropriately on a stable internal lab host.",
+      allowedFlexibility: "Any Nmap command that clearly applies the T4 timing template to the target is acceptable.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Apply a faster timing profile while scanning metasploitable2 (192.168.56.102).",
+          context: "This is a controlled internal lab target, so a faster timing profile is reasonable. The goal is to tune the scan pace, not change the host.",
+          hints: [
+            "This is about tuning scan pace, not changing what gets scanned.",
+            "Nmap has timing templates for faster or slower behavior.",
+            "Use the common lab-friendly timing option that speeds up the scan."
+          ],
+          explanation: "Timing templates are for tuning scan pace to the environment. In a stable lab, a faster template is often appropriate.",
+          whyThisMatters: "Operators adapt scan speed to the environment instead of treating every target the same way.",
+          successFeedback: "You applied a faster timing profile appropriately.",
+          accepts: [
+            rawMatch(/^nmap\s+-T4\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-T4\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-T4\s+target$/i),
+            rawMatch(/^nmap\s+-T4\s+-sV\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-T4\s+-sV\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-T4\s+-sV\s+target$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nmap-basics-save-output",
+      title: "Nmap Basics Save Output",
+      category: "Nmap scanning workflows",
+      level: "Beginner",
+      objective: "Preserve scan evidence in a readable file instead of relying on terminal scrollback.",
+      allowedFlexibility: "Any normal-text Nmap output command that writes to scan.txt for the correct target is acceptable.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Save a readable Nmap scan of metasploitable2 (192.168.56.102) to scan.txt.",
+          context: "You want an artifact you can review later, so write the scan output directly to a normal text file while you scan.",
+          hints: [
+            "Think about preserving evidence, not changing the scan target.",
+            "Nmap can write output in several formats.",
+            "Use the normal-text output option and name the file scan.txt."
+          ],
+          explanation: "Saving a scan to normal text keeps the evidence readable and easy to reference in later tasks.",
+          whyThisMatters: "Saved output turns one-off terminal output into reusable evidence.",
+          successFeedback: "You preserved the scan output in a readable file.",
+          accepts: [
+            rawMatch(/^nmap\s+-oN\s+scan\.txt\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-oN\s+scan\.txt\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-oN\s+scan\.txt\s+target$/i),
+            rawMatch(/^nmap\s+-oN\s+scan\.txt\s+-sV\s+192\.168\.56\.102$/i),
+            rawMatch(/^nmap\s+-oN\s+scan\.txt\s+-sV\s+metasploitable2$/i),
+            rawMatch(/^nmap\s+-oN\s+scan\.txt\s+-sV\s+target$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nmap-basics-read-and-follow-up",
+      title: "Nmap Basics Read and Follow Up",
+      category: "Nmap scanning workflows",
+      level: "Intermediate",
+      objective: "Read Nmap output, separate meaningful open services from filtered results, and choose a focused follow-up.",
+      allowedFlexibility: "Reading the saved output first is required. For the follow-up, a focused scan of the open web port is acceptable with or without version detection.",
+      environment: {
+        cwd: "/home/student",
+        files: [{
+          path: "/home/student/scan.txt",
+          content: "Nmap scan report for 192.168.56.10\n80/tcp open http\n443/tcp filtered https\n"
+        }],
+        targets: commonTargets()
+      },
+      steps: [
+        step({
+          objective: "Read the saved scan output first.",
+          context: "You already have scan evidence in scan.txt. Read it before you decide which service deserves the next action.",
+          hints: [
+            "Do not rescan blindly before you look at the evidence you already have.",
+            "Open the saved report first.",
+            "Try `cat scan.txt`."
+          ],
+          explanation: "The disciplined move is to read the evidence first so the next action is driven by output instead of habit.",
+          whyThisMatters: "Operators build the next step from evidence already collected, not from guesswork.",
+          successFeedback: "You reviewed the saved scan evidence.",
+          accepts: [rawMatch(/^cat\s+scan\.txt$/i)]
+        }),
+        step({
+          objective: "Follow up on the confirmed open web service, not the filtered one.",
+          context: "The saved output shows port 80 open and port 443 filtered on web-lab at 192.168.56.10. Focus the next check on the service that actually answered.",
+          hints: [
+            "Not every listed port deserves the same attention.",
+            "Focus on services that truly responded, not uncertain blocked paths.",
+            "Treat the open service as the next lead and avoid chasing the filtered one first."
+          ],
+          explanation: "An open service is actionable evidence. A filtered result tells you the path is constrained, not that the service is ready for immediate follow-up.",
+          whyThisMatters: "Good operators prioritize live evidence before they burn time on ambiguous results.",
+          successFeedback: "You chose the meaningful follow-up based on the scan output.",
+          accepts: [
+            rawMatch(/^nmap\s+-p\s+80\s+192\.168\.56\.10$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+web-lab$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+web$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+192\.168\.56\.10$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+192\.168\.56\.10$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+web-lab$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+web-lab$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80\s+web$/i),
+            rawMatch(/^nmap\s+-p\s+80\s+-sV\s+web$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
       id: "top-ports-triage",
       title: "Top Ports Triage",
       category: "Nmap scanning workflows",
