@@ -607,12 +607,14 @@ function updateMergeCableGeometry() {
   const pcSwitchY = overlapMidpoint(pcRect.top, pcRect.bottom, switchRect.top, switchRect.bottom);
   const switchRouterY = overlapMidpoint(switchRect.top, switchRect.bottom, routerRect.top, routerRect.bottom);
   const routerServerY = overlapMidpoint(routerRect.top, routerRect.bottom, serverRect.top, serverRect.bottom);
-  const switchY = switchRect.top + switchRect.height / 2;
-  const serverY = serverRect.top + serverRect.height / 2;
+  const switchX = switchRect.left + switchRect.width / 2;
+  const serverX = serverRect.left + serverRect.width / 2;
+  const switchBottom = switchRect.bottom;
+  const serverBottom = serverRect.bottom;
   const bypassLaneY = Math.max(switchRect.bottom, serverRect.bottom) + 26;
-  const bypassWidth = Math.max(14, serverRect.left - switchRect.right);
-  const leftStemHeight = Math.max(10, bypassLaneY - switchY);
-  const rightStemHeight = Math.max(10, bypassLaneY - serverY);
+  const bypassWidth = Math.max(14, serverX - switchX);
+  const leftStemHeight = Math.max(10, bypassLaneY - switchBottom);
+  const rightStemHeight = Math.max(10, bypassLaneY - serverBottom);
 
   setCableBox(cableElements["pc-switch"], {
     left: pcRect.right,
@@ -636,7 +638,7 @@ function updateMergeCableGeometry() {
   });
 
   setCableBox(cableElements["switch-server"], {
-    left: switchRect.right,
+    left: switchX,
     top: bypassLaneY - lineOffset,
     width: bypassWidth,
     height: lineThickness
@@ -775,14 +777,18 @@ function getBypassWaypoints(fromId, toId) {
   }
 
   const laneY = bypassRect.top + bypassRect.height / 2;
-  const leftX = switchRect.right;
-  const rightX = serverRect.left;
+  const leftX = switchRect.left + switchRect.width / 2;
+  const rightX = serverRect.left + serverRect.width / 2;
+  const switchBottom = switchRect.bottom;
+  const serverBottom = serverRect.bottom;
 
   if (fromId === "switch" && toId === "server") {
     return [
       { x: leftX, y: from.y },
+      { x: leftX, y: switchBottom },
       { x: leftX, y: laneY },
       { x: rightX, y: laneY },
+      { x: rightX, y: serverBottom },
       { x: rightX, y: to.y }
     ];
   }
@@ -790,8 +796,10 @@ function getBypassWaypoints(fromId, toId) {
   if (fromId === "server" && toId === "switch") {
     return [
       { x: rightX, y: from.y },
+      { x: rightX, y: serverBottom },
       { x: rightX, y: laneY },
       { x: leftX, y: laneY },
+      { x: leftX, y: switchBottom },
       { x: leftX, y: to.y }
     ];
   }
