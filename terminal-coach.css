@@ -136,6 +136,38 @@
   color: #fde68a;
 }
 
+.current-layer-badge,
+.terminal-mobile-layer,
+.layer-transition-banner {
+  border: 1px solid rgba(56, 189, 248, 0.34);
+  background: rgba(8, 16, 28, 0.92);
+  color: #dbeafe;
+}
+
+.current-layer-badge[data-layer="network"],
+.terminal-mobile-layer[data-layer="network"],
+.layer-transition-banner[data-layer="network"] {
+  border-color: rgba(56, 189, 248, 0.34);
+  background: rgba(8, 16, 28, 0.92);
+  color: #7dd3fc;
+}
+
+.current-layer-badge[data-layer="application"],
+.terminal-mobile-layer[data-layer="application"],
+.layer-transition-banner[data-layer="application"] {
+  border-color: rgba(167, 139, 250, 0.34);
+  background: rgba(19, 14, 35, 0.92);
+  color: #c4b5fd;
+}
+
+.current-layer-badge[data-layer="exploitation"],
+.terminal-mobile-layer[data-layer="exploitation"],
+.layer-transition-banner[data-layer="exploitation"] {
+  border-color: rgba(248, 113, 113, 0.34);
+  background: rgba(38, 11, 18, 0.92);
+  color: #fca5a5;
+}
+
 .scenario-support-grid {
   display: grid;
   gap: 14px;
@@ -197,6 +229,16 @@
   min-height: 760px;
   padding: 0;
   overflow: hidden;
+}
+
+.layer-transition-banner {
+  margin: 0 20px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .terminal-output-shell {
@@ -266,6 +308,17 @@
   background: rgba(7, 11, 16, 0.9);
 }
 
+.terminal-mobile-layer {
+  width: fit-content;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .terminal-mobile-scenario {
   margin: 0;
   color: #7dd3fc;
@@ -301,6 +354,18 @@
   font-family: "Courier New", monospace;
   font-weight: 700;
   font-size: clamp(13px, 1.3vw, 14px);
+}
+
+.terminal-page[data-layer="network"] .terminal-prompt-label {
+  color: #38bdf8;
+}
+
+.terminal-page[data-layer="application"] .terminal-prompt-label {
+  color: #a78bfa;
+}
+
+.terminal-page[data-layer="exploitation"] .terminal-prompt-label {
+  color: #f87171;
 }
 
 .terminal-input {
@@ -792,6 +857,12 @@
     padding-bottom: 18px;
     font-size: 12.5px;
     max-height: min(40dvh, 300px);
+  }
+
+  .layer-transition-banner {
+    margin: 0 12px;
+    padding: 9px 10px;
+    font-size: 11px;
   }
 
   .terminal-mobile-dock {

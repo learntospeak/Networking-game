@@ -9,6 +9,7 @@
     scenarioCountBadge: document.getElementById("scenarioCountBadge"),
     stepCountBadge: document.getElementById("stepCountBadge"),
     shellBadge: document.getElementById("shellBadge"),
+    currentLayerBadge: document.getElementById("currentLayerBadge"),
     scenarioCategory: document.getElementById("scenarioCategory"),
     scenarioTitle: document.getElementById("scenarioTitle"),
     scenarioLevel: document.getElementById("scenarioLevel"),
@@ -18,6 +19,8 @@
     coachSignal: document.getElementById("coachSignal"),
     hintLadder: document.getElementById("hintLadder"),
     progressSummary: document.getElementById("progressSummary"),
+    layerTransitionBanner: document.getElementById("layerTransitionBanner"),
+    mobileLayerBadge: document.getElementById("mobileLayerBadge"),
     mobileScenarioTitle: document.getElementById("mobileScenarioTitle"),
     mobileStepObjective: document.getElementById("mobileStepObjective"),
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
@@ -40,7 +43,9 @@
     hintLevel: -1,
     commandHistory: [],
     historyIndex: 0,
-    scenarioCompleted: false
+    scenarioCompleted: false,
+    currentLayer: null,
+    layerTransitionTimer: null
   };
 
   function currentScenario() {
@@ -87,8 +92,62 @@
     els.terminalOutput.innerHTML = "";
   }
 
+  function getLayerLabel(layer = session.currentLayer) {
+    return String(layer || "application").toUpperCase();
+  }
+
+  function getPromptLabel() {
+    return `[${getLayerLabel()}] ${StateManager.getPrompt(session.state)}`;
+  }
+
+  function syncLayerElement(element, layer, text) {
+    if (!element) return;
+    element.dataset.layer = layer;
+    if (text !== undefined) {
+      element.textContent = text;
+    }
+  }
+
+  function setCurrentLayer(layer) {
+    const normalizedLayer = ["network", "application", "exploitation"].includes(layer) ? layer : "application";
+    session.currentLayer = normalizedLayer;
+    if (session.state) {
+      session.state.currentLayer = normalizedLayer;
+    }
+    document.body.dataset.layer = normalizedLayer;
+
+    syncLayerElement(els.currentLayerBadge, normalizedLayer, `${getLayerLabel(normalizedLayer)} Layer`);
+    syncLayerElement(els.mobileLayerBadge, normalizedLayer, `Layer: ${getLayerLabel(normalizedLayer)}`);
+    syncLayerElement(els.layerTransitionBanner, normalizedLayer);
+  }
+
+  function showLayerTransition(previousLayer, nextLayer) {
+    if (!els.layerTransitionBanner) return;
+
+    if (session.layerTransitionTimer) {
+      window.clearTimeout(session.layerTransitionTimer);
+      session.layerTransitionTimer = null;
+    }
+
+    if (!previousLayer || previousLayer === nextLayer) {
+      els.layerTransitionBanner.hidden = true;
+      els.layerTransitionBanner.textContent = "";
+      return;
+    }
+
+    syncLayerElement(
+      els.layerTransitionBanner,
+      nextLayer,
+      `Transitioning from ${getLayerLabel(previousLayer)} -> ${getLayerLabel(nextLayer)} layer`
+    );
+    els.layerTransitionBanner.hidden = false;
+    session.layerTransitionTimer = window.setTimeout(() => {
+      els.layerTransitionBanner.hidden = true;
+    }, 2200);
+  }
+
   function updatePrompt() {
-    els.terminalPrompt.textContent = StateManager.getPrompt(session.state);
+    els.terminalPrompt.textContent = getPromptLabel();
   }
 
   function shellLabel() {
@@ -116,6 +175,7 @@
     els.scenarioCountBadge.textContent = `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
     els.stepCountBadge.textContent = `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
     els.shellBadge.textContent = shellLabel();
+    setCurrentLayer(scenario.layer || "application");
 
     els.scenarioCategory.textContent = scenario.category;
     els.scenarioTitle.textContent = scenario.title;
@@ -148,6 +208,7 @@
     const step = currentStep();
 
     printLine(`[${scenario.category}] ${scenario.title}`, "system");
+    printLine(`Layer: ${getLayerLabel(scenario.layer)}`, "dim");
     printLine(`Objective: ${scenario.objective}`, "dim");
     printLine(`Environment: ${shellLabel()} shell`, "dim");
     if (step.context) {
@@ -158,6 +219,7 @@
 
   function resetScenarioState() {
     session.state = StateManager.createState(currentScenario().environment);
+    setCurrentLayer(currentScenario().layer || "application");
     session.stepIndex = 0;
     session.attemptsForStep = 0;
     session.hintLevel = -1;
@@ -165,9 +227,11 @@
   }
 
   function loadScenario(index) {
+    const previousLayer = session.currentLayer;
     session.scenarioIndex = ((index % totalScenarios()) + totalScenarios()) % totalScenarios();
     resetScenarioState();
     clearTerminal();
+    showLayerTransition(previousLayer, session.currentLayer);
     announceScenario();
     renderPanel();
     els.terminalInput.focus();
@@ -1319,7 +1383,7 @@
     const rawInput = els.terminalInput.value.trim();
     if (!rawInput) return;
 
-    printLine(`${StateManager.getPrompt(session.state)} ${rawInput}`, "command");
+    printLine(`${getPromptLabel()} ${rawInput}`, "command");
     pushHistory(rawInput);
     els.terminalInput.value = "";
 
@@ -1341,7 +1405,7 @@
     }
 
     session.hintLevel = Math.min(2, session.hintLevel + 1);
-    const hint = CoachEngine.getHint(currentStep(), session.hintLevel);
+    const hint = CoachEngine.getHint(currentStep(), session.hintLevel, session.state);
     printLine(`Hint ${session.hintLevel + 1}: ${hint}`, "coach");
     renderPanel();
   }

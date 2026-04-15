@@ -427,10 +427,59 @@
     };
   }
 
+  function inferScenarioLayer(scenario) {
+    const explicitLayer = String(scenario.layer || "").toLowerCase();
+    if (["network", "application", "exploitation"].includes(explicitLayer)) {
+      return explicitLayer;
+    }
+
+    const category = String(scenario.category || "").toLowerCase();
+    const combined = `${category} ${scenario.title || ""} ${scenario.objective || ""}`.toLowerCase();
+
+    if (
+      category === "file system navigation" ||
+      category === "file manipulation" ||
+      category === "text processing" ||
+      category === "archive workflows" ||
+      category === "python/script workflows" ||
+      category === "troubleshooting scenarios" ||
+      category === "mixed real-world tasks"
+    ) {
+      return "application";
+    }
+
+    if (category === "nmap scanning workflows" || category === "netcat workflows" || category === "networking basics") {
+      return "network";
+    }
+
+    if (category === "exploitation thinking" || category === "metasploit workflows") {
+      return "exploitation";
+    }
+
+    if (/\bmetasploit\b|\bexploit\b|\bpayload\b|\breverse shell\b|\bbind shell\b|\bprivilege\b|\bsession\b/.test(combined)) {
+      return "exploitation";
+    }
+
+    if (/\bnmap\b|\bnetcat\b|\bnc\b|\bport\b|\bports\b|\bhost\b|\bscan\b|\blistener\b|\bconnect\b|\bping\b|\bsmtp\b|\btcp\b|\budp\b/.test(combined)) {
+      return "network";
+    }
+
+    if (/\bhttp\b|\bhttps\b|\brequest\b|\bresponse\b|\bparameter\b|\bheader\b|\bcookie\b|\bapi\b|\bconfig\b|\blog\b|\bservice\b/.test(combined)) {
+      return "application";
+    }
+
+    return "application";
+  }
+
   function refineScenario(scenario) {
-    return {
+    const layeredScenario = {
       ...scenario,
-      steps: scenario.steps.map((stepConfig) => refineStep(stepConfig, scenario))
+      layer: inferScenarioLayer(scenario)
+    };
+
+    return {
+      ...layeredScenario,
+      steps: layeredScenario.steps.map((stepConfig) => refineStep(stepConfig, layeredScenario))
     };
   }
 
@@ -1312,6 +1361,7 @@
       id: config.id,
       title: config.title,
       category: "File system navigation",
+      layer: config.layer || inferScenarioLayer({ ...config, category: "File system navigation" }),
       level: config.level,
       shell: "linux",
       objective: config.objective,
@@ -1335,6 +1385,7 @@
       id: config.id,
       title: config.title,
       category: "File system navigation",
+      layer: config.layer || inferScenarioLayer({ ...config, category: "File system navigation" }),
       level: config.level,
       shell: "cmd",
       objective: config.objective,
@@ -1358,6 +1409,7 @@
       id: config.id,
       title: config.title,
       category: "File manipulation",
+      layer: config.layer || inferScenarioLayer({ ...config, category: "File manipulation" }),
       level: config.level,
       shell: "linux",
       objective: config.objective,
@@ -1376,6 +1428,7 @@
       id: config.id,
       title: config.title,
       category: config.category,
+      layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "linux",
       objective: config.objective,
@@ -1390,6 +1443,7 @@
       id: config.id,
       title: config.title,
       category: config.category,
+      layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "cmd",
       objective: config.objective,
@@ -2760,6 +2814,7 @@
     id: "string",
     title: "string",
     category: "string",
+    layer: "network | application | exploitation",
     level: "Beginner | Intermediate | Advanced",
     shell: "linux | cmd | metasploit",
     objective: "string",

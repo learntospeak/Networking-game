@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
-  <link rel="stylesheet" href="./style.css?v=20260414b">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260414b">
-  <script src="./commandsData.js?v=20260414b" defer></script>
-  <script src="./stateManager.js?v=20260414b" defer></script>
-  <script src="./coachEngine.js?v=20260414b" defer></script>
-  <script src="./scenarioEngine.js?v=20260414b" defer></script>
-  <script src="./terminalEngine.js?v=20260414b" defer></script>
-  <script src="./commandSheet.js?v=20260414b" defer></script>
+  <link rel="stylesheet" href="./style.css?v=20260415a">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260415a">
+  <script src="./commandsData.js?v=20260415a" defer></script>
+  <script src="./stateManager.js?v=20260415a" defer></script>
+  <script src="./coachEngine.js?v=20260415a" defer></script>
+  <script src="./scenarioEngine.js?v=20260415a" defer></script>
+  <script src="./terminalEngine.js?v=20260415a" defer></script>
+  <script src="./commandSheet.js?v=20260415a" defer></script>
 </head>
 <body class="terminal-page">
   <div class="rack-room">
@@ -48,6 +48,7 @@
             <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
             <div id="stepCountBadge" class="status-badge">Task 1 / 4</div>
             <div id="shellBadge" class="status-badge">Linux</div>
+            <div id="currentLayerBadge" class="status-badge current-layer-badge" data-layer="network">NETWORK Layer</div>
           </div>
         </div>
       </section>
@@ -91,12 +92,14 @@
         </aside>
 
         <section class="lab-panel terminal-panel">
+          <div id="layerTransitionBanner" class="layer-transition-banner" data-layer="network" hidden></div>
           <div class="terminal-output-shell">
             <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
           </div>
 
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
+              <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
               <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
               <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>
               <p id="mobileCoachSignal" class="terminal-mobile-signal">Work from evidence. Good operators confirm context before they act.</p>

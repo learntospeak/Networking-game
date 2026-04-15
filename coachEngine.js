@@ -94,19 +94,44 @@
     return 2;
   }
 
-  function getHint(step, level) {
-    const hints = step.hints || [];
-    if (!hints.length) return "Stay on the current objective and use the output you already have.";
-    return hints[Math.min(level, hints.length - 1)];
+  function getCurrentLayer(state) {
+    const layer = String(state?.currentLayer || "").toLowerCase();
+    return ["network", "application", "exploitation"].includes(layer) ? layer : "application";
   }
 
-  function buildMistakeMessage(step, execution, attempts, classification, partial) {
+  function getLayerHintLead(state) {
+    switch (getCurrentLayer(state)) {
+      case "network":
+        return "Network layer: think about hosts, ports, reachability, and service exposure.";
+      case "exploitation":
+        return "Exploitation layer: think about how controlled input changes behavior or execution.";
+      default:
+        return "Application layer: focus on service behavior, files, requests, or parameters.";
+    }
+  }
+
+  function withLayerLead(state, text) {
+    const lead = getLayerHintLead(state);
+    if (!text) return lead;
+    if (String(text).toLowerCase().includes("layer:")) return text;
+    return `${lead} ${text}`;
+  }
+
+  function getHint(step, level, state) {
+    const hints = step.hints || [];
+    const baseHint = hints.length
+      ? hints[Math.min(level, hints.length - 1)]
+      : "Stay on the current objective and use the output you already have.";
+    return withLayerLead(state, baseHint);
+  }
+
+  function buildMistakeMessage(step, execution, state, attempts, classification, partial) {
     if (partial) {
       return {
         classification: partial.classification || "inefficient",
         feedback: partial.feedback,
-        coach: partial.coach || step.context || step.explanation,
-        hint: partial.countsAsAttempt === false ? null : getHint(step, getHintTierFromAttempts(attempts)),
+        coach: withLayerLead(state, partial.coach || step.context || step.explanation),
+        hint: partial.countsAsAttempt === false ? null : getHint(step, getHintTierFromAttempts(attempts), state),
         countsAsAttempt: partial.countsAsAttempt !== false
       };
     }
@@ -115,8 +140,8 @@
       return {
         classification,
         feedback: "That command is not available in this training shell.",
-        coach: step.context || "Stay inside the tools and commands that fit the current platform and scenario.",
-        hint: getHint(step, getHintTierFromAttempts(attempts)),
+        coach: withLayerLead(state, step.context || "Stay inside the tools and commands that fit the current platform and scenario."),
+        hint: getHint(step, getHintTierFromAttempts(attempts), state),
         countsAsAttempt: true
       };
     }
@@ -127,8 +152,8 @@
         return {
           classification,
           feedback: "The `-p` value is not a valid port list.",
-          coach: "Use `-p` with a port number or comma-separated port list, then put the target after that. For example, keep the port after `-p` and the host as the final argument.",
-          hint: getHint(step, getHintTierFromAttempts(attempts)),
+          coach: withLayerLead(state, "Use `-p` with a port number or comma-separated port list, then put the target after that. For example, keep the port after `-p` and the host as the final argument."),
+          hint: getHint(step, getHintTierFromAttempts(attempts), state),
           countsAsAttempt: true
         };
       }
@@ -136,8 +161,8 @@
       return {
         classification,
         feedback: "The command is recognized, but the syntax or arguments are off.",
-        coach: step.context || "Look at the flags, argument order, or the target you passed in.",
-        hint: getHint(step, getHintTierFromAttempts(attempts)),
+        coach: withLayerLead(state, step.context || "Look at the flags, argument order, or the target you passed in."),
+        hint: getHint(step, getHintTierFromAttempts(attempts), state),
         countsAsAttempt: true
       };
     }
@@ -145,8 +170,8 @@
     return {
       classification,
       feedback: "That command is valid, but it does not move this scenario forward.",
-      coach: step.context || "Use the current objective and the terminal output to decide the next practical move.",
-      hint: getHint(step, getHintTierFromAttempts(attempts)),
+      coach: withLayerLead(state, step.context || "Use the current objective and the terminal output to decide the next practical move."),
+      hint: getHint(step, getHintTierFromAttempts(attempts), state),
       countsAsAttempt: true
     };
   }
@@ -162,7 +187,7 @@
         success: true,
         classification: "success",
         feedback: matchedSuccess.feedback || step.successFeedback || "That command works for this task.",
-        coach: matchedSuccess.coach || step.explanation,
+        coach: withLayerLead(state, matchedSuccess.coach || step.explanation),
         hint: null,
         countsAsAttempt: false,
         advanceBy: matchedSuccess.advanceBy || 1
@@ -175,15 +200,15 @@
         success: false,
         classification: matchedExploration.classification || "exploration",
         feedback: matchedExploration.feedback,
-        coach: matchedExploration.coach || step.context || step.explanation,
-        hint: matchedExploration.hint || null,
+        coach: withLayerLead(state, matchedExploration.coach || step.context || step.explanation),
+        hint: matchedExploration.hint ? withLayerLead(state, matchedExploration.hint) : null,
         countsAsAttempt: false
       };
     }
 
     const matchedPartial = partials.find((partial) => matchRule(partial.match, execution, state));
     const classification = getClassificationForExecution(execution);
-    const result = buildMistakeMessage(step, execution, attempts, classification, matchedPartial);
+    const result = buildMistakeMessage(step, execution, state, attempts, classification, matchedPartial);
 
     return {
       success: false,
