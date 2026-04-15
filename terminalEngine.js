@@ -438,6 +438,12 @@
     return lines.filter((line) => regex.test(line));
   }
 
+  function normalizeTextLines(lines) {
+    return lines
+      .flatMap((line) => String(line).split(/\r?\n/))
+      .filter((line) => line !== "");
+  }
+
   function buildDownloadedFile(url, outputName) {
     const filename = outputName || url.split("/").pop() || "downloaded-file";
 
@@ -574,12 +580,12 @@
   }
 
   function readTextSource(commandName, parsed, pipedInput) {
-    if (pipedInput.length) return { ok: true, lines: pipedInput };
+    if (pipedInput.length) return { ok: true, lines: normalizeTextLines(pipedInput) };
     const filename = parsed.args[parsed.args.length - 1];
     if (!filename) return { ok: false, error: `${commandName}: missing file operand`, status: "syntax_error" };
     const file = StateManager.readFile(session.state, filename);
     if (!file.ok) return { ok: false, error: file.error, status: "runtime_error" };
-    return { ok: true, lines: file.content.split(/\r?\n/) };
+    return { ok: true, lines: normalizeTextLines(file.content.split(/\r?\n/)) };
   }
 
   function executeCat(parsed) {

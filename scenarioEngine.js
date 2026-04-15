@@ -1089,12 +1089,13 @@
       category: "Python/script workflows",
       level: "Beginner",
       shell: "linux",
-      objective: "Create a clean script workspace, move into it, create the file, and verify the result.",
+      objective: "Create a clean script workspace for the `port-audit` project, move into it, create `scan.py`, and verify the result.",
       allowedFlexibility: "Any valid path form is acceptable as long as the final workspace and file exist in the right location.",
       environment: linuxEnv({ cwd: "/home/student/scripts" }),
       steps: [
         step({
           objective: "Create a new folder for the scan project.",
+          context: "For this task, the project folder should be named `port-audit` so the rest of the workflow has a consistent workspace.",
           hints: ["Start by making the project directory.", "Create a folder named port-audit.", "Try `mkdir port-audit`."],
           explanation: "Creating a dedicated project folder before you script keeps tools and notes isolated from the rest of the host.",
           successFeedback: "You created the project directory.",
@@ -1109,6 +1110,7 @@
         }),
         step({
           objective: "Create the Python scan file.",
+          context: "The script file for this workspace should be named `scan.py`, so create that file inside the project directory before you verify it.",
           hints: ["You need an empty file first.", "Create scan.py in the current directory.", "Try `touch scan.py`."],
           explanation: "touch creates the script placeholder so you can start building or reviewing code in the correct location.",
           successFeedback: "You created the script file.",
