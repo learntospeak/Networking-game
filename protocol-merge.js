@@ -494,7 +494,7 @@ const state = {
   visualRunId: 0
 };
 
-const MESSAGE_TIME_SCALE = 1.4;
+const MESSAGE_TIME_SCALE = 1.96;
 
 function getScenario() {
   return scenarios[state.scenarioIndex];
