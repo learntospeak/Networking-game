@@ -231,6 +231,16 @@
 
   function mkdir(state, targetPath) {
     const normalized = normalizePath(state, targetPath);
+    const existing = state.fs[normalized];
+
+    if (existing) {
+      if (existing.type === "dir") {
+        return { ok: true, path: normalized };
+      }
+
+      return { ok: false, error: "Path exists and is not a directory" };
+    }
+
     ensureDirectory(state, normalized);
     return { ok: true, path: normalized };
   }

@@ -130,10 +130,18 @@
   }
 
   function fileExistsMatch(path, extras = {}) {
+    const { nodeType, postCheck, ...rest } = extras;
+
     return {
+      ...rest,
       fileExists: path,
-      postCheck: (_, state) => Boolean(window.StateManager.getNode(state, path)),
-      ...extras
+      postCheck: (execution, state) => {
+        const node = window.StateManager.getNode(state, path);
+        if (!node) return false;
+        if (nodeType && node.type !== nodeType) return false;
+        if (postCheck) return postCheck(execution, state);
+        return true;
+      }
     };
   }
 
@@ -1099,14 +1107,25 @@
           hints: ["Start by making the project directory.", "Create a folder named port-audit.", "Try `mkdir port-audit`."],
           explanation: "Creating a dedicated project folder before you script keeps tools and notes isolated from the rest of the host.",
           successFeedback: "You created the project directory.",
-          accepts: [fileExistsMatch("/home/student/scripts/port-audit", { command: "mkdir" })]
+          accepts: [fileExistsMatch("/home/student/scripts/port-audit", { command: "mkdir", nodeType: "dir" })]
         }),
         step({
           objective: "Move into the new project folder.",
           hints: ["Work inside the new project directory.", "Change into port-audit.", "Try `cd port-audit`."],
           explanation: "Entering the project folder first keeps later files in the right place.",
           successFeedback: "You moved into the project directory.",
-          accepts: [cwdMatch("/home/student/scripts/port-audit")]
+          accepts: [cwdMatch("/home/student/scripts/port-audit")],
+          partials: [
+            {
+              match: (execution, state) =>
+                /^cd\s+port-audit$/i.test((execution.raw || "").trim()) &&
+                window.StateManager.getNode(state, "/home/student/scripts/port-audit")?.type === "file",
+              classification: "wrong_context",
+              feedback: "`port-audit` exists as a file, not a directory.",
+              coach: "Remove the file, recreate `port-audit` as a directory, then change into it.",
+              countsAsAttempt: false
+            }
+          ]
         }),
         step({
           objective: "Create the Python scan file.",

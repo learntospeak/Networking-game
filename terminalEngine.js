@@ -569,7 +569,10 @@
 
   function executeMkdir(parsed) {
     if (!parsed.args.length) return errorResult("mkdir: missing operand", "syntax_error");
-    parsed.args.forEach((arg) => StateManager.mkdir(session.state, arg));
+    for (const arg of parsed.args) {
+      const created = StateManager.mkdir(session.state, arg);
+      if (!created.ok) return errorResult(`mkdir: ${created.error}`);
+    }
     return okResult(parsed.args.map((arg) => `created directory ${arg}`));
   }
 
