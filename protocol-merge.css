@@ -152,6 +152,7 @@
   --merge-bypass-bottom-stub: 16px;
   background: var(--merge-bypass-color);
   overflow: visible;
+  z-index: 2;
 }
 
 .merge-page .flow-cable-bypass::before,
@@ -167,13 +168,13 @@
 }
 
 .merge-page .flow-cable-bypass::before {
-  left: 0;
+  left: -3px;
   top: calc(var(--merge-bypass-left-stem) * -1);
   height: var(--merge-bypass-left-stem);
 }
 
 .merge-page .flow-cable-bypass::after {
-  right: 0;
+  right: -3px;
   top: calc(var(--merge-bypass-right-stem) * -1);
   height: var(--merge-bypass-right-stem);
 }
