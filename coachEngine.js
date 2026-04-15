@@ -122,6 +122,17 @@
     }
 
     if (classification === "wrong_syntax") {
+      const syntaxMessage = (execution.stderr || []).join(" ");
+      if (/illegal port specification/i.test(syntaxMessage)) {
+        return {
+          classification,
+          feedback: "The `-p` value is not a valid port list.",
+          coach: "Use `-p` with a port number or comma-separated port list, then put the target after that. For example, keep the port after `-p` and the host as the final argument.",
+          hint: getHint(step, getHintTierFromAttempts(attempts)),
+          countsAsAttempt: true
+        };
+      }
+
       return {
         classification,
         feedback: "The command is recognized, but the syntax or arguments are off.",

@@ -497,6 +497,11 @@
     return value.split(",").map((item) => Number(item.trim())).filter((item) => Number.isInteger(item));
   }
 
+  function hasValidPortListSyntax(value) {
+    if (!value) return true;
+    return /^\d+(,\d+)*$/.test(value.trim());
+  }
+
   function targetListFromArgs(parsed) {
     const fromFile = firstValueAfter(parsed, ["-iL"]);
     if (fromFile) {
@@ -768,6 +773,11 @@
   }
 
   function executeNmap(parsed) {
+    const requestedPortValue = firstValueAfter(parsed, ["-p"]);
+    if (!hasValidPortListSyntax(requestedPortValue)) {
+      return errorResult(`nmap: illegal port specification: ${requestedPortValue}`, "syntax_error");
+    }
+
     const targets = targetListFromArgs(parsed);
     if (targets.error) return errorResult(targets.error);
     if (!targets.length) return errorResult("nmap: missing target specification", "syntax_error");
