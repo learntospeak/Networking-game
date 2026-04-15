@@ -1982,6 +1982,457 @@
 
   const generatedNetcatScenarios = [
     linuxScenario({
+      id: "nc-basics-smtp-banner-check",
+      title: "Netcat SMTP Banner Check",
+      category: "Netcat workflows",
+      level: "Beginner",
+      objective: "Reach a known remote service and confirm it answers on the expected port.",
+      allowedFlexibility: "Any direct Netcat client connection to the correct SMTP host and port is acceptable.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Connect to the SMTP service on metasploitable2 (192.168.56.102).",
+          context: "You only need to prove that the mail service answers on its expected port. This is a client connection to a known remote service.",
+          hints: [
+            "This is an outbound connection, not a local waiting task.",
+            "Mail services usually speak first once you reach the right port.",
+            "Use Netcat as a client against metasploitable2 on SMTP."
+          ],
+          explanation: "When you already know the service port, the cleanest proof is a direct socket connection that returns the service banner.",
+          whyThisMatters: "Operators use raw socket checks to validate whether a service is truly reachable before doing anything deeper.",
+          successFeedback: "You connected to the remote SMTP service correctly.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i),
+            rawMatch(/^nc\s+-nv\s+metasploitable2\s+25$/i),
+            rawMatch(/^nc\s+-nv\s+target\s+25$/i),
+            rawMatch(/^nc\s+192\.168\.56\.102\s+25$/i),
+            rawMatch(/^nc\s+metasploitable2\s+25$/i),
+            rawMatch(/^nc\s+target\s+25$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-web-port-check",
+      title: "Netcat Web Port Check",
+      category: "Netcat workflows",
+      level: "Beginner",
+      objective: "Test whether a likely web service is reachable without setting up any listener locally.",
+      allowedFlexibility: "Any direct client connection to the correct web host and port is acceptable.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Test whether web-lab (192.168.56.10) is accepting connections on port 80.",
+          context: "A teammate suspects HTTP is running. Validate the web port directly instead of using a local listener or an unrelated port.",
+          hints: [
+            "You are testing a remote service, not waiting for a callback.",
+            "This is a single outbound socket to the likely web port.",
+            "Connect to web-lab on port 80."
+          ],
+          explanation: "A direct client connection is the fastest way to confirm whether the suspected web port is actually accepting sessions.",
+          whyThisMatters: "Connection logic starts with role clarity: if the service is remote, you connect to it.",
+          successFeedback: "You tested the remote web port correctly.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.10\s+80$/i),
+            rawMatch(/^nc\s+-nv\s+web-lab\s+80$/i),
+            rawMatch(/^nc\s+-nv\s+web\s+80$/i),
+            rawMatch(/^nc\s+192\.168\.56\.10\s+80$/i),
+            rawMatch(/^nc\s+web-lab\s+80$/i),
+            rawMatch(/^nc\s+web\s+80$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-listener-callback",
+      title: "Netcat Callback Listener",
+      category: "Netcat workflows",
+      level: "Beginner",
+      objective: "Prepare your system to receive an inbound callback on a known port.",
+      allowedFlexibility: "Any valid Netcat listener on the correct port is acceptable.",
+      environment: { cwd: "/home/student" },
+      steps: [
+        step({
+          objective: "Start a local listener on TCP 4444 before the remote side calls back.",
+          context: "The remote system will initiate the connection to you. Your side must already be waiting on the chosen port.",
+          hints: [
+            "The remote side is the initiator here.",
+            "If you are waiting for a callback, your socket must already be open.",
+            "Use Netcat in listen mode on port 4444."
+          ],
+          explanation: "A callback only lands if the receiving side is already listening. That is the critical role decision in this workflow.",
+          whyThisMatters: "Knowing who listens versus who connects is the core Netcat skill.",
+          successFeedback: "You prepared the local callback listener.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+4444$/i),
+            rawMatch(/^nc\s+-lvp\s+4444$/i),
+            listenerPortMatch(4444, { command: "nc" })
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-file-receiver",
+      title: "Netcat File Receiver",
+      category: "Netcat workflows",
+      level: "Beginner",
+      objective: "Prepare the receiving side of a file transfer and write incoming data straight to disk.",
+      allowedFlexibility: "A valid listener on the correct port with output redirected to the target file is required.",
+      environment: { cwd: "/home/student/downloads" },
+      steps: [
+        step({
+          objective: "Set up the receiving side on port 9001 so incoming data is saved to loot.txt.",
+          context: "Your machine is receiving the file. The receiver should wait first and direct the incoming bytes into a local file.",
+          hints: [
+            "The receiver should wait; the sender should connect.",
+            "You need both a listening socket and output redirection.",
+            "Listen on port 9001 and redirect the stream into loot.txt."
+          ],
+          explanation: "For a one-way transfer, the receiving host takes the listener role and writes the incoming stream to disk.",
+          whyThisMatters: "File movement with Netcat depends on assigning the listener role to the destination side.",
+          successFeedback: "You prepared the file receiver correctly.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+9001\s*>\s*loot\.txt$/i),
+            rawMatch(/^nc\s+-lvp\s+9001\s*>\s*loot\.txt$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-file-sender",
+      title: "Netcat File Sender",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Send a local file to a host that is already waiting to receive it.",
+      allowedFlexibility: "Any valid outbound Netcat connection to the waiting host and port that feeds the local file into the socket is acceptable.",
+      environment: {
+        cwd: "/home/student",
+        files: [{ path: "/home/student/notes.txt", content: "operator notes\n" }],
+        targets: [
+          ...commonTargets(),
+          {
+            ip: "192.168.56.50",
+            hostname: "receiver-lab",
+            aliases: ["receiver", "dropbox"],
+            reachable: true,
+            os: "Ubuntu Linux",
+            ports: [{ port: 9001, proto: "tcp", service: "nc-listener", version: "waiting receiver", banner: "" }]
+          }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Send notes.txt to receiver-lab (192.168.56.50) on port 9001.",
+          context: "The destination host is already listening. Your role is to connect to it and stream the local file across the socket.",
+          hints: [
+            "The sender is not the listener in this situation.",
+            "You need an outbound connection plus input redirection from a local file.",
+            "Connect to receiver-lab on port 9001 and feed notes.txt into the session."
+          ],
+          explanation: "When the receiver is already waiting, the sender becomes the client and pushes local file data into the outbound connection.",
+          whyThisMatters: "Transfers work cleanly only when the sender and receiver roles are assigned correctly.",
+          successFeedback: "You initiated the file transfer from the sending side.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.50\s+9001\s*<\s*notes\.txt$/i),
+            rawMatch(/^nc\s+-nv\s+receiver-lab\s+9001\s*<\s*notes\.txt$/i),
+            rawMatch(/^nc\s+-nv\s+receiver\s+9001\s*<\s*notes\.txt$/i),
+            rawMatch(/^nc\s+192\.168\.56\.50\s+9001\s*<\s*notes\.txt$/i),
+            rawMatch(/^nc\s+receiver-lab\s+9001\s*<\s*notes\.txt$/i),
+            rawMatch(/^nc\s+receiver\s+9001\s*<\s*notes\.txt$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-port-correction",
+      title: "Netcat Wrong Port Correction",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Correct a bad port assumption and connect to the real service port instead.",
+      allowedFlexibility: "Any direct client connection to the correct SMTP port is acceptable.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "After a failed guess at 2525, connect to the real SMTP service on metasploitable2.",
+          context: "The host is still correct. The mistake was the port choice. Use the real mail-service port instead of repeating the bad guess.",
+          hints: [
+            "Host identity and port identity are different checks.",
+            "A failed service connection does not always mean the host is wrong.",
+            "Reconnect to metasploitable2 on the real SMTP port."
+          ],
+          explanation: "When the host is right but the port is wrong, the correct recovery is to adjust the service port, not abandon the target.",
+          whyThisMatters: "Operators separate host problems from port problems instead of treating them as the same failure.",
+          successFeedback: "You corrected the service port cleanly.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.102\s+25$/i),
+            rawMatch(/^nc\s+-nv\s+metasploitable2\s+25$/i),
+            rawMatch(/^nc\s+-nv\s+target\s+25$/i),
+            rawMatch(/^nc\s+192\.168\.56\.102\s+25$/i),
+            rawMatch(/^nc\s+metasploitable2\s+25$/i),
+            rawMatch(/^nc\s+target\s+25$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-missing-listener-fix",
+      title: "Netcat Missing Listener Fix",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Fix a stalled transfer by preparing the missing receiving socket first.",
+      allowedFlexibility: "Any valid listener on the agreed port is acceptable.",
+      environment: { cwd: "/home/student" },
+      steps: [
+        step({
+          objective: "Start a local listener on port 7001 so the sender can retry.",
+          context: "The sender already tried once and nothing landed because your side was not waiting yet. Fix the role problem before the next attempt.",
+          hints: [
+            "Netcat does not invent a receiver for you.",
+            "One side must be ready before the other side can connect.",
+            "Start a listener on the agreed local port before the sender retries."
+          ],
+          explanation: "If the receiving side is not listening first, the sending side has nowhere to connect and the transfer fails.",
+          whyThisMatters: "Sequence matters with sockets: listening must exist before the client initiates.",
+          successFeedback: "You corrected the missing-listener problem.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+7001$/i),
+            rawMatch(/^nc\s+-lvp\s+7001$/i),
+            listenerPortMatch(7001, { command: "nc" })
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-destination-listens",
+      title: "Netcat Destination Listens",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Assign the listener role to the machine that must receive the file.",
+      allowedFlexibility: "A valid receiving listener with output redirected to the intended file is required.",
+      environment: { cwd: "/home/student/downloads" },
+      steps: [
+        step({
+          objective: "Prepare this host to receive a report on port 9100 and save it as report.txt.",
+          context: "Machine A has the file. This machine is the destination. The destination should wait and capture the incoming bytes locally.",
+          hints: [
+            "Think about where the data needs to end up.",
+            "The host that must capture the bytes should be passive first.",
+            "Listen on port 9100 and write the received stream into report.txt."
+          ],
+          explanation: "The receiving machine should be the listener in a one-way transfer because it is the endpoint that must capture the data.",
+          whyThisMatters: "Connection role decisions become much easier once you think in terms of data destination.",
+          successFeedback: "You assigned the listener role to the destination side.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+9100\s*>\s*report\.txt$/i),
+            rawMatch(/^nc\s+-lvp\s+9100\s*>\s*report\.txt$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-both-sides-connect-fix",
+      title: "Netcat Both Sides Connect Fix",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Resolve a failed exchange caused by both operators trying to initiate connections.",
+      allowedFlexibility: "Any valid listener on the agreed port is acceptable.",
+      environment: { cwd: "/home/student" },
+      steps: [
+        step({
+          objective: "Switch your side into a waiting role on port 8800 so the other operator can connect.",
+          context: "Nothing worked because both sides tried to connect out. One side has to stop initiating and open a listening socket instead.",
+          hints: [
+            "Connections need a server side and a client side.",
+            "If both ends initiate, there may be no open listening socket.",
+            "Open a local listener on the agreed port so the other operator can connect."
+          ],
+          explanation: "A socket exchange needs one passive side and one initiating side. Two clients do not create a complete session by themselves.",
+          whyThisMatters: "Understanding why a connection fails is often more important than memorizing the syntax.",
+          successFeedback: "You fixed the role mismatch by listening locally.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+8800$/i),
+            rawMatch(/^nc\s+-lvp\s+8800$/i),
+            listenerPortMatch(8800, { command: "nc" })
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-https-reachability",
+      title: "Netcat HTTPS Socket Check",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Test whether an HTTPS service is accepting TCP connections even before you speak the full protocol.",
+      allowedFlexibility: "Any direct client connection to the correct host and port is acceptable.",
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Connect to web-lab (192.168.56.10) on port 443.",
+          context: "You are only validating TCP acceptance on the HTTPS port. This is still a client-side connection to a remote service.",
+          hints: [
+            "This is a raw connectivity check to a secure web port.",
+            "You do not need a local listener for this task.",
+            "Connect directly to web-lab on port 443."
+          ],
+          explanation: "Even when the higher-level protocol is HTTPS, Netcat can still tell you whether the socket accepts the connection.",
+          whyThisMatters: "Operators often separate transport reachability from full application-layer testing.",
+          successFeedback: "You validated TCP reachability to the HTTPS port.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.10\s+443$/i),
+            rawMatch(/^nc\s+-nv\s+web-lab\s+443$/i),
+            rawMatch(/^nc\s+-nv\s+web\s+443$/i),
+            rawMatch(/^nc\s+192\.168\.56\.10\s+443$/i),
+            rawMatch(/^nc\s+web-lab\s+443$/i),
+            rawMatch(/^nc\s+web\s+443$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-quiet-service-connect",
+      title: "Netcat Quiet Service Connect",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Connect to a service that accepts the socket even if it does not print an immediate banner.",
+      allowedFlexibility: "Any direct client connection to the correct host and port is acceptable.",
+      environment: {
+        cwd: "/home/student",
+        targets: [
+          ...commonTargets(),
+          {
+            ip: "192.168.56.60",
+            hostname: "raw-app",
+            aliases: ["raw", "quiet-service"],
+            reachable: true,
+            os: "Linux",
+            ports: [{ port: 8088, proto: "tcp", service: "custom-app", version: "raw socket", banner: "" }]
+          }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Connect to raw-app (192.168.56.60) on port 8088.",
+          context: "This service may stay quiet after the connection opens. The absence of a banner does not mean the socket failed if the connection is held open.",
+          hints: [
+            "Silence does not always mean failure.",
+            "Some protocols wait for the client to speak first.",
+            "Open a direct Netcat connection to raw-app on port 8088."
+          ],
+          explanation: "Some services accept the socket but wait for client input before sending anything. That is still a successful connection.",
+          whyThisMatters: "You need to distinguish a quiet open socket from a refused or unreachable service.",
+          successFeedback: "You reached the quiet service correctly.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.60\s+8088$/i),
+            rawMatch(/^nc\s+-nv\s+raw-app\s+8088$/i),
+            rawMatch(/^nc\s+-nv\s+raw\s+8088$/i),
+            rawMatch(/^nc\s+192\.168\.56\.60\s+8088$/i),
+            rawMatch(/^nc\s+raw-app\s+8088$/i),
+            rawMatch(/^nc\s+raw\s+8088$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-notes-intake",
+      title: "Netcat Notes Intake",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Prepare a simple listener that captures plain-text notes from another operator.",
+      allowedFlexibility: "A valid receiving listener with output redirected to notes.txt is required.",
+      environment: { cwd: "/home/student/downloads" },
+      steps: [
+        step({
+          objective: "Start a listener on port 7777 and save the incoming text as notes.txt.",
+          context: "A teammate is about to send you a short note file. Your machine is the receiving endpoint and should write the data directly to disk.",
+          hints: [
+            "You are collecting, not sending.",
+            "Combine a waiting socket with file output redirection.",
+            "Listen on port 7777 and write the incoming stream into notes.txt."
+          ],
+          explanation: "A listener with output redirection is the cleanest way to receive a short text artifact from another host.",
+          whyThisMatters: "Netcat becomes much easier when you think about byte direction first and syntax second.",
+          successFeedback: "You prepared the notes intake listener.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+7777\s*>\s*notes\.txt$/i),
+            rawMatch(/^nc\s+-lvp\s+7777\s*>\s*notes\.txt$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-notes-send",
+      title: "Netcat Notes Send",
+      category: "Netcat workflows",
+      level: "Intermediate",
+      objective: "Send a local notes file to a remote host that is already listening.",
+      allowedFlexibility: "Any valid outbound Netcat file-send command to the correct host and port is acceptable.",
+      environment: {
+        cwd: "/home/student",
+        files: [{ path: "/home/student/status.txt", content: "status: ready\n" }],
+        targets: [
+          ...commonTargets(),
+          {
+            ip: "192.168.56.70",
+            hostname: "ops-drop",
+            aliases: ["ops", "drop"],
+            reachable: true,
+            os: "Linux",
+            ports: [{ port: 7777, proto: "tcp", service: "nc-listener", version: "waiting receiver", banner: "" }]
+          }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Send status.txt to ops-drop (192.168.56.70) on port 7777.",
+          context: "The remote side is already waiting. Your task is to initiate the client connection and feed the local file into the socket.",
+          hints: [
+            "The receiver is already passive and waiting.",
+            "Use an outbound connection plus input redirection from the local file.",
+            "Connect to ops-drop on port 7777 and feed status.txt into the session."
+          ],
+          explanation: "When the far end is already listening, the correct role for your side is the sender client that streams the file outward.",
+          whyThisMatters: "File transfers are clearer once you always ask which side is already waiting.",
+          successFeedback: "You started the outbound file send correctly.",
+          accepts: [
+            rawMatch(/^nc\s+-nv\s+192\.168\.56\.70\s+7777\s*<\s*status\.txt$/i),
+            rawMatch(/^nc\s+-nv\s+ops-drop\s+7777\s*<\s*status\.txt$/i),
+            rawMatch(/^nc\s+-nv\s+ops\s+7777\s*<\s*status\.txt$/i),
+            rawMatch(/^nc\s+192\.168\.56\.70\s+7777\s*<\s*status\.txt$/i),
+            rawMatch(/^nc\s+ops-drop\s+7777\s*<\s*status\.txt$/i),
+            rawMatch(/^nc\s+ops\s+7777\s*<\s*status\.txt$/i)
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
+      id: "nc-basics-late-listener-recovery",
+      title: "Netcat Late Listener Recovery",
+      category: "Netcat workflows",
+      level: "Advanced",
+      objective: "Recover from a failed transfer where the listener was started too late.",
+      allowedFlexibility: "Any valid listener on the agreed port is acceptable.",
+      environment: { cwd: "/home/student" },
+      steps: [
+        step({
+          objective: "Put your side into listen mode on port 5555 before the next retry.",
+          context: "The earlier attempt failed because the sender already tried to connect before your machine was waiting. Fix the order before the retry.",
+          hints: [
+            "This is a sequencing problem, not just a syntax problem.",
+            "The receiver must be ready before the client side reaches out.",
+            "Start a listener on port 5555 before the retry happens."
+          ],
+          explanation: "Netcat exchanges are timing-sensitive. If the listener is not present first, the sender cannot complete the connection.",
+          whyThisMatters: "Correct sequencing is part of operational discipline, not just command recall.",
+          successFeedback: "You corrected the timing problem by listening first.",
+          accepts: [
+            rawMatch(/^nc\s+-lvnp\s+5555$/i),
+            rawMatch(/^nc\s+-lvp\s+5555$/i),
+            listenerPortMatch(5555, { command: "nc" })
+          ]
+        })
+      ]
+    }),
+    linuxScenario({
       id: "smtp-full-mail-flow",
       title: "SMTP Full Mail Flow",
       category: "Netcat workflows",
