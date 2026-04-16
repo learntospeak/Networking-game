@@ -24,6 +24,25 @@ window.TerminalCoachConfig = {
     });
   }
 
+  function formatTargets(scenario) {
+    const targets = Array.isArray(scenario?.environment?.targets) ? scenario.environment.targets : [];
+    const unique = [];
+    const seen = new Set();
+
+    targets.forEach((target) => {
+      if (!target || !target.ip) return;
+      const label = target.hostname
+        ? `${target.hostname} (${target.ip})`
+        : target.ip;
+
+      if (seen.has(label)) return;
+      seen.add(label);
+      unique.push(label);
+    });
+
+    return unique;
+  }
+
   function initChallengeMode() {
     const engine = window.TerminalEngine;
     if (!engine) return;
@@ -35,6 +54,7 @@ window.TerminalCoachConfig = {
       difficultyMeta: document.getElementById("challengeDifficultyMeta"),
       layersMeta: document.getElementById("challengeLayersMeta"),
       successList: document.getElementById("challengeSuccessList"),
+      targetList: document.getElementById("challengeTargetList"),
       approachList: document.getElementById("challengeApproachList")
     };
 
@@ -67,6 +87,7 @@ window.TerminalCoachConfig = {
       }
 
       renderList(els.successList, scenario.successConditions);
+      renderList(els.targetList, formatTargets(scenario));
       renderList(els.approachList, scenario.allowedApproaches);
     }
 

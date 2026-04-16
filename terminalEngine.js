@@ -108,6 +108,25 @@
     return scenarioLayerList(scenario).map((layer) => String(layer || "").toUpperCase()).join(" + ");
   }
 
+  function scenarioKnownTargets(scenario = currentScenario()) {
+    const targets = Array.isArray(scenario?.environment?.targets) ? scenario.environment.targets : [];
+    const unique = [];
+    const seen = new Set();
+
+    targets.forEach((target) => {
+      if (!target || !target.ip) return;
+      const label = target.hostname
+        ? `${target.hostname} (${target.ip})`
+        : target.ip;
+
+      if (seen.has(label)) return;
+      seen.add(label);
+      unique.push(label);
+    });
+
+    return unique;
+  }
+
   function allowedApproachText(scenario = currentScenario()) {
     if (scenarioUsesChallengePresentation(scenario) && Array.isArray(scenario.allowedApproaches) && scenario.allowedApproaches.length) {
       return `Allowed approaches: ${scenario.allowedApproaches.join(" | ")}`;
@@ -304,6 +323,12 @@
     printLine(`Layer: ${scenarioLayerText(scenario)}`, "dim");
     printLine(`Objective: ${scenarioObjectiveText(scenario)}`, "dim");
     printLine(`Environment: ${shellLabel()} shell`, "dim");
+    if (challengePresentation) {
+      const knownTargets = scenarioKnownTargets(scenario);
+      if (knownTargets.length) {
+        printLine(`Known targets: ${knownTargets.join(" | ")}`, "dim");
+      }
+    }
     if (challengePresentation && Array.isArray(scenario.successConditions) && scenario.successConditions.length) {
       printLine(`Success signals: ${scenario.successConditions.join(" | ")}`, "dim");
       printLine("Minimal guidance is active. Work from evidence and decide your own sequence.", "coach");
