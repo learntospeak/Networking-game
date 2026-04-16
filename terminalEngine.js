@@ -7,23 +7,35 @@
   }
 
   const els = {
+    pageKicker: document.getElementById("terminalPageKicker"),
+    pageTitle: document.getElementById("terminalPageTitle"),
+    pageIntro: document.getElementById("terminalPageIntro"),
+    linuxTrackLink: document.getElementById("linuxTrackLink"),
+    windowsTrackLink: document.getElementById("windowsTrackLink"),
+    challengeTrackLink: document.getElementById("challengeTrackLink"),
     scenarioCountBadge: document.getElementById("scenarioCountBadge"),
     stepCountBadge: document.getElementById("stepCountBadge"),
+    environmentBadge: document.getElementById("environmentBadge"),
     shellBadge: document.getElementById("shellBadge"),
     currentLayerBadge: document.getElementById("currentLayerBadge"),
     scenarioCategory: document.getElementById("scenarioCategory"),
     scenarioTitle: document.getElementById("scenarioTitle"),
     scenarioLevel: document.getElementById("scenarioLevel"),
+    scenarioEnvironmentBadge: document.getElementById("scenarioEnvironmentBadge"),
     scenarioObjective: document.getElementById("scenarioObjective"),
     scenarioFlex: document.getElementById("scenarioFlex"),
+    environmentSummary: document.getElementById("environmentSummary"),
+    machineContextList: document.getElementById("machineContextList") || document.getElementById("challengeContextList"),
     stepObjective: document.getElementById("stepObjective"),
     coachSignal: document.getElementById("coachSignal"),
     hintLadder: document.getElementById("hintLadder"),
     progressSummary: document.getElementById("progressSummary"),
     layerTransitionBanner: document.getElementById("layerTransitionBanner"),
+    mobileEnvironmentBadge: document.getElementById("mobileEnvironmentBadge"),
     mobileLayerBadge: document.getElementById("mobileLayerBadge"),
     mobileScenarioTitle: document.getElementById("mobileScenarioTitle"),
     mobileStepObjective: document.getElementById("mobileStepObjective"),
+    mobileMachineContext: document.getElementById("mobileMachineContext"),
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
     terminalOutput: document.getElementById("terminalOutput"),
     terminalForm: document.getElementById("terminalForm"),
@@ -80,6 +92,125 @@
 
   function scenarioUsesChallengePresentation(scenario = currentScenario()) {
     return Boolean(pageConfig.mode === "challenge" || scenario?.mode === "challenge" || scenario?.hiddenSteps);
+  }
+
+  function scenarioEnvironmentCategory(scenario = currentScenario()) {
+    if (scenario?.environmentCategory) {
+      return scenario.environmentCategory;
+    }
+
+    if (pageConfig.environmentCategory) {
+      return pageConfig.environmentCategory;
+    }
+
+    if (scenarioUsesChallengePresentation(scenario)) {
+      return "cyber";
+    }
+
+    return scenario?.shell === "cmd" ? "windows" : "linux";
+  }
+
+  function scenarioEnvironmentLabel(scenario = currentScenario()) {
+    if (scenario?.environmentLabel) {
+      return scenario.environmentLabel;
+    }
+
+    const category = scenarioEnvironmentCategory(scenario);
+    if (category === "windows") return "Windows Terminal Learning";
+    if (category === "cyber") return "Cyber Challenge Mode";
+    return "Linux Terminal Learning";
+  }
+
+  function scenarioMachineContexts(scenario = currentScenario()) {
+    return Array.isArray(scenario?.machineContexts) ? scenario.machineContexts : [];
+  }
+
+  function formatMachineContext(context) {
+    return [context?.label, context?.role, context?.detail].filter(Boolean).join(" | ");
+  }
+
+  function machineContextSummary(scenario = currentScenario()) {
+    const contexts = scenarioMachineContexts(scenario);
+    if (!contexts.length) return "";
+
+    return contexts.map(formatMachineContext).join(" || ");
+  }
+
+  function primaryMachineContextText(scenario = currentScenario()) {
+    return formatMachineContext(scenarioMachineContexts(scenario)[0] || {});
+  }
+
+  function environmentSummaryText(scenario = currentScenario()) {
+    const label = scenarioEnvironmentLabel(scenario);
+
+    if (scenarioEnvironmentCategory(scenario) === "cyber") {
+      return `${label} keeps command input on the Analyst Box. Remote machines and application evidence are listed separately so the active shell stays obvious.`;
+    }
+
+    const shellText = scenario?.shell === "cmd" ? "Windows CMD" : "Linux terminal";
+    return `${label} keeps commands inside one ${shellText} unless the lesson explicitly says otherwise.`;
+  }
+
+  function hintContextLabel(scenario = currentScenario()) {
+    return scenarioMachineContexts(scenario)[0]?.label || scenarioEnvironmentLabel(scenario);
+  }
+
+  function syncTrackLinks(activeCategory) {
+    [
+      [els.linuxTrackLink, activeCategory === "linux"],
+      [els.windowsTrackLink, activeCategory === "windows"],
+      [els.challengeTrackLink, activeCategory === "cyber"]
+    ].forEach(([element, active]) => {
+      if (!element) return;
+      element.classList.toggle("is-active", active);
+      element.setAttribute("aria-current", active ? "page" : "false");
+    });
+  }
+
+  function syncPageIdentity(scenario = currentScenario()) {
+    const activeCategory = scenarioEnvironmentCategory(scenario);
+
+    document.body.dataset.environmentCategory = activeCategory;
+    syncTrackLinks(activeCategory);
+
+    if (els.pageKicker && pageConfig.pageKicker) {
+      els.pageKicker.textContent = pageConfig.pageKicker;
+    }
+
+    if (els.pageTitle && pageConfig.pageTitle) {
+      els.pageTitle.textContent = pageConfig.pageTitle;
+    }
+
+    if (els.pageIntro && pageConfig.pageIntro) {
+      els.pageIntro.textContent = pageConfig.pageIntro;
+    }
+  }
+
+  function renderMachineContexts(scenario = currentScenario()) {
+    if (!els.machineContextList) return;
+
+    const contexts = scenarioMachineContexts(scenario);
+    els.machineContextList.innerHTML = "";
+
+    contexts.forEach((context) => {
+      const li = document.createElement("li");
+      li.className = "machine-context-item";
+
+      const title = document.createElement("strong");
+      title.className = "machine-context-label";
+      title.textContent = context.label || "Machine Context";
+      li.appendChild(title);
+
+      const metaText = [context.role, context.detail].filter(Boolean).join(" | ");
+      if (metaText) {
+        const meta = document.createElement("span");
+        meta.className = "machine-context-meta";
+        meta.textContent = metaText;
+        li.appendChild(meta);
+      }
+
+      els.machineContextList.appendChild(li);
+    });
   }
 
   function scenarioObjectiveText(scenario = currentScenario()) {
@@ -271,6 +402,7 @@
     const scenario = currentScenario();
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const environmentLabel = scenarioEnvironmentLabel(scenario);
 
     els.scenarioCountBadge.textContent = challengePresentation
       ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
@@ -278,21 +410,38 @@
     els.stepCountBadge.textContent = challengePresentation
       ? "Challenge Active"
       : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
+    if (els.environmentBadge) {
+      els.environmentBadge.textContent = environmentLabel;
+    }
     els.shellBadge.textContent = shellLabel();
     setCurrentLayer(scenario.layer || "application");
     syncScenarioLayerBadges(scenario);
+    syncPageIdentity(scenario);
 
     els.scenarioCategory.textContent = scenario.category;
     els.scenarioTitle.textContent = scenario.title;
     els.scenarioLevel.textContent = challengePresentation ? (scenario.difficulty || scenario.level) : scenario.level;
+    if (els.scenarioEnvironmentBadge) {
+      els.scenarioEnvironmentBadge.textContent = environmentLabel;
+    }
     els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
     els.scenarioFlex.textContent = allowedApproachText(scenario);
+    if (els.environmentSummary) {
+      els.environmentSummary.textContent = environmentSummaryText(scenario);
+    }
+    renderMachineContexts(scenario);
     els.stepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
-    els.progressSummary.textContent = `${session.completedScenarioIds.size} scenarios completed in this session.`;
+    els.progressSummary.textContent = `${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`;
+    if (els.mobileEnvironmentBadge) {
+      els.mobileEnvironmentBadge.textContent = environmentLabel;
+    }
     els.mobileScenarioTitle.textContent = challengePresentation
       ? `${scenario.title} - Challenge ${session.scenarioIndex + 1}/${totalScenarios()}`
       : `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
     els.mobileStepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
+    if (els.mobileMachineContext) {
+      els.mobileMachineContext.textContent = primaryMachineContextText(scenario);
+    }
 
     if (session.scenarioCompleted) {
       els.coachSignal.textContent = "Scenario complete. Move to the next scenario or reset this one and run it cleaner.";
@@ -318,11 +467,16 @@
     const scenario = currentScenario();
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const machineSummary = machineContextSummary(scenario);
 
     printLine(`[${challengePresentation ? "Challenge" : scenario.category}] ${scenario.title}`, "system");
+    printLine(`Track: ${scenarioEnvironmentLabel(scenario)}`, "dim");
     printLine(`Layer: ${scenarioLayerText(scenario)}`, "dim");
     printLine(`Objective: ${scenarioObjectiveText(scenario)}`, "dim");
     printLine(`Environment: ${shellLabel()} shell`, "dim");
+    if (machineSummary) {
+      printLine(`Machine context: ${machineSummary}`, "dim");
+    }
     if (challengePresentation) {
       const knownTargets = scenarioKnownTargets(scenario);
       if (knownTargets.length) {
@@ -1542,7 +1696,7 @@
     );
     printLine(evaluation.coach, "dim");
     if (evaluation.hint) {
-      printLine(`Hint: ${evaluation.hint}`, "coach");
+      printLine(`Hint [${hintContextLabel()}]: ${evaluation.hint}`, "coach");
     }
     if (execution.status === "syntax_error" || execution.status === "invalid_command") {
       const reference = getCommandReference(execution.raw);
@@ -1609,7 +1763,7 @@
 
     session.hintLevel = Math.min(2, session.hintLevel + 1);
     const hint = CoachEngine.getHint(currentStep(), session.hintLevel, session.state);
-    printLine(`Hint ${session.hintLevel + 1}: ${hint}`, "coach");
+    printLine(`Hint ${session.hintLevel + 1} [${hintContextLabel()}]: ${hint}`, "coach");
     renderPanel();
   }
 

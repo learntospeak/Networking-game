@@ -1,5 +1,6 @@
 (function () {
   const { CommandsData } = window;
+  const pageConfig = window.TerminalCoachConfig || {};
 
   if (!CommandsData) {
     return;
@@ -21,9 +22,17 @@
     return;
   }
 
+  const availableCategories = Array.isArray(pageConfig.commandSheetCategories) && pageConfig.commandSheetCategories.length
+    ? pageConfig.commandSheetCategories.filter((category) => CommandsData.categories.includes(category))
+    : CommandsData.categories.slice();
+
+  const defaultCategory = availableCategories.includes(pageConfig.commandSheetDefaultCategory)
+    ? pageConfig.commandSheetDefaultCategory
+    : (availableCategories.includes("All") ? "All" : availableCategories[0]);
+
   const state = {
     query: "",
-    category: "All",
+    category: defaultCategory,
     expanded: new Set(),
     activeTrigger: null
   };
@@ -46,7 +55,8 @@
   }
 
   function renderTabs() {
-    els.tabs.innerHTML = CommandsData.categories
+    els.tabs.hidden = availableCategories.length <= 1;
+    els.tabs.innerHTML = availableCategories
       .map((category) => {
         const active = category === state.category;
         return `
@@ -210,7 +220,7 @@
 
     els.clearBtn.addEventListener("click", () => {
       state.query = "";
-      state.category = "All";
+      state.category = defaultCategory;
       els.search.value = "";
       syncState();
       els.search.focus();

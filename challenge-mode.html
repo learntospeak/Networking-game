@@ -36,6 +36,11 @@
           <p class="terminal-kicker">Applied Skill Builder</p>
           <h1>Challenge Mode</h1>
           <p class="terminal-intro">Apply your skills with minimal guidance. Investigate, reason, and solve the task.</p>
+          <nav class="environment-route-nav" aria-label="Learning paths">
+            <a id="linuxTrackLink" class="environment-route-link" href="./terminal-coach.html?track=linux">Linux Terminal Learning</a>
+            <a id="windowsTrackLink" class="environment-route-link" href="./terminal-coach.html?track=windows">Windows Terminal Learning</a>
+            <a id="challengeTrackLink" class="environment-route-link is-active" href="./challenge-mode.html">Cyber Challenge Mode</a>
+          </nav>
         </div>
         <a class="terminal-nav-link" href="./index.html">Back to Main App</a>
       </header>
@@ -62,6 +67,7 @@
           <div class="status-cluster">
             <div id="scenarioCountBadge" class="status-badge status-badge-blue">Challenge 1 / 3</div>
             <div id="stepCountBadge" class="status-badge">Challenge Active</div>
+            <div id="environmentBadge" class="status-badge environment-badge">Cyber Challenge Mode</div>
             <div id="shellBadge" class="status-badge">Linux</div>
             <div id="currentLayerBadge" class="status-badge current-layer-badge" data-layer="network">NETWORK Layer</div>
           </div>
@@ -75,6 +81,7 @@
             <h2 id="scenarioTitle" class="scenario-title">Challenge Lab 1: Web Surface Recon</h2>
             <p id="scenarioLevel" class="scenario-level">Beginner / Intermediate</p>
             <div class="challenge-meta-row">
+              <span id="scenarioEnvironmentBadge" class="challenge-mini-badge">Cyber Challenge Mode</span>
               <span id="challengeDifficultyMeta" class="challenge-mini-badge">Difficulty: Beginner / Intermediate</span>
               <span id="challengeLayersMeta" class="challenge-mini-badge">Layers: NETWORK + APPLICATION</span>
             </div>
@@ -94,8 +101,9 @@
             </article>
 
             <article class="support-card">
-              <h3>Known Targets</h3>
-              <ul id="challengeTargetList" class="challenge-list"></ul>
+              <h3>Machine Context</h3>
+              <p id="environmentSummary">Command input starts from the Analyst Box. Target systems are listed separately so command context stays clear.</p>
+              <ul id="challengeContextList" class="machine-context-list"></ul>
             </article>
 
             <article class="support-card">
@@ -132,9 +140,11 @@
 
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
+              <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Cyber Challenge Mode</p>
               <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
               <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Challenge Lab 1: Web Surface Recon</p>
               <p id="mobileStepObjective" class="terminal-mobile-objective">Investigate the environment, reason from the evidence, and decide the next move.</p>
+              <p id="mobileMachineContext" class="terminal-mobile-machine">Analyst Box | /home/student</p>
               <p id="mobileCoachSignal" class="terminal-mobile-signal">Minimal guidance is active. Investigate, reason, and solve the task.</p>
             </div>
 

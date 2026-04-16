@@ -108,6 +108,115 @@
     ]);
   }
 
+  function selectTargets(...identifiers) {
+    if (!identifiers.length) {
+      return commonTargets();
+    }
+
+    const wanted = identifiers.map((value) => String(value || "").toLowerCase());
+
+    return commonTargets().filter((target) => {
+      const keys = [
+        target.ip,
+        target.hostname,
+        ...(target.aliases || [])
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase());
+
+      return keys.some((key) => wanted.includes(key));
+    });
+  }
+
+  function shellDisplayLabel(shell) {
+    if (shell === "cmd") return "Windows CMD";
+    if (shell === "metasploit") return "Metasploit";
+    return "Linux Terminal";
+  }
+
+  function environmentCategoryLabel(category) {
+    if (category === "windows") return "Windows Terminal Learning";
+    if (category === "cyber") return "Cyber Challenge Mode";
+    return "Linux Terminal Learning";
+  }
+
+  function normalizeMachineContexts(machineContexts = []) {
+    return machineContexts
+      .map((entry) => {
+        if (!entry) return null;
+
+        return {
+          label: entry.label || "Machine Context",
+          role: entry.role || entry.kind || "",
+          detail: entry.detail || ""
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function inferTargetContextLabel(target) {
+    const combined = `${target?.hostname || ""} ${target?.os || ""}`.toLowerCase();
+
+    if (/\bwindows\b/.test(combined)) {
+      return "Windows Host";
+    }
+
+    if (/\blinux\b|\bubuntu\b|\bdebian\b/.test(combined)) {
+      return "Linux Server";
+    }
+
+    return "Target Machine";
+  }
+
+  function buildMachineContexts(config, environment, shell) {
+    const provided = normalizeMachineContexts(config.machineContexts);
+    if (provided.length) {
+      return provided;
+    }
+
+    const environmentCategory = config.environmentCategory || (config.mode === "challenge" ? "cyber" : shell === "cmd" ? "windows" : "linux");
+    const location = environment.cwd || environment.home || "";
+
+    if (environmentCategory === "cyber") {
+      const contexts = [
+        {
+          label: "Analyst Box",
+          role: shellDisplayLabel(shell),
+          detail: location
+        }
+      ];
+
+      (environment.targets || []).forEach((target) => {
+        contexts.push({
+          label: inferTargetContextLabel(target),
+          role: target.hostname ? `${target.hostname} (${target.ip})` : target.ip,
+          detail: target.os || ""
+        });
+      });
+
+      return contexts;
+    }
+
+    return [
+      {
+        label: shell === "cmd" ? "Windows Host" : "Linux Host",
+        role: shellDisplayLabel(shell),
+        detail: location
+      }
+    ];
+  }
+
+  function buildScenarioContextMetadata(config, environment, shell) {
+    const environmentCategory = config.environmentCategory || (config.mode === "challenge" ? "cyber" : shell === "cmd" ? "windows" : "linux");
+
+    return {
+      environmentCategory,
+      environmentLabel: environmentCategoryLabel(environmentCategory),
+      environmentPolicy: config.environmentPolicy || "segregated",
+      machineContexts: buildMachineContexts({ ...config, environmentCategory }, environment, shell)
+    };
+  }
+
   function archiveFile(path, entries) {
     return { path, content: "", archiveEntries: entries };
   }
@@ -486,8 +595,20 @@
       layer: inferScenarioLayer(scenario)
     };
 
+    const shell = layeredScenario.shell || (layeredScenario.environment?.platform === "cmd" ? "cmd" : "linux");
+    const environment = layeredScenario.environment || (shell === "cmd" ? cmdEnv() : linuxEnv());
+    const contextMeta = buildScenarioContextMetadata(layeredScenario, environment, shell);
+
     return {
       ...layeredScenario,
+      shell,
+      environment,
+      environmentCategory: layeredScenario.environmentCategory || contextMeta.environmentCategory,
+      environmentLabel: layeredScenario.environmentLabel || contextMeta.environmentLabel,
+      environmentPolicy: layeredScenario.environmentPolicy || contextMeta.environmentPolicy,
+      machineContexts: normalizeMachineContexts(layeredScenario.machineContexts).length
+        ? normalizeMachineContexts(layeredScenario.machineContexts)
+        : contextMeta.machineContexts,
       steps: layeredScenario.steps.map((stepConfig) => refineStep(stepConfig, layeredScenario))
     };
   }
@@ -1433,6 +1554,9 @@
   }
 
   function linuxScenario(config) {
+    const environment = linuxEnv(config.environment || {});
+    const contextMeta = buildScenarioContextMetadata(config, environment, "linux");
+
     return {
       id: config.id,
       title: config.title,
@@ -1447,14 +1571,21 @@
       layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "linux",
+      environmentCategory: contextMeta.environmentCategory,
+      environmentLabel: contextMeta.environmentLabel,
+      environmentPolicy: contextMeta.environmentPolicy,
+      machineContexts: contextMeta.machineContexts,
       objective: config.objective,
       allowedFlexibility: config.allowedFlexibility || "Reasonable command variations are fine if the right state or evidence is produced.",
-      environment: linuxEnv(config.environment || {}),
+      environment,
       steps: config.steps
     };
   }
 
   function cmdScenario(config) {
+    const environment = cmdEnv(config.environment || {});
+    const contextMeta = buildScenarioContextMetadata(config, environment, "cmd");
+
     return {
       id: config.id,
       title: config.title,
@@ -1469,9 +1600,13 @@
       layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "cmd",
+      environmentCategory: contextMeta.environmentCategory,
+      environmentLabel: contextMeta.environmentLabel,
+      environmentPolicy: contextMeta.environmentPolicy,
+      machineContexts: contextMeta.machineContexts,
       objective: config.objective,
       allowedFlexibility: config.allowedFlexibility || "Stay inside CMD commands while reaching the required result.",
-      environment: cmdEnv(config.environment || {}),
+      environment,
       steps: config.steps
     };
   }
@@ -3094,7 +3229,11 @@
         "Use a targeted web-port scan or a broader scan with version detection.",
         "Make contact with the web service directly or capture usable scan evidence for follow-up."
       ],
-      environment: { cwd: "/home/student", targets: commonTargets() },
+      environment: { cwd: "/home/student", targets: selectTargets("web-lab") },
+      machineContexts: [
+        { label: "Analyst Box", role: "Linux Terminal", detail: "/home/student" },
+        { label: "Linux Server", role: "web-lab (192.168.56.10)", detail: "Ubuntu Linux" }
+      ],
       steps: [
         step({
           objective: "Establish credible initial evidence on web-lab before you commit to a web interaction.",
@@ -3182,7 +3321,11 @@
         "A broader scan is acceptable if you need to reduce uncertainty.",
         "Netcat or Telnet are both valid if they fit the discovered service."
       ],
-      environment: { cwd: "/home/student", targets: commonTargets() },
+      environment: { cwd: "/home/student", targets: selectTargets("metasploitable2") },
+      machineContexts: [
+        { label: "Analyst Box", role: "Linux Terminal", detail: "/home/student" },
+        { label: "Target Machine", role: "metasploitable2 (192.168.56.102)", detail: "Linux 2.6.x" }
+      ],
       steps: [
         step({
           objective: "Discover the text-based service that matters on metasploitable2.",
@@ -3263,6 +3406,10 @@
           { path: "/home/student/challenges/proxy-audit/role-change.response", content: "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nmode=admin view enabled\n" }
         ]
       },
+      machineContexts: [
+        { label: "Analyst Box", role: "Linux Terminal", detail: "/home/student/challenges/proxy-audit" },
+        { label: "Target Application", role: "app.lab capture set", detail: "Captured request and replay evidence" }
+      ],
       steps: [
         step({
           objective: "Identify the request artifact that is worth investigating first.",
@@ -3365,6 +3512,9 @@
     title: "string",
     category: "string",
     mode: "lesson | challenge",
+    environmentCategory: "linux | windows | cyber",
+    environmentLabel: "Linux Terminal Learning | Windows Terminal Learning | Cyber Challenge Mode",
+    environmentPolicy: "segregated | combined",
     layer: "network | application | exploitation",
     layers: ["network", "application"],
     level: "Beginner | Intermediate | Advanced",
@@ -3376,6 +3526,7 @@
     successConditions: ["string"],
     allowedApproaches: ["string"],
     allowedFlexibility: "string",
+    machineContexts: [{ label: "Analyst Box", role: "Linux Terminal", detail: "/home/student" }],
     environment: {
       cwd: "string",
       directories: ["string"],

@@ -10,6 +10,48 @@
   <script src="./stateManager.js?v=20260416c" defer></script>
   <script src="./coachEngine.js?v=20260416c" defer></script>
   <script src="./scenarioEngine.js?v=20260416c" defer></script>
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const requestedTrack = (params.get("track") || "").toLowerCase();
+      const track = requestedTrack === "windows" ? "windows" : "linux";
+
+      const trackConfig = {
+        linux: {
+          environmentCategory: "linux",
+          pageKicker: "Linux Terminal Learning",
+          pageTitle: "Linux Terminal Coach",
+          pageIntro: "Practice Linux-first workflows with one shell context at a time. Windows commands stay out of view unless a lesson is explicitly built to compare environments.",
+          initialMessage: "Linux terminal lessons loaded. This track stays inside a Linux shell unless a scenario explicitly says otherwise.",
+          commandSheetDefaultCategory: "Linux",
+          commandSheetCategories: ["Linux", "Nmap", "Netcat", "Metasploit"]
+        },
+        windows: {
+          environmentCategory: "windows",
+          pageKicker: "Windows Terminal Learning",
+          pageTitle: "Windows Terminal Coach",
+          pageIntro: "Practice Windows CMD workflows in a dedicated track so new learners are not forced to translate Linux syntax mid-lesson.",
+          initialMessage: "Windows terminal lessons loaded. This track stays inside CMD unless a scenario explicitly says otherwise.",
+          commandSheetDefaultCategory: "Windows CMD",
+          commandSheetCategories: ["Windows CMD"]
+        }
+      };
+
+      const active = trackConfig[track];
+
+      window.TerminalCoachConfig = {
+        mode: "lesson",
+        environmentCategory: active.environmentCategory,
+        pageKicker: active.pageKicker,
+        pageTitle: active.pageTitle,
+        pageIntro: active.pageIntro,
+        initialMessage: active.initialMessage,
+        commandSheetDefaultCategory: active.commandSheetDefaultCategory,
+        commandSheetCategories: active.commandSheetCategories,
+        scenarioFilter: (scenario) => scenario.mode !== "challenge" && scenario.environmentCategory === active.environmentCategory
+      };
+    })();
+  </script>
   <script src="./terminalEngine.js?v=20260416c" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
@@ -31,9 +73,14 @@
 
       <header class="terminal-header">
         <div>
-          <p class="terminal-kicker">Core Skill Builder</p>
-          <h1>Master Terminal Coach</h1>
-          <p class="terminal-intro">Type real commands, work through multi-stage scenarios, and get context-aware coaching that reacts to mistakes, syntax, and workflow quality.</p>
+          <p id="terminalPageKicker" class="terminal-kicker">Linux Terminal Learning</p>
+          <h1 id="terminalPageTitle">Linux Terminal Coach</h1>
+          <p id="terminalPageIntro" class="terminal-intro">Practice Linux-first workflows with one shell context at a time. Windows commands stay out of view unless a lesson is explicitly built to compare environments.</p>
+          <nav class="environment-route-nav" aria-label="Learning paths">
+            <a id="linuxTrackLink" class="environment-route-link" href="./terminal-coach.html?track=linux">Linux Terminal Learning</a>
+            <a id="windowsTrackLink" class="environment-route-link" href="./terminal-coach.html?track=windows">Windows Terminal Learning</a>
+            <a id="challengeTrackLink" class="environment-route-link" href="./challenge-mode.html">Cyber Challenge Mode</a>
+          </nav>
         </div>
         <a class="terminal-nav-link" href="./index.html">Back to Main App</a>
       </header>
@@ -47,6 +94,7 @@
           <div class="status-cluster">
             <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
             <div id="stepCountBadge" class="status-badge">Task 1 / 4</div>
+            <div id="environmentBadge" class="status-badge environment-badge">Linux Terminal Learning</div>
             <div id="shellBadge" class="status-badge">Linux</div>
             <div id="currentLayerBadge" class="status-badge current-layer-badge" data-layer="network">NETWORK Layer</div>
           </div>
@@ -59,11 +107,20 @@
             <p id="scenarioCategory" class="scenario-category">File System Navigation</p>
             <h2 id="scenarioTitle" class="scenario-title">Log Triage on a Linux Host</h2>
             <p id="scenarioLevel" class="scenario-level">Beginner</p>
+            <div class="scenario-meta-row">
+              <span id="scenarioEnvironmentBadge" class="scenario-mini-badge">Linux Terminal Learning</span>
+            </div>
             <p id="scenarioObjective" class="scenario-objective">Move into the right directory, find the rotated log, and inspect the crash clues without leaving the terminal.</p>
             <div id="scenarioFlex" class="scenario-flex">Allowed flexibility: any valid path form is acceptable as long as it reaches the right result.</div>
           </div>
 
           <div class="scenario-support-grid">
+            <article class="support-card">
+              <h3>Environment Context</h3>
+              <p id="environmentSummary">Linux Terminal learning. Commands stay inside one Linux shell unless a lesson explicitly says otherwise.</p>
+              <ul id="machineContextList" class="machine-context-list"></ul>
+            </article>
+
             <article class="support-card">
               <h3>Current Task</h3>
               <p id="stepObjective">Identify your working directory before you move deeper into the host.</p>
@@ -99,9 +156,11 @@
 
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
+              <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Linux Terminal Learning</p>
               <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
               <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
               <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>
+              <p id="mobileMachineContext" class="terminal-mobile-machine">Linux Host | /home/student</p>
               <p id="mobileCoachSignal" class="terminal-mobile-signal">Work from evidence. Good operators confirm context before they act.</p>
             </div>
 

@@ -1,10 +1,13 @@
 window.TerminalCoachConfig = {
   mode: "challenge",
+  environmentCategory: "cyber",
   autoStart: false,
   challengeTaskText: "Investigate the environment, reason from the evidence, and decide the next move.",
   challengeIntroSignal: "Minimal guidance is active. Investigate, reason, and solve the task.",
   challengeHintAttempts: [1, 3, 5],
   initialMessage: "Select a challenge card and press Start Challenge to begin.",
+  commandSheetDefaultCategory: "Linux",
+  commandSheetCategories: ["Linux", "Nmap", "Netcat", "Metasploit"],
   scenarioFilter: (scenario) => scenario.mode === "challenge"
 };
 
@@ -24,23 +27,11 @@ window.TerminalCoachConfig = {
     });
   }
 
-  function formatTargets(scenario) {
-    const targets = Array.isArray(scenario?.environment?.targets) ? scenario.environment.targets : [];
-    const unique = [];
-    const seen = new Set();
-
-    targets.forEach((target) => {
-      if (!target || !target.ip) return;
-      const label = target.hostname
-        ? `${target.hostname} (${target.ip})`
-        : target.ip;
-
-      if (seen.has(label)) return;
-      seen.add(label);
-      unique.push(label);
+  function formatMachineContexts(scenario) {
+    return (scenario?.machineContexts || []).map((context) => {
+      const parts = [context.label, context.role, context.detail].filter(Boolean);
+      return parts.join(" | ");
     });
-
-    return unique;
   }
 
   function initChallengeMode() {
@@ -54,8 +45,9 @@ window.TerminalCoachConfig = {
       difficultyMeta: document.getElementById("challengeDifficultyMeta"),
       layersMeta: document.getElementById("challengeLayersMeta"),
       successList: document.getElementById("challengeSuccessList"),
-      targetList: document.getElementById("challengeTargetList"),
-      approachList: document.getElementById("challengeApproachList")
+      contextList: document.getElementById("challengeContextList"),
+      approachList: document.getElementById("challengeApproachList"),
+      environmentSummary: document.getElementById("environmentSummary")
     };
 
     const scenarios = engine.getScenarios();
@@ -87,8 +79,14 @@ window.TerminalCoachConfig = {
       }
 
       renderList(els.successList, scenario.successConditions);
-      renderList(els.targetList, formatTargets(scenario));
+      renderList(els.contextList, formatMachineContexts(scenario));
       renderList(els.approachList, scenario.allowedApproaches);
+
+      if (els.environmentSummary) {
+        const primaryContext = scenario.machineContexts?.[0];
+        const primaryLabel = primaryContext?.label || "Analyst Box";
+        els.environmentSummary.textContent = `${scenario.environmentLabel || "Cyber Challenge Mode"} keeps command input on ${primaryLabel}. Target machines and application context are listed separately so the shell context stays obvious.`;
+      }
     }
 
     function updateSelectorStatus(scenario, started) {
@@ -116,6 +114,7 @@ window.TerminalCoachConfig = {
             <h3 class="challenge-card-title">${scenario.title}</h3>
           </div>
           <div class="challenge-meta-row">
+            <span class="challenge-mini-badge">${scenario.environmentLabel || "Cyber Challenge Mode"}</span>
             <span class="challenge-mini-badge">${scenario.difficulty || scenario.level}</span>
             <span class="challenge-mini-badge">${layerText}</span>
           </div>
