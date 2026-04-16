@@ -1453,6 +1453,15 @@
     };
   }
 
+  function proxyScenario(config) {
+    return linuxScenario({
+      category: "Proxy interception workflows",
+      layer: "application",
+      allowedFlexibility: config.allowedFlexibility || "Use terminal inspection commands to isolate the meaningful request or response artifact before you decide what matters.",
+      ...config
+    });
+  }
+
   const generatedNavigationScenarios = [
     linuxNavigationScenario({
       id: "apache-vhost-hunt",
@@ -2618,6 +2627,263 @@
     })
   ];
 
+  const generatedProxyScenarios = [
+    proxyScenario({
+      id: "proxy-login-capture-review",
+      title: "Proxy Login Capture Review",
+      level: "Beginner",
+      objective: "Inspect a captured login exchange and isolate the request that actually submits credentials.",
+      environment: {
+        cwd: "/home/student/proxy-lab/login",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/login"],
+        files: [
+          { path: "/home/student/proxy-lab/login/GET-login.txt", content: "GET /login HTTP/1.1\nHost: app.lab\nUser-Agent: Browser\n" },
+          { path: "/home/student/proxy-lab/login/POST-login.txt", content: "POST /session HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nusername=alice&password=Winter2025!\n" },
+          { path: "/home/student/proxy-lab/login/telemetry.txt", content: "POST /metrics HTTP/1.1\nHost: app.lab\nContent-Length: 12\n\nbeacon=login\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "List the intercepted traffic files so you can identify the state-changing request.", hints: ["Start by triaging the capture set.", "List the files in the current workspace.", "Try `ls`."], explanation: "A directory listing helps you separate likely login traffic from surrounding noise before you open anything.", whyThisMatters: "Application testing starts with choosing the right request, not editing random traffic.", successFeedback: "You enumerated the captured request artifacts.", accepts: [commandMatch("ls")] }),
+        step({ objective: "Read the request that actually submits the login.", hints: ["The state-changing login request is not the page load.", "Open the POST capture rather than the GET page fetch.", "Try `cat POST-login.txt`."], explanation: "The credential-bearing request is the one worth studying because it actually changes application state.", whyThisMatters: "In interception work, finding the meaningful request comes before manipulating it.", successFeedback: "You isolated the login submission request.", accepts: [rawMatch(/^cat\s+POST-login\.txt$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-username-field-hunt",
+      title: "Proxy Username Field Hunt",
+      level: "Beginner",
+      objective: "Locate the username-bearing field inside a captured login request.",
+      environment: {
+        cwd: "/home/student/proxy-lab/fields",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/fields"],
+        files: [
+          { path: "/home/student/proxy-lab/fields/login-submit.txt", content: "POST /session HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nusername=alice&password=Winter2025!&remember=false\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the captured login request once.", hints: ["Start with the full request.", "Open login-submit.txt directly.", "Try `cat login-submit.txt`."], explanation: "A first read shows which part of the request carries actual application input.", whyThisMatters: "Headers and bodies play different roles. You need to see the whole request before you isolate one field.", successFeedback: "You reviewed the full request.", accepts: [rawMatch(/^cat\s+login-submit\.txt$/i)] }),
+        step({ objective: "Filter the request down to the username-bearing line.", hints: ["You want the field that matches the account identifier.", "Use grep on the username key.", "Try `grep username= login-submit.txt`."], explanation: "Filtering the request isolates the specific application input you are about to reason about.", whyThisMatters: "Application-layer testing depends on finding which field the server is likely to trust or process.", successFeedback: "You isolated the username field.", accepts: [rawMatch(/^grep\s+username=\s+login-submit\.txt$/i), rawMatch(/^cat\s+login-submit\.txt\s*\|\s*grep\s+username=$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-numeric-id-review",
+      title: "Proxy Numeric ID Review",
+      level: "Beginner",
+      objective: "Inspect a request that selects a record by numeric identifier and then review the replayed response.",
+      environment: {
+        cwd: "/home/student/proxy-lab/id-review",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/id-review"],
+        files: [
+          { path: "/home/student/proxy-lab/id-review/profile-request.txt", content: "GET /api/profile?id=104 HTTP/1.1\nHost: app.lab\nAccept: application/json\n" },
+          { path: "/home/student/proxy-lab/id-review/replayed-response.txt", content: "HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"id\":105,\"user\":\"bob\",\"email\":\"bob@app.lab\"}\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Filter the request down to the selector parameter.", hints: ["The interesting input chooses which record is returned.", "Use grep on the id parameter.", "Try `grep id= profile-request.txt`."], explanation: "A selector parameter is often the first thing to inspect when the response content changes scope.", whyThisMatters: "Record-selection parameters are common application-layer decision points.", successFeedback: "You identified the record selector.", accepts: [rawMatch(/^grep\s+id=\s+profile-request\.txt$/i), rawMatch(/^cat\s+profile-request\.txt\s*\|\s*grep\s+id=$/i)] }),
+        step({ objective: "Read the replayed response to see what changed after the request was altered.", hints: ["Now inspect the returned object, not the request.", "Open the replayed response file.", "Try `cat replayed-response.txt`."], explanation: "The response tells you whether the modified request changed the application’s returned data.", whyThisMatters: "Request manipulation only matters if you can tie it to a response difference.", successFeedback: "You reviewed the replayed response.", accepts: [rawMatch(/^cat\s+replayed-response\.txt$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-body-vs-query-review",
+      title: "Proxy Body vs Query Review",
+      level: "Intermediate",
+      objective: "Distinguish a URL selector from a body field in a mixed request and focus on the submitted input.",
+      environment: {
+        cwd: "/home/student/proxy-lab/orders",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/orders"],
+        files: [
+          { path: "/home/student/proxy-lab/orders/order-update.txt", content: "POST /orders?id=731 HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nnote=fragile&status=queued\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the mixed request so you can see both the URL selector and the submitted body.", hints: ["Open the request before you decide which input matters.", "Read order-update.txt.", "Try `cat order-update.txt`."], explanation: "Seeing the whole request first is what lets you separate routing data from user-submitted content.", whyThisMatters: "Application inputs can appear in more than one place. You need to choose the field that actually drives the tested behaviour.", successFeedback: "You reviewed the mixed request.", accepts: [rawMatch(/^cat\s+order-update\.txt$/i)] }),
+        step({ objective: "Filter the request down to the submitted body field you would be most likely to edit first.", hints: ["The free-form body field is more useful than the route selector for this test.", "Use grep on the note field.", "Try `grep note= order-update.txt`."], explanation: "A body field such as a note is often a better first manipulation target than an identifier that simply selects the object.", whyThisMatters: "Application-layer reasoning means knowing where to focus your first controlled edit.", successFeedback: "You isolated the body parameter.", accepts: [rawMatch(/^grep\s+note=\s+order-update\.txt$/i), rawMatch(/^cat\s+order-update\.txt\s*\|\s*grep\s+note=$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-single-change-replay",
+      title: "Proxy Single Change Replay",
+      level: "Intermediate",
+      objective: "Compare a baseline request, a single-field replay, and the replayed response without introducing extra noise.",
+      environment: {
+        cwd: "/home/student/proxy-lab/replay",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/replay"],
+        files: [
+          { path: "/home/student/proxy-lab/replay/baseline-request.txt", content: "POST /api/email HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nemail=alice@lab.local&notify=false\n" },
+          { path: "/home/student/proxy-lab/replay/replayed-request.txt", content: "POST /api/email HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nemail=alice@lab.local&notify=true\n" },
+          { path: "/home/student/proxy-lab/replay/replayed-response.txt", content: "HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"status\":\"queued\",\"notification\":\"scheduled\"}\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the baseline request first.", hints: ["Start with the known-good request.", "Open baseline-request.txt.", "Try `cat baseline-request.txt`."], explanation: "A baseline request is what makes later replay differences meaningful instead of random.", whyThisMatters: "You cannot reason about a replay if you do not preserve what changed from the baseline.", successFeedback: "You reviewed the baseline request.", accepts: [rawMatch(/^cat\s+baseline-request\.txt$/i)] }),
+        step({ objective: "Read the replayed request that changes only one field.", hints: ["Compare the controlled variation next.", "Open replayed-request.txt.", "Try `cat replayed-request.txt`."], explanation: "A single-field replay is the cleanest way to test whether one input changes behaviour.", whyThisMatters: "One change at a time is what keeps response differences attributable.", successFeedback: "You reviewed the controlled replay.", accepts: [rawMatch(/^cat\s+replayed-request\.txt$/i)] }),
+        step({ objective: "Read the replayed response so you can judge the effect of the single change.", hints: ["Now inspect what the server said back.", "Open replayed-response.txt.", "Try `cat replayed-response.txt`."], explanation: "The replayed response is the evidence that tells you whether the changed parameter altered application behaviour.", whyThisMatters: "Interception is not about editing for its own sake. It is about proving a behavioural change.", successFeedback: "You reviewed the replay result.", accepts: [rawMatch(/^cat\s+replayed-response\.txt$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-hidden-flag-review",
+      title: "Proxy Hidden Flag Review",
+      level: "Intermediate",
+      objective: "Inspect a suspicious control field and see whether a modified replay exposed extra server behaviour.",
+      environment: {
+        cwd: "/home/student/proxy-lab/debug",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/debug"],
+        files: [
+          { path: "/home/student/proxy-lab/debug/report-request.txt", content: "POST /reports/render HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nreport=weekly&preview=false&debug=false\n" },
+          { path: "/home/student/proxy-lab/debug/debug-response.txt", content: "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nrender complete\nstackTrace=enabled\nqueryTimer=18ms\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Filter the request down to the suspicious control field.", hints: ["Mode and flag fields are often more interesting than ordinary content.", "Use grep on the debug field.", "Try `grep debug= report-request.txt`."], explanation: "Control-style fields often hint at hidden application behaviour that is worth testing carefully.", whyThisMatters: "A small flag can matter more than a large block of user content if the server trusts it.", successFeedback: "You isolated the hidden control field.", accepts: [rawMatch(/^grep\s+debug=\s+report-request\.txt$/i), rawMatch(/^cat\s+report-request\.txt\s*\|\s*grep\s+debug=$/i)] }),
+        step({ objective: "Read the response captured after the flag was altered.", hints: ["Now look for the effect of the replayed change.", "Open debug-response.txt.", "Try `cat debug-response.txt`."], explanation: "The modified response is what tells you whether the flag changed server behaviour in a meaningful way.", whyThisMatters: "You are validating hidden behaviour, not just noticing that the field exists.", successFeedback: "You reviewed the altered response.", accepts: [rawMatch(/^cat\s+debug-response\.txt$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-auth-response-compare",
+      title: "Proxy Auth Response Compare",
+      level: "Intermediate",
+      objective: "Compare two authentication responses and infer what the application decided.",
+      environment: {
+        cwd: "/home/student/proxy-lab/auth-compare",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/auth-compare"],
+        files: [
+          { path: "/home/student/proxy-lab/auth-compare/auth-success.response", content: "HTTP/1.1 302 Found\nLocation: /dashboard\nSet-Cookie: session=abc123\n" },
+          { path: "/home/student/proxy-lab/auth-compare/auth-fail.response", content: "HTTP/1.1 200 OK\nContent-Type: text/html\n\nInvalid credentials\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the response that represents a successful authentication path.", hints: ["Start with the success case.", "Open auth-success.response.", "Try `cat auth-success.response`."], explanation: "A successful response establishes the baseline signs of accepted authentication.", whyThisMatters: "Redirects, cookies, and response codes are application-layer clues about server decisions.", successFeedback: "You reviewed the success response.", accepts: [rawMatch(/^cat\s+auth-success\.response$/i)] }),
+        step({ objective: "Read the response that represents a failed authentication path.", hints: ["Now compare it to the failure case.", "Open auth-fail.response.", "Try `cat auth-fail.response`."], explanation: "Contrasting the failure case helps you infer what changed in the server’s decision process.", whyThisMatters: "Response comparison is what turns a replay into analysis instead of guesswork.", successFeedback: "You reviewed the failure response.", accepts: [rawMatch(/^cat\s+auth-fail\.response$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-cookie-role-review",
+      title: "Proxy Cookie Role Review",
+      level: "Intermediate",
+      objective: "Inspect a cookie-heavy request and identify the cookie value most likely to influence authorization behaviour.",
+      environment: {
+        cwd: "/home/student/proxy-lab/cookies",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/cookies"],
+        files: [
+          { path: "/home/student/proxy-lab/cookies/account-request.txt", content: "GET /account HTTP/1.1\nHost: app.lab\nCookie: session=abc123; theme=dark; role=user\nAccept: text/html\n" },
+          { path: "/home/student/proxy-lab/cookies/role-replay.response", content: "HTTP/1.1 200 OK\nContent-Type: text/html\n\nadmin panel hidden\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Filter the request down to the Cookie header.", hints: ["Start by isolating the header that carries multiple browser-side values.", "Use grep on Cookie:.", "Try `grep Cookie: account-request.txt`."], explanation: "A cookie header often contains several independent application inputs that deserve different levels of scrutiny.", whyThisMatters: "Not all cookies are equal. You need to isolate the right one before you test it.", successFeedback: "You isolated the Cookie header.", accepts: [rawMatch(/^grep\s+Cookie:\s+account-request\.txt$/i), rawMatch(/^cat\s+account-request\.txt\s*\|\s*grep\s+Cookie:$/i)] }),
+        step({ objective: "Filter the request down to the role-like cookie value.", hints: ["The interesting cookie looks like an authorization hint.", "Use grep on the role field.", "Try `grep role= account-request.txt`."], explanation: "Role-like cookie values are often worth attention because they may influence authorization decisions if the server trusts them.", whyThisMatters: "Application trust boundaries are frequently exposed in small, role-like values.", successFeedback: "You isolated the role cookie.", accepts: [rawMatch(/^grep\s+role=\s+account-request\.txt$/i), rawMatch(/^cat\s+account-request\.txt\s*\|\s*grep\s+role=$/i)] }),
+        step({ objective: "Read the response captured after the role cookie was tampered with.", hints: ["Now inspect the server reaction to the changed cookie.", "Open role-replay.response.", "Try `cat role-replay.response`."], explanation: "The response tells you whether the application reacted differently after the cookie was altered.", whyThisMatters: "Cookie manipulation is only useful if you connect it to a server-side behaviour change.", successFeedback: "You reviewed the replayed cookie response.", accepts: [rawMatch(/^cat\s+role-replay\.response$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-header-priority-review",
+      title: "Proxy Header Priority Review",
+      level: "Intermediate",
+      objective: "Separate one potentially meaningful header from a larger set of ordinary browser noise.",
+      environment: {
+        cwd: "/home/student/proxy-lab/headers",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/headers"],
+        files: [
+          { path: "/home/student/proxy-lab/headers/admin-request.txt", content: "GET /admin HTTP/1.1\nHost: app.lab\nUser-Agent: Browser\nAccept: text/html\nX-Forwarded-For: 127.0.0.1\nReferer: https://app.lab/home\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the full request once so you can judge header priority instead of guessing.", hints: ["Start by reading the whole request.", "Open admin-request.txt.", "Try `cat admin-request.txt`."], explanation: "A full request read helps you separate potentially trusted headers from routine browser noise.", whyThisMatters: "Application-layer testing depends on choosing high-value hypotheses rather than editing everything.", successFeedback: "You reviewed the header set.", accepts: [rawMatch(/^cat\s+admin-request\.txt$/i)] }),
+        step({ objective: "Filter the request down to the header most likely to influence trust or routing decisions.", hints: ["One header looks more interesting than the rest.", "Use grep on the forwarded-for header.", "Try `grep X-Forwarded-For: admin-request.txt`."], explanation: "Forwarding-related headers are often more meaningful to test than generic browser headers like User-Agent or Accept.", whyThisMatters: "Prioritising likely trust headers is part of disciplined interception work.", successFeedback: "You isolated the high-interest header.", accepts: [rawMatch(/^grep\s+X-Forwarded-For:\s+admin-request\.txt$/i), rawMatch(/^cat\s+admin-request\.txt\s*\|\s*grep\s+X-Forwarded-For:$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-client-check-bypass",
+      title: "Proxy Client Check Bypass",
+      level: "Intermediate",
+      objective: "Inspect a request that carries a value the browser would normally restrict and review the replayed server response.",
+      environment: {
+        cwd: "/home/student/proxy-lab/checkout",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/checkout"],
+        files: [
+          { path: "/home/student/proxy-lab/checkout/checkout-request.txt", content: "POST /checkout HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\namount=10001&currency=USD\n" },
+          { path: "/home/student/proxy-lab/checkout/bypass-response.txt", content: "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nqueued for manual review\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Filter the request down to the value that looks like it may have bypassed a simple client-side check.", hints: ["Look for the submitted value that would be most likely limited by the browser.", "Use grep on the amount field.", "Try `grep amount= checkout-request.txt`."], explanation: "A large submitted value is a good candidate when you want to test whether validation happens in the browser or on the server.", whyThisMatters: "Client-side limits only matter if the server enforces them too.", successFeedback: "You isolated the candidate bypass field.", accepts: [rawMatch(/^grep\s+amount=\s+checkout-request\.txt$/i), rawMatch(/^cat\s+checkout-request\.txt\s*\|\s*grep\s+amount=$/i)] }),
+        step({ objective: "Read the response captured after the modified request was replayed.", hints: ["Now inspect the server’s reaction.", "Open bypass-response.txt.", "Try `cat bypass-response.txt`."], explanation: "The replayed response is what tells you whether the server accepted, rejected, or rerouted the changed value.", whyThisMatters: "The point of bypass testing is to determine where enforcement actually lives.", successFeedback: "You reviewed the bypass response.", accepts: [rawMatch(/^cat\s+bypass-response\.txt$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-method-awareness-review",
+      title: "Proxy Method Awareness Review",
+      level: "Intermediate",
+      objective: "Use the HTTP method to identify which request is more likely to represent a state-changing application action.",
+      environment: {
+        cwd: "/home/student/proxy-lab/methods",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/methods"],
+        files: [
+          { path: "/home/student/proxy-lab/methods/view-request.txt", content: "GET /profile?id=12 HTTP/1.1\nHost: app.lab\n" },
+          { path: "/home/student/proxy-lab/methods/update-request.txt", content: "POST /profile/update HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nemail=new@app.lab\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the captured request that most clearly represents a submitted update rather than a simple fetch.", hints: ["The request you care about changes state rather than only reading it.", "Open the update request rather than the view request.", "Try `cat update-request.txt`."], explanation: "The request method helps you separate ordinary retrieval from a state-changing submission.", whyThisMatters: "Method awareness is a fast way to prioritise requests in a capture set.", successFeedback: "You reviewed the state-changing request.", accepts: [rawMatch(/^cat\s+update-request\.txt$/i)] }),
+        step({ objective: "Filter the request down to the method line that signals state change.", hints: ["Use the method itself as the clue.", "Filter for POST in the update request.", "Try `grep POST update-request.txt`."], explanation: "The request line often frames the whole test by telling you what kind of action the server is being asked to perform.", whyThisMatters: "Reading the method early reduces blind manipulation.", successFeedback: "You isolated the method signal.", accepts: [rawMatch(/^grep\s+POST\s+update-request\.txt$/i), rawMatch(/^cat\s+update-request\.txt\s*\|\s*grep\s+POST$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-sequence-triage",
+      title: "Proxy Sequence Triage",
+      level: "Advanced",
+      objective: "Pick the action-bearing request from a small burst of surrounding traffic.",
+      environment: {
+        cwd: "/home/student/proxy-lab/sequence",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/sequence"],
+        files: [
+          { path: "/home/student/proxy-lab/sequence/asset-style.txt", content: "GET /assets/site.css HTTP/1.1\nHost: app.lab\n" },
+          { path: "/home/student/proxy-lab/sequence/login-api.txt", content: "POST /api/login HTTP/1.1\nHost: app.lab\nContent-Type: application/json\n\n{\"username\":\"alice\",\"password\":\"Winter2025!\"}\n" },
+          { path: "/home/student/proxy-lab/sequence/telemetry.txt", content: "POST /api/telemetry HTTP/1.1\nHost: app.lab\nContent-Type: application/json\n\n{\"event\":\"page_load\"}\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "List the intercepted files so you can decide which request is worth opening first.", hints: ["Start by triaging the capture burst.", "Use ls in the sequence folder.", "Try `ls`."], explanation: "Traffic triage is part of interception skill. You do not open everything blindly.", whyThisMatters: "Application analysis often begins by separating business actions from surrounding noise.", successFeedback: "You triaged the capture set.", accepts: [commandMatch("ls")] }),
+        step({ objective: "Read the request most likely to carry the meaningful authentication action.", hints: ["One request carries credentials; the others do not.", "Open the API login request.", "Try `cat login-api.txt`."], explanation: "The action-bearing request is the one that actually carries the user-controlled authentication content.", whyThisMatters: "Choosing the right request is what makes later manipulation useful.", successFeedback: "You isolated the action-bearing request.", accepts: [rawMatch(/^cat\s+login-api\.txt$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-response-size-signal",
+      title: "Proxy Response Size Signal",
+      level: "Advanced",
+      objective: "Use response summaries to spot a behavioural difference even when the visible page shape looks similar.",
+      environment: {
+        cwd: "/home/student/proxy-lab/response-signal",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/response-signal"],
+        files: [
+          { path: "/home/student/proxy-lab/response-signal/baseline.summary", content: "status=200\nlength=842\nsections=profile,alerts\n" },
+          { path: "/home/student/proxy-lab/response-signal/modified.summary", content: "status=200\nlength=1254\nsections=profile,alerts,debug-panel\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Read the baseline response summary first.", hints: ["Start with the unmodified case.", "Open baseline.summary.", "Try `cat baseline.summary`."], explanation: "A baseline summary gives you a compact reference for later response comparison.", whyThisMatters: "Application differences are often subtle. Baselines stop you from relying on memory.", successFeedback: "You reviewed the baseline response summary.", accepts: [rawMatch(/^cat\s+baseline\.summary$/i)] }),
+        step({ objective: "Read the modified response summary and look for structural differences.", hints: ["Now compare it to the altered case.", "Open modified.summary.", "Try `cat modified.summary`."], explanation: "A changed response length or section list can reveal hidden behaviour even when the page does not obviously announce it.", whyThisMatters: "Response structure is part of application-layer evidence, not just cosmetic output.", successFeedback: "You reviewed the modified response summary.", accepts: [rawMatch(/^cat\s+modified\.summary$/i)] })
+      ]
+    }),
+    proxyScenario({
+      id: "proxy-role-parameter-review",
+      title: "Proxy Role Parameter Review",
+      level: "Advanced",
+      objective: "Inspect a role-like parameter in a request and review the server’s replayed reaction to it.",
+      environment: {
+        cwd: "/home/student/proxy-lab/role-review",
+        directories: ["/home/student/proxy-lab", "/home/student/proxy-lab/role-review"],
+        files: [
+          { path: "/home/student/proxy-lab/role-review/access-request.txt", content: "POST /api/report HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nmode=user&format=html\n" },
+          { path: "/home/student/proxy-lab/role-review/role-change.response", content: "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nmode=admin view enabled\n" }
+        ]
+      },
+      steps: [
+        step({ objective: "Filter the request down to the role-like parameter.", hints: ["The high-interest input looks like an authorization hint.", "Use grep on the mode field.", "Try `grep mode= access-request.txt`."], explanation: "Role-like fields are valuable because they may expose trust decisions if the server uses them directly.", whyThisMatters: "Privilege and mode values often deserve more attention than ordinary content fields.", successFeedback: "You isolated the role-like parameter.", accepts: [rawMatch(/^grep\s+mode=\s+access-request\.txt$/i), rawMatch(/^cat\s+access-request\.txt\s*\|\s*grep\s+mode=$/i)] }),
+        step({ objective: "Read the response captured after that parameter was changed and replayed.", hints: ["Now inspect how the server reacted.", "Open role-change.response.", "Try `cat role-change.response`."], explanation: "The replayed response is the evidence for whether the server trusted the altered role-like value.", whyThisMatters: "The lesson is not that a field exists, but whether the application changes behaviour when it is manipulated.", successFeedback: "You reviewed the replayed role response.", accepts: [rawMatch(/^cat\s+role-change\.response$/i)] })
+      ]
+    })
+  ];
+
   const generatedExploitScenarios = [
     linuxScenario({
       id: "samba-research-path",
@@ -2779,6 +3045,7 @@
   const refinedNmapScenarios = generatedNmapScenarios.map(refineScenario);
   const refinedNetcatScenarios = generatedNetcatScenarios.map(refineScenario);
   const refinedPythonScenarios = generatedPythonScenarios.map(refineScenario);
+  const refinedProxyScenarios = generatedProxyScenarios.map(refineScenario);
   const refinedExploitScenarios = generatedExploitScenarios.map(refineScenario);
   const refinedMetasploitScenarios = generatedMetasploitScenarios.map(refineScenario);
   const refinedTroubleshootScenarios = generatedTroubleshootScenarios.map(refineScenario);
@@ -2794,6 +3061,7 @@
     ...refinedNmapScenarios,
     ...refinedNetcatScenarios,
     ...refinedPythonScenarios,
+    ...refinedProxyScenarios,
     ...refinedExploitScenarios,
     ...refinedMetasploitScenarios,
     ...refinedTroubleshootScenarios,
