@@ -569,22 +569,29 @@
 .command-sheet-tabs {
   display: flex;
   gap: 8px;
+  align-items: center;
   overflow-x: auto;
+  scrollbar-width: thin;
   padding-bottom: 2px;
+  padding-right: 4px;
 }
 
 .command-sheet-tab {
   position: relative;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  width: auto;
+  max-width: none;
   min-height: 38px;
-  padding: 8px 14px 8px 22px;
+  margin: 0;
+  padding: 8px 12px 8px 20px;
   border-radius: 999px;
   border: 1px solid #334155;
   background: rgba(10, 16, 24, 0.92);
   color: #cbd5e1;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -1023,7 +1030,7 @@
 
   .command-sheet-tab {
     min-height: 36px;
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 7px 10px 7px 18px;
+    font-size: 11px;
   }
 }

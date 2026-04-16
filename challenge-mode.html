@@ -3,23 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terminal Coach</title>
+  <title>Challenge Mode</title>
   <link rel="stylesheet" href="./style.css?v=20260416b">
   <link rel="stylesheet" href="./terminal-coach.css?v=20260416b">
+  <link rel="stylesheet" href="./challenge-mode.css?v=20260416b">
   <script src="./commandsData.js?v=20260416b" defer></script>
   <script src="./stateManager.js?v=20260416b" defer></script>
   <script src="./coachEngine.js?v=20260416b" defer></script>
   <script src="./scenarioEngine.js?v=20260416b" defer></script>
+  <script src="./challenge-mode.js?v=20260416b" defer></script>
   <script src="./terminalEngine.js?v=20260416b" defer></script>
   <script src="./commandSheet.js?v=20260416b" defer></script>
 </head>
-<body class="terminal-page">
+<body class="terminal-page challenge-page">
   <div class="rack-room">
-    <div class="router-shell terminal-shell">
+    <div class="router-shell terminal-shell challenge-shell">
       <div class="router-top">
         <div>
-          <div class="router-brand">NET-LAB TERMINAL COACH</div>
-          <div class="terminal-subbrand">Typed workflows, adaptive coaching, and stateful command practice</div>
+          <div class="router-brand">NET-LAB CHALLENGE MODE</div>
+          <div class="terminal-subbrand">Minimal guidance, realistic tasks, and evidence-driven terminal problem solving</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -31,47 +33,74 @@
 
       <header class="terminal-header">
         <div>
-          <p class="terminal-kicker">Core Skill Builder</p>
-          <h1>Master Terminal Coach</h1>
-          <p class="terminal-intro">Type real commands, work through multi-stage scenarios, and get context-aware coaching that reacts to mistakes, syntax, and workflow quality.</p>
+          <p class="terminal-kicker">Applied Skill Builder</p>
+          <h1>Challenge Mode</h1>
+          <p class="terminal-intro">Apply your skills with minimal guidance. Investigate, reason, and solve the task.</p>
         </div>
         <a class="terminal-nav-link" href="./index.html">Back to Main App</a>
       </header>
 
+      <section class="lab-panel challenge-selector-panel">
+        <div class="mode-panel-head">
+          <div>
+            <h2>Challenge Selector</h2>
+            <p class="panel-copy">Choose a lab, then solve it with the same terminal engine and coaching stack, but with less hand-holding and broader objectives.</p>
+          </div>
+          <div class="status-cluster">
+            <div id="challengeSelectorStatus" class="status-badge status-badge-blue">Selected: Loading challenge set...</div>
+          </div>
+        </div>
+        <div id="challengeCardGrid" class="challenge-card-grid"></div>
+      </section>
+
       <section class="lab-panel terminal-meta-panel">
         <div class="mode-panel-head">
           <div>
-            <h2>Scenario Progress</h2>
-            <p class="panel-copy">This trainer keeps environment state, accepts multiple valid workflows, and coaches you through mistakes instead of collapsing into multiple choice.</p>
+            <h2>Challenge Progress</h2>
+            <p class="panel-copy">Challenge Mode keeps the same stateful terminal system, but hides internal workflow steps and delays hints so you have to reason from output.</p>
           </div>
           <div class="status-cluster">
-            <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
-            <div id="stepCountBadge" class="status-badge">Task 1 / 4</div>
+            <div id="scenarioCountBadge" class="status-badge status-badge-blue">Challenge 1 / 3</div>
+            <div id="stepCountBadge" class="status-badge">Challenge Active</div>
             <div id="shellBadge" class="status-badge">Linux</div>
             <div id="currentLayerBadge" class="status-badge current-layer-badge" data-layer="network">NETWORK Layer</div>
           </div>
         </div>
       </section>
 
-      <div class="terminal-layout">
+      <div class="terminal-layout challenge-layout">
         <aside class="lab-panel scenario-panel">
-          <div class="scenario-card">
-            <p id="scenarioCategory" class="scenario-category">File System Navigation</p>
-            <h2 id="scenarioTitle" class="scenario-title">Log Triage on a Linux Host</h2>
-            <p id="scenarioLevel" class="scenario-level">Beginner</p>
-            <p id="scenarioObjective" class="scenario-objective">Move into the right directory, find the rotated log, and inspect the crash clues without leaving the terminal.</p>
-            <div id="scenarioFlex" class="scenario-flex">Allowed flexibility: any valid path form is acceptable as long as it reaches the right result.</div>
+          <div class="scenario-card challenge-overview-card">
+            <p id="scenarioCategory" class="scenario-category">Challenge Labs</p>
+            <h2 id="scenarioTitle" class="scenario-title">Challenge Lab 1: Web Surface Recon</h2>
+            <p id="scenarioLevel" class="scenario-level">Beginner / Intermediate</p>
+            <div class="challenge-meta-row">
+              <span id="challengeDifficultyMeta" class="challenge-mini-badge">Difficulty: Beginner / Intermediate</span>
+              <span id="challengeLayersMeta" class="challenge-mini-badge">Layers: NETWORK + APPLICATION</span>
+            </div>
+            <p id="scenarioObjective" class="scenario-objective">Investigate the target system, identify useful services, and reach a justified next step without step-by-step guidance.</p>
+            <div id="scenarioFlex" class="scenario-flex">Allowed approaches: start with ping or go straight to Nmap, then justify the next move from the evidence.</div>
           </div>
 
           <div class="scenario-support-grid">
             <article class="support-card">
-              <h3>Current Task</h3>
-              <p id="stepObjective">Identify your working directory before you move deeper into the host.</p>
+              <h3>Challenge Focus</h3>
+              <p id="stepObjective">Investigate the environment, reason from the evidence, and decide the next move.</p>
+            </article>
+
+            <article class="support-card">
+              <h3>Success Signals</h3>
+              <ul id="challengeSuccessList" class="challenge-list"></ul>
+            </article>
+
+            <article class="support-card">
+              <h3>Allowed Approaches</h3>
+              <ul id="challengeApproachList" class="challenge-list"></ul>
             </article>
 
             <article class="support-card">
               <h3>Mentor Signal</h3>
-              <p id="coachSignal">Strong operators confirm context before they touch files, processes, or services.</p>
+              <p id="coachSignal">Minimal guidance is active. Work from evidence and decide your own next move.</p>
             </article>
 
             <article class="support-card">
@@ -85,10 +114,9 @@
 
             <article class="support-card">
               <h3>Progress</h3>
-              <p id="progressSummary">0 scenarios completed in this session.</p>
+              <p id="progressSummary">0 challenges completed in this session.</p>
             </article>
           </div>
-
         </aside>
 
         <section class="lab-panel terminal-panel">
@@ -100,21 +128,21 @@
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
               <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
-              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
-              <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>
-              <p id="mobileCoachSignal" class="terminal-mobile-signal">Work from evidence. Good operators confirm context before they act.</p>
+              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Challenge Lab 1: Web Surface Recon</p>
+              <p id="mobileStepObjective" class="terminal-mobile-objective">Investigate the environment, reason from the evidence, and decide the next move.</p>
+              <p id="mobileCoachSignal" class="terminal-mobile-signal">Minimal guidance is active. Investigate, reason, and solve the task.</p>
             </div>
 
-            <div class="trainer-controls terminal-controls">
+            <div class="trainer-controls terminal-controls challenge-controls">
               <button id="commandSheetBtn" type="button" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet">Commands</button>
               <button id="hintBtn" type="button">Hint</button>
-              <button id="previousScenarioBtn" type="button" aria-label="Previous scenario">Previous</button>
-              <button id="resetScenarioBtn" type="button" aria-label="Reset current scenario">Reset</button>
-              <button id="nextScenarioBtn" type="button" aria-label="Next scenario">Next</button>
+              <button id="startChallengeBtn" type="button">Start Challenge</button>
+              <button id="resetScenarioBtn" type="button" aria-label="Reset current challenge">Reset Challenge</button>
+              <a id="exitChallengeBtn" class="challenge-control-link" href="./index.html">Exit Challenge</a>
             </div>
 
             <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
-              <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">student@lab:~$</label>
+              <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">[NETWORK] student@lab:~$</label>
               <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none">
               <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
             </form>

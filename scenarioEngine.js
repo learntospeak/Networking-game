@@ -474,6 +474,15 @@
   function refineScenario(scenario) {
     const layeredScenario = {
       ...scenario,
+      mode: scenario.mode || "lesson",
+      hiddenSteps: Boolean(scenario.hiddenSteps),
+      challengeObjective: scenario.challengeObjective || "",
+      successConditions: scenario.successConditions || [],
+      allowedApproaches: scenario.allowedApproaches || [],
+      difficulty: scenario.difficulty || scenario.level,
+      layers: Array.isArray(scenario.layers) && scenario.layers.length
+        ? scenario.layers
+        : [scenario.layer || inferScenarioLayer(scenario)],
       layer: inferScenarioLayer(scenario)
     };
 
@@ -1428,6 +1437,13 @@
       id: config.id,
       title: config.title,
       category: config.category,
+      mode: config.mode || "lesson",
+      hiddenSteps: Boolean(config.hiddenSteps),
+      challengeObjective: config.challengeObjective || "",
+      successConditions: config.successConditions || [],
+      allowedApproaches: config.allowedApproaches || [],
+      difficulty: config.difficulty || config.level,
+      layers: Array.isArray(config.layers) && config.layers.length ? config.layers : [config.layer || inferScenarioLayer(config)],
       layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "linux",
@@ -1443,6 +1459,13 @@
       id: config.id,
       title: config.title,
       category: config.category,
+      mode: config.mode || "lesson",
+      hiddenSteps: Boolean(config.hiddenSteps),
+      challengeObjective: config.challengeObjective || "",
+      successConditions: config.successConditions || [],
+      allowedApproaches: config.allowedApproaches || [],
+      difficulty: config.difficulty || config.level,
+      layers: Array.isArray(config.layers) && config.layers.length ? config.layers : [config.layer || inferScenarioLayer(config)],
       layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "cmd",
@@ -1458,6 +1481,21 @@
       category: "Proxy interception workflows",
       layer: "application",
       allowedFlexibility: config.allowedFlexibility || "Use terminal inspection commands to isolate the meaningful request or response artifact before you decide what matters.",
+      ...config
+    });
+  }
+
+  function challengeScenario(config) {
+    return linuxScenario({
+      category: config.category || "Challenge labs",
+      mode: "challenge",
+      hiddenSteps: true,
+      challengeObjective: config.challengeObjective || config.objective,
+      successConditions: config.successConditions || [],
+      allowedApproaches: config.allowedApproaches || [],
+      difficulty: config.difficulty || config.level,
+      layers: Array.isArray(config.layers) && config.layers.length ? config.layers : [config.layer || inferScenarioLayer(config)],
+      allowedFlexibility: config.allowedFlexibility || "Multiple valid approaches are acceptable if you gather the right evidence and reach a defensible outcome.",
       ...config
     });
   }
@@ -3036,6 +3074,248 @@
     })
   ];
 
+  const generatedChallengeScenarios = [
+    challengeScenario({
+      id: "challenge-web-surface-recon",
+      title: "Challenge Lab 1: Web Surface Recon",
+      level: "Intermediate",
+      difficulty: "Beginner / Intermediate",
+      layer: "network",
+      layers: ["network", "application"],
+      objective: "Investigate web-lab, identify the useful web surface, and gather enough evidence to justify the next application step.",
+      challengeObjective: "Investigate the target system, identify useful services, and reach a justified next step without step-by-step guidance.",
+      successConditions: [
+        "Confirm the target is reachable or directly prove it with scan evidence.",
+        "Identify the exposed web service with useful detail.",
+        "Take a reasonable next step toward interacting with the web application."
+      ],
+      allowedApproaches: [
+        "Start with ping or go straight to Nmap.",
+        "Use a targeted web-port scan or a broader scan with version detection.",
+        "Make contact with the web service directly or capture usable scan evidence for follow-up."
+      ],
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Establish credible initial evidence on web-lab before you commit to a web interaction.",
+          context: "The target in this lab is web-lab at 192.168.56.10. You can confirm it is alive directly or jump straight into service discovery if that is your preferred workflow.",
+          hints: [
+            "Start by proving the host is alive or by gathering direct exposure evidence.",
+            "Ping is acceptable, but a sensible Nmap scan is also a valid opening move.",
+            "Try `ping web-lab`, `ping 192.168.56.10`, or a basic `nmap` against the same target."
+          ],
+          explanation: "Challenge work still begins with evidence. You either confirm reachability first or collect credible surface information immediately.",
+          whyThisMatters: "Operators do not guess whether a target is up. They prove it or replace the question with better evidence.",
+          successFeedback: "You established initial target evidence.",
+          accepts: [
+            rawMatch(/^ping\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+-T4\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80,443\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i, {
+              advanceBy: 2,
+              feedback: "You jumped straight from initial evidence to identified web services."
+            }),
+            rawMatch(/^nmap\s+-p\s+80,443\s+-sV\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i, {
+              advanceBy: 2,
+              feedback: "You jumped straight from initial evidence to identified web services."
+            }),
+            rawMatch(/^nmap\s+-A\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i, {
+              advanceBy: 2,
+              feedback: "You collected broad web-facing evidence in one pass."
+            })
+          ]
+        }),
+        step({
+          objective: "Identify the web-facing service with enough detail to justify interaction.",
+          context: "Stay on web-lab and turn the broad host evidence into something specific enough to support the next move.",
+          hints: [
+            "Now reduce the uncertainty around the web service itself.",
+            "A web-port scan with version detection is the fastest clean way to do that.",
+            "Try `nmap -sV -p 80,443 web-lab` or the same scan against 192.168.56.10."
+          ],
+          explanation: "Once you have the host in scope, the next useful move is to identify the web-facing service precisely enough to justify interaction.",
+          whyThisMatters: "A good challenge workflow narrows from host evidence to service evidence before it touches the application.",
+          successFeedback: "You identified the useful web surface.",
+          accepts: [
+            rawMatch(/^nmap\s+-sV\s+-p\s+80,443\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+-p\s+80,443\s+-sV\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+-sV\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+-A\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i)
+          ]
+        }),
+        step({
+          objective: "Take a reasonable next step toward the web application itself.",
+          context: "At this point you have enough evidence to justify making contact with the HTTP service or preserving the scan output for follow-up.",
+          hints: [
+            "Either touch the web service directly or preserve the evidence for the next operator move.",
+            "A raw TCP connection to port 80 is acceptable, and saving a focused scan is also valid.",
+            "Try `nc web-lab 80`, `telnet web-lab 80`, or save a focused web scan with `-oN`."
+          ],
+          explanation: "A challenge scenario should end on a defensible next step, not on blind curiosity.",
+          whyThisMatters: "Good operators know when they have enough evidence to move from recon into interaction.",
+          successFeedback: "You reached a justified next step against the web target.",
+          accepts: [
+            rawMatch(/^nc\s+(?:-nv\s+)?(?:web-lab|web|frontend|192\.168\.56\.10)\s+80$/i),
+            rawMatch(/^telnet\s+(?:web-lab|web|frontend|192\.168\.56\.10)\s+80$/i),
+            rawMatch(/^nmap\s+-oN\s+\S+\s+-sV\s+-p\s+80,443\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+80,443\s+-oN\s+\S+\s+(?:web-lab|web|frontend|192\.168\.56\.10)$/i)
+          ]
+        })
+      ]
+    }),
+    challengeScenario({
+      id: "challenge-text-service-hunt",
+      title: "Challenge Lab 2: Text Service Hunt",
+      level: "Intermediate",
+      difficulty: "Intermediate",
+      layer: "network",
+      layers: ["network"],
+      objective: "Discover the right host and service, choose a valid interaction method, and prove you can speak to it.",
+      challengeObjective: "Find the correct host and service, choose a workable interaction method, and establish a live session with minimal guidance.",
+      successConditions: [
+        "Identify the correct host/port with real scan evidence.",
+        "Choose a valid client method for the discovered service.",
+        "Send enough protocol data to prove the session is real."
+      ],
+      allowedApproaches: [
+        "A focused scan is fine if you already have a strong hypothesis.",
+        "A broader scan is acceptable if you need to reduce uncertainty.",
+        "Netcat or Telnet are both valid if they fit the discovered service."
+      ],
+      environment: { cwd: "/home/student", targets: commonTargets() },
+      steps: [
+        step({
+          objective: "Discover the text-based service that matters on metasploitable2.",
+          context: "You are looking for a remotely reachable text-based service on metasploitable2 at 192.168.56.102. You do not need the whole host map if you already have a good service hypothesis.",
+          hints: [
+            "Use scan evidence to confirm the correct service first.",
+            "A focused scan on SMTP is acceptable, but a broader scan also works.",
+            "Try `nmap -p 25 metasploitable2`, `nmap -sV -p 25 metasploitable2`, or a broader `nmap metasploitable2`."
+          ],
+          explanation: "The service decision should come from evidence, not from a hint ladder alone.",
+          whyThisMatters: "Challenge work rewards justified narrowing instead of habit-based command entry.",
+          successFeedback: "You identified the service target.",
+          accepts: [
+            rawMatch(/^nmap\s+-p\s+25\s+(?:metasploitable2|target|192\.168\.56\.102)$/i),
+            rawMatch(/^nmap\s+-sV\s+-p\s+25\s+(?:metasploitable2|target|192\.168\.56\.102)$/i),
+            rawMatch(/^nmap\s+-p\s+25\s+-sV\s+(?:metasploitable2|target|192\.168\.56\.102)$/i),
+            rawMatch(/^nmap\s+(?:metasploitable2|target|192\.168\.56\.102)$/i)
+          ]
+        }),
+        step({
+          objective: "Choose a valid way to connect to the discovered service.",
+          context: "Now that you have service evidence, pick a client that makes sense for a plain text protocol on TCP 25.",
+          hints: [
+            "The service speaks plain text over TCP.",
+            "Use a simple socket client rather than another scanner.",
+            "Try Netcat or Telnet against port 25."
+          ],
+          explanation: "Once the port is identified, the next operator decision is which client best fits the service and the task.",
+          whyThisMatters: "Choosing the right interaction method is part of real workflow judgement, not just syntax recall.",
+          successFeedback: "You opened a live service session.",
+          accepts: [
+            rawMatch(/^nc\s+(?:-nv\s+)?(?:metasploitable2|target|192\.168\.56\.102)\s+25$/i),
+            rawMatch(/^telnet\s+(?:metasploitable2|target|192\.168\.56\.102)\s+25$/i)
+          ]
+        }),
+        step({
+          objective: "Send the opening protocol verb that proves the session is interactive.",
+          context: "You have a live text-based service session. Send the normal opening greeting rather than random text.",
+          hints: [
+            "Use the standard SMTP greeting verb.",
+            "Either of the two common hello forms is acceptable.",
+            "Try `EHLO lab.local` or `HELO lab.local`."
+          ],
+          explanation: "The point is not just to connect, but to prove you can interact meaningfully with the service once connected.",
+          whyThisMatters: "A live session only becomes useful when you can speak the protocol correctly enough to elicit a response.",
+          successFeedback: "You proved the connection with a valid protocol move.",
+          accepts: [
+            rawMatch(/^(EHLO|HELO)\s+\S+$/i, { connectionType: "smtp" })
+          ]
+        })
+      ]
+    }),
+    challengeScenario({
+      id: "challenge-parameter-trace",
+      title: "Challenge Lab 3: Parameter Trace",
+      level: "Intermediate",
+      difficulty: "Intermediate",
+      layer: "application",
+      layers: ["application"],
+      objective: "Explore a captured web request set, isolate a high-interest parameter, and justify why it matters.",
+      challengeObjective: "Explore the captured web application traffic, identify a parameter or endpoint worth testing, and choose a reasonable next step.",
+      successConditions: [
+        "Identify the request artifact that matters.",
+        "Isolate a parameter or control field worth testing.",
+        "Review evidence that the modified request changed behavior."
+      ],
+      allowedApproaches: [
+        "List the workspace first or open the likely request directly.",
+        "Use full file reads or targeted grep to isolate the interesting input.",
+        "Use the replayed response to justify why the input deserves more testing."
+      ],
+      environment: {
+        cwd: "/home/student/challenges/proxy-audit",
+        directories: ["/home/student/challenges", "/home/student/challenges/proxy-audit"],
+        files: [
+          { path: "/home/student/challenges/proxy-audit/asset-style.txt", content: "GET /assets/site.css HTTP/1.1\nHost: app.lab\n" },
+          { path: "/home/student/challenges/proxy-audit/access-request.txt", content: "POST /api/report HTTP/1.1\nHost: app.lab\nContent-Type: application/x-www-form-urlencoded\n\nmode=user&format=html\n" },
+          { path: "/home/student/challenges/proxy-audit/role-change.response", content: "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nmode=admin view enabled\n" }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Identify the request artifact that is worth investigating first.",
+          context: "This capture set includes noise and a meaningful request. Start by triaging the files before you decide what to inspect deeply.",
+          hints: [
+            "Separate the likely business action from ordinary asset noise.",
+            "A quick listing is a valid opening move, but you can open the likely request directly if you see it.",
+            "Try `ls` or `cat access-request.txt`."
+          ],
+          explanation: "Challenge application work still starts with choosing the right request artifact rather than opening everything at random.",
+          whyThisMatters: "Traffic triage is a real skill. The right first file is usually the one tied to state or user-controlled input.",
+          successFeedback: "You isolated the action-bearing artifact.",
+          accepts: [
+            commandMatch("ls", {
+              advanceBy: 1,
+              feedback: "You triaged the capture set and identified the useful artifact."
+            }),
+            rawMatch(/^cat\s+access-request\.txt$/i)
+          ]
+        }),
+        step({
+          objective: "Isolate the control field that looks worth testing.",
+          context: "Focus on the request field that looks like it could influence behavior or scope rather than on harmless formatting values.",
+          hints: [
+            "Look for a mode-like or role-like value.",
+            "Use grep to narrow the request to the suspicious field.",
+            "Try `grep mode= access-request.txt` or filter the request output for that key."
+          ],
+          explanation: "Small control fields often matter more than ordinary content because the server may branch on them.",
+          whyThisMatters: "Application reasoning depends on recognizing which field is likely to influence trust or behavior.",
+          successFeedback: "You isolated the high-interest parameter.",
+          accepts: [
+            rawMatch(/^grep\s+mode=\s+access-request\.txt$/i),
+            rawMatch(/^cat\s+access-request\.txt\s*\|\s*grep\s+mode=$/i)
+          ]
+        }),
+        step({
+          objective: "Review the replay evidence that shows why the parameter deserves more attention.",
+          context: "The replayed response is what tells you whether the parameter actually changed application behavior.",
+          hints: [
+            "Now switch from request inspection to response comparison.",
+            "Read the replayed response directly.",
+            "Try `cat role-change.response`."
+          ],
+          explanation: "The altered response is the evidence that turns a suspicious field into a justified next application step.",
+          whyThisMatters: "A parameter only becomes interesting when you can tie it to a server-side behavior change.",
+          successFeedback: "You justified the next application-focused move with evidence.",
+          accepts: [rawMatch(/^cat\s+role-change\.response$/i)]
+        })
+      ]
+    })
+  ];
+
   const refinedExampleScenarios = exampleScenarios.map(refineScenario);
   const refinedNavigationScenarios = generatedNavigationScenarios.map(refineScenario);
   const refinedFileManipScenarios = generatedFileManipScenarios.map(refineScenario);
@@ -3046,6 +3326,7 @@
   const refinedNetcatScenarios = generatedNetcatScenarios.map(refineScenario);
   const refinedPythonScenarios = generatedPythonScenarios.map(refineScenario);
   const refinedProxyScenarios = generatedProxyScenarios.map(refineScenario);
+  const refinedChallengeScenarios = generatedChallengeScenarios.map(refineScenario);
   const refinedExploitScenarios = generatedExploitScenarios.map(refineScenario);
   const refinedMetasploitScenarios = generatedMetasploitScenarios.map(refineScenario);
   const refinedTroubleshootScenarios = generatedTroubleshootScenarios.map(refineScenario);
@@ -3062,6 +3343,7 @@
     ...refinedNetcatScenarios,
     ...refinedPythonScenarios,
     ...refinedProxyScenarios,
+    ...refinedChallengeScenarios,
     ...refinedExploitScenarios,
     ...refinedMetasploitScenarios,
     ...refinedTroubleshootScenarios,
@@ -3082,10 +3364,17 @@
     id: "string",
     title: "string",
     category: "string",
+    mode: "lesson | challenge",
     layer: "network | application | exploitation",
+    layers: ["network", "application"],
     level: "Beginner | Intermediate | Advanced",
+    difficulty: "Beginner | Intermediate | Advanced | custom challenge difficulty",
     shell: "linux | cmd | metasploit",
     objective: "string",
+    challengeObjective: "string",
+    hiddenSteps: "boolean",
+    successConditions: ["string"],
+    allowedApproaches: ["string"],
     allowedFlexibility: "string",
     environment: {
       cwd: "string",

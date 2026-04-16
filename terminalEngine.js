@@ -1,5 +1,6 @@
 (function () {
   const { StateManager, CoachEngine, ScenarioEngine, CommandsData } = window;
+  const pageConfig = window.TerminalCoachConfig || {};
 
   if (!StateManager || !CoachEngine || !ScenarioEngine) {
     return;
@@ -36,6 +37,7 @@
 
   const session = {
     scenarioIndex: 0,
+    scenarios: [],
     stepIndex: 0,
     state: null,
     completedScenarioIds: new Set(),
@@ -44,12 +46,28 @@
     commandHistory: [],
     historyIndex: 0,
     scenarioCompleted: false,
+    scenarioStarted: false,
     currentLayer: null,
     layerTransitionTimer: null
   };
 
+  function configuredScenarioPool() {
+    const source = Array.isArray(ScenarioEngine.scenarios) ? ScenarioEngine.scenarios : [];
+    let filtered = source;
+
+    if (typeof pageConfig.scenarioFilter === "function") {
+      filtered = source.filter((scenario) => pageConfig.scenarioFilter(scenario));
+    } else if (pageConfig.mode === "challenge") {
+      filtered = source.filter((scenario) => scenario.mode === "challenge");
+    }
+
+    return filtered.length ? filtered : source;
+  }
+
+  session.scenarios = configuredScenarioPool();
+
   function currentScenario() {
-    return ScenarioEngine.scenarios[session.scenarioIndex];
+    return session.scenarios[session.scenarioIndex];
   }
 
   function currentStep() {
@@ -57,7 +75,45 @@
   }
 
   function totalScenarios() {
-    return ScenarioEngine.scenarios.length;
+    return session.scenarios.length;
+  }
+
+  function scenarioUsesChallengePresentation(scenario = currentScenario()) {
+    return Boolean(pageConfig.mode === "challenge" || scenario?.mode === "challenge" || scenario?.hiddenSteps);
+  }
+
+  function scenarioObjectiveText(scenario = currentScenario()) {
+    if (scenarioUsesChallengePresentation(scenario)) {
+      return scenario.challengeObjective || scenario.objective;
+    }
+
+    return scenario.objective;
+  }
+
+  function challengeTaskText(scenario = currentScenario()) {
+    return pageConfig.challengeTaskText
+      || scenario.challengeTaskText
+      || "Investigate the environment, reason from the evidence, and decide the next move.";
+  }
+
+  function scenarioLayerList(scenario = currentScenario()) {
+    if (Array.isArray(scenario?.layers) && scenario.layers.length) {
+      return scenario.layers;
+    }
+
+    return [scenario?.layer || "application"];
+  }
+
+  function scenarioLayerText(scenario = currentScenario()) {
+    return scenarioLayerList(scenario).map((layer) => String(layer || "").toUpperCase()).join(" + ");
+  }
+
+  function allowedApproachText(scenario = currentScenario()) {
+    if (scenarioUsesChallengePresentation(scenario) && Array.isArray(scenario.allowedApproaches) && scenario.allowedApproaches.length) {
+      return `Allowed approaches: ${scenario.allowedApproaches.join(" | ")}`;
+    }
+
+    return `Allowed flexibility: ${scenario.allowedFlexibility || "Use any valid workflow that reaches the objective."}`;
   }
 
   function getCommandReference(rawInput) {
@@ -133,6 +189,18 @@
     syncLayerElement(els.layerTransitionBanner, normalizedLayer);
   }
 
+  function syncScenarioLayerBadges(scenario) {
+    const layers = scenarioLayerText(scenario);
+    const primaryLayer = scenarioLayerList(scenario)[0] || scenario.layer || "application";
+
+    syncLayerElement(
+      els.currentLayerBadge,
+      primaryLayer,
+      `${layers} ${scenarioLayerList(scenario).length > 1 ? "Layers" : "Layer"}`
+    );
+    syncLayerElement(els.mobileLayerBadge, primaryLayer, `Layer: ${layers}`);
+  }
+
   function showLayerTransition(previousLayer, nextLayer) {
     if (!els.layerTransitionBanner) return;
 
@@ -183,24 +251,36 @@
   function renderPanel() {
     const scenario = currentScenario();
     const step = currentStep();
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
 
-    els.scenarioCountBadge.textContent = `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
-    els.stepCountBadge.textContent = `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
+    els.scenarioCountBadge.textContent = challengePresentation
+      ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
+      : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
+    els.stepCountBadge.textContent = challengePresentation
+      ? "Challenge Active"
+      : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
     els.shellBadge.textContent = shellLabel();
     setCurrentLayer(scenario.layer || "application");
+    syncScenarioLayerBadges(scenario);
 
     els.scenarioCategory.textContent = scenario.category;
     els.scenarioTitle.textContent = scenario.title;
-    els.scenarioLevel.textContent = scenario.level;
-    els.scenarioObjective.textContent = scenario.objective;
-    els.scenarioFlex.textContent = `Allowed flexibility: ${scenario.allowedFlexibility || "Use any valid workflow that reaches the objective."}`;
-    els.stepObjective.textContent = step.objective;
+    els.scenarioLevel.textContent = challengePresentation ? (scenario.difficulty || scenario.level) : scenario.level;
+    els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
+    els.scenarioFlex.textContent = allowedApproachText(scenario);
+    els.stepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
     els.progressSummary.textContent = `${session.completedScenarioIds.size} scenarios completed in this session.`;
-    els.mobileScenarioTitle.textContent = `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
-    els.mobileStepObjective.textContent = step.objective;
+    els.mobileScenarioTitle.textContent = challengePresentation
+      ? `${scenario.title} - Challenge ${session.scenarioIndex + 1}/${totalScenarios()}`
+      : `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
+    els.mobileStepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
 
     if (session.scenarioCompleted) {
       els.coachSignal.textContent = "Scenario complete. Move to the next scenario or reset this one and run it cleaner.";
+    } else if (challengePresentation && session.attemptsForStep > 0) {
+      els.coachSignal.textContent = "Minimal guidance is active. Use the evidence you already created before widening the workflow.";
+    } else if (challengePresentation) {
+      els.coachSignal.textContent = pageConfig.challengeIntroSignal || "Minimal guidance is active. Investigate, reason, and decide your own next move.";
     } else if (session.attemptsForStep > 0) {
       els.coachSignal.textContent = "Stay on the current objective. Use the output you already produced before you widen the workflow.";
     } else if (step.context) {
@@ -218,11 +298,17 @@
   function announceScenario() {
     const scenario = currentScenario();
     const step = currentStep();
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
 
-    printLine(`[${scenario.category}] ${scenario.title}`, "system");
-    printLine(`Layer: ${getLayerLabel(scenario.layer)}`, "dim");
-    printLine(`Objective: ${scenario.objective}`, "dim");
+    printLine(`[${challengePresentation ? "Challenge" : scenario.category}] ${scenario.title}`, "system");
+    printLine(`Layer: ${scenarioLayerText(scenario)}`, "dim");
+    printLine(`Objective: ${scenarioObjectiveText(scenario)}`, "dim");
     printLine(`Environment: ${shellLabel()} shell`, "dim");
+    if (challengePresentation && Array.isArray(scenario.successConditions) && scenario.successConditions.length) {
+      printLine(`Success signals: ${scenario.successConditions.join(" | ")}`, "dim");
+      printLine("Minimal guidance is active. Work from evidence and decide your own sequence.", "coach");
+      return;
+    }
     if (step.context) {
       printLine(`Context: ${step.context}`, "dim");
     }
@@ -238,15 +324,43 @@
     session.scenarioCompleted = false;
   }
 
-  function loadScenario(index) {
+  function loadScenario(index, options = {}) {
+    const announce = options.announce !== false;
+    const transition = options.transition !== false;
+    const focus = options.focus !== false;
     const previousLayer = session.currentLayer;
     session.scenarioIndex = ((index % totalScenarios()) + totalScenarios()) % totalScenarios();
     resetScenarioState();
+    session.scenarioStarted = announce;
     clearTerminal();
-    showLayerTransition(previousLayer, session.currentLayer);
-    announceScenario();
+    if (transition) {
+      showLayerTransition(previousLayer, session.currentLayer);
+    } else if (els.layerTransitionBanner) {
+      els.layerTransitionBanner.hidden = true;
+      els.layerTransitionBanner.textContent = "";
+    }
+    if (announce) {
+      announceScenario();
+    } else if (pageConfig.initialMessage) {
+      printLine(pageConfig.initialMessage, "coach");
+    }
     renderPanel();
-    els.terminalInput.focus();
+    document.dispatchEvent(new CustomEvent("terminalcoach:scenariochange", {
+      detail: {
+        scenario: currentScenario(),
+        index: session.scenarioIndex,
+        total: totalScenarios(),
+        mode: pageConfig.mode || currentScenario().mode || "lesson",
+        started: session.scenarioStarted
+      }
+    }));
+    if (focus && els.terminalInput) {
+      els.terminalInput.focus();
+    }
+  }
+
+  function previewScenario(index) {
+    loadScenario(index, { announce: false, transition: false, focus: false });
   }
 
   function markScenarioComplete() {
@@ -258,6 +372,7 @@
 
   function advanceStep(count = 1) {
     const scenario = currentScenario();
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const skipCount = Math.max(1, Number(count) || 1);
 
     for (let index = 0; index < skipCount; index += 1) {
@@ -273,6 +388,11 @@
     session.hintLevel = -1;
     if (skipCount > 1) {
       printLine("You already collected the deeper evidence, so the coach skipped the redundant intermediate task.", "success");
+    }
+    if (challengePresentation) {
+      printLine("Progress recorded. Keep investigating and let the evidence drive the next move.", "coach");
+      renderPanel();
+      return;
     }
     if (currentStep().context) {
       printLine(`Context: ${currentStep().context}`, "dim");
@@ -1413,6 +1533,13 @@
     const rawInput = els.terminalInput.value.trim();
     if (!rawInput) return;
 
+    if (!session.scenarioStarted) {
+      els.terminalInput.value = "";
+      printLine("Start the selected challenge before issuing commands.", "coach");
+      renderPanel();
+      return;
+    }
+
     printLine(`${getPromptLabel()} ${rawInput}`, "command");
     pushHistory(rawInput);
     els.terminalInput.value = "";
@@ -1429,9 +1556,30 @@
   }
 
   function showHint() {
+    if (!session.scenarioStarted) {
+      printLine("Start the selected challenge before requesting hints.", "coach");
+      return;
+    }
+
     if (session.scenarioCompleted) {
       printLine("This scenario is already complete. Move on or reset it for a cleaner run.", "coach");
       return;
+    }
+
+    if (scenarioUsesChallengePresentation()) {
+      const nextHintLevel = Math.min(2, session.hintLevel + 1);
+      const requiredAttempts = Array.isArray(pageConfig.challengeHintAttempts)
+        ? (pageConfig.challengeHintAttempts[nextHintLevel] ?? (nextHintLevel + 1))
+        : (nextHintLevel + 1);
+
+      if (session.attemptsForStep < requiredAttempts) {
+        printLine(
+          `Challenge hints unlock after ${requiredAttempts} unsuccessful attempt${requiredAttempts === 1 ? "" : "s"}. Keep investigating first.`,
+          "coach"
+        );
+        renderPanel();
+        return;
+      }
     }
 
     session.hintLevel = Math.min(2, session.hintLevel + 1);
@@ -1441,6 +1589,11 @@
   }
 
   function resetScenario() {
+    if (!session.scenarioStarted && pageConfig.autoStart === false) {
+      previewScenario(session.scenarioIndex);
+      return;
+    }
+
     loadScenario(session.scenarioIndex);
   }
 
@@ -1453,23 +1606,65 @@
   }
 
   function bindEvents() {
-    els.terminalForm.addEventListener("submit", runSubmittedCommand);
-    els.hintBtn.addEventListener("click", showHint);
-    els.previousScenarioBtn.addEventListener("click", previousScenario);
-    els.resetScenarioBtn.addEventListener("click", resetScenario);
-    els.nextScenarioBtn.addEventListener("click", nextScenario);
+    if (els.terminalForm) {
+      els.terminalForm.addEventListener("submit", runSubmittedCommand);
+    }
+    if (els.hintBtn) {
+      els.hintBtn.addEventListener("click", showHint);
+    }
+    if (els.previousScenarioBtn) {
+      els.previousScenarioBtn.addEventListener("click", previousScenario);
+    }
+    if (els.resetScenarioBtn) {
+      els.resetScenarioBtn.addEventListener("click", resetScenario);
+    }
+    if (els.nextScenarioBtn) {
+      els.nextScenarioBtn.addEventListener("click", nextScenario);
+    }
 
-    els.terminalInput.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        recallHistory(-1);
-      } else if (event.key === "ArrowDown") {
-        event.preventDefault();
-        recallHistory(1);
-      }
-    });
+    if (els.terminalInput) {
+      els.terminalInput.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          recallHistory(-1);
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          recallHistory(1);
+        }
+      });
+    }
   }
 
+  function loadScenarioById(id) {
+    const index = session.scenarios.findIndex((scenario) => scenario.id === id);
+    if (index === -1) return false;
+    loadScenario(index);
+    return true;
+  }
+
+  function previewScenarioById(id) {
+    const index = session.scenarios.findIndex((scenario) => scenario.id === id);
+    if (index === -1) return false;
+    previewScenario(index);
+    return true;
+  }
+
+  window.TerminalEngine = {
+    getScenarios: () => session.scenarios.slice(),
+    getCurrentScenario: () => currentScenario(),
+    loadScenario,
+    loadScenarioById,
+    previewScenario,
+    previewScenarioById,
+    resetScenario,
+    nextScenario,
+    previousScenario
+  };
+
   bindEvents();
-  loadScenario(0);
+  if (pageConfig.autoStart === false) {
+    previewScenario(0);
+  } else {
+    loadScenario(0);
+  }
 })();
