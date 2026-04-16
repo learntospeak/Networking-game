@@ -213,7 +213,7 @@ const scenarios = [
       pc: { label: "User PC", meta: "Wants https://learn.lab", icon: "fa-desktop" },
       switch: { label: "Access Switch", meta: "Local LAN path", icon: "fa-network-wired" },
       router: { label: "Default Gateway", meta: "Path to remote services", icon: "fa-route" },
-      server: { label: "DNS / Web Service", meta: "DNS answer first, then HTTPS target", icon: "fa-server" }
+      server: { label: "DNS / Web Service", meta: "Resolver first, web response second", icon: "fa-server" }
     },
     steps: [
       {
@@ -241,7 +241,7 @@ const scenarios = [
           mode: "unicast",
           devices: ["pc", "switch", "router", "server"],
           cables: ["pc-switch", "switch-router", "router-server"],
-          trafficLabel: "DNS query path from client to the resolver"
+          trafficLabel: "DNS query from the client to the resolver"
         }
       },
       {
@@ -266,10 +266,10 @@ const scenarios = [
         explanation:
           "The DNS reply returns the website IP address so the client finally knows where to send the HTTPS connection.",
         visualAction: {
-          mode: "unicast",
+          mode: "reply",
           devices: ["pc", "switch", "router", "server"],
           cables: ["pc-switch", "switch-router", "router-server"],
-          trafficLabel: "DNS response returns the destination IP"
+          trafficLabel: "DNS response returns from the server to the client"
         }
       },
       {
@@ -297,7 +297,7 @@ const scenarios = [
           mode: "secure",
           devices: ["pc", "switch", "router", "server"],
           cables: ["pc-switch", "switch-router", "router-server"],
-          trafficLabel: "Secure HTTPS flow across the path"
+          trafficLabel: "HTTPS request goes out, then the secure response comes back"
         }
       }
     ]
@@ -343,7 +343,7 @@ const scenarios = [
           mode: "secure",
           devices: ["pc", "switch", "router"],
           cables: ["pc-switch", "switch-router"],
-          trafficLabel: "Secure management session path"
+          trafficLabel: "SSH session setup to the managed router"
         }
       },
       {
@@ -371,7 +371,7 @@ const scenarios = [
           mode: "secure",
           devices: ["pc", "switch", "router"],
           cables: ["pc-switch", "switch-router"],
-          trafficLabel: "Encrypted remote administration traffic"
+          trafficLabel: "Encrypted SSH credentials and commands"
         }
       },
       {
@@ -399,7 +399,7 @@ const scenarios = [
           mode: "warning",
           devices: ["pc", "switch", "router"],
           cables: ["pc-switch", "switch-router"],
-          trafficLabel: "Insecure Telnet session across the path"
+          trafficLabel: "Plaintext Telnet credentials and commands"
         }
       }
     ]
@@ -1053,6 +1053,102 @@ async function runArpGatewayFlow(stepIndex, visualAction, runId) {
   await travelAndVerify("router", "server", "FWD", "unicast", "RX", runId);
 }
 
+async function runDnsHttpsFlow(stepIndex, visualAction, runId) {
+  if (stepIndex === 0) {
+    updateTrafficMode("unicast", visualAction.trafficLabel);
+    await flashNode("pc", "DNS", "unicast", runId, { hold: 240 });
+    await travelAndVerify("pc", "switch", "DNS?", "unicast", "RX", runId);
+    await travelAndVerify("switch", "router", "DNS?", "unicast", "FWD", runId);
+    await travelAndVerify("router", "server", "learn.lab", "unicast", "DNS RX", runId);
+    return;
+  }
+
+  if (stepIndex === 1) {
+    updateTrafficMode("reply", visualAction.trafficLabel);
+    await flashNode("server", "A Rec", "reply", runId, { hold: 260 });
+    await travelAndVerify("server", "router", "A 203.0.113.20", "reply", "RX", runId, {
+      nodeType: "reply"
+    });
+    await travelAndVerify("router", "switch", "A 203.0.113.20", "reply", "FWD", runId, {
+      nodeType: "reply"
+    });
+    await travelAndVerify("switch", "pc", "A 203.0.113.20", "reply", "IP OK", runId, {
+      nodeType: "reply"
+    });
+    return;
+  }
+
+  updateTrafficMode("secure", visualAction.trafficLabel);
+  await flashNode("pc", "HTTPS", "secure", runId, { hold: 240 });
+  await travelAndVerify("pc", "switch", "TLS", "secure", "FWD", runId, {
+    nodeType: "secure"
+  });
+  await travelAndVerify("switch", "router", "TLS", "secure", "FWD", runId, {
+    nodeType: "secure"
+  });
+  await travelAndVerify("router", "server", "HTTPS GET", "secure", "200 OK", runId, {
+    nodeType: "secure"
+  });
+  await flashNode("server", "Reply", "secure", runId, { hold: 220 });
+  await travelAndVerify("server", "router", "HTTPS 200", "secure", "FWD", runId, {
+    nodeType: "secure"
+  });
+  await travelAndVerify("router", "switch", "HTTPS 200", "secure", "FWD", runId, {
+    nodeType: "secure"
+  });
+  await travelAndVerify("switch", "pc", "HTTPS 200", "secure", "Page", runId, {
+    nodeType: "secure"
+  });
+}
+
+async function runRemoteAccessFlow(stepIndex, visualAction, runId) {
+  if (stepIndex === 0) {
+    updateTrafficMode("secure", visualAction.trafficLabel);
+    await flashNode("pc", "SSH", "secure", runId, { hold: 240 });
+    await travelAndVerify("pc", "switch", "SSH KeyX", "secure", "FWD", runId, {
+      nodeType: "secure"
+    });
+    await travelAndVerify("switch", "router", "SSH KeyX", "secure", "Ready", runId, {
+      nodeType: "secure"
+    });
+    return;
+  }
+
+  if (stepIndex === 1) {
+    updateTrafficMode("secure", visualAction.trafficLabel);
+    await flashNode("pc", "Login", "secure", runId, { hold: 240 });
+    await travelAndVerify("pc", "switch", "ENC{admin}", "secure", "Cipher", runId, {
+      nodeType: "secure"
+    });
+    await travelAndVerify("switch", "router", "ENC{show ip}", "secure", "Decrypt", runId, {
+      nodeType: "secure"
+    });
+    await flashNode("router", "Auth OK", "secure", runId, { hold: 220 });
+    await travelAndVerify("router", "switch", "ENC{OK}", "secure", "Cipher", runId, {
+      nodeType: "secure"
+    });
+    await travelAndVerify("switch", "pc", "ENC{OK}", "secure", "RX", runId, {
+      nodeType: "secure"
+    });
+    return;
+  }
+
+  updateTrafficMode("warning", visualAction.trafficLabel);
+  await flashNode("pc", "Telnet", "warning", runId, { hold: 240 });
+  await travelAndVerify("pc", "switch", "admin:cisco123", "warning", "Readable", runId, {
+    nodeType: "warning"
+  });
+  await travelAndVerify("switch", "router", "show run", "warning", "Exec", runId, {
+    nodeType: "warning"
+  });
+  await travelAndVerify("router", "switch", "config text", "warning", "Readable", runId, {
+    nodeType: "warning"
+  });
+  await travelAndVerify("switch", "pc", "config text", "warning", "RX", runId, {
+    nodeType: "warning"
+  });
+}
+
 function updateScenarioStatus(type, text) {
   els.scenarioStatus.className = `flow-status ${type}`;
   els.scenarioStatus.textContent = text;
@@ -1178,6 +1274,16 @@ async function runVisualAction(visualAction) {
 
   if (scenario.id === "arp-gateway") {
     await runArpGatewayFlow(state.stepIndex, visualAction, runId);
+    return;
+  }
+
+  if (scenario.id === "dns-https") {
+    await runDnsHttpsFlow(state.stepIndex, visualAction, runId);
+    return;
+  }
+
+  if (scenario.id === "ssh-vs-telnet") {
+    await runRemoteAccessFlow(state.stepIndex, visualAction, runId);
     return;
   }
 
