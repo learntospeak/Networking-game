@@ -506,7 +506,19 @@
 .command-sheet-close,
 .command-sheet-clear {
   min-height: 42px;
-  padding: 10px 14px;
+  padding: 10px 14px 10px 22px;
+}
+
+.command-sheet-close::before,
+.command-sheet-clear::before,
+.command-sheet-tab::before,
+.command-card-copy::before,
+.command-card-toggle::before {
+  left: 7px;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  transform: none;
 }
 
 .command-sheet-close::before {
@@ -567,7 +579,7 @@
   align-items: center;
   justify-content: center;
   min-height: 38px;
-  padding: 8px 14px;
+  padding: 8px 14px 8px 22px;
   border-radius: 999px;
   border: 1px solid #334155;
   background: rgba(10, 16, 24, 0.92);
@@ -659,7 +671,7 @@
 .command-card-copy,
 .command-card-toggle {
   min-height: 40px;
-  padding: 9px 12px;
+  padding: 9px 12px 9px 22px;
 }
 
 .command-card-copy::before {

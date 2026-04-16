@@ -1552,13 +1552,13 @@
       id: "move-suspicious-log",
       title: "Move a Suspicious Log",
       level: "Intermediate",
-      objective: "Create a quarantine folder, move the suspicious log into it, and verify the move completed.",
+      objective: "Create a folder named `quarantine` in the current workspace, move the suspicious log into that folder, and verify the move completed.",
       cwd: "/home/student/downloads",
       files: [{ path: "/home/student/downloads/suspicious.log", content: "anomalous login pattern\n" }],
       steps: [
-        step({ objective: "Create a quarantine directory.", hints: ["You need a holding area first.", "Create a folder named quarantine.", "Try `mkdir quarantine`."], explanation: "Quarantine folders keep suspicious artifacts separate from the rest of the workspace.", accepts: [fileExistsMatch("/home/student/downloads/quarantine", { command: "mkdir" })] }),
-        step({ objective: "Move suspicious.log into the quarantine folder.", hints: ["Use the move command.", "Send suspicious.log into quarantine.", "Try `mv suspicious.log quarantine/`."], explanation: "Moving the file separates it from the main workspace without destroying it.", accepts: [fileExistsMatch("/home/student/downloads/quarantine/suspicious.log", { command: "mv" })] }),
-        step({ objective: "List the quarantine folder to confirm the move.", hints: ["Check the target folder now.", "List quarantine.", "Try `ls quarantine`."], explanation: "A direct listing of the target directory confirms the file landed where you intended.", accepts: [rawMatch(/^ls\s+quarantine$/i)] })
+        step({ objective: "Create the `quarantine` directory under `/home/student/downloads`.", context: "Stay in the current downloads workspace. The holding folder for this task is `/home/student/downloads/quarantine`.", hints: ["You need a holding area first.", "Create a folder named quarantine in the current directory.", "Try `mkdir quarantine`."], explanation: "Quarantine folders keep suspicious artifacts separate from the rest of the workspace.", accepts: [fileExistsMatch("/home/student/downloads/quarantine", { command: "mkdir" })] }),
+        step({ objective: "Move suspicious.log into the `quarantine` folder.", context: "The destination is the directory you just created: `/home/student/downloads/quarantine`. Moving the file into that directory is enough; you do not need to rename it.", hints: ["Use the move command.", "Send suspicious.log into the quarantine directory.", "Try `mv suspicious.log quarantine/` or `mv suspicious.log quarantine`."], explanation: "Moving the file separates it from the main workspace without destroying it.", accepts: [fileExistsMatch("/home/student/downloads/quarantine/suspicious.log", { command: "mv" })] }),
+        step({ objective: "List the quarantine folder to confirm the move.", context: "Confirm the file is now inside `/home/student/downloads/quarantine` rather than in the main downloads listing.", hints: ["Check the target folder now.", "List quarantine directly.", "Try `ls quarantine`."], explanation: "A direct listing of the target directory confirms the file landed where you intended.", accepts: [rawMatch(/^ls\s+quarantine$/i)] })
       ]
     }),
     fileManipScenario({

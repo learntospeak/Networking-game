@@ -295,7 +295,14 @@
     if (!source) return { ok: false, error: "Source not found" };
 
     const sourceNormalized = normalizePath(state, sourcePath);
-    const destNormalized = normalizePath(state, destPath);
+    let destNormalized = normalizePath(state, destPath);
+    const destinationNode = state.fs[destNormalized];
+
+    if (destinationNode && destinationNode.type === "dir") {
+      const sourceNode = state.fs[sourceNormalized];
+      const sourceName = sourceNode ? sourceNode.name : sourceNormalized.split("/").pop();
+      destNormalized = normalizePath(state, sourceName, destNormalized);
+    }
 
     if (source.type === "file") {
       createFile(state, {

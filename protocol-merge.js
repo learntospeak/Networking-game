@@ -242,7 +242,8 @@ const scenarios = [
           devices: ["pc", "switch", "router", "server"],
           cables: ["pc-switch", "switch-router", "router-server"],
           trafficLabel: "DNS query from the client to the resolver"
-        }
+        },
+        flowIndicator: { label: "DNS Query", tone: "unicast" }
       },
       {
         prompt: "The DNS server receives the query. What is the correct next action?",
@@ -270,7 +271,8 @@ const scenarios = [
           devices: ["pc", "switch", "router", "server"],
           cables: ["pc-switch", "switch-router", "router-server"],
           trafficLabel: "DNS response returns from the server to the client"
-        }
+        },
+        flowIndicator: { label: "DNS Response", tone: "reply" }
       },
       {
         prompt: "The PC now knows the web server IP. What is the best next step?",
@@ -298,7 +300,8 @@ const scenarios = [
           devices: ["pc", "switch", "router", "server"],
           cables: ["pc-switch", "switch-router", "router-server"],
           trafficLabel: "HTTPS request goes out, then the secure response comes back"
-        }
+        },
+        flowIndicator: { label: "HTTPS Exchange", tone: "secure" }
       }
     ]
   },
@@ -344,7 +347,8 @@ const scenarios = [
           devices: ["pc", "switch", "router"],
           cables: ["pc-switch", "switch-router"],
           trafficLabel: "SSH session setup to the managed router"
-        }
+        },
+        flowIndicator: { label: "SSH Handshake", tone: "secure" }
       },
       {
         prompt: "Why is SSH the better answer here?",
@@ -372,7 +376,8 @@ const scenarios = [
           devices: ["pc", "switch", "router"],
           cables: ["pc-switch", "switch-router"],
           trafficLabel: "Encrypted SSH credentials and commands"
-        }
+        },
+        flowIndicator: { label: "SSH Encrypted Session", tone: "secure" }
       },
       {
         prompt: "Why is Telnet risky on untrusted networks?",
@@ -400,7 +405,8 @@ const scenarios = [
           devices: ["pc", "switch", "router"],
           cables: ["pc-switch", "switch-router"],
           trafficLabel: "Plaintext Telnet credentials and commands"
-        }
+        },
+        flowIndicator: { label: "Telnet Plaintext Session", tone: "warning" }
       }
     ]
   }
@@ -440,6 +446,7 @@ const els = {
   scenarioName: document.getElementById("scenarioName"),
   scenarioSubtitle: document.getElementById("scenarioSubtitle"),
   stepBadge: document.getElementById("stepBadge"),
+  flowIndicator: document.getElementById("flowIndicator"),
   mobileScenarioName: document.getElementById("mobileScenarioName"),
   mobileStepBadge: document.getElementById("mobileStepBadge"),
   mobileFeedbackState: document.getElementById("mobileFeedbackState"),
@@ -1161,6 +1168,21 @@ function updateTrafficMode(type, text) {
   els.trafficMode.textContent = text;
 }
 
+function updateFlowIndicator(indicator) {
+  if (!els.flowIndicator) return;
+
+  if (!indicator) {
+    els.flowIndicator.hidden = true;
+    els.flowIndicator.className = "flow-indicator idle";
+    els.flowIndicator.textContent = "";
+    return;
+  }
+
+  els.flowIndicator.hidden = false;
+  els.flowIndicator.className = `flow-indicator ${indicator.tone || "idle"}`;
+  els.flowIndicator.textContent = indicator.label;
+}
+
 function renderScenarioTabs() {
   els.scenarioTabs.innerHTML = "";
 
@@ -1312,6 +1334,7 @@ function renderStep() {
   els.scenarioName.textContent = scenario.name;
   els.scenarioSubtitle.textContent = scenario.subtitle;
   els.stepBadge.textContent = `Step ${state.stepIndex + 1} of ${scenario.steps.length}`;
+  updateFlowIndicator(step.flowIndicator);
   els.mobileScenarioName.textContent = scenario.name;
   els.mobileStepBadge.textContent = `Step ${state.stepIndex + 1} of ${scenario.steps.length}`;
   els.stepPrompt.textContent = step.prompt;

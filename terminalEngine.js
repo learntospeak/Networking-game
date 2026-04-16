@@ -65,7 +65,19 @@
       return null;
     }
 
-    return CommandsData.lookupForInput(rawInput);
+    const reference = CommandsData.lookupForInput(rawInput);
+    if (!reference) return null;
+
+    const windowsShell = StateManager.isWindowsState(session.state);
+    if (windowsShell && reference.category === "Linux") {
+      return null;
+    }
+
+    if (!windowsShell && reference.category === "Windows CMD") {
+      return null;
+    }
+
+    return reference;
   }
 
   function scrollTerminal() {
@@ -1124,8 +1136,26 @@
     ]);
   }
 
+  function commandAllowedInCurrentShell(command) {
+    if (!command) return true;
+
+    const windowsShell = StateManager.isWindowsState(session.state);
+    const windowsOnly = new Set(["dir", "type", "findstr", "tasklist", "taskkill"]);
+    const linuxOnly = new Set(["pwd", "ls", "touch", "cat", "grep", "cp", "mv", "rm", "ps", "kill", "wget", "searchsploit"]);
+
+    if (windowsShell) {
+      return !linuxOnly.has(command);
+    }
+
+    return !windowsOnly.has(command);
+  }
+
   function executeCommand(parsed, pipedInput = []) {
     if (!parsed.command) return okResult([]);
+
+    if (!commandAllowedInCurrentShell(parsed.command)) {
+      return errorResult("That command is not available in this training shell.", "invalid_command");
+    }
 
     if (session.state.activeConnection) {
       return executeActiveConnection(parsed);
