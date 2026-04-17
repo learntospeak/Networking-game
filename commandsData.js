@@ -73,6 +73,35 @@
     entry({ id: "cmd-whoami", command: "whoami", category: "Windows CMD", meaning: "Show the current logged-in user context.", example: "whoami", related: ["hostname", "echo"], keywords: ["current user", "identity", "account"] }),
     entry({ id: "cmd-ipconfig", command: "ipconfig", category: "Windows CMD", meaning: "Show IP address configuration for local network adapters.", example: "ipconfig", flags: [flag("/all", "Show detailed adapter and DNS information.")], related: ["hostname", "ping", "netstat"], keywords: ["ip address", "network config", "adapter"] }),
     entry({ id: "cmd-netstat", command: "netstat", category: "Windows CMD", meaning: "Show active connections, listening ports, and protocol statistics.", example: "netstat -ano", flags: [flag("-a", "Show all connections and listening ports."), flag("-n", "Show addresses numerically instead of resolving names."), flag("-o", "Show the owning process ID for each connection.")], related: ["tasklist", "ipconfig", "findstr"], keywords: ["listening ports", "connections", "pid", "network"] }),
+    entry({ id: "cmd-xcopy", command: "xcopy", category: "Windows CMD", meaning: "Copy files and whole directory trees into another location.", example: "xcopy C:\\Lab\\Toolkit C:\\Lab\\Archive\\Toolkit /E /I", flags: [flag("/E", "Copy directories and subdirectories, including empty ones."), flag("/I", "Assume the destination is a directory.")], related: ["copy", "move", "dir"], keywords: ["copy folder", "recursive copy", "directory tree"] }),
+    entry({ id: "cmd-attrib", command: "attrib", category: "Windows CMD", meaning: "View or change file attributes such as hidden or read-only.", example: "attrib hidden-note.txt", flags: [flag("+H", "Set the hidden attribute."), flag("-H", "Remove the hidden attribute.")], related: ["dir", "type", "del"], keywords: ["attributes", "hidden file", "read only"] }),
+    entry({ id: "cmd-systeminfo", command: "systeminfo", category: "Windows CMD", meaning: "Show OS version, hardware, boot time, and other system details.", example: "systeminfo", related: ["hostname", "ver", "driverquery"], keywords: ["system details", "os version", "boot time"] }),
+    entry({ id: "cmd-set", command: "set", category: "Windows CMD", meaning: "List, filter, or set environment variables in the current CMD session.", example: "set LAB_ROLE=analyst", related: ["echo", "prompt", "whoami"], keywords: ["environment variable", "session variable", "path"] }),
+    entry({ id: "cmd-ver", command: "ver", category: "Windows CMD", meaning: "Show the current Windows version string.", example: "ver", related: ["systeminfo", "hostname"], keywords: ["windows version", "build", "os"] }),
+    entry({ id: "cmd-date", command: "date", category: "Windows CMD", meaning: "Display or change the current system date.", example: "date", related: ["time", "systeminfo"], keywords: ["date", "clock", "system time"] }),
+    entry({ id: "cmd-time", command: "time", category: "Windows CMD", meaning: "Display or change the current system time.", example: "time", related: ["date", "systeminfo"], keywords: ["time", "clock", "system time"] }),
+    entry({ id: "cmd-prompt", command: "prompt", category: "Windows CMD", meaning: "Customize the CMD prompt text and tokens.", example: "prompt $D $T $P$G", related: ["cls", "set", "echo"], keywords: ["prompt", "custom shell", "cmd prompt"] }),
+    entry({ id: "cmd-ping", command: "ping", category: "Windows CMD", meaning: "Test whether a host responds and measure basic network reachability.", example: "ping fileserver", related: ["tracert", "pathping", "ipconfig"], keywords: ["reachability", "icmp", "latency", "windows"] }),
+    entry({ id: "cmd-tracert", command: "tracert", category: "Windows CMD", meaning: "Trace the router hops between this host and a remote destination.", example: "tracert web-lab", related: ["ping", "pathping"], keywords: ["route trace", "network path", "hops"] }),
+    entry({ id: "cmd-pathping", command: "pathping", category: "Windows CMD", meaning: "Combine path tracing and packet-loss measurement for a destination.", example: "pathping fileserver", related: ["ping", "tracert"], keywords: ["packet loss", "route health", "path analysis"] }),
+    entry({ id: "cmd-nslookup", command: "nslookup", category: "Windows CMD", meaning: "Resolve hostnames to IP addresses using DNS.", example: "nslookup fileserver", related: ["ping", "ipconfig"], keywords: ["dns", "name resolution", "lookup"] }),
+    entry({ id: "cmd-arp", command: "arp", category: "Windows CMD", meaning: "Inspect cached IP-to-MAC address mappings on the local host.", example: "arp -a", related: ["ipconfig", "getmac", "route print"], keywords: ["arp cache", "mac address", "layer 2"] }),
+    entry({ id: "cmd-route-print", command: "route print", category: "Windows CMD", meaning: "Display the local routing table so you can inspect gateways and interfaces.", example: "route print", related: ["tracert", "arp", "ipconfig"], keywords: ["routing table", "gateway", "routes"] }),
+    entry({ id: "cmd-getmac", command: "getmac", category: "Windows CMD", meaning: "Show MAC addresses for local network adapters.", example: "getmac", related: ["ipconfig", "arp"], keywords: ["mac address", "adapter", "network card"] }),
+    entry({ id: "cmd-sc-query", command: "sc query", category: "Windows CMD", meaning: "Inspect the current status of Windows services.", example: "sc query Spooler", related: ["net start", "net stop", "tasklist"], keywords: ["service status", "service control", "spooler"] }),
+    entry({ id: "cmd-net-start", command: "net start", category: "Windows CMD", meaning: "List running services or start a specific Windows service.", example: "net start Spooler", related: ["sc query", "net stop"], keywords: ["start service", "running services", "service control"] }),
+    entry({ id: "cmd-net-stop", command: "net stop", category: "Windows CMD", meaning: "Stop a specific Windows service.", example: "net stop Spooler", related: ["net start", "sc query"], keywords: ["stop service", "service control", "spooler"] }),
+    entry({ id: "cmd-wmic-process-list-brief", command: "wmic process list brief", category: "Windows CMD", meaning: "Show a compact process listing through WMIC.", example: "wmic process list brief", related: ["tasklist", "taskkill"], keywords: ["wmic", "process inventory", "brief list"] }),
+    entry({ id: "cmd-driverquery", command: "driverquery", category: "Windows CMD", meaning: "List installed drivers and their runtime state.", example: "driverquery", related: ["systeminfo", "sc query"], keywords: ["drivers", "kernel modules", "device drivers"] }),
+    entry({ id: "cmd-query-user", command: "query user", category: "Windows CMD", meaning: "Show currently logged-on or disconnected user sessions.", example: "query user", related: ["whoami", "net user"], keywords: ["sessions", "logged on users", "rdp"] }),
+    entry({ id: "cmd-net-user", command: "net user", category: "Windows CMD", meaning: "List local accounts or inspect a specific local user.", example: "net user analyst", related: ["whoami", "net localgroup"], keywords: ["local user", "account details", "admin"] }),
+    entry({ id: "cmd-net-localgroup", command: "net localgroup", category: "Windows CMD", meaning: "Inspect local group membership such as Administrators.", example: "net localgroup Administrators", related: ["net user", "whoami"], keywords: ["group membership", "administrators", "local group"] }),
+    entry({ id: "cmd-net-use", command: "net use", category: "Windows CMD", meaning: "View or map SMB shares to drive letters.", example: "net use Z: \\\\fileserver\\Tools", related: ["net share", "dir"], keywords: ["map drive", "smb share", "network drive"] }),
+    entry({ id: "cmd-net-share", command: "net share", category: "Windows CMD", meaning: "List available shares exposed on the local host.", example: "net share", related: ["net use", "dir"], keywords: ["shares", "smb", "shared folders"] }),
+    entry({ id: "cmd-shutdown", command: "shutdown", category: "Windows CMD", meaning: "Schedule or cancel a shutdown or restart action.", example: "shutdown /r /t 60", flags: [flag("/r", "Restart instead of a full power-off."), flag("/t", "Set the countdown in seconds."), flag("/a", "Abort a pending shutdown.")], related: ["schtasks", "systeminfo"], keywords: ["restart", "power off", "reboot"] }),
+    entry({ id: "cmd-schtasks", command: "schtasks", category: "Windows CMD", meaning: "Query scheduled tasks to inspect what runs automatically.", example: "schtasks /query", related: ["shutdown", "systeminfo"], keywords: ["scheduled task", "automation", "job list"] }),
+    entry({ id: "cmd-find", command: "find", category: "Windows CMD", meaning: "Search text output or a file for lines containing a literal string.", example: "find \"ERROR\" service.log", related: ["findstr", "type"], keywords: ["literal search", "filter text", "windows find"] }),
+    entry({ id: "cmd-fc", command: "fc", category: "Windows CMD", meaning: "Compare two files and show line differences.", example: "fc baseline.cfg candidate.cfg", related: ["type", "findstr"], keywords: ["file compare", "diff", "configuration drift"] }),
 
     entry({ id: "nmap-command", command: "nmap", category: "Nmap", meaning: "Scan hosts for open ports, services, and fingerprints.", example: "nmap -sV 192.168.56.102", flags: [flag("-p", "Scan only the specified ports."), flag("-sV", "Probe service versions."), flag("-sC", "Run common default scripts."), flag("-O", "Attempt OS detection."), flag("-A", "Enable several advanced detection features together."), flag("-oN", "Write normal text output to a file."), flag("--top-ports", "Scan the most common ports only."), flag("-Pn", "Skip host discovery and treat the host as up.")], related: ["ping", "nc", "-p", "-sV"], keywords: ["scan", "ports", "services", "host discovery"] }),
     entry({ id: "nmap-p", command: "-p", category: "Nmap", meaning: "Scan only specific ports instead of the default set.", example: "nmap -p 21,80,443 192.168.56.102", related: ["nmap", "--top-ports", "-sV"], keywords: ["ports", "specific port", "targeted scan"] }),
@@ -159,24 +188,45 @@
     });
   }
 
-  function findEntry(command) {
-    const normalized = (command || "").trim().toLowerCase();
-    return entries.find((item) => item.command.toLowerCase() === normalized) || null;
+  function prioritizeMatches(matches, preferredCategories = []) {
+    if (!Array.isArray(matches) || !matches.length) return null;
+    if (!Array.isArray(preferredCategories) || !preferredCategories.length) return matches[0];
+
+    const ranked = [...matches].sort((left, right) => {
+      const leftIndex = preferredCategories.indexOf(left.category);
+      const rightIndex = preferredCategories.indexOf(right.category);
+      const leftScore = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+      const rightScore = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+      return leftScore - rightScore;
+    });
+
+    return ranked[0];
   }
 
-  function lookupForInput(rawInput) {
+  function findEntry(command, preferredCategories = []) {
+    const normalized = (command || "").trim().toLowerCase();
+    return prioritizeMatches(
+      entries.filter((item) => item.command.toLowerCase() === normalized || (item.aliases || []).some((alias) => alias.toLowerCase() === normalized)),
+      preferredCategories
+    );
+  }
+
+  function lookupForInput(rawInput, preferredCategories = []) {
     const normalized = (rawInput || "").trim().toLowerCase();
     if (!normalized) return null;
 
     const ranked = [...entries].sort((left, right) => right.command.length - left.command.length);
+    const matches = [];
 
     for (const item of ranked) {
       const commands = [item.command, ...(item.aliases || [])].map((value) => value.toLowerCase());
       const matched = commands.find((command) => normalized === command || normalized.startsWith(`${command} `));
-      if (matched) return item;
+      if (matched) {
+        matches.push(item);
+      }
     }
 
-    return null;
+    return prioritizeMatches(matches, preferredCategories);
   }
 
   window.CommandsData = {

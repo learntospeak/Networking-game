@@ -53,11 +53,36 @@
         "C:/Users/student/Downloads",
         "C:/Lab",
         "C:/Lab/Logs",
+        "C:/Lab/Temp",
+        "C:/Lab/Reports",
+        "C:/Lab/Shares",
+        "C:/Lab/Services",
+        "C:/Windows",
+        "C:/Windows/System32",
         ...(config.directories || [])
       ],
       files: config.files || [],
       processes: config.processes || [],
-      targets: config.targets || commonTargets()
+      targets: config.targets || commonTargets(),
+      envVars: config.envVars || commonWindowsEnvVars(),
+      systemInfo: config.systemInfo || commonWindowsSystemInfo(),
+      networkAdapters: config.networkAdapters || commonWindowsNetworkAdapters(),
+      networkConnections: config.networkConnections || commonWindowsConnections(),
+      arpCache: config.arpCache || commonWindowsArpCache(),
+      routeTable: config.routeTable || commonWindowsRouteTable(),
+      dnsRecords: config.dnsRecords || commonWindowsDnsRecords(),
+      services: config.services || commonWindowsServices(),
+      drivers: config.drivers || commonWindowsDrivers(),
+      userSessions: config.userSessions || commonWindowsUserSessions(),
+      localUsers: config.localUsers || commonWindowsUsers(),
+      localGroups: config.localGroups || commonWindowsLocalGroups(),
+      shares: config.shares || commonWindowsShares(),
+      mappedShares: config.mappedShares || [],
+      scheduledTasks: config.scheduledTasks || commonWindowsScheduledTasks(),
+      pathExecutables: config.pathExecutables || commonWindowsPathExecutables(),
+      currentDate: config.currentDate || "04/17/2026",
+      currentTime: config.currentTime || "08:24 AM",
+      promptTemplate: config.promptTemplate || "$P$G"
     };
   }
 
@@ -105,6 +130,159 @@
           { port: 3389, proto: "tcp", service: "ms-wbt-server", version: "RDP", banner: "RDP service ready" }
         ]
       }
+    ]);
+  }
+
+  function commonWindowsEnvVars() {
+    return clone({
+      ALLUSERSPROFILE: "C:\\ProgramData",
+      APPDATA: "C:\\Users\\student\\AppData\\Roaming",
+      COMPUTERNAME: "LAB-WIN",
+      COMSPEC: "C:\\Windows\\System32\\cmd.exe",
+      PATH: "C:\\Windows\\System32;C:\\Windows;C:\\Python311",
+      TEMP: "C:\\Temp",
+      TMP: "C:\\Temp",
+      USERDOMAIN: "LAB",
+      USERNAME: "student",
+      USERPROFILE: "C:\\Users\\student"
+    });
+  }
+
+  function commonWindowsSystemInfo() {
+    return clone({
+      hostName: "LAB-WIN",
+      osName: "Microsoft Windows 10 Enterprise",
+      osVersion: "10.0.19045 N/A Build 19045",
+      osManufacturer: "Microsoft Corporation",
+      systemModel: "VMware Virtual Platform",
+      systemType: "x64-based PC",
+      bootTime: "4/17/2026, 7:58:11 AM",
+      hotfixCount: 5,
+      biosVersion: "VMware, Inc. VMW71.00V.21100432.B64.2202210304, 02/21/2022"
+    });
+  }
+
+  function commonWindowsNetworkAdapters() {
+    return clone([
+      {
+        name: "Ethernet0",
+        description: "Intel(R) 82574L Gigabit Network Connection",
+        ipv4: "192.168.56.25",
+        subnetMask: "255.255.255.0",
+        gateway: "192.168.56.1",
+        dns: ["192.168.56.1"],
+        mac: "00-0C-29-5E-11-22",
+        dhcpEnabled: false
+      }
+    ]);
+  }
+
+  function commonWindowsConnections() {
+    return clone([
+      { proto: "TCP", localAddress: "192.168.56.25:49712", foreignAddress: "192.168.56.10:443", state: "ESTABLISHED", pid: 4088 },
+      { proto: "TCP", localAddress: "0.0.0.0:135", foreignAddress: "0.0.0.0:0", state: "LISTENING", pid: 960 },
+      { proto: "TCP", localAddress: "0.0.0.0:445", foreignAddress: "0.0.0.0:0", state: "LISTENING", pid: 4 },
+      { proto: "UDP", localAddress: "0.0.0.0:68", foreignAddress: "*:*", state: "", pid: 1140 }
+    ]);
+  }
+
+  function commonWindowsArpCache() {
+    return clone([
+      { interface: "192.168.56.25", ip: "192.168.56.1", mac: "08-00-27-AA-BB-CC", type: "dynamic" },
+      { interface: "192.168.56.25", ip: "192.168.56.10", mac: "08-00-27-11-22-33", type: "dynamic" },
+      { interface: "192.168.56.25", ip: "192.168.56.20", mac: "08-00-27-44-55-66", type: "dynamic" }
+    ]);
+  }
+
+  function commonWindowsRouteTable() {
+    return clone([
+      { network: "0.0.0.0", netmask: "0.0.0.0", gateway: "192.168.56.1", interface: "192.168.56.25", metric: 25 },
+      { network: "127.0.0.0", netmask: "255.0.0.0", gateway: "On-link", interface: "127.0.0.1", metric: 331 },
+      { network: "192.168.56.0", netmask: "255.255.255.0", gateway: "On-link", interface: "192.168.56.25", metric: 281 },
+      { network: "192.168.56.25", netmask: "255.255.255.255", gateway: "On-link", interface: "192.168.56.25", metric: 281 }
+    ]);
+  }
+
+  function commonWindowsDnsRecords() {
+    return clone([
+      { hostname: "fileserver", address: "192.168.56.20" },
+      { hostname: "web-lab", address: "192.168.56.10" },
+      { hostname: "metasploitable2", address: "192.168.56.102" },
+      { hostname: "dc01", address: "192.168.56.5" }
+    ]);
+  }
+
+  function commonWindowsServices() {
+    return clone([
+      { name: "Spooler", displayName: "Print Spooler", status: "RUNNING", pid: 1504, startType: "Auto" },
+      { name: "w32time", displayName: "Windows Time", status: "RUNNING", pid: 1224, startType: "Manual" },
+      { name: "BITS", displayName: "Background Intelligent Transfer Service", status: "RUNNING", pid: 1756, startType: "Manual" },
+      { name: "Dnscache", displayName: "DNS Client", status: "RUNNING", pid: 1092, startType: "Auto" }
+    ]);
+  }
+
+  function commonWindowsDrivers() {
+    return clone([
+      { moduleName: "ACPI", displayName: "Microsoft ACPI Driver", startMode: "Boot", state: "Running" },
+      { moduleName: "disk", displayName: "Disk Driver", startMode: "System", state: "Running" },
+      { moduleName: "Tcpip", displayName: "TCP/IP Protocol Driver", startMode: "System", state: "Running" },
+      { moduleName: "vmxnet3", displayName: "VMware vmxnet3 Ethernet Adapter Driver", startMode: "Manual", state: "Running" }
+    ]);
+  }
+
+  function commonWindowsUserSessions() {
+    return clone([
+      { username: "student", sessionName: "console", id: 1, state: "Active", idleTime: "none", logonTime: "4/17/2026 8:00 AM" },
+      { username: "analyst", sessionName: "rdp-tcp#3", id: 2, state: "Disc", idleTime: "1:12", logonTime: "4/17/2026 6:42 AM" }
+    ]);
+  }
+
+  function commonWindowsUsers() {
+    return clone([
+      { username: "Administrator", fullName: "Built-in Administrator", enabled: true, lastLogon: "4/16/2026 7:11 PM", groups: ["Administrators"] },
+      { username: "student", fullName: "Lab Student", enabled: true, lastLogon: "4/17/2026 8:00 AM", groups: ["Users"] },
+      { username: "analyst", fullName: "IR Analyst", enabled: true, lastLogon: "4/17/2026 6:42 AM", groups: ["Administrators", "Remote Desktop Users"] },
+      { username: "backupsvc", fullName: "Backup Service", enabled: true, lastLogon: "Never", groups: ["Backup Operators"] }
+    ]);
+  }
+
+  function commonWindowsLocalGroups() {
+    return clone([
+      { name: "Administrators", members: ["Administrator", "analyst"] },
+      { name: "Users", members: ["student"] },
+      { name: "Backup Operators", members: ["backupsvc"] },
+      { name: "Remote Desktop Users", members: ["analyst"] }
+    ]);
+  }
+
+  function commonWindowsShares() {
+    return clone([
+      { name: "ADMIN$", path: "C:\\Windows", remark: "Remote Admin" },
+      { name: "C$", path: "C:\\", remark: "Default share" },
+      { name: "Tools", path: "C:\\Lab\\Shares\\Tools", remark: "IR toolkit share", server: "fileserver", unc: "\\\\fileserver\\Tools" },
+      { name: "Reports", path: "C:\\Lab\\Shares\\Reports", remark: "Incident report drop", server: "fileserver", unc: "\\\\fileserver\\Reports" }
+    ]);
+  }
+
+  function commonWindowsScheduledTasks() {
+    return clone([
+      { name: "\\DailyBackup", nextRunTime: "4/18/2026 1:00 AM", status: "Ready", taskToRun: "C:\\Lab\\Scripts\\backup.cmd" },
+      { name: "\\LogArchive", nextRunTime: "4/17/2026 11:00 PM", status: "Ready", taskToRun: "C:\\Lab\\Scripts\\archive-logs.cmd" }
+    ]);
+  }
+
+  function commonWindowsPathExecutables() {
+    return clone([
+      "C:\\Windows\\System32\\arp.exe",
+      "C:\\Windows\\System32\\cmd.exe",
+      "C:\\Windows\\System32\\find.exe",
+      "C:\\Windows\\System32\\findstr.exe",
+      "C:\\Windows\\System32\\ipconfig.exe",
+      "C:\\Windows\\System32\\netstat.exe",
+      "C:\\Windows\\System32\\nslookup.exe",
+      "C:\\Windows\\System32\\ping.exe",
+      "C:\\Windows\\System32\\route.exe",
+      "C:\\Python311\\python.exe"
     ]);
   }
 
@@ -256,6 +434,49 @@
 
   function listenerPortMatch(port, extras = {}) {
     return { listenerPort: port, ...extras };
+  }
+
+  function envVarMatch(name, value, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => {
+        if (!state.envVars) return false;
+        if (value === undefined) return Object.prototype.hasOwnProperty.call(state.envVars, name);
+        return String(state.envVars[name] || "") === String(value);
+      }
+    };
+  }
+
+  function serviceStatusMatch(serviceName, status, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => Array.isArray(state.services)
+        && state.services.some((service) => String(service.name).toLowerCase() === String(serviceName).toLowerCase()
+          && String(service.status).toUpperCase() === String(status).toUpperCase())
+    };
+  }
+
+  function mappedShareMatch(drive, unc, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => Array.isArray(state.mappedShares)
+        && state.mappedShares.some((share) => String(share.drive).toUpperCase() === String(drive).toUpperCase()
+          && String(share.unc).toLowerCase() === String(unc).toLowerCase())
+    };
+  }
+
+  function promptTemplateMatch(template, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => String(state.promptTemplate || "") === String(template)
+    };
+  }
+
+  function shutdownMatch(kind, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => state.pendingShutdown && String(state.pendingShutdown.kind) === String(kind)
+    };
   }
 
   function explorationRule(match, feedback, coach) {
@@ -1571,6 +1792,12 @@
       layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "linux",
+      scenarioIntro: config.scenarioIntro || "",
+      commandFocus: config.commandFocus || [],
+      acceptedCommands: config.acceptedCommands || [],
+      simulatedOutput: config.simulatedOutput || [],
+      successCondition: config.successCondition || "",
+      feedbackText: config.feedbackText || "",
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
       environmentPolicy: contextMeta.environmentPolicy,
@@ -1600,6 +1827,12 @@
       layer: config.layer || inferScenarioLayer(config),
       level: config.level,
       shell: "cmd",
+      scenarioIntro: config.scenarioIntro || "",
+      commandFocus: config.commandFocus || [],
+      acceptedCommands: config.acceptedCommands || [],
+      simulatedOutput: config.simulatedOutput || [],
+      successCondition: config.successCondition || "",
+      feedbackText: config.feedbackText || "",
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
       environmentPolicy: contextMeta.environmentPolicy,
@@ -1609,6 +1842,15 @@
       environment,
       steps: config.steps
     };
+  }
+
+  function windowsLessonScenario(config) {
+    return cmdScenario({
+      level: config.level || config.difficulty || "Beginner",
+      difficulty: config.difficulty || config.level || "Beginner",
+      allowedFlexibility: config.allowedFlexibility || "Stay inside practical CMD commands. Relative or absolute Windows paths are both fine when the end state or evidence is correct.",
+      ...config
+    });
   }
 
   function proxyScenario(config) {
@@ -3157,6 +3399,1070 @@
     })
   ];
 
+  const generatedWindowsCurriculumScenarios = [
+    windowsLessonScenario({
+      id: "win-dir-incident-triage",
+      title: "Incident Folder Triage",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "List the incident workspace so you can see where the case notes live.",
+      scenarioIntro: "You are on the Windows analyst workstation at C:\\Lab\\Incident. Start by listing the current folder so the learner sees the immediate Windows context before changing anything.",
+      commandFocus: ["dir"],
+      acceptedCommands: ["dir", "dir C:\\Lab\\Incident"],
+      simulatedOutput: [" Directory of C:\\Lab\\Incident", "Notes", "triage.txt"],
+      successCondition: "List the incident folder and identify the Notes directory.",
+      feedbackText: "The learner now has the core Windows workspace in view before navigating deeper.",
+      environment: {
+        cwd: "C:/Lab/Incident",
+        directories: ["C:/Lab/Incident/Notes"],
+        files: [
+          { path: "C:/Lab/Incident/triage.txt", content: "Review startup items and case notes.\n" },
+          { path: "C:/Lab/Incident/Notes/service.txt", content: "Spooler restarts are failing.\n" }
+        ]
+      },
+      steps: [
+        step({
+          objective: "List the current incident folder in CMD.",
+          hints: ["Start with the Windows directory listing command.", "You only need the current folder view first.", "Try `dir`."],
+          explanation: "Beginner Windows workflows should start with a local listing so the learner sees the current folder before moving.",
+          successFeedback: "You listed the incident workspace.",
+          accepts: [commandMatch("dir")]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-cd-notes-folder",
+      title: "Move Into the Notes Folder",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "Change into the Notes folder so you are working in the correct case directory.",
+      scenarioIntro: "The case notes are stored under C:\\Lab\\Incident\\Notes. Move into that directory explicitly so the learner associates Windows navigation with the correct folder context.",
+      commandFocus: ["cd"],
+      acceptedCommands: ["cd Notes", "cd C:\\Lab\\Incident\\Notes"],
+      simulatedOutput: ["C:\\Lab\\Incident\\Notes"],
+      successCondition: "End the step with the CMD working directory set to C:\\Lab\\Incident\\Notes.",
+      feedbackText: "The working directory now matches the incident notes context.",
+      environment: {
+        cwd: "C:/Lab/Incident",
+        directories: ["C:/Lab/Incident/Notes"]
+      },
+      steps: [
+        step({
+          objective: "Move into C:\\Lab\\Incident\\Notes.",
+          hints: ["Change into the Notes folder.", "Relative or full Windows paths are fine.", "Try `cd Notes`."],
+          explanation: "Changing into the exact case folder reduces path confusion for beginners.",
+          successFeedback: "You moved into the notes folder.",
+          accepts: [cwdMatch("C:/Lab/Incident/Notes")]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-tree-toolbox-map",
+      title: "Map the Toolbox Tree",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "Display the folder tree for the toolkit so you can see the directory structure at a glance.",
+      scenarioIntro: "The analyst toolkit has several subfolders. Use the tree view so the learner sees a Windows-native way to understand folder layout without opening each directory one by one.",
+      commandFocus: ["tree"],
+      acceptedCommands: ["tree", "tree C:\\Lab\\Toolkit"],
+      simulatedOutput: ["C:\\Lab\\Toolkit", "+---Docs", "\\---Scripts"],
+      successCondition: "Render the toolkit directory structure in tree form.",
+      feedbackText: "The learner has a visual folder map instead of guessing from separate listings.",
+      environment: {
+        cwd: "C:/Lab/Toolkit",
+        directories: ["C:/Lab/Toolkit/Docs", "C:/Lab/Toolkit/Scripts", "C:/Lab/Toolkit/Logs"],
+        files: [{ path: "C:/Lab/Toolkit/Docs/readme.txt", content: "Toolkit usage notes.\n" }]
+      },
+      steps: [
+        step({
+          objective: "Display the current toolkit folder as a tree.",
+          hints: ["Use the CMD tree command.", "You can target the current folder or name it explicitly.", "Try `tree`."],
+          explanation: "tree is a beginner-friendly way to understand a Windows folder hierarchy quickly.",
+          successFeedback: "You mapped the toolkit tree.",
+          accepts: [commandMatch("tree")]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-mkdir-rmdir-temp-workspace",
+      title: "Create and Remove a Temp Workspace",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "Create a scratch directory for triage notes, then remove it once the practice task is complete.",
+      scenarioIntro: "Temporary work folders are common during Windows triage. Create one under C:\\Lab\\Temp, then clean it up so the learner sees both setup and tidy-up commands in one small workflow.",
+      commandFocus: ["mkdir", "rmdir"],
+      acceptedCommands: ["mkdir scratch", "rmdir scratch"],
+      simulatedOutput: ["created directory scratch"],
+      successCondition: "Create C:\\Lab\\Temp\\scratch and remove it again.",
+      feedbackText: "The learner practiced both making and removing a temporary Windows folder.",
+      environment: {
+        cwd: "C:/Lab/Temp"
+      },
+      steps: [
+        step({
+          objective: "Create a directory named scratch in the current folder.",
+          hints: ["Start by making the workspace.", "Use the Windows directory creation command.", "Try `mkdir scratch`."],
+          explanation: "Creating a dedicated workspace first keeps response artifacts contained.",
+          successFeedback: "You created the scratch workspace.",
+          accepts: [fileExistsMatch("C:/Lab/Temp/scratch", { command: "mkdir", nodeType: "dir" })]
+        }),
+        step({
+          objective: "Remove the scratch directory once the practice setup is proven.",
+          hints: ["Clean the temporary folder back up.", "Use the Windows directory removal command.", "Try `rmdir scratch`."],
+          explanation: "Cleaning up temporary folders is part of disciplined terminal work.",
+          successFeedback: "You removed the temporary workspace.",
+          accepts: [{ command: "rmdir", fileMissing: "C:/Lab/Temp/scratch" }]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-copy-case-note",
+      title: "Copy a Case Note Forward",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "Copy the current case note into the reports folder without changing the original file.",
+      scenarioIntro: "A responder often needs to duplicate a note before editing a report version. Use copy so the learner sees the difference between duplicating and moving a file.",
+      commandFocus: ["copy"],
+      acceptedCommands: ["copy case-note.txt C:\\Lab\\Reports\\case-note.txt"],
+      simulatedOutput: ["1 file(s) copied."],
+      successCondition: "Create a copy of case-note.txt under C:\\Lab\\Reports.",
+      feedbackText: "The report copy exists and the original note remains in place.",
+      environment: {
+        cwd: "C:/Lab/Notes",
+        directories: ["C:/Lab/Reports"],
+        files: [{ path: "C:/Lab/Notes/case-note.txt", content: "Initial case note.\n" }]
+      },
+      steps: [
+        step({
+          objective: "Copy case-note.txt into C:\\Lab\\Reports.",
+          hints: ["Use copy with a source and destination.", "Keep the original file where it is.", "Try `copy case-note.txt C:\\Lab\\Reports\\case-note.txt`."],
+          explanation: "copy preserves the source file while creating a second copy where you need it.",
+          successFeedback: "You copied the case note into the reports folder.",
+          accepts: [fileExistsMatch("C:/Lab/Reports/case-note.txt", { command: "copy" })]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-xcopy-toolkit-bundle",
+      title: "Replicate the Toolkit Bundle",
+      category: "Files and navigation",
+      difficulty: "Intermediate",
+      objective: "Copy the whole toolkit bundle into the archive area so the folder structure is preserved.",
+      scenarioIntro: "Simple copy is not enough when you need the whole folder tree. Use xcopy so the learner sees the Windows command that handles recursive copy workflows more naturally.",
+      commandFocus: ["xcopy"],
+      acceptedCommands: ["xcopy Bundle C:\\Lab\\Archive\\Bundle /E /I"],
+      simulatedOutput: ["1 File(s) copied"],
+      successCondition: "Create a copied Bundle tree under C:\\Lab\\Archive.",
+      feedbackText: "The toolkit bundle was replicated with its folder structure intact.",
+      environment: {
+        cwd: "C:/Lab/Tools",
+        directories: ["C:/Lab/Tools/Bundle", "C:/Lab/Tools/Bundle/Docs", "C:/Lab/Archive"],
+        files: [
+          { path: "C:/Lab/Tools/Bundle/Docs/checklist.txt", content: "Acquisition checklist.\n" },
+          { path: "C:/Lab/Tools/Bundle/readme.txt", content: "Toolkit bundle.\n" }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Copy the Bundle directory tree into C:\\Lab\\Archive.",
+          hints: ["Use the recursive copy command.", "Preserve the folder structure while copying Bundle.", "Try `xcopy Bundle C:\\Lab\\Archive\\Bundle /E /I`."],
+          explanation: "xcopy is the classic CMD way to duplicate a folder tree without collapsing it into single files.",
+          successFeedback: "You copied the toolkit bundle tree.",
+          accepts: [fileExistsMatch("C:/Lab/Archive/Bundle/Docs/checklist.txt", { command: "xcopy" })]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-move-and-rename-review-note",
+      title: "Move and Rename a Review Note",
+      category: "Files and navigation",
+      difficulty: "Intermediate",
+      objective: "Move the draft review note into the reports folder and rename it to its final report name.",
+      scenarioIntro: "This mini workflow teaches that moving and renaming are separate concerns in CMD. First relocate the file, then rename it once it is in the right folder.",
+      commandFocus: ["move", "ren"],
+      acceptedCommands: ["move review-draft.txt C:\\Lab\\Reports\\review-draft.txt", "ren C:\\Lab\\Reports\\review-draft.txt review-final.txt"],
+      simulatedOutput: ["1 file(s) moved."],
+      successCondition: "Place review-final.txt under C:\\Lab\\Reports.",
+      feedbackText: "The draft was relocated and renamed into its report-ready state.",
+      environment: {
+        cwd: "C:/Lab/Temp",
+        directories: ["C:/Lab/Reports"],
+        files: [{ path: "C:/Lab/Temp/review-draft.txt", content: "Draft review text.\n" }]
+      },
+      steps: [
+        step({
+          objective: "Move review-draft.txt into C:\\Lab\\Reports.",
+          hints: ["Relocate the file first.", "Use move with the reports path as the destination.", "Try `move review-draft.txt C:\\Lab\\Reports\\review-draft.txt`."],
+          explanation: "move changes the file location without creating a duplicate.",
+          successFeedback: "You moved the draft into the reports folder.",
+          accepts: [fileExistsMatch("C:/Lab/Reports/review-draft.txt", { command: "move" })]
+        }),
+        step({
+          objective: "Rename the moved file to review-final.txt.",
+          hints: ["Now rename the file in its new folder.", "Use ren against the report copy.", "Try `ren C:\\Lab\\Reports\\review-draft.txt review-final.txt`."],
+          explanation: "ren is the straightforward CMD command for changing a file name in place.",
+          successFeedback: "You renamed the report file.",
+          accepts: [fileExistsMatch("C:/Lab/Reports/review-final.txt", { command: "ren" })]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-delete-old-dump",
+      title: "Purge an Old Dump File",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "Delete a stale dump file from the temp folder after confirming the target file name.",
+      scenarioIntro: "Temporary dump files quickly clutter a Windows workspace. Use del for a direct clean-up action once the target file is clear.",
+      commandFocus: ["del"],
+      acceptedCommands: ["del old-dump.txt"],
+      simulatedOutput: [],
+      successCondition: "Remove old-dump.txt from C:\\Lab\\Temp.",
+      feedbackText: "The stale dump file is gone from the temp workspace.",
+      environment: {
+        cwd: "C:/Lab/Temp",
+        files: [{ path: "C:/Lab/Temp/old-dump.txt", content: "old collection data\n" }]
+      },
+      steps: [
+        step({
+          objective: "Delete old-dump.txt from the current directory.",
+          hints: ["Use the Windows delete command on the file.", "You do not need to move it first.", "Try `del old-dump.txt`."],
+          explanation: "del removes a file directly when you are certain the workspace no longer needs it.",
+          successFeedback: "You deleted the stale dump file.",
+          accepts: [{ command: "del", fileMissing: "C:/Lab/Temp/old-dump.txt" }]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-type-more-audit-log",
+      title: "Read a Long Audit Note Safely",
+      category: "Files and navigation",
+      difficulty: "Beginner",
+      objective: "Read the audit log once, then page it through more so the output is easier to review.",
+      scenarioIntro: "Large text files can overwhelm new learners. This lesson shows the difference between printing the whole file with type and paging it with more when the output gets long.",
+      commandFocus: ["type", "more"],
+      acceptedCommands: ["type audit.log", "type audit.log | more"],
+      simulatedOutput: ["Line 01: startup ok", "Line 12: archive completed"],
+      successCondition: "Read audit.log directly and then run it through more for paged review.",
+      feedbackText: "The learner has seen both the raw file read and the paged review workflow.",
+      environment: {
+        cwd: "C:/Lab/Logs",
+        files: [{ path: "C:/Lab/Logs/audit.log", content: "Line 01: startup ok\nLine 02: driver load ok\nLine 03: analyst login ok\nLine 04: share check ok\nLine 05: backup task ready\nLine 06: archive job queued\nLine 07: ip config captured\nLine 08: dns cache warm\nLine 09: service inventory done\nLine 10: spooler monitored\nLine 11: route table reviewed\nLine 12: archive completed\n" }]
+      },
+      steps: [
+        step({
+          objective: "Read audit.log directly in CMD.",
+          hints: ["Open the file with the Windows text-display command.", "Start with the full file output.", "Try `type audit.log`."],
+          explanation: "type is the basic Windows command for reading a text file directly in the terminal.",
+          successFeedback: "You printed the audit log.",
+          accepts: [rawMatch(/^type\s+audit\.log$/i)]
+        }),
+        step({
+          objective: "Page the same file through more so the output is easier to scan.",
+          hints: ["Now send the file output through the pager.", "Use a simple pipeline with more.", "Try `type audit.log | more`."],
+          explanation: "more is useful when a file is too long to read comfortably as one burst of output.",
+          successFeedback: "You paged the audit log output.",
+          accepts: [rawMatch(/^type\s+audit\.log\s*\|\s*more$/i), rawMatch(/^more\s+audit\.log$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-attrib-hidden-plan",
+      title: "Review Hidden File Attributes",
+      category: "Files and navigation",
+      difficulty: "Intermediate",
+      objective: "Inspect the attributes on the hidden plan file so you can explain why it does not appear in a normal listing.",
+      scenarioIntro: "A responder may know a file exists but not see it in a normal dir result. Use attrib to make the hidden context explicit instead of guessing.",
+      commandFocus: ["attrib"],
+      acceptedCommands: ["attrib hidden-plan.txt"],
+      simulatedOutput: ["H A      C:\\Lab\\Secrets\\hidden-plan.txt"],
+      successCondition: "Inspect hidden-plan.txt with attrib.",
+      feedbackText: "The hidden attribute is now obvious instead of implied.",
+      environment: {
+        cwd: "C:/Lab/Secrets",
+        files: [{ path: "C:/Lab/Secrets/hidden-plan.txt", content: "Hidden remediation plan.\n", hidden: true, attributes: ["H"] }]
+      },
+      steps: [
+        step({
+          objective: "Inspect the attributes on hidden-plan.txt.",
+          hints: ["Use the Windows attribute command on the file directly.", "Do not rely on a normal dir listing for this one.", "Try `attrib hidden-plan.txt`."],
+          explanation: "attrib exposes file metadata that a beginner would otherwise miss in a normal folder listing.",
+          successFeedback: "You inspected the hidden file attributes.",
+          accepts: [rawMatch(/^attrib\s+hidden-plan\.txt$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-host-and-user-identity",
+      title: "Identify the Host and User",
+      category: "System and environment",
+      difficulty: "Beginner",
+      objective: "Confirm the Windows host name and the current logged-in user context.",
+      scenarioIntro: "Before changing anything on a Windows system, learners should know which host and account they are actually using. This keeps the environment context explicit from the start.",
+      commandFocus: ["hostname", "whoami"],
+      acceptedCommands: ["hostname", "whoami"],
+      simulatedOutput: ["LAB-WIN", "LAB\\student"],
+      successCondition: "Display both the host name and the active user context.",
+      feedbackText: "The learner confirmed both the machine identity and the current account.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Print the host name of this Windows machine.",
+          hints: ["Use the command that returns the computer name.", "Stay inside CMD.", "Try `hostname`."],
+          explanation: "Host identity is basic but essential context before system work begins.",
+          successFeedback: "You confirmed the host name.",
+          accepts: [rawMatch(/^hostname$/i)]
+        }),
+        step({
+          objective: "Print the current user context.",
+          hints: ["Now show which account is active.", "Use the built-in identity command.", "Try `whoami`."],
+          explanation: "User context matters because command results and permissions depend on the active account.",
+          successFeedback: "You confirmed the current user context.",
+          accepts: [rawMatch(/^whoami$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-build-snapshot",
+      title: "Capture a Build Snapshot",
+      category: "System and environment",
+      difficulty: "Beginner",
+      objective: "Collect the full Windows system summary, then confirm the short version string.",
+      scenarioIntro: "Build and OS context often matter before troubleshooting. This lesson pairs the verbose system snapshot with the quick version check so learners see both levels of detail.",
+      commandFocus: ["systeminfo", "ver"],
+      acceptedCommands: ["systeminfo", "ver"],
+      simulatedOutput: ["OS Name: Microsoft Windows 10 Enterprise", "Microsoft Windows [Version 10.0.19045]"],
+      successCondition: "Run both the full system summary and the short version command.",
+      feedbackText: "The learner collected both broad system detail and the fast build check.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Display the full system summary.",
+          hints: ["Use the built-in Windows system report command.", "This one gives you the detailed picture.", "Try `systeminfo`."],
+          explanation: "systeminfo provides the detailed baseline when you need more than the host name alone.",
+          successFeedback: "You captured the system summary.",
+          accepts: [rawMatch(/^systeminfo$/i)]
+        }),
+        step({
+          objective: "Confirm the short Windows version string.",
+          hints: ["Now use the compact version command.", "You only need the brief OS string.", "Try `ver`."],
+          explanation: "ver is useful when you only need a fast Windows version confirmation.",
+          successFeedback: "You confirmed the short version string.",
+          accepts: [rawMatch(/^ver$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-set-and-echo-lab-role",
+      title: "Review and Set Environment Variables",
+      category: "System and environment",
+      difficulty: "Intermediate",
+      objective: "Set a session variable for the analyst role, then echo it back to confirm the value.",
+      scenarioIntro: "CMD environment variables matter during repeatable workflows and scripted triage. This lesson keeps it simple: set a variable, then prove the session now knows it.",
+      commandFocus: ["set", "echo"],
+      acceptedCommands: ["set LAB_ROLE=analyst", "echo %LAB_ROLE%"],
+      simulatedOutput: ["LAB_ROLE=analyst", "analyst"],
+      successCondition: "Create LAB_ROLE=analyst in the current session and print it back with echo.",
+      feedbackText: "The CMD session now carries the analyst role variable and the learner verified it.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Set LAB_ROLE to analyst in the current CMD session.",
+          hints: ["Use set with NAME=VALUE syntax.", "The variable name is LAB_ROLE.", "Try `set LAB_ROLE=analyst`."],
+          explanation: "Environment variables are useful for lightweight session context and scripted reuse.",
+          successFeedback: "You set the session variable.",
+          accepts: [envVarMatch("LAB_ROLE", "analyst", { command: "set" })]
+        }),
+        step({
+          objective: "Echo the LAB_ROLE variable so you can confirm the value.",
+          hints: ["Use echo with the percent-wrapped variable name.", "Print the variable back to the terminal.", "Try `echo %LAB_ROLE%`."],
+          explanation: "Printing the variable back confirms that the session value really exists and is spelled correctly.",
+          successFeedback: "You confirmed the session variable value.",
+          accepts: [rawMatch(/^echo\s+%LAB_ROLE%$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-date-and-time-check",
+      title: "Confirm the Lab Clock",
+      category: "System and environment",
+      difficulty: "Beginner",
+      objective: "Check the current date and time so the case notes line up with the host clock.",
+      scenarioIntro: "Time context matters in every investigation. This lesson uses the built-in date and time commands so learners get comfortable checking the Windows host clock directly.",
+      commandFocus: ["date", "time"],
+      acceptedCommands: ["date", "time"],
+      simulatedOutput: ["The current date is: 04/17/2026", "The current time is: 08:24 AM"],
+      successCondition: "Display both the current system date and the current system time.",
+      feedbackText: "The learner checked the host clock before making timeline assumptions.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Display the current Windows date.",
+          hints: ["Use the built-in date command first.", "You only need to read the current value.", "Try `date`."],
+          explanation: "Timeline accuracy starts by checking what the host thinks the date is.",
+          successFeedback: "You displayed the current date.",
+          accepts: [rawMatch(/^date$/i)]
+        }),
+        step({
+          objective: "Display the current Windows time.",
+          hints: ["Now check the time component too.", "Use the matching clock command.", "Try `time`."],
+          explanation: "Both date and time matter when you align system activity to case notes.",
+          successFeedback: "You displayed the current time.",
+          accepts: [rawMatch(/^time$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-cls-and-prompt-cleanup",
+      title: "Clear and Customise the Prompt",
+      category: "System and environment",
+      difficulty: "Intermediate",
+      objective: "Clear the terminal screen, then set a prompt that shows date, time, and the current path.",
+      scenarioIntro: "A clean screen and a more informative prompt make guided terminal learning less confusing. This lesson uses cls and prompt to improve the visible shell context directly.",
+      commandFocus: ["cls", "prompt"],
+      acceptedCommands: ["cls", "prompt $D $T $P$G"],
+      simulatedOutput: ["04/17/2026 08:24 AM C:\\Lab>"],
+      successCondition: "Clear the terminal and change the prompt template to include date, time, and path.",
+      feedbackText: "The learner cleaned the screen and made the shell context more obvious.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Clear the current CMD screen.",
+          hints: ["Use the screen-clearing command.", "This one has no arguments.", "Try `cls`."],
+          explanation: "Clearing clutter can make the next command output easier for beginners to follow.",
+          successFeedback: "You cleared the screen.",
+          accepts: [rawMatch(/^cls$/i)]
+        }),
+        step({
+          objective: "Set the prompt to show date, time, and the current path.",
+          hints: ["Use the prompt command with CMD tokens.", "You need date, time, path, and the > symbol.", "Try `prompt $D $T $P$G`."],
+          explanation: "A more informative prompt reduces the chance of learners forgetting which path or session they are in.",
+          successFeedback: "You updated the CMD prompt template.",
+          accepts: [promptTemplateMatch("$D $T $P$G", { command: "prompt" })]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-ipconfig-and-getmac-audit",
+      title: "Audit the Local Adapter",
+      category: "Networking",
+      difficulty: "Beginner",
+      objective: "Review the local IP configuration, then confirm the adapter MAC address.",
+      scenarioIntro: "Networking lessons should start with the learner's own host context. This pairs the local IP configuration view with the MAC-address check so the analyst box identity stays clear.",
+      commandFocus: ["ipconfig", "getmac"],
+      acceptedCommands: ["ipconfig /all", "getmac"],
+      simulatedOutput: ["IPv4 Address . . . . . . . . . . : 192.168.56.25", "00-0C-29-5E-11-22"],
+      successCondition: "Display adapter configuration and then the local MAC address.",
+      feedbackText: "The learner gathered the local network identity before checking remote hosts.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Display the local adapter configuration with full detail.",
+          hints: ["Use ipconfig with the all-details flag.", "You want the adapter, IP, and gateway details.", "Try `ipconfig /all`."],
+          explanation: "ipconfig /all is the normal Windows starting point when you need local addressing context.",
+          successFeedback: "You reviewed the adapter configuration.",
+          accepts: [rawMatch(/^ipconfig(?:\s+\/all)?$/i)]
+        }),
+        step({
+          objective: "Display the adapter MAC address.",
+          hints: ["Now check the physical address directly.", "Use the MAC-address command.", "Try `getmac`."],
+          explanation: "The MAC address is part of the local host identity and often appears in switch, DHCP, or ARP context later.",
+          successFeedback: "You confirmed the local MAC address.",
+          accepts: [rawMatch(/^getmac$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-ping-fileserver",
+      title: "Reachability Check on the File Server",
+      category: "Networking",
+      difficulty: "Beginner",
+      objective: "Test basic reachability to the file server before you troubleshoot anything deeper.",
+      scenarioIntro: "Ping is still useful when the learner needs a first yes-or-no answer about host reachability. Keep it focused on the Windows file server so the shell context and target context remain simple.",
+      commandFocus: ["ping"],
+      acceptedCommands: ["ping fileserver", "ping 192.168.56.20"],
+      simulatedOutput: ["Reply from 192.168.56.20: bytes=32 time<1ms TTL=128"],
+      successCondition: "Send an ICMP reachability check to fileserver.",
+      feedbackText: "The learner proved the file server responds before escalating to route or service checks.",
+      environment: {
+        cwd: "C:/Lab",
+        targets: selectTargets("fileserver")
+      },
+      steps: [
+        step({
+          objective: "Ping the file server from this Windows host.",
+          hints: ["Use the built-in Windows reachability command.", "The target can be fileserver or 192.168.56.20.", "Try `ping fileserver`."],
+          explanation: "A basic reachability test is still a sensible first move before deeper networking steps.",
+          successFeedback: "You confirmed the file server responds to ping.",
+          accepts: [rawMatch(/^ping\s+(?:fileserver|192\.168\.56\.20)$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-tracert-and-pathping-web-lab",
+      title: "Trace the Path to Web-Lab",
+      category: "Networking",
+      difficulty: "Intermediate",
+      objective: "Trace the route to web-lab, then run pathping to collect the same path with packet-loss context.",
+      scenarioIntro: "When ping succeeds but a learner still needs route context, tracert and pathping are the next Windows-native steps. This lesson intentionally keeps both commands on the same target so the difference in purpose stays clear.",
+      commandFocus: ["tracert", "pathping"],
+      acceptedCommands: ["tracert web-lab", "pathping web-lab"],
+      simulatedOutput: ["Tracing route to web-lab [192.168.56.10]", "Hop  RTT    Lost/Sent = Pct"],
+      successCondition: "Run both tracert and pathping against web-lab.",
+      feedbackText: "The learner saw both the route path and the packet-loss-oriented follow-up.",
+      environment: {
+        cwd: "C:/Lab",
+        targets: selectTargets("web-lab")
+      },
+      steps: [
+        step({
+          objective: "Trace the route to web-lab.",
+          hints: ["Start with the route-trace command.", "The target can be web-lab or 192.168.56.10.", "Try `tracert web-lab`."],
+          explanation: "tracert shows the hop path without turning immediately into deeper network tooling.",
+          successFeedback: "You traced the route to web-lab.",
+          accepts: [rawMatch(/^tracert\s+(?:web-lab|192\.168\.56\.10)$/i)]
+        }),
+        step({
+          objective: "Run pathping against the same host for additional path quality context.",
+          hints: ["Now use the combined trace and loss command.", "Keep the same target so you can compare the workflow.", "Try `pathping web-lab`."],
+          explanation: "pathping extends the route idea by adding packet-loss statistics along the path.",
+          successFeedback: "You ran pathping against the same target.",
+          accepts: [rawMatch(/^pathping\s+(?:web-lab|192\.168\.56\.10)$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-nslookup-fileserver",
+      title: "Resolve the File Server Name",
+      category: "Networking",
+      difficulty: "Beginner",
+      objective: "Resolve the file server hostname through DNS before you test any share path assumptions.",
+      scenarioIntro: "This lesson keeps DNS resolution separate from reachability. The learner should know the Windows name-resolution step before moving into share or route tasks.",
+      commandFocus: ["nslookup"],
+      acceptedCommands: ["nslookup fileserver"],
+      simulatedOutput: ["Name:    fileserver", "Address: 192.168.56.20"],
+      successCondition: "Resolve fileserver to its IP address with nslookup.",
+      feedbackText: "The learner separated DNS evidence from later SMB or connectivity checks.",
+      environment: {
+        cwd: "C:/Lab",
+        targets: selectTargets("fileserver")
+      },
+      steps: [
+        step({
+          objective: "Resolve fileserver with DNS.",
+          hints: ["Use the Windows DNS lookup command.", "The hostname is fileserver.", "Try `nslookup fileserver`."],
+          explanation: "nslookup is the Windows-native way to confirm name resolution directly from the shell.",
+          successFeedback: "You resolved the file server name.",
+          accepts: [rawMatch(/^nslookup\s+fileserver$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-netstat-connection-audit",
+      title: "Audit Listening Sockets",
+      category: "Networking",
+      difficulty: "Intermediate",
+      objective: "Show current network connections with owning PIDs so you can tie sockets back to processes.",
+      scenarioIntro: "Once the learner understands host and route context, it makes sense to inspect active Windows connections. Use netstat with PID detail so the result can support later process investigation.",
+      commandFocus: ["netstat"],
+      acceptedCommands: ["netstat -ano"],
+      simulatedOutput: ["Proto  Local Address          Foreign Address        State           PID", "TCP    0.0.0.0:445          0.0.0.0:0              LISTENING       4"],
+      successCondition: "Display netstat output with the owning process IDs.",
+      feedbackText: "The learner connected network sockets to processes instead of treating them as anonymous ports.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Display current connections and listening ports with PIDs.",
+          hints: ["Use netstat with the all, numeric, and owning-process flags.", "You want the PID column visible.", "Try `netstat -ano`."],
+          explanation: "netstat becomes much more useful once the learner can tie each socket back to a PID.",
+          successFeedback: "You displayed the connection table with PIDs.",
+          accepts: [rawMatch(/^netstat\s+-ano$/i), rawMatch(/^netstat\s+-aon$/i), rawMatch(/^netstat\s+-oan$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-arp-and-route-review",
+      title: "Review Local Layer-2 and Route Clues",
+      category: "Networking",
+      difficulty: "Intermediate",
+      objective: "Inspect the ARP cache first, then print the route table so you can explain both the local neighbor and routing context.",
+      scenarioIntro: "Learners often mix layer-2 and layer-3 evidence together. This lesson separates ARP cache evidence from route-table evidence while keeping both on the same Windows host.",
+      commandFocus: ["arp", "route print"],
+      acceptedCommands: ["arp -a", "route print"],
+      simulatedOutput: ["Interface: 192.168.56.25 --- 0x6", "IPv4 Route Table"],
+      successCondition: "Run arp -a and then route print on the current Windows host.",
+      feedbackText: "The learner collected both neighbor-table and route-table evidence without mixing the two concepts.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Review the ARP cache on the current Windows host.",
+          hints: ["Start with the ARP cache listing.", "This is the local neighbor table view.", "Try `arp -a`."],
+          explanation: "ARP shows which IP-to-MAC mappings the host already knows on the local segment.",
+          successFeedback: "You reviewed the ARP cache.",
+          accepts: [rawMatch(/^arp(?:\s+-a)?$/i)]
+        }),
+        step({
+          objective: "Print the current route table.",
+          hints: ["Now move from local neighbor data to routing data.", "Use the route command with print.", "Try `route print`."],
+          explanation: "route print shows the network paths the host will actually prefer once traffic leaves the local segment.",
+          successFeedback: "You printed the route table.",
+          accepts: [rawMatch(/^route\s+print$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-tasklist-and-wmic-inventory",
+      title: "Running Process Inventory",
+      category: "Processes and services",
+      difficulty: "Intermediate",
+      objective: "Inspect the running process list with tasklist, then confirm the same idea with WMIC's brief process view.",
+      scenarioIntro: "Windows learners should know there is more than one way to inspect processes. This lesson starts with tasklist and then reinforces the inventory concept with WMIC.",
+      commandFocus: ["tasklist", "wmic process list brief"],
+      acceptedCommands: ["tasklist", "wmic process list brief"],
+      simulatedOutput: ["Image Name                     PID", "Caption                ProcessId"],
+      successCondition: "Run both tasklist and WMIC's brief process listing.",
+      feedbackText: "The learner saw two CMD-native ways to inventory running processes.",
+      environment: {
+        cwd: "C:/Lab",
+        processes: [
+          { pid: 2210, name: "updater.exe", user: "SYSTEM", cpu: "44", memory: "20", command: "updater.exe /scheduled" },
+          { pid: 1504, name: "spoolsv.exe", user: "SYSTEM", cpu: "2", memory: "18", command: "spoolsv.exe" },
+          { pid: 991, name: "explorer.exe", user: "student", cpu: "2", memory: "85", command: "explorer.exe" }
+        ]
+      },
+      steps: [
+        step({
+          objective: "List the running processes with tasklist.",
+          hints: ["Start with the primary Windows process listing command.", "You only need the full process table first.", "Try `tasklist`."],
+          explanation: "tasklist is the default Windows command learners should know for process visibility.",
+          successFeedback: "You listed the running tasks.",
+          accepts: [rawMatch(/^tasklist$/i)]
+        }),
+        step({
+          objective: "Show the brief WMIC process inventory as well.",
+          hints: ["Use WMIC for the alternate brief process view.", "This command is longer but still common in older Windows workflows.", "Try `wmic process list brief`."],
+          explanation: "WMIC reinforces that Windows process inspection is not limited to one command surface.",
+          successFeedback: "You displayed the WMIC process view.",
+          accepts: [rawMatch(/^wmic\s+process\s+list\s+brief$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-taskkill-updater",
+      title: "Terminate a Runaway Worker",
+      category: "Processes and services",
+      difficulty: "Intermediate",
+      objective: "Terminate the runaway updater process by PID once the task is identified.",
+      scenarioIntro: "A process inventory is only useful if the learner can act on it. This lesson focuses on the direct containment move: stopping a known bad PID with taskkill.",
+      commandFocus: ["taskkill"],
+      acceptedCommands: ["taskkill /PID 2210 /F"],
+      simulatedOutput: ["SUCCESS: Sent termination signal to PID 2210."],
+      successCondition: "Terminate PID 2210 from the Windows process list.",
+      feedbackText: "The runaway process was removed from the host process table.",
+      environment: {
+        cwd: "C:/Lab",
+        processes: [
+          { pid: 2210, name: "updater.exe", user: "SYSTEM", cpu: "44", memory: "20", command: "updater.exe /scheduled" },
+          { pid: 991, name: "explorer.exe", user: "student", cpu: "2", memory: "85", command: "explorer.exe" }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Terminate PID 2210 with force enabled.",
+          hints: ["Use taskkill with the PID switch.", "The target PID is 2210.", "Try `taskkill /PID 2210 /F`."],
+          explanation: "taskkill is safest when the learner targets the exact PID instead of guessing at a name.",
+          successFeedback: "You terminated the updater process.",
+          accepts: [{ command: "taskkill", fileMissing: "", postCheck: (_, state) => !state.processes.some((process) => process.pid === 2210) }]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-sc-query-spooler",
+      title: "Check Service State",
+      category: "Processes and services",
+      difficulty: "Intermediate",
+      objective: "Check the status of the Print Spooler service before you decide whether it needs intervention.",
+      scenarioIntro: "Services and processes are related but not identical. This lesson teaches the service-status view explicitly with sc query so the learner sees the Windows service-management surface.",
+      commandFocus: ["sc query"],
+      acceptedCommands: ["sc query Spooler"],
+      simulatedOutput: ["SERVICE_NAME: Spooler", "STATE              : 4  RUNNING"],
+      successCondition: "Query the Spooler service state with sc.",
+      feedbackText: "The learner confirmed service state before taking action.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Query the Spooler service status.",
+          hints: ["Use sc with the query action.", "The service name is Spooler.", "Try `sc query Spooler`."],
+          explanation: "sc query gives direct service state without forcing a start or stop action first.",
+          successFeedback: "You queried the Spooler service.",
+          accepts: [rawMatch(/^sc\s+query\s+Spooler$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-net-stop-start-spooler",
+      title: "Stop and Start the Spooler",
+      category: "Processes and services",
+      difficulty: "Intermediate",
+      objective: "Stop the Print Spooler service, then start it again cleanly.",
+      scenarioIntro: "Once the learner can check a service, the next skill is controlled restart. This lesson uses net stop and net start on the same named service so the action stays obvious.",
+      commandFocus: ["net stop", "net start"],
+      acceptedCommands: ["net stop Spooler", "net start Spooler"],
+      simulatedOutput: ["The Print Spooler service was stopped successfully.", "The Print Spooler service was started successfully."],
+      successCondition: "Set Spooler to stopped and then back to running.",
+      feedbackText: "The learner practiced a clean service restart rather than jumping straight to process killing.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Stop the Spooler service.",
+          hints: ["Use the NET service-control command to stop the service.", "The service name is Spooler.", "Try `net stop Spooler`."],
+          explanation: "net stop is the simpler Windows service-control surface for routine restarts.",
+          successFeedback: "You stopped the Spooler service.",
+          accepts: [serviceStatusMatch("Spooler", "STOPPED", { raw: /^net\s+stop\s+Spooler$/i })]
+        }),
+        step({
+          objective: "Start the Spooler service again.",
+          hints: ["Bring the same service back online.", "Use the matching NET start action.", "Try `net start Spooler`."],
+          explanation: "Restarting cleanly after a controlled stop reinforces the difference between service control and process termination.",
+          successFeedback: "You started the Spooler service again.",
+          accepts: [serviceStatusMatch("Spooler", "RUNNING", { raw: /^net\s+start\s+Spooler$/i })]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-driverquery-review",
+      title: "Review Loaded Drivers",
+      category: "Processes and services",
+      difficulty: "Intermediate",
+      objective: "Inspect the driver inventory so you can verify which major kernel and device drivers are present.",
+      scenarioIntro: "Driver state is a different layer from services and user processes. This lesson introduces driverquery so learners can separate device-driver visibility from everything else in Windows.",
+      commandFocus: ["driverquery"],
+      acceptedCommands: ["driverquery"],
+      simulatedOutput: ["Module Name  Display Name", "Tcpip        TCP/IP Protocol Driver"],
+      successCondition: "Display the current driver inventory with driverquery.",
+      feedbackText: "The learner saw the Windows driver inventory without confusing it with services or processes.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "List the current Windows drivers.",
+          hints: ["Use the built-in driver inventory command.", "You only need the direct command here.", "Try `driverquery`."],
+          explanation: "driverquery surfaces a Windows layer that many beginners overlook until a troubleshooting scenario demands it.",
+          successFeedback: "You reviewed the driver inventory.",
+          accepts: [rawMatch(/^driverquery$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-query-user-sessions",
+      title: "Review Logged-On Sessions",
+      category: "Processes and services",
+      difficulty: "Beginner",
+      objective: "Inspect the currently logged-on or disconnected user sessions on the host.",
+      scenarioIntro: "User-session awareness matters when the learner needs to understand whether another admin or analyst has touched the box recently. query user provides that quick session picture.",
+      commandFocus: ["query user"],
+      acceptedCommands: ["query user"],
+      simulatedOutput: ["USERNAME              SESSIONNAME        ID  STATE", "student               console            1  Active"],
+      successCondition: "Display the current Windows user-session table.",
+      feedbackText: "The learner gathered session context before making assumptions about who used the host.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Show the current Windows user sessions.",
+          hints: ["Use the query command against user sessions.", "The subcommand is user.", "Try `query user`."],
+          explanation: "query user is a fast way to see active and disconnected sessions without leaving CMD.",
+          successFeedback: "You reviewed the user-session table.",
+          accepts: [rawMatch(/^query\s+user$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-net-user-analyst",
+      title: "Review a Local User",
+      category: "Users, shares, and admin tasks",
+      difficulty: "Beginner",
+      objective: "Inspect the local analyst account so you can confirm its status and group membership.",
+      scenarioIntro: "Account context should be explicit for beginners. net user is the quickest CMD path to local-account details without opening a GUI tool.",
+      commandFocus: ["net user"],
+      acceptedCommands: ["net user analyst"],
+      simulatedOutput: ["User name                    analyst", "Local Group Memberships      Administrators, Remote Desktop Users"],
+      successCondition: "Display the local analyst account record.",
+      feedbackText: "The learner checked the user record directly from CMD.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Inspect the analyst local account.",
+          hints: ["Use NET with the user subcommand.", "The local account name is analyst.", "Try `net user analyst`."],
+          explanation: "net user is the standard CMD tool for quick local-account inspection.",
+          successFeedback: "You reviewed the analyst account.",
+          accepts: [rawMatch(/^net\s+user\s+analyst$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-net-localgroup-admins",
+      title: "Audit the Administrators Group",
+      category: "Users, shares, and admin tasks",
+      difficulty: "Beginner",
+      objective: "Review who belongs to the local Administrators group on this machine.",
+      scenarioIntro: "Privilege context matters. This lesson uses net localgroup so the learner can check local administrative membership directly from CMD.",
+      commandFocus: ["net localgroup"],
+      acceptedCommands: ["net localgroup Administrators"],
+      simulatedOutput: ["Alias name     Administrators", "Administrator", "analyst"],
+      successCondition: "Display the member list for the local Administrators group.",
+      feedbackText: "The learner confirmed which accounts hold local administrative access.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "List the local Administrators group membership.",
+          hints: ["Use NET with the localgroup subcommand.", "The group name is Administrators.", "Try `net localgroup Administrators`."],
+          explanation: "Group membership is often the fastest way to understand local privilege on a Windows host.",
+          successFeedback: "You reviewed the Administrators group.",
+          accepts: [rawMatch(/^net\s+localgroup\s+Administrators$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-net-share-audit",
+      title: "Review Shared Resources",
+      category: "Users, shares, and admin tasks",
+      difficulty: "Beginner",
+      objective: "Inspect the currently shared folders so you know what this Windows host exposes.",
+      scenarioIntro: "Before mapping or browsing shares, the learner should know what the Windows host claims to expose. net share provides that local share inventory directly.",
+      commandFocus: ["net share"],
+      acceptedCommands: ["net share"],
+      simulatedOutput: ["Share name   Resource", "Tools        C:\\Lab\\Shares\\Tools"],
+      successCondition: "Display the local share inventory with net share.",
+      feedbackText: "The learner reviewed the share surface before interacting with it.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "List the currently shared folders.",
+          hints: ["Use NET with the share subcommand.", "This one does not need a share name yet.", "Try `net share`."],
+          explanation: "net share gives the local Windows share inventory without needing PowerShell or GUI tools.",
+          successFeedback: "You reviewed the share inventory.",
+          accepts: [rawMatch(/^net\s+share$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-net-use-map-tools",
+      title: "Map the Tools Share",
+      category: "Users, shares, and admin tasks",
+      difficulty: "Intermediate",
+      objective: "Map the remote Tools share to drive Z:, then verify the mapping table.",
+      scenarioIntro: "Mapping a share makes the remote context concrete for beginners. This lesson uses net use both to create the mapping and to confirm it exists afterward.",
+      commandFocus: ["net use"],
+      acceptedCommands: ["net use Z: \\\\fileserver\\Tools", "net use"],
+      simulatedOutput: ["The command completed successfully.", "Z: is now connected to \\\\fileserver\\Tools"],
+      successCondition: "Map Z: to \\\\fileserver\\Tools and then display the mapping list.",
+      feedbackText: "The learner created a usable share mapping and verified it from CMD.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Map drive Z: to the remote Tools share.",
+          hints: ["Use NET USE with a drive letter and UNC path.", "The remote share is \\\\fileserver\\Tools.", "Try `net use Z: \\\\fileserver\\Tools`."],
+          explanation: "Mapping a share makes later file work easier and reinforces UNC path awareness.",
+          successFeedback: "You mapped the remote Tools share.",
+          accepts: [mappedShareMatch("Z:", "\\\\fileserver\\Tools", { raw: /^net\s+use\s+Z:\s+\\\\fileserver\\Tools$/i })]
+        }),
+        step({
+          objective: "Display the current mapping table so you can verify Z: is present.",
+          hints: ["Now list the current NET USE mappings.", "You only need the subcommand by itself.", "Try `net use`."],
+          explanation: "Verifying the mapping table stops the learner from assuming the drive letter mapped correctly.",
+          successFeedback: "You confirmed the share mapping table.",
+          accepts: [rawMatch(/^net\s+use$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-schtasks-review",
+      title: "Review Scheduled Tasks",
+      category: "Users, shares, and admin tasks",
+      difficulty: "Intermediate",
+      objective: "Query the scheduled-task list so you can identify which jobs run automatically on the host.",
+      scenarioIntro: "Automatic execution matters in both admin work and response work. schtasks gives the learner a direct CMD view of what is set to run without requiring Task Scheduler GUI access.",
+      commandFocus: ["schtasks"],
+      acceptedCommands: ["schtasks /query"],
+      simulatedOutput: ["TaskName                         Next Run Time         Status", "\\DailyBackup"],
+      successCondition: "Display the scheduled task list with schtasks.",
+      feedbackText: "The learner surfaced the host's automatic jobs from the command line.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Query the scheduled task list.",
+          hints: ["Use schtasks with the query action.", "You do not need to target a single task yet.", "Try `schtasks /query`."],
+          explanation: "schtasks /query is the direct CMD way to review scheduled automation on a Windows host.",
+          successFeedback: "You reviewed the scheduled task list.",
+          accepts: [rawMatch(/^schtasks\s+\/query$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-shutdown-planned-restart",
+      title: "Queue a Planned Restart",
+      category: "Users, shares, and admin tasks",
+      difficulty: "Intermediate",
+      objective: "Schedule a controlled restart with a one-minute delay so the action is deliberate and observable.",
+      scenarioIntro: "Shutdown commands should feel intentional, not casual. This lesson makes the learner schedule a restart with a timer so they see the difference between planning and abrupt action.",
+      commandFocus: ["shutdown"],
+      acceptedCommands: ["shutdown /r /t 60"],
+      simulatedOutput: ["Shutdown scheduled: restart in 60 second(s)."],
+      successCondition: "Create a pending restart action with a 60-second timer.",
+      feedbackText: "The learner scheduled a controlled restart instead of triggering an immediate reboot.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Schedule a restart with a 60-second delay.",
+          hints: ["Use shutdown with the restart and timer switches.", "The timer should be 60 seconds.", "Try `shutdown /r /t 60`."],
+          explanation: "A delayed restart is safer in training because it reinforces that restart actions can be planned and communicated.",
+          successFeedback: "You scheduled the planned restart.",
+          accepts: [shutdownMatch("restart", { raw: /^shutdown\s+\/r\s+\/t\s+60$/i })]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-find-failure-lines",
+      title: "Find Failure Lines",
+      category: "Search and comparison",
+      difficulty: "Beginner",
+      objective: "Search a summary file for the lines that contain the literal FAILED marker.",
+      scenarioIntro: "Literal text search is a useful first filter before learners move to broader pattern matching. This lesson keeps the task small and obvious with the exact word FAILED.",
+      commandFocus: ["find"],
+      acceptedCommands: ["find \"FAILED\" backup-summary.txt"],
+      simulatedOutput: ["FAILED backup validation on drive D:"],
+      successCondition: "Filter backup-summary.txt for the literal word FAILED.",
+      feedbackText: "The learner isolated the failure lines with a direct literal search.",
+      environment: {
+        cwd: "C:/Lab/Logs",
+        files: [{ path: "C:/Lab/Logs/backup-summary.txt", content: "OK backup started\nFAILED backup validation on drive D:\nOK archive uploaded\nFAILED retention check\n" }]
+      },
+      steps: [
+        step({
+          objective: "Filter backup-summary.txt for the literal FAILED lines.",
+          hints: ["Use the Windows literal text filter.", "The string to find is FAILED.", "Try `find \"FAILED\" backup-summary.txt`."],
+          explanation: "find is useful when the learner wants a direct literal match without broader pattern options.",
+          successFeedback: "You isolated the failure lines.",
+          accepts: [rawMatch(/^find\s+\"FAILED\"\s+backup-summary\.txt$/i), rawMatch(/^find\s+FAILED\s+backup-summary\.txt$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-findstr-service-filter",
+      title: "Filter Service Output",
+      category: "Search and comparison",
+      difficulty: "Beginner",
+      objective: "Search a service inventory file for the Spooler lines so the relevant service stands out immediately.",
+      scenarioIntro: "findstr is broader than find and commonly appears in real Windows workflows. Here it is used to isolate the Spooler lines from a larger service-inventory text file.",
+      commandFocus: ["findstr"],
+      acceptedCommands: ["findstr Spooler services.txt"],
+      simulatedOutput: ["Spooler               RUNNING"],
+      successCondition: "Filter services.txt down to the Spooler lines.",
+      feedbackText: "The learner narrowed noisy service output down to the one service that matters.",
+      environment: {
+        cwd: "C:/Lab/Services",
+        files: [{ path: "C:/Lab/Services/services.txt", content: "Spooler               RUNNING\nBITS                  RUNNING\nDnscache              RUNNING\nw32time               RUNNING\n" }]
+      },
+      steps: [
+        step({
+          objective: "Filter services.txt for the Spooler entry.",
+          hints: ["Use the Windows pattern filter command.", "The target text is Spooler.", "Try `findstr Spooler services.txt`."],
+          explanation: "findstr is one of the most practical CMD filters once the learner needs to isolate a signal from noisy output.",
+          successFeedback: "You filtered the service inventory down to Spooler.",
+          accepts: [rawMatch(/^findstr\s+Spooler\s+services\.txt$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-where-python",
+      title: "Locate an Executable",
+      category: "Search and comparison",
+      difficulty: "Beginner",
+      objective: "Find where Python is available on this host's PATH before you rely on it in a follow-up workflow.",
+      scenarioIntro: "Beginners often assume a tool exists without confirming the path. where gives them a direct Windows-native way to verify executable location before using it.",
+      commandFocus: ["where"],
+      acceptedCommands: ["where python"],
+      simulatedOutput: ["C:\\Python311\\python.exe"],
+      successCondition: "Locate python.exe through the current PATH.",
+      feedbackText: "The learner confirmed the executable path before depending on the tool.",
+      environment: {
+        cwd: "C:/Lab"
+      },
+      steps: [
+        step({
+          objective: "Locate python on the current PATH.",
+          hints: ["Use the Windows executable-location command.", "The target tool name is python.", "Try `where python`."],
+          explanation: "where confirms tool availability and path placement before the learner assumes a command exists.",
+          successFeedback: "You located the Python executable.",
+          accepts: [rawMatch(/^where\s+python$/i)]
+        })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-fc-config-compare",
+      title: "Compare Two Configs",
+      category: "Search and comparison",
+      difficulty: "Intermediate",
+      objective: "Compare the baseline and candidate configuration files so you can spot the changed setting quickly.",
+      scenarioIntro: "Configuration drift is easier to explain when the learner sees a direct file comparison. fc is the CMD-native comparison command that keeps the task inside the terminal.",
+      commandFocus: ["fc"],
+      acceptedCommands: ["fc baseline.cfg candidate.cfg"],
+      simulatedOutput: ["Comparing files baseline.cfg and candidate.cfg", "***** baseline.cfg"],
+      successCondition: "Run a line comparison between baseline.cfg and candidate.cfg.",
+      feedbackText: "The learner used CMD to surface configuration differences directly.",
+      environment: {
+        cwd: "C:/Lab/Config",
+        files: [
+          { path: "C:/Lab/Config/baseline.cfg", content: "mode=baseline\nthreads=4\nlog_level=info\n" },
+          { path: "C:/Lab/Config/candidate.cfg", content: "mode=baseline\nthreads=8\nlog_level=info\n" }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Compare baseline.cfg and candidate.cfg.",
+          hints: ["Use the CMD file-compare command.", "Target the baseline and candidate files in that order.", "Try `fc baseline.cfg candidate.cfg`."],
+          explanation: "fc gives the learner a lightweight comparison workflow without needing a separate editor or GUI diff tool.",
+          successFeedback: "You compared the two configuration files.",
+          accepts: [rawMatch(/^fc\s+baseline\.cfg\s+candidate\.cfg$/i)]
+        })
+      ]
+    }),
+  ];
+
   const generatedMixedScenarios = [
     linuxScenario({
       id: "download-extract-inspect",
@@ -3477,6 +4783,7 @@
   const refinedExploitScenarios = generatedExploitScenarios.map(refineScenario);
   const refinedMetasploitScenarios = generatedMetasploitScenarios.map(refineScenario);
   const refinedTroubleshootScenarios = generatedTroubleshootScenarios.map(refineScenario);
+  const refinedWindowsCurriculumScenarios = generatedWindowsCurriculumScenarios.map(refineScenario);
   const refinedMixedScenarios = generatedMixedScenarios.map(refineScenario);
 
   const scenarios = [
@@ -3494,6 +4801,7 @@
     ...refinedExploitScenarios,
     ...refinedMetasploitScenarios,
     ...refinedTroubleshootScenarios,
+    ...refinedWindowsCurriculumScenarios,
     ...refinedMixedScenarios
   ];
 
@@ -3521,6 +4829,12 @@
     difficulty: "Beginner | Intermediate | Advanced | custom challenge difficulty",
     shell: "linux | cmd | metasploit",
     objective: "string",
+    scenarioIntro: "string",
+    commandFocus: ["command names"],
+    acceptedCommands: ["example command"],
+    simulatedOutput: ["key output line"],
+    successCondition: "string",
+    feedbackText: "string",
     challengeObjective: "string",
     hiddenSteps: "boolean",
     successConditions: ["string"],

@@ -158,6 +158,7 @@
       path: normalized,
       name: getNameFromPath(normalized),
       hidden: Boolean(fileDef.hidden),
+      attributes: clone(fileDef.attributes || []),
       content: fileDef.content || "",
       archiveEntries: clone(fileDef.archiveEntries || []),
       executable: Boolean(fileDef.executable),
@@ -309,6 +310,7 @@
         path: destNormalized,
         content: source.content,
         hidden: source.hidden,
+        attributes: source.attributes,
         archiveEntries: source.archiveEntries
       });
       return { ok: true };
@@ -324,6 +326,7 @@
           path: target,
           content: node.content,
           hidden: node.hidden,
+          attributes: node.attributes,
           archiveEntries: node.archiveEntries
         });
       }
@@ -413,6 +416,26 @@
       fs: {},
       processes: clone(base.processes || []),
       targets: clone(base.targets || []),
+      envVars: clone(base.envVars || {}),
+      systemInfo: clone(base.systemInfo || {}),
+      networkAdapters: clone(base.networkAdapters || []),
+      networkConnections: clone(base.networkConnections || []),
+      arpCache: clone(base.arpCache || []),
+      routeTable: clone(base.routeTable || []),
+      dnsRecords: clone(base.dnsRecords || []),
+      services: clone(base.services || []),
+      drivers: clone(base.drivers || []),
+      userSessions: clone(base.userSessions || []),
+      localUsers: clone(base.localUsers || []),
+      localGroups: clone(base.localGroups || []),
+      shares: clone(base.shares || []),
+      mappedShares: clone(base.mappedShares || []),
+      scheduledTasks: clone(base.scheduledTasks || []),
+      pathExecutables: clone(base.pathExecutables || []),
+      currentDate: base.currentDate || "04/17/2026",
+      currentTime: base.currentTime || "08:24 AM",
+      promptTemplate: base.promptTemplate || "$P$G",
+      pendingShutdown: null,
       discovery: [],
       listeners: [],
       extractedArchives: [],
@@ -445,7 +468,23 @@
     }
 
     if (isWindowsState(state)) {
-      return `${displayPath(state, state.cwd)}>`;
+      const template = String(state.promptTemplate || "$P$G");
+      const driveLetter = String(state.drive || "C:").replace(":", "");
+      const rendered = template
+        .replace(/\$\$/g, "\u0000")
+        .replace(/\$P/gi, displayPath(state, state.cwd))
+        .replace(/\$N/gi, driveLetter)
+        .replace(/\$G/gi, ">")
+        .replace(/\$L/gi, "<")
+        .replace(/\$B/gi, "|")
+        .replace(/\$Q/gi, "=")
+        .replace(/\$_/gi, "\n")
+        .replace(/\$S/gi, " ")
+        .replace(/\$D/gi, state.currentDate || "04/17/2026")
+        .replace(/\$T/gi, state.currentTime || "08:24 AM")
+        .replace(/\u0000/g, "$");
+
+      return rendered || `${displayPath(state, state.cwd)}>`;
     }
 
     return `${state.user}@${state.host}:${displayPath(state, state.cwd, true)}$`;

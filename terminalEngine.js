@@ -271,10 +271,13 @@
       return null;
     }
 
-    const reference = CommandsData.lookupForInput(rawInput);
+    const windowsShell = StateManager.isWindowsState(session.state);
+    const preferredCategories = windowsShell
+      ? ["Windows CMD"]
+      : ["Linux", "Nmap", "Netcat", "Metasploit"];
+    const reference = CommandsData.lookupForInput(rawInput, preferredCategories);
     if (!reference) return null;
 
-    const windowsShell = StateManager.isWindowsState(session.state);
     if (windowsShell && reference.category === "Linux") {
       return null;
     }
@@ -819,6 +822,348 @@
       .filter((line) => line !== "");
   }
 
+  function expandWindowsEnvText(text) {
+    if (!StateManager.isWindowsState(session.state)) return String(text || "");
+
+    return String(text || "").replace(/%([^%]+)%/g, (_, name) => {
+      const keys = Object.keys(session.state.envVars || {});
+      const matchedKey = keys.find((key) => key.toUpperCase() === String(name || "").trim().toUpperCase());
+      return matchedKey ? String(session.state.envVars[matchedKey]) : `%${name}%`;
+    });
+  }
+
+  function treeLinesForPath(path, showFiles = false, prefix = "") {
+    const children = StateManager.listChildren(session.state, path, true)
+      .filter((child) => showFiles || child.type === "dir");
+    const lines = [];
+
+    children.forEach((child, index) => {
+      const last = index === children.length - 1;
+      const connector = last ? "\\---" : "+---";
+      lines.push(`${prefix}${connector}${child.name}`);
+
+      if (child.type === "dir") {
+        const nextPrefix = `${prefix}${last ? "    " : "|   "}`;
+        lines.push(...treeLinesForPath(child.path, showFiles, nextPrefix));
+      }
+    });
+
+    return lines;
+  }
+
+  function parseAttributeMutations(tokens = []) {
+    const mutations = [];
+
+    tokens.forEach((token) => {
+      const match = String(token || "").match(/^([+-])([A-Za-z])$/);
+      if (!match) return;
+      mutations.push({ enabled: match[1] === "+", code: match[2].toUpperCase() });
+    });
+
+    return mutations;
+  }
+
+  function nodeAttributeCodes(node) {
+    const codes = new Set((node?.attributes || []).map((value) => String(value).toUpperCase()));
+    if (node?.hidden) codes.add("H");
+    if (node?.type === "dir") codes.add("D");
+    if (node?.type === "file" && !codes.has("A")) codes.add("A");
+    return Array.from(codes);
+  }
+
+  function setNodeAttribute(node, code, enabled) {
+    const normalized = String(code || "").toUpperCase();
+    const current = new Set((node.attributes || []).map((value) => String(value).toUpperCase()));
+
+    if (enabled) current.add(normalized);
+    else current.delete(normalized);
+
+    node.attributes = Array.from(current);
+    if (normalized === "H") {
+      node.hidden = enabled;
+    }
+  }
+
+  function resolveNetworkTarget(value) {
+    const normalized = String(value || "").trim();
+    if (!normalized) return null;
+
+    const knownTarget = StateManager.findTarget(session.state, normalized);
+    if (knownTarget) return knownTarget;
+
+    const dnsRecord = (session.state.dnsRecords || []).find((record) => String(record.hostname).toLowerCase() === normalized.toLowerCase());
+    if (dnsRecord) {
+      return StateManager.findTarget(session.state, dnsRecord.address) || {
+        ip: dnsRecord.address,
+        hostname: dnsRecord.hostname,
+        reachable: true,
+        ports: []
+      };
+    }
+
+    if ((session.state.networkAdapters || []).some((adapter) => adapter.ipv4 === normalized)) {
+      return {
+        ip: normalized,
+        hostname: session.state.host,
+        reachable: true,
+        ports: []
+      };
+    }
+
+    return {
+      ip: normalized,
+      hostname: normalized,
+      reachable: false,
+      ports: []
+    };
+  }
+
+  function findServiceRecord(name) {
+    const normalized = String(name || "").trim().toLowerCase();
+    return (session.state.services || []).find((service) => {
+      const serviceName = String(service.name || "").toLowerCase();
+      const displayName = String(service.displayName || "").toLowerCase();
+      return serviceName === normalized || displayName === normalized;
+    }) || null;
+  }
+
+  function findUserRecord(name) {
+    return (session.state.localUsers || []).find((user) => String(user.username || "").toLowerCase() === String(name || "").trim().toLowerCase()) || null;
+  }
+
+  function findGroupRecord(name) {
+    return (session.state.localGroups || []).find((group) => String(group.name || "").toLowerCase() === String(name || "").trim().toLowerCase()) || null;
+  }
+
+  function findShareRecord(name) {
+    return (session.state.shares || []).find((share) => String(share.name || "").toLowerCase() === String(name || "").trim().toLowerCase()) || null;
+  }
+
+  function findScheduledTask(name) {
+    return (session.state.scheduledTasks || []).find((task) => String(task.name || "").toLowerCase() === String(name || "").trim().toLowerCase()) || null;
+  }
+
+  function formatWindowsPing(target) {
+    return [
+      `Pinging ${target.hostname || target.ip} [${target.ip}] with 32 bytes of data:`,
+      `Reply from ${target.ip}: bytes=32 time<1ms TTL=128`,
+      `Reply from ${target.ip}: bytes=32 time<1ms TTL=128`,
+      `Reply from ${target.ip}: bytes=32 time<1ms TTL=128`,
+      `Reply from ${target.ip}: bytes=32 time<1ms TTL=128`,
+      "",
+      `Ping statistics for ${target.ip}:`,
+      "    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),"
+    ];
+  }
+
+  function formatIpconfigOutput(showAll = false) {
+    const adapters = session.state.networkAdapters || [];
+    const lines = [];
+
+    adapters.forEach((adapter) => {
+      lines.push("");
+      lines.push(`Ethernet adapter ${adapter.name}:`);
+      lines.push("");
+      if (showAll) {
+        lines.push(`   Description . . . . . . . . . . . : ${adapter.description}`);
+        lines.push(`   Physical Address. . . . . . . . . : ${adapter.mac}`);
+        lines.push(`   DHCP Enabled. . . . . . . . . . . : ${adapter.dhcpEnabled ? "Yes" : "No"}`);
+      }
+      lines.push(`   IPv4 Address. . . . . . . . . . . : ${adapter.ipv4}`);
+      lines.push(`   Subnet Mask . . . . . . . . . . . : ${adapter.subnetMask}`);
+      lines.push(`   Default Gateway . . . . . . . . . : ${adapter.gateway}`);
+      if (showAll) {
+        lines.push(`   DNS Servers . . . . . . . . . . . : ${(adapter.dns || []).join(", ")}`);
+      }
+    });
+
+    return lines.length ? lines : ["Windows IP Configuration"];
+  }
+
+  function formatNetstatOutput(includePid = false) {
+    const lines = [
+      includePid
+        ? "  Proto  Local Address          Foreign Address        State           PID"
+        : "  Proto  Local Address          Foreign Address        State"
+    ];
+
+    (session.state.networkConnections || []).forEach((connection) => {
+      const stateText = connection.proto === "UDP" ? "" : String(connection.state || "").padEnd(13);
+      const base = [
+        String(connection.proto).padEnd(6),
+        String(connection.localAddress).padEnd(22),
+        String(connection.foreignAddress).padEnd(22),
+        stateText
+      ];
+
+      if (includePid) {
+        base.push(String(connection.pid || ""));
+      }
+
+      lines.push(base.join(" ").trimEnd());
+    });
+
+    return lines;
+  }
+
+  function formatArpOutput() {
+    const groups = new Map();
+
+    (session.state.arpCache || []).forEach((entry) => {
+      const key = entry.interface || "Interface";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(entry);
+    });
+
+    const lines = [];
+    groups.forEach((entries, iface) => {
+      lines.push(`Interface: ${iface} --- 0x6`);
+      lines.push("  Internet Address      Physical Address      Type");
+      entries.forEach((entry) => {
+        lines.push(`  ${String(entry.ip).padEnd(21)} ${String(entry.mac).padEnd(21)} ${entry.type}`);
+      });
+      lines.push("");
+    });
+
+    return lines;
+  }
+
+  function formatRoutePrintOutput() {
+    return [
+      "=========================================================================",
+      "Interface List",
+      " 11...00 0c 29 5e 11 22 ......Intel(R) 82574L Gigabit Network Connection",
+      "=========================================================================",
+      "IPv4 Route Table",
+      "=========================================================================",
+      "Active Routes:",
+      "Network Destination        Netmask          Gateway       Interface  Metric",
+      ...(session.state.routeTable || []).map((route) =>
+        `${String(route.network).padEnd(26)} ${String(route.netmask).padEnd(16)} ${String(route.gateway).padEnd(15)} ${String(route.interface).padEnd(11)} ${route.metric}`),
+      "========================================================================="
+    ];
+  }
+
+  function formatSystemInfoOutput() {
+    const info = session.state.systemInfo || {};
+    return [
+      `Host Name:                 ${info.hostName || session.state.host}`,
+      `OS Name:                   ${info.osName || "Microsoft Windows 10"}`,
+      `OS Version:                ${info.osVersion || "10.0.19045"}`,
+      `OS Manufacturer:           ${info.osManufacturer || "Microsoft Corporation"}`,
+      `System Model:              ${info.systemModel || "Virtual Machine"}`,
+      `System Type:               ${info.systemType || "x64-based PC"}`,
+      `BIOS Version:              ${info.biosVersion || "Unknown"}`,
+      `System Boot Time:          ${info.bootTime || "Unknown"}`,
+      `Hotfix(s):                 ${info.hotfixCount || 0} Hotfix(s) Installed.`
+    ];
+  }
+
+  function formatServiceQueryOutput(service) {
+    return [
+      `SERVICE_NAME: ${service.name}`,
+      `        TYPE               : 10  WIN32_OWN_PROCESS`,
+      `        STATE              : ${service.status === "RUNNING" ? "4  RUNNING" : "1  STOPPED"}`,
+      `        WIN32_EXIT_CODE    : 0  (0x0)`,
+      `        SERVICE_EXIT_CODE  : 0  (0x0)`,
+      `        CHECKPOINT         : 0x0`,
+      `        WAIT_HINT          : 0x0`
+    ];
+  }
+
+  function formatWmicProcessOutput() {
+    return [
+      "Caption                ProcessId",
+      "=====================  =========",
+      ...StateManager.listProcesses(session.state).map((process) => `${String(process.name).padEnd(21)} ${process.pid}`)
+    ];
+  }
+
+  function formatDriverQueryOutput() {
+    return [
+      "Module Name  Display Name                              Start Mode  State",
+      "===========  ========================================  ==========  =======",
+      ...(session.state.drivers || []).map((driver) =>
+        `${String(driver.moduleName).padEnd(11)} ${String(driver.displayName).padEnd(40)} ${String(driver.startMode).padEnd(10)} ${driver.state}`)
+    ];
+  }
+
+  function formatQueryUserOutput() {
+    return [
+      " USERNAME              SESSIONNAME        ID  STATE   IDLE TIME  LOGON TIME",
+      ...(session.state.userSessions || []).map((entry) =>
+        `${String(entry.username).padEnd(21)} ${String(entry.sessionName).padEnd(18)} ${String(entry.id).padStart(2)}  ${String(entry.state).padEnd(7)} ${String(entry.idleTime).padEnd(10)} ${entry.logonTime}`)
+    ];
+  }
+
+  function formatNetUserOutput(user) {
+    return [
+      `User name                    ${user.username}`,
+      `Full Name                    ${user.fullName || ""}`,
+      `Account active               ${user.enabled ? "Yes" : "No"}`,
+      `Last logon                   ${user.lastLogon || "Never"}`,
+      `Local Group Memberships      ${(user.groups || []).join(", ") || "None"}`
+    ];
+  }
+
+  function formatLocalGroupOutput(group) {
+    return [
+      `Alias name     ${group.name}`,
+      "Members",
+      "-------------------------",
+      ...((group.members || []).length ? group.members : ["No members"])
+    ];
+  }
+
+  function formatNetShareOutput(shares) {
+    return [
+      "Share name   Resource                        Remark",
+      "----------   ------------------------------  --------------------",
+      ...shares.map((share) =>
+        `${String(share.name).padEnd(11)} ${String(share.path).padEnd(30)} ${share.remark || ""}`)
+    ];
+  }
+
+  function formatMappedShares() {
+    const mapped = session.state.mappedShares || [];
+    if (!mapped.length) {
+      return ["There are no entries in the list."];
+    }
+
+    return [
+      "Status       Local     Remote",
+      "-----------  -------   -------------------------",
+      ...mapped.map((entry) => `OK           ${String(entry.drive).padEnd(8)} ${entry.unc}`)
+    ];
+  }
+
+  function formatSchtasksOutput(tasks) {
+    return [
+      "TaskName                         Next Run Time         Status",
+      "===============================  ====================  ========",
+      ...tasks.map((task) => `${String(task.name).padEnd(31)} ${String(task.nextRunTime).padEnd(20)} ${task.status}`)
+    ];
+  }
+
+  function formatFcOutput(leftPath, rightPath, leftLines, rightLines) {
+    if (leftLines.join("\n") === rightLines.join("\n")) {
+      return ["FC: no differences encountered"];
+    }
+
+    const lines = [`Comparing files ${leftPath} and ${rightPath}`];
+    const max = Math.max(leftLines.length, rightLines.length);
+
+    for (let index = 0; index < max; index += 1) {
+      if (leftLines[index] === rightLines[index]) continue;
+      lines.push(`***** ${leftPath}`);
+      lines.push(leftLines[index] || "");
+      lines.push(`***** ${rightPath}`);
+      lines.push(rightLines[index] || "");
+    }
+
+    return lines;
+  }
+
   function buildDownloadedFile(url, outputName) {
     const filename = outputName || url.split("/").pop() || "downloaded-file";
 
@@ -987,7 +1332,7 @@
   }
 
   function executeEcho(parsed) {
-    const text = parsed.args.join(" ");
+    const text = expandWindowsEnvText(parsed.args.join(" "));
     if (parsed.redirect && parsed.redirect.path) {
       const written = StateManager.writeFile(session.state, parsed.redirect.path, `${text}\n`, parsed.redirect.append);
       if (!written.ok) return errorResult(written.error);
@@ -1012,6 +1357,14 @@
     return okResult(filterLines(source.lines, pattern));
   }
 
+  function executeFind(parsed, pipedInput) {
+    const pattern = parsed.args[0];
+    if (!pattern) return errorResult("FIND: missing search string", "syntax_error");
+    const source = readTextSource("find", parsed, pipedInput);
+    if (!source.ok) return errorResult(source.error, source.status);
+    return okResult(filterLines(source.lines, pattern.replace(/^"|"$/g, "")));
+  }
+
   function executeCp(parsed) {
     if (parsed.args.length < 2) return errorResult("cp: missing file operand", "syntax_error");
     const copied = StateManager.copyPath(session.state, parsed.args[0], parsed.args[1]);
@@ -1032,6 +1385,156 @@
     const removed = StateManager.removePath(session.state, parsed.args[0], recursive);
     if (!removed.ok) return errorResult(removed.error);
     return okResult([]);
+  }
+
+  function executeTree(parsed) {
+    const target = parsed.args[0] || session.state.cwd;
+    const node = StateManager.getNode(session.state, target);
+    if (!node) return errorResult("Path not found");
+    if (node.type === "file") return okResult(StateManager.displayPath(session.state, node.path));
+
+    const showFiles = hasFlag(parsed, "/F");
+    const lines = [StateManager.displayPath(session.state, node.path), ...treeLinesForPath(node.path, showFiles)];
+    return okResult(lines);
+  }
+
+  function executeRmdir(parsed) {
+    if (!parsed.args.length) return errorResult("The syntax of the command is incorrect.", "syntax_error");
+    const recursive = hasFlag(parsed, "/S");
+    const removed = StateManager.removePath(session.state, parsed.args[0], recursive);
+    if (!removed.ok) return errorResult(removed.error);
+    return okResult([]);
+  }
+
+  function executeCopy(parsed) {
+    if (parsed.args.length < 2) return errorResult("The syntax of the command is incorrect.", "syntax_error");
+    const copied = StateManager.copyPath(session.state, parsed.args[0], parsed.args[1]);
+    if (!copied.ok) return errorResult(copied.error);
+    return okResult("        1 file(s) copied.");
+  }
+
+  function executeXcopy(parsed) {
+    if (parsed.args.length < 2) return errorResult("Invalid number of parameters", "syntax_error");
+    const copied = StateManager.copyPath(session.state, parsed.args[0], parsed.args[1]);
+    if (!copied.ok) return errorResult(copied.error);
+    return okResult("1 File(s) copied");
+  }
+
+  function executeMove(parsed) {
+    if (parsed.args.length < 2) return errorResult("The syntax of the command is incorrect.", "syntax_error");
+    const moved = StateManager.movePath(session.state, parsed.args[0], parsed.args[1]);
+    if (!moved.ok) return errorResult(moved.error);
+    return okResult("        1 file(s) moved.");
+  }
+
+  function executeDel(parsed) {
+    if (!parsed.args.length) return errorResult("The syntax of the command is incorrect.", "syntax_error");
+    const removed = StateManager.removePath(session.state, parsed.args[0], false);
+    if (!removed.ok) return errorResult(removed.error);
+    return okResult([]);
+  }
+
+  function executeRen(parsed) {
+    if (parsed.args.length < 2) return errorResult("The syntax of the command is incorrect.", "syntax_error");
+    const source = StateManager.getNode(session.state, parsed.args[0]);
+    if (!source) return errorResult("The system cannot find the file specified.");
+    const sourcePath = StateManager.normalizePath(session.state, parsed.args[0]);
+    const parent = sourcePath.includes("/") ? sourcePath.slice(0, sourcePath.lastIndexOf("/")) : session.state.cwd;
+    const destination = `${parent}/${parsed.args[1]}`;
+    const moved = StateManager.movePath(session.state, sourcePath, destination);
+    if (!moved.ok) return errorResult(moved.error);
+    return okResult([]);
+  }
+
+  function executeMore(parsed, pipedInput) {
+    const source = readTextSource("more", parsed, pipedInput);
+    if (!source.ok) return errorResult(source.error, source.status);
+    return okResult(source.lines);
+  }
+
+  function executeAttrib(parsed) {
+    const mutations = parseAttributeMutations(parsed.tokens.slice(1));
+    const targets = parsed.args.filter((arg) => !/^[+-][A-Za-z]$/.test(arg));
+    const target = targets[0] || session.state.cwd;
+    const node = StateManager.getNode(session.state, target);
+    if (!node) return errorResult("File not found");
+
+    if (mutations.length) {
+      mutations.forEach((mutation) => setNodeAttribute(node, mutation.code, mutation.enabled));
+      return okResult(StateManager.displayPath(session.state, node.path));
+    }
+
+    if (node.type === "dir") {
+      return okResult(StateManager.listChildren(session.state, node.path, true).map((child) =>
+        `${nodeAttributeCodes(child).join(" ").padEnd(8)} ${StateManager.displayPath(session.state, child.path)}`));
+    }
+
+    return okResult(`${nodeAttributeCodes(node).join(" ").padEnd(8)} ${StateManager.displayPath(session.state, node.path)}`);
+  }
+
+  function executeHostname() {
+    return okResult((session.state.systemInfo || {}).hostName || session.state.host);
+  }
+
+  function executeWhoami() {
+    const domain = session.state.envVars?.USERDOMAIN || "LAB";
+    return okResult(`${domain}\\${session.state.user}`);
+  }
+
+  function executeSysteminfo() {
+    return okResult(formatSystemInfoOutput());
+  }
+
+  function executeSet(parsed) {
+    const expression = parsed.args.join(" ");
+    if (!expression) {
+      return okResult(Object.keys(session.state.envVars || {})
+        .sort((left, right) => left.localeCompare(right))
+        .map((key) => `${key}=${session.state.envVars[key]}`));
+    }
+
+    if (expression.includes("=")) {
+      const [rawKey, ...valueParts] = expression.split("=");
+      const key = rawKey.trim();
+      session.state.envVars[key] = valueParts.join("=");
+      return okResult(`${key}=${session.state.envVars[key]}`);
+    }
+
+    const prefix = expression.trim().toUpperCase();
+    return okResult(Object.keys(session.state.envVars || {})
+      .filter((key) => key.toUpperCase().startsWith(prefix))
+      .sort((left, right) => left.localeCompare(right))
+      .map((key) => `${key}=${session.state.envVars[key]}`));
+  }
+
+  function executeVer() {
+    return okResult(`Microsoft Windows [Version ${(session.state.systemInfo || {}).osVersion || "10.0.19045"}]`);
+  }
+
+  function executeDate(parsed) {
+    if (parsed.args.length) {
+      session.state.currentDate = parsed.args.join(" ");
+    }
+    return okResult(`The current date is: ${session.state.currentDate}`);
+  }
+
+  function executeTime(parsed) {
+    if (parsed.args.length) {
+      session.state.currentTime = parsed.args.join(" ");
+    }
+    return okResult(`The current time is: ${session.state.currentTime}`);
+  }
+
+  function executeCls() {
+    return okResult([], { clearScreen: true });
+  }
+
+  function executePrompt(parsed) {
+    if (parsed.args.length) {
+      session.state.promptTemplate = parsed.args.join(" ");
+      return okResult([]);
+    }
+    return okResult(StateManager.getPrompt(session.state));
   }
 
   function executeTar(parsed) {
@@ -1084,17 +1587,32 @@
 
   function executeTaskkill(parsed) {
     const pid = firstValueAfter(parsed, ["/PID"]);
-    if (!pid) return errorResult("ERROR: The /PID option requires a process id.", "syntax_error");
-    const killed = StateManager.killProcess(session.state, pid);
+    const imageName = firstValueAfter(parsed, ["/IM"]);
+    let targetPid = pid;
+
+    if (!targetPid && imageName) {
+      targetPid = (StateManager.listProcesses(session.state).find((process) => String(process.name).toLowerCase() === String(imageName).toLowerCase()) || {}).pid;
+    }
+
+    if (!targetPid) return errorResult("ERROR: The /PID option requires a process id.", "syntax_error");
+    const killed = StateManager.killProcess(session.state, targetPid);
     if (!killed.ok) return errorResult(killed.error);
-    return okResult(`SUCCESS: Sent termination signal to PID ${pid}.`);
+    return okResult(`SUCCESS: Sent termination signal to PID ${targetPid}.`);
   }
 
   function executePing(parsed) {
     const targetValue = parsed.args[0];
     if (!targetValue) return errorResult("ping: missing destination", "syntax_error");
-    const target = StateManager.findTarget(session.state, targetValue) || { ip: targetValue, reachable: false };
-    if (!target.reachable) return errorResult(`PING ${targetValue}: host unreachable`);
+    const target = resolveNetworkTarget(targetValue);
+    if (!target || !target.reachable) {
+      return StateManager.isWindowsState(session.state)
+        ? errorResult(`Ping request could not find host ${targetValue}.`)
+        : errorResult(`PING ${targetValue}: host unreachable`);
+    }
+
+    if (StateManager.isWindowsState(session.state)) {
+      return okResult(formatWindowsPing(target));
+    }
 
     return okResult([
       `PING ${target.ip} (${target.ip}) 56(84) bytes of data.`,
@@ -1105,6 +1623,240 @@
       `--- ${target.ip} ping statistics ---`,
       "3 packets transmitted, 3 received, 0% packet loss"
     ]);
+  }
+
+  function executeTracert(parsed) {
+    const targetValue = parsed.args[0];
+    if (!targetValue) return errorResult("Unable to resolve target system name.", "syntax_error");
+    const target = resolveNetworkTarget(targetValue);
+    if (!target || !target.reachable) return errorResult(`Unable to resolve target system name ${targetValue}.`);
+    return okResult([
+      `Tracing route to ${target.hostname || target.ip} [${target.ip}]`,
+      "over a maximum of 30 hops:",
+      "",
+      "  1    <1 ms    <1 ms    <1 ms  192.168.56.1",
+      `  2    <1 ms    <1 ms    <1 ms  ${target.ip}`,
+      "",
+      "Trace complete."
+    ]);
+  }
+
+  function executePathping(parsed) {
+    const targetValue = parsed.args[0];
+    if (!targetValue) return errorResult("Unable to resolve target system name.", "syntax_error");
+    const target = resolveNetworkTarget(targetValue);
+    if (!target || !target.reachable) return errorResult(`Unable to resolve target system name ${targetValue}.`);
+    return okResult([
+      `Tracing route to ${target.hostname || target.ip} [${target.ip}]`,
+      "  0  LAB-WIN [192.168.56.25]",
+      "  1  192.168.56.1",
+      `  2  ${target.ip}`,
+      "",
+      "Computing statistics for 50 seconds...",
+      "Source to Here   This Node/Link",
+      "Hop  RTT    Lost/Sent = Pct  Lost/Sent = Pct  Address",
+      `  2    1ms     0/ 100 =  0%     0/ 100 =  0%  ${target.ip}`
+    ]);
+  }
+
+  function executeNslookup(parsed) {
+    const query = parsed.args[0];
+    if (!query) return errorResult("*** Can't find server address", "syntax_error");
+    const adapter = (session.state.networkAdapters || [])[0] || {};
+    const server = (adapter.dns || [])[0] || adapter.gateway || "192.168.56.1";
+    const target = resolveNetworkTarget(query);
+    const resolved = target?.reachable ? target.ip : null;
+
+    if (!resolved) {
+      return okResult([
+        `Server:  ${server}`,
+        `Address: ${server}`,
+        "",
+        `*** ${server} can't find ${query}: Non-existent domain`
+      ]);
+    }
+
+    return okResult([
+      `Server:  ${server}`,
+      `Address: ${server}`,
+      "",
+      `Name:    ${target.hostname || query}`,
+      `Address: ${resolved}`
+    ]);
+  }
+
+  function executeIpconfig(parsed) {
+    return okResult(formatIpconfigOutput(hasFlag(parsed, "/ALL")));
+  }
+
+  function executeNetstat(parsed) {
+    return okResult(formatNetstatOutput(hasFlag(parsed, "-o", "-O")));
+  }
+
+  function executeArp() {
+    return okResult(formatArpOutput());
+  }
+
+  function executeRoute(parsed) {
+    if (String(parsed.args[0] || "").toLowerCase() !== "print") {
+      return errorResult("The syntax of this command is:\nROUTE [-f] [-p] [command [destination] [MASK netmask] [gateway] [METRIC metric]]", "syntax_error");
+    }
+    return okResult(formatRoutePrintOutput());
+  }
+
+  function executeGetmac() {
+    return okResult((session.state.networkAdapters || []).map((adapter) =>
+      `${String(adapter.mac).padEnd(20)} ${adapter.name}`));
+  }
+
+  function executeSc(parsed) {
+    const action = String(parsed.args[0] || "").toLowerCase();
+    if (action !== "query") return errorResult("[SC] Unsupported action in this trainer.", "wrong_context");
+    const serviceName = parsed.args.slice(1).join(" ").trim();
+
+    if (!serviceName) {
+      return okResult((session.state.services || []).flatMap((service) => [
+        `SERVICE_NAME: ${service.name}`,
+        `        STATE              : ${service.status === "RUNNING" ? "4  RUNNING" : "1  STOPPED"}`,
+        ""
+      ]));
+    }
+
+    const service = findServiceRecord(serviceName);
+    if (!service) return errorResult(`[SC] OpenService FAILED 1060:\nThe specified service does not exist as an installed service.`);
+    return okResult(formatServiceQueryOutput(service));
+  }
+
+  function executeNet(parsed) {
+    const action = String(parsed.args[0] || "").toLowerCase();
+    const subject = parsed.args.slice(1).join(" ").trim();
+
+    if (action === "start") {
+      if (!subject) {
+        return okResult((session.state.services || [])
+          .filter((service) => service.status === "RUNNING")
+          .map((service) => service.displayName || service.name));
+      }
+
+      const service = findServiceRecord(subject);
+      if (!service) return errorResult(`The service name is invalid.`);
+      service.status = "RUNNING";
+      return okResult(`The ${service.displayName || service.name} service was started successfully.`);
+    }
+
+    if (action === "stop") {
+      const service = findServiceRecord(subject);
+      if (!service) return errorResult(`The service name is invalid.`);
+      service.status = "STOPPED";
+      return okResult(`The ${service.displayName || service.name} service was stopped successfully.`);
+    }
+
+    if (action === "user") {
+      if (!subject) {
+        return okResult((session.state.localUsers || []).map((user) => user.username));
+      }
+      const user = findUserRecord(subject);
+      if (!user) return errorResult("The user name could not be found.");
+      return okResult(formatNetUserOutput(user));
+    }
+
+    if (action === "localgroup") {
+      if (!subject) {
+        return okResult((session.state.localGroups || []).map((group) => group.name));
+      }
+      const group = findGroupRecord(subject);
+      if (!group) return errorResult("There is no such global user or group.");
+      return okResult(formatLocalGroupOutput(group));
+    }
+
+    if (action === "use") {
+      if (!subject) {
+        return okResult(formatMappedShares());
+      }
+
+      const [drive, unc] = parsed.args.slice(1);
+      if (!drive || !unc) return errorResult("The syntax of this command is:\nNET USE [devicename] [\\\\computer\\share]");
+      session.state.mappedShares = (session.state.mappedShares || []).filter((entry) => String(entry.drive).toUpperCase() !== String(drive).toUpperCase());
+      session.state.mappedShares.push({ drive, unc });
+      return okResult([
+        "The command completed successfully.",
+        `${drive} is now connected to ${unc}`
+      ]);
+    }
+
+    if (action === "share") {
+      if (!subject) {
+        return okResult(formatNetShareOutput(session.state.shares || []));
+      }
+      const share = findShareRecord(subject);
+      if (!share) return errorResult("The share name could not be found.");
+      return okResult(formatNetShareOutput([share]));
+    }
+
+    return errorResult("That NET subcommand is not available in this training build.", "wrong_context");
+  }
+
+  function executeWmic(parsed) {
+    const query = parsed.args.join(" ").trim().toLowerCase();
+    if (query !== "process list brief") return errorResult("WMIC: unsupported alias in this trainer.", "wrong_context");
+    return okResult(formatWmicProcessOutput());
+  }
+
+  function executeDriverquery() {
+    return okResult(formatDriverQueryOutput());
+  }
+
+  function executeQuery(parsed) {
+    const subject = String(parsed.args[0] || "").toLowerCase();
+    if (subject !== "user") return errorResult("QUERY: unsupported object in this trainer.", "wrong_context");
+    return okResult(formatQueryUserOutput());
+  }
+
+  function executeWhere(parsed) {
+    const pattern = String(parsed.args[0] || "").trim();
+    if (!pattern) return errorResult("INFO: Could not find files for the given pattern(s).", "syntax_error");
+    const basePattern = pattern.toLowerCase().replace(/\.exe$/i, "");
+    const matches = (session.state.pathExecutables || []).filter((entry) => {
+      const name = String(entry).split("\\").pop().toLowerCase().replace(/\.exe$/i, "");
+      return name === basePattern || name.includes(basePattern.replace(/\*/g, ""));
+    });
+    if (!matches.length) return errorResult("INFO: Could not find files for the given pattern(s).");
+    return okResult(matches);
+  }
+
+  function executeFc(parsed) {
+    if (parsed.args.length < 2) return errorResult("FC: insufficient parameters", "syntax_error");
+    const left = StateManager.readFile(session.state, parsed.args[0]);
+    if (!left.ok) return errorResult(left.error);
+    const right = StateManager.readFile(session.state, parsed.args[1]);
+    if (!right.ok) return errorResult(right.error);
+    return okResult(formatFcOutput(parsed.args[0], parsed.args[1], normalizeTextLines(left.content.split(/\r?\n/)), normalizeTextLines(right.content.split(/\r?\n/))));
+  }
+
+  function executeShutdown(parsed) {
+    if (hasFlag(parsed, "/A")) {
+      session.state.pendingShutdown = null;
+      return okResult("Shutdown cancelled.");
+    }
+
+    const kind = hasFlag(parsed, "/R") ? "restart" : "shutdown";
+    const timeoutValue = Number(firstValueAfter(parsed, ["/T"])) || 0;
+    session.state.pendingShutdown = { kind, timeout: timeoutValue };
+    return okResult(`Shutdown scheduled: ${kind} in ${timeoutValue} second(s).`);
+  }
+
+  function executeSchtasks(parsed) {
+    if (!parsed.args.length || hasFlag(parsed, "/QUERY")) {
+      const taskName = firstValueAfter(parsed, ["/TN"]);
+      if (taskName) {
+        const task = findScheduledTask(taskName);
+        if (!task) return errorResult("ERROR: The system cannot find the file specified.");
+        return okResult(formatSchtasksOutput([task]));
+      }
+      return okResult(formatSchtasksOutput(session.state.scheduledTasks || []));
+    }
+
+    return errorResult("SCHTASKS: unsupported action in this trainer.", "wrong_context");
   }
 
   function buildNmapOutput(target, parsed) {
@@ -1439,7 +2191,16 @@
     if (!command) return true;
 
     const windowsShell = StateManager.isWindowsState(session.state);
-    const windowsOnly = new Set(["dir", "type", "findstr", "tasklist", "taskkill"]);
+    if (!windowsShell && session.state.metasploit.active && command === "set") {
+      return true;
+    }
+
+    const windowsOnly = new Set([
+      "dir", "type", "find", "findstr", "tree", "rmdir", "rd", "copy", "xcopy", "move", "del", "erase", "ren", "rename", "more", "attrib",
+      "hostname", "whoami", "systeminfo", "set", "ver", "date", "time", "cls", "prompt",
+      "ipconfig", "tracert", "pathping", "nslookup", "netstat", "arp", "route", "getmac",
+      "tasklist", "taskkill", "sc", "net", "wmic", "driverquery", "query", "where", "fc", "shutdown", "schtasks"
+    ]);
     const linuxOnly = new Set(["pwd", "ls", "touch", "cat", "grep", "cp", "mv", "rm", "ps", "kill", "wget", "searchsploit"]);
 
     if (windowsShell) {
@@ -1483,16 +2244,57 @@
         return executeType(parsed);
       case "echo":
         return executeEcho(parsed);
+      case "find":
+        return executeFind(parsed, pipedInput);
       case "grep":
         return executeGrep(parsed, pipedInput);
       case "findstr":
         return executeFindstr(parsed, pipedInput);
+      case "tree":
+        return executeTree(parsed);
       case "cp":
         return executeCp(parsed);
+      case "copy":
+        return executeCopy(parsed);
+      case "xcopy":
+        return executeXcopy(parsed);
       case "mv":
         return executeMv(parsed);
+      case "move":
+        return executeMove(parsed);
       case "rm":
         return executeRm(parsed);
+      case "rmdir":
+      case "rd":
+        return executeRmdir(parsed);
+      case "del":
+      case "erase":
+        return executeDel(parsed);
+      case "ren":
+      case "rename":
+        return executeRen(parsed);
+      case "more":
+        return executeMore(parsed, pipedInput);
+      case "attrib":
+        return executeAttrib(parsed);
+      case "hostname":
+        return executeHostname(parsed);
+      case "whoami":
+        return executeWhoami(parsed);
+      case "systeminfo":
+        return executeSysteminfo(parsed);
+      case "set":
+        return executeSet(parsed);
+      case "ver":
+        return executeVer(parsed);
+      case "date":
+        return executeDate(parsed);
+      case "time":
+        return executeTime(parsed);
+      case "cls":
+        return executeCls(parsed);
+      case "prompt":
+        return executePrompt(parsed);
       case "tar":
         return executeTar(parsed);
       case "wget":
@@ -1507,6 +2309,40 @@
         return executeTaskkill(parsed);
       case "ping":
         return executePing(parsed);
+      case "tracert":
+        return executeTracert(parsed);
+      case "pathping":
+        return executePathping(parsed);
+      case "nslookup":
+        return executeNslookup(parsed);
+      case "ipconfig":
+        return executeIpconfig(parsed);
+      case "netstat":
+        return executeNetstat(parsed);
+      case "arp":
+        return executeArp(parsed);
+      case "route":
+        return executeRoute(parsed);
+      case "getmac":
+        return executeGetmac(parsed);
+      case "sc":
+        return executeSc(parsed);
+      case "net":
+        return executeNet(parsed);
+      case "wmic":
+        return executeWmic(parsed);
+      case "driverquery":
+        return executeDriverquery(parsed);
+      case "query":
+        return executeQuery(parsed);
+      case "where":
+        return executeWhere(parsed);
+      case "fc":
+        return executeFc(parsed);
+      case "shutdown":
+        return executeShutdown(parsed);
+      case "schtasks":
+        return executeSchtasks(parsed);
       case "nmap":
         return executeNmap(parsed);
       case "searchsploit":
@@ -1602,7 +2438,8 @@
         mode: shellLabel(),
         status: "ok",
         stdout: [],
-        stderr: []
+        stderr: [],
+        clearScreen: false
       };
     }
 
@@ -1639,11 +2476,16 @@
       mode: shellLabel(),
       status: result.status,
       stdout: result.stdout,
-      stderr: result.stderr
+      stderr: result.stderr,
+      clearScreen: Boolean(result.clearScreen)
     };
   }
 
   function presentExecution(execution) {
+    if (execution.clearScreen) {
+      clearTerminal();
+    }
+
     if (execution.stdout.length) {
       printLines(execution.stdout, "system");
     }
