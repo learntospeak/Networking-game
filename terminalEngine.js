@@ -115,6 +115,15 @@
     if (target && els.terminalForm.parentElement !== target) {
       target.appendChild(els.terminalForm);
     }
+
+    if (
+      inlineMobileInput
+      && els.terminalOutput
+      && els.terminalInlineInputSlot
+      && els.terminalInlineInputSlot.parentElement === els.terminalOutput
+    ) {
+      els.terminalOutput.appendChild(els.terminalInlineInputSlot);
+    }
   }
 
   function mobileViewportMetrics() {
@@ -505,11 +514,26 @@
     els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
   }
 
+  function appendTerminalNode(node) {
+    if (!els.terminalOutput) return;
+
+    if (
+      usesInlineMobileInput()
+      && els.terminalInlineInputSlot
+      && els.terminalInlineInputSlot.parentElement === els.terminalOutput
+    ) {
+      els.terminalOutput.insertBefore(node, els.terminalInlineInputSlot);
+      return;
+    }
+
+    els.terminalOutput.appendChild(node);
+  }
+
   function printLine(text, type = "system") {
     const line = document.createElement("div");
     line.className = `terminal-line ${type}`;
     line.textContent = text;
-    els.terminalOutput.appendChild(line);
+    appendTerminalNode(line);
     scrollTerminal();
   }
 

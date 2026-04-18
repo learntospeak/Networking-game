@@ -1174,8 +1174,8 @@
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-output {
-    padding-bottom: 18px;
-    scroll-padding-bottom: 20px;
+    padding-bottom: 0;
+    scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom));
   }
 
   .layer-transition-banner {
@@ -1280,36 +1280,46 @@
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot {
-    order: 2;
     display: block;
-    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(71, 85, 105, 0.62);
-    background: linear-gradient(180deg, rgba(6, 10, 14, 0.98) 0%, rgba(3, 7, 12, 0.99) 100%);
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 12px -14px -14px;
+    padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(71, 85, 105, 0.5);
+    background:
+      linear-gradient(180deg, rgba(1, 10, 16, 0) 0%, rgba(1, 10, 16, 0.92) 18%, rgba(1, 10, 16, 0.99) 100%);
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input-shell {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 8px;
-    align-items: stretch;
+    align-items: center;
     scroll-margin-bottom: 12px;
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-prompt-label {
-    grid-column: 1 / -1;
-    font-size: 12px;
+    grid-column: auto;
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input {
-    min-height: 46px;
-    padding: 10px 12px;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #f8fafc;
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-run-btn {
     width: auto;
-    min-width: 88px;
-    min-height: 38px;
-    padding: 8px 8px 8px 28px;
-    font-size: 12px;
+    min-width: 74px;
+    min-height: 34px;
+    padding: 6px 8px 6px 24px;
+    font-size: 11px;
   }
 
   /* While the mobile terminal is active, collapse duplicate context panels so the shell gets the usable viewport. */
@@ -1440,6 +1450,10 @@
 
   .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-output-shell {
     min-height: clamp(260px, calc(var(--terminal-mobile-viewport-height) - 96px), 860px);
+  }
+
+  .terminal-page .router-ports {
+    display: none;
   }
 
   .command-sheet {
