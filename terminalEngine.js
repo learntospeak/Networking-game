@@ -168,6 +168,7 @@
     }
 
     const panel = els.terminalPanel;
+    const focusTarget = els.terminalForm || els.terminalInput;
     if (!panel) return;
 
     // Keep the terminal feed on its own scroller so mobile layout changes do not hide the newest output.
@@ -178,13 +179,19 @@
     const safeTop = offsetTop + 10;
     const safeBottom = offsetTop + visibleHeight - 14;
     const panelRect = panel.getBoundingClientRect();
+    const focusRect = focusTarget.getBoundingClientRect();
 
     if (panelRect.top < safeTop || panelRect.bottom > safeBottom) {
       panel.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
     }
 
-    const dockRect = (els.terminalMobileDock || els.terminalForm).getBoundingClientRect();
-    const promptRect = (els.terminalPrompt || els.terminalForm).getBoundingClientRect();
+    if (focusRect.top < safeTop || focusRect.bottom > safeBottom) {
+      // Scroll the live input row itself into view so repeated taps keep the current prompt visible without large page jumps.
+      focusTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    }
+
+    const dockRect = (els.terminalMobileDock || focusTarget).getBoundingClientRect();
+    const promptRect = (els.terminalPrompt || focusTarget).getBoundingClientRect();
 
     if (dockRect.bottom > safeBottom) {
       window.scrollBy({ top: dockRect.bottom - safeBottom + 12, behavior: "auto" });
