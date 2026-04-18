@@ -41,6 +41,7 @@
     mobileStepObjective: document.getElementById("mobileStepObjective"),
     mobileMachineContext: document.getElementById("mobileMachineContext"),
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
+    mobileContextToggleBtn: document.getElementById("mobileContextToggleBtn"),
     terminalOutput: document.getElementById("terminalOutput"),
     terminalForm: document.getElementById("terminalForm"),
     terminalPrompt: document.getElementById("terminalPrompt"),
@@ -69,7 +70,8 @@
     mobileDockRaf: 0,
     mobileRevealRaf: 0,
     mobileRevealTimer: 0,
-    mobileBlurTimer: 0
+    mobileBlurTimer: 0,
+    mobileContextCollapsed: false
   };
 
   function cancelScheduledFrame(id) {
@@ -111,11 +113,12 @@
 
   function syncMobileInputState(active) {
     if (!isMobileTerminalLayout()) {
-      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open");
+      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open", "terminal-mobile-context-collapsed");
       return;
     }
 
     document.body.classList.toggle("terminal-mobile-active", Boolean(active));
+    document.body.classList.toggle("terminal-mobile-context-collapsed", session.mobileContextCollapsed);
     if (!active) {
       document.body.classList.remove("terminal-mobile-keyboard-open");
     }
@@ -198,6 +201,19 @@
     } else if (promptRect.top < safeTop) {
       window.scrollBy({ top: promptRect.top - safeTop - 8, behavior: "auto" });
     }
+  }
+
+  function setMobileContextCollapsed(collapsed) {
+    session.mobileContextCollapsed = Boolean(collapsed);
+    document.body.classList.toggle("terminal-mobile-context-collapsed", session.mobileContextCollapsed);
+
+    if (els.mobileContextToggleBtn) {
+      els.mobileContextToggleBtn.textContent = session.mobileContextCollapsed ? "Show Context" : "Hide Context";
+      els.mobileContextToggleBtn.setAttribute("aria-expanded", String(!session.mobileContextCollapsed));
+    }
+
+    // The compact dock changes the reserved terminal space, so recalculate before the next mobile reveal.
+    measureTerminalDockSpace();
   }
 
   function scheduleMobileTerminalReveal(delay = 72) {
@@ -2813,6 +2829,14 @@
     if (els.nextScenarioBtn) {
       els.nextScenarioBtn.addEventListener("click", nextScenario);
     }
+    if (els.mobileContextToggleBtn) {
+      els.mobileContextToggleBtn.addEventListener("click", () => {
+        setMobileContextCollapsed(!session.mobileContextCollapsed);
+        if (document.activeElement === els.terminalInput) {
+          scheduleMobileTerminalReveal(0);
+        }
+      });
+    }
 
     if (els.terminalInput) {
       els.terminalInput.addEventListener("keydown", (event) => {
@@ -2893,6 +2917,7 @@
   };
 
   bindEvents();
+  setMobileContextCollapsed(false);
   syncMobileViewportMetrics();
   if (pageConfig.autoStart === false) {
     previewScenario(0);

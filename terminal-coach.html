@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260416c">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260418a">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260418b">
   <script src="./commandsData.js?v=20260416c" defer></script>
   <script src="./stateManager.js?v=20260416c" defer></script>
   <script src="./coachEngine.js?v=20260416c" defer></script>
@@ -52,7 +52,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260418b" defer></script>
+  <script src="./terminalEngine.js?v=20260418c" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
 <body class="terminal-page">
@@ -156,7 +156,10 @@
 
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
-              <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Linux Terminal Learning</p>
+              <div class="terminal-mobile-context-head">
+                <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Linux Terminal Learning</p>
+                <button id="mobileContextToggleBtn" class="terminal-mobile-context-toggle" type="button" aria-expanded="true" aria-controls="mobileScenarioTitle mobileStepObjective mobileMachineContext mobileCoachSignal">Hide Context</button>
+              </div>
               <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
               <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
               <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>

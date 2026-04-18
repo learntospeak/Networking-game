@@ -175,6 +175,15 @@
     margin-bottom: 16px;
   }
 
+  .challenge-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #startChallengeBtn,
+  #exitChallengeBtn {
+    grid-column: auto;
+  }
+
   .challenge-card-grid {
     gap: 10px;
   }
@@ -196,6 +205,18 @@
 
   .challenge-control-link {
     min-height: 38px;
-    font-size: 13px;
+    padding: 8px 8px 8px 28px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .challenge-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #startChallengeBtn,
+  #exitChallengeBtn {
+    grid-column: span 2;
   }
 }
