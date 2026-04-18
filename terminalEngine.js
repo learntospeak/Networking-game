@@ -43,6 +43,8 @@
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
     mobileContextToggleBtn: document.getElementById("mobileContextToggleBtn"),
     terminalOutput: document.getElementById("terminalOutput"),
+    terminalInlineInputSlot: document.getElementById("terminalInlineInputSlot"),
+    terminalDockInputMount: document.getElementById("terminalDockInputMount"),
     terminalForm: document.getElementById("terminalForm"),
     terminalPrompt: document.getElementById("terminalPrompt"),
     terminalInput: document.getElementById("terminalInput"),
@@ -92,6 +94,29 @@
     return window.matchMedia("(max-width: 768px)").matches;
   }
 
+  function usesInlineMobileInput() {
+    return Boolean(
+      isMobileTerminalLayout()
+      && els.terminalInlineInputSlot
+      && els.terminalDockInputMount
+      && els.terminalForm
+    );
+  }
+
+  function syncTerminalInputPlacement() {
+    const inlineMobileInput = usesInlineMobileInput();
+    document.body.classList.toggle("terminal-mobile-inline-input", inlineMobileInput);
+
+    if (!els.terminalForm) {
+      return;
+    }
+
+    const target = inlineMobileInput ? els.terminalInlineInputSlot : els.terminalDockInputMount;
+    if (target && els.terminalForm.parentElement !== target) {
+      target.appendChild(els.terminalForm);
+    }
+  }
+
   function mobileViewportMetrics() {
     const visualViewport = window.visualViewport;
     const layoutHeight = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
@@ -113,7 +138,7 @@
 
   function syncMobileInputState(active) {
     if (!isMobileTerminalLayout()) {
-      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open", "terminal-mobile-context-collapsed");
+      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open", "terminal-mobile-context-collapsed", "terminal-mobile-inline-input");
       return;
     }
 
@@ -127,7 +152,7 @@
   function measureTerminalDockSpace() {
     session.mobileDockRaf = cancelScheduledFrame(session.mobileDockRaf);
 
-    if (!isMobileTerminalLayout() || !els.terminalMobileDock) {
+    if (!isMobileTerminalLayout() || !els.terminalMobileDock || usesInlineMobileInput()) {
       document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
       return;
     }
@@ -143,6 +168,7 @@
 
   function syncMobileViewportMetrics() {
     session.mobileViewportRaf = cancelScheduledFrame(session.mobileViewportRaf);
+    syncTerminalInputPlacement();
 
     if (!isMobileTerminalLayout()) {
       document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open");
@@ -172,6 +198,7 @@
 
     const panel = els.terminalPanel;
     const focusTarget = els.terminalForm || els.terminalInput;
+    const inlineMobileInput = usesInlineMobileInput();
     if (!panel) return;
 
     // Keep the terminal feed on its own scroller so mobile layout changes do not hide the newest output.
@@ -192,6 +219,10 @@
     if (focusRect.top < safeTop || focusRect.bottom > safeBottom) {
       // Scroll the live input row itself into view so repeated taps keep the current prompt visible without large page jumps.
       focusTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    }
+
+    if (inlineMobileInput) {
+      return;
     }
 
     const dockRect = (els.terminalMobileDock || focusTarget).getBoundingClientRect();
@@ -2924,6 +2955,7 @@
   };
 
   bindEvents();
+  syncTerminalInputPlacement();
   setMobileContextCollapsed(false);
   syncMobileViewportMetrics();
   if (pageConfig.autoStart === false) {

@@ -426,6 +426,16 @@
   overflow: hidden;
 }
 
+.terminal-inline-input-slot,
+.terminal-dock-input-mount {
+  width: 100%;
+}
+
+.terminal-inline-input-slot:empty,
+.terminal-dock-input-mount:empty {
+  display: none;
+}
+
 .terminal-output {
   flex: 1;
   overflow-y: auto;
@@ -1135,8 +1145,25 @@
     flex: 1 1 auto;
   }
 
+  .terminal-page.terminal-mobile-inline-input {
+    --terminal-mobile-dock-space: 0px;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-shell {
+    padding-bottom: 0;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-panel {
+    min-height: clamp(360px, calc(var(--terminal-mobile-viewport-height) - 110px), 820px);
+  }
+
   .terminal-output-shell {
     min-height: clamp(220px, calc(var(--terminal-mobile-viewport-height) * 0.4), 420px);
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-output-shell {
+    order: 1;
+    min-height: clamp(250px, calc(var(--terminal-mobile-viewport-height) - 218px), 760px);
   }
 
   .terminal-output {
@@ -1144,6 +1171,11 @@
     padding-bottom: calc(var(--terminal-mobile-dock-space) + 20px);
     font-size: 12.5px;
     max-height: none;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-output {
+    padding-bottom: 18px;
+    scroll-padding-bottom: 20px;
   }
 
   .layer-transition-banner {
@@ -1170,6 +1202,23 @@
       0 0 0 1px rgba(56, 189, 248, 0.08);
     backdrop-filter: blur(18px);
     touch-action: pan-y;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-mobile-dock {
+    order: 0;
+    position: static;
+    left: auto;
+    bottom: auto;
+    z-index: auto;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+    transform: none;
+    border: 0;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.62);
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   .terminal-mobile-context {
@@ -1230,6 +1279,39 @@
     min-width: 88px;
   }
 
+  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot {
+    order: 2;
+    display: block;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(71, 85, 105, 0.62);
+    background: linear-gradient(180deg, rgba(6, 10, 14, 0.98) 0%, rgba(3, 7, 12, 0.99) 100%);
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input-shell {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: stretch;
+    scroll-margin-bottom: 12px;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-prompt-label {
+    grid-column: 1 / -1;
+    font-size: 12px;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input {
+    min-height: 46px;
+    padding: 10px 12px;
+  }
+
+  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-run-btn {
+    width: auto;
+    min-width: 88px;
+    min-height: 38px;
+    padding: 8px 8px 8px 28px;
+    font-size: 12px;
+  }
+
   /* While the mobile terminal is active, collapse duplicate context panels so the shell gets the usable viewport. */
   .terminal-page.terminal-mobile-active .terminal-subbrand,
   .terminal-page.terminal-mobile-active .terminal-intro,
@@ -1262,6 +1344,10 @@
 
   .terminal-page.terminal-mobile-active .terminal-output-shell {
     min-height: clamp(220px, calc(var(--terminal-mobile-viewport-height) - var(--terminal-mobile-dock-space) - 118px), 760px);
+  }
+
+  .terminal-page.terminal-mobile-inline-input.terminal-mobile-active .terminal-output-shell {
+    min-height: clamp(250px, calc(var(--terminal-mobile-viewport-height) - 218px), 760px);
   }
 
   .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-context {
@@ -1341,6 +1427,19 @@
   .terminal-page.terminal-mobile-keyboard-open .terminal-controls {
     gap: 6px;
     margin-top: 8px;
+  }
+
+  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .layer-transition-banner,
+  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-mobile-dock {
+    display: none;
+  }
+
+  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-panel {
+    min-height: clamp(320px, calc(var(--terminal-mobile-viewport-height) - 8px), 860px);
+  }
+
+  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-output-shell {
+    min-height: clamp(260px, calc(var(--terminal-mobile-viewport-height) - 96px), 860px);
   }
 
   .command-sheet {

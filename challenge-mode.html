@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Challenge Mode</title>
   <link rel="stylesheet" href="./style.css?v=20260416c">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260418c">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260418d">
   <link rel="stylesheet" href="./challenge-mode.css?v=20260418d">
   <script src="./commandsData.js?v=20260416c" defer></script>
   <script src="./stateManager.js?v=20260416c" defer></script>
   <script src="./coachEngine.js?v=20260416c" defer></script>
   <script src="./scenarioEngine.js?v=20260416c" defer></script>
   <script src="./challenge-mode.js?v=20260416c" defer></script>
-  <script src="./terminalEngine.js?v=20260418d" defer></script>
+  <script src="./terminalEngine.js?v=20260418e" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
 <body class="terminal-page challenge-page">
@@ -137,6 +137,7 @@
           <div class="terminal-output-shell">
             <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
           </div>
+          <div id="terminalInlineInputSlot" class="terminal-inline-input-slot"></div>
 
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
@@ -159,11 +160,13 @@
               <a id="exitChallengeBtn" class="challenge-control-link" href="./index.html">Exit Challenge</a>
             </div>
 
-            <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
-              <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">[NETWORK] student@lab:~$</label>
-              <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="send">
-              <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
-            </form>
+            <div id="terminalDockInputMount" class="terminal-dock-input-mount">
+              <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
+                <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">[NETWORK] student@lab:~$</label>
+                <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="send">
+                <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
+              </form>
+            </div>
           </div>
         </section>
       </div>
