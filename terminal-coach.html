@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260416c">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260416c">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260418a">
   <script src="./commandsData.js?v=20260416c" defer></script>
   <script src="./stateManager.js?v=20260416c" defer></script>
   <script src="./coachEngine.js?v=20260416c" defer></script>
@@ -52,7 +52,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260416c" defer></script>
+  <script src="./terminalEngine.js?v=20260418a" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
 <body class="terminal-page">
@@ -174,7 +174,7 @@
 
             <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
               <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">student@lab:~$</label>
-              <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none">
+              <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="send">
               <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
             </form>
           </div>

@@ -1,5 +1,7 @@
 .terminal-page {
   --terminal-mobile-dock-space: 0px;
+  --terminal-mobile-viewport-height: 100vh;
+  --terminal-visual-keyboard-offset: 0px;
 }
 
 .terminal-page .rack-room {
@@ -9,6 +11,12 @@
 .terminal-shell {
   width: 100%;
   max-width: none;
+}
+
+@supports (height: 100dvh) {
+  .terminal-page {
+    --terminal-mobile-viewport-height: 100dvh;
+  }
 }
 
 .terminal-subbrand {
@@ -415,12 +423,16 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .terminal-output {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
   padding: 22px;
   background:
     linear-gradient(180deg, rgba(1, 5, 9, 0.98) 0%, rgba(1, 10, 16, 0.98) 100%);
@@ -428,6 +440,8 @@
   font-family: "Courier New", monospace;
   font-size: clamp(13px, 1.25vw, 14px);
   line-height: 1.6;
+  scroll-padding-bottom: calc(var(--terminal-mobile-dock-space) + 24px);
+  overflow-anchor: none;
 }
 
 .terminal-line {
@@ -550,6 +564,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
+  scroll-margin-bottom: calc(var(--terminal-mobile-dock-space) + 24px);
 }
 
 .terminal-prompt-label {
@@ -1036,13 +1051,22 @@
 @media (max-width: 768px) {
   .terminal-page {
     --terminal-mobile-dock-space: calc(232px + env(safe-area-inset-bottom));
+    min-height: var(--terminal-mobile-viewport-height);
+    padding: 14px 10px 20px;
+    scroll-padding-bottom: calc(var(--terminal-mobile-dock-space) + 24px);
   }
 
   .terminal-page .rack-room {
     max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(var(--terminal-mobile-viewport-height) - 34px);
   }
 
   .terminal-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(var(--terminal-mobile-viewport-height) - 34px);
     padding-bottom: calc(var(--terminal-mobile-dock-space) + 16px);
   }
 
@@ -1053,6 +1077,7 @@
 
   .terminal-layout {
     gap: 12px;
+    min-height: 0;
   }
 
   .scenario-card,
@@ -1076,18 +1101,19 @@
 
   .terminal-panel {
     height: auto;
-    min-height: 0;
+    min-height: clamp(320px, calc(var(--terminal-mobile-viewport-height) - 236px), 720px);
+    flex: 1 1 auto;
   }
 
   .terminal-output-shell {
-    min-height: min(38dvh, 320px);
+    min-height: clamp(220px, calc(var(--terminal-mobile-viewport-height) * 0.4), 420px);
   }
 
   .terminal-output {
     padding: 14px;
-    padding-bottom: 18px;
+    padding-bottom: calc(var(--terminal-mobile-dock-space) + 20px);
     font-size: 12.5px;
-    max-height: min(40dvh, 300px);
+    max-height: none;
   }
 
   .layer-transition-banner {
@@ -1101,10 +1127,10 @@
     padding: 12px;
     position: fixed;
     left: 50%;
-    bottom: calc(env(safe-area-inset-bottom) + 6px);
+    bottom: calc(env(safe-area-inset-bottom) + 6px + var(--terminal-visual-keyboard-offset));
     z-index: 40;
     width: min(calc(100vw - 12px), 980px);
-    max-height: min(34dvh, 272px);
+    max-height: clamp(196px, calc(var(--terminal-mobile-viewport-height) * 0.38), 292px);
     overflow-y: auto;
     transform: translateX(-50%);
     border: 1px solid rgba(71, 85, 105, 0.72);
@@ -1164,6 +1190,54 @@
     min-width: 96px;
   }
 
+  /* While the mobile terminal is active, collapse duplicate context panels so the shell gets the usable viewport. */
+  .terminal-page.terminal-mobile-active .terminal-subbrand,
+  .terminal-page.terminal-mobile-active .terminal-intro,
+  .terminal-page.terminal-mobile-active .environment-route-nav,
+  .terminal-page.terminal-mobile-active .terminal-meta-panel,
+  .terminal-page.terminal-mobile-active .scenario-panel,
+  .terminal-page.terminal-mobile-active .challenge-selector-panel {
+    display: none;
+  }
+
+  .terminal-page.terminal-mobile-active .router-top {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+  }
+
+  .terminal-page.terminal-mobile-active .terminal-header {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .terminal-page.terminal-mobile-active .terminal-nav-link {
+    min-height: 40px;
+    padding: 0 14px 0 34px;
+    font-size: 13px;
+  }
+
+  .terminal-page.terminal-mobile-active .terminal-panel {
+    min-height: clamp(320px, calc(var(--terminal-mobile-viewport-height) - 150px), 760px);
+  }
+
+  .terminal-page.terminal-mobile-active .terminal-output-shell {
+    min-height: clamp(220px, calc(var(--terminal-mobile-viewport-height) - var(--terminal-mobile-dock-space) - 118px), 760px);
+  }
+
+  /* Keyboard-open state trims the dock further so the prompt and newest output stay visible above the IME. */
+  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-dock {
+    max-height: clamp(168px, calc(var(--terminal-mobile-viewport-height) * 0.34), 252px);
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-context {
+    gap: 3px;
+    padding: 8px 10px;
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-signal {
+    display: none;
+  }
+
   .command-sheet {
     top: 0;
     right: 0;
@@ -1178,7 +1252,7 @@
 
   .command-sheet-shell {
     border-radius: 0;
-    height: 100dvh;
+    height: var(--terminal-mobile-viewport-height);
   }
 
   .command-sheet-toolbar,
@@ -1225,7 +1299,7 @@
 
 @media (max-width: 520px) {
   .terminal-mobile-dock {
-    max-height: min(36dvh, 284px);
+    max-height: clamp(180px, calc(var(--terminal-mobile-viewport-height) * 0.4), 284px);
   }
 
   .terminal-mobile-context {

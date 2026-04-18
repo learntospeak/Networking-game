@@ -7,6 +7,10 @@
   }
 
   const els = {
+    terminalShell: document.querySelector(".terminal-shell"),
+    terminalLayout: document.querySelector(".terminal-layout"),
+    terminalPanel: document.querySelector(".terminal-panel"),
+    terminalMobileDock: document.querySelector(".terminal-mobile-dock"),
     pageKicker: document.getElementById("terminalPageKicker"),
     pageTitle: document.getElementById("terminalPageTitle"),
     pageIntro: document.getElementById("terminalPageIntro"),
@@ -60,8 +64,160 @@
     scenarioCompleted: false,
     scenarioStarted: false,
     currentLayer: null,
-    layerTransitionTimer: null
+    layerTransitionTimer: null,
+    mobileViewportRaf: 0,
+    mobileDockRaf: 0,
+    mobileRevealRaf: 0,
+    mobileRevealTimer: 0,
+    mobileBlurTimer: 0
   };
+
+  function cancelScheduledFrame(id) {
+    if (id) {
+      window.cancelAnimationFrame(id);
+    }
+    return 0;
+  }
+
+  function cancelScheduledTimeout(id) {
+    if (id) {
+      window.clearTimeout(id);
+    }
+    return 0;
+  }
+
+  function isMobileTerminalLayout() {
+    return window.matchMedia("(max-width: 768px)").matches;
+  }
+
+  function mobileViewportMetrics() {
+    const visualViewport = window.visualViewport;
+    const layoutHeight = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
+
+    if (!visualViewport) {
+      return {
+        visibleHeight: layoutHeight,
+        keyboardOffset: 0,
+        offsetTop: 0
+      };
+    }
+
+    return {
+      visibleHeight: Math.round(visualViewport.height),
+      keyboardOffset: Math.max(0, Math.round(layoutHeight - (visualViewport.height + visualViewport.offsetTop))),
+      offsetTop: Math.max(0, Math.round(visualViewport.offsetTop || 0))
+    };
+  }
+
+  function syncMobileInputState(active) {
+    if (!isMobileTerminalLayout()) {
+      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open");
+      return;
+    }
+
+    document.body.classList.toggle("terminal-mobile-active", Boolean(active));
+    if (!active) {
+      document.body.classList.remove("terminal-mobile-keyboard-open");
+    }
+  }
+
+  function measureTerminalDockSpace() {
+    session.mobileDockRaf = cancelScheduledFrame(session.mobileDockRaf);
+
+    if (!isMobileTerminalLayout() || !els.terminalMobileDock) {
+      document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
+      return;
+    }
+
+    session.mobileDockRaf = window.requestAnimationFrame(() => {
+      session.mobileDockRaf = 0;
+      const dockHeight = Math.ceil(els.terminalMobileDock.getBoundingClientRect().height || 0);
+      const { keyboardOffset } = mobileViewportMetrics();
+      const reservedSpace = Math.max(0, dockHeight + keyboardOffset + 18);
+      document.body.style.setProperty("--terminal-mobile-dock-space", `${reservedSpace}px`);
+    });
+  }
+
+  function syncMobileViewportMetrics() {
+    session.mobileViewportRaf = cancelScheduledFrame(session.mobileViewportRaf);
+
+    if (!isMobileTerminalLayout()) {
+      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open");
+      document.body.style.removeProperty("--terminal-mobile-viewport-height");
+      document.body.style.removeProperty("--terminal-visual-keyboard-offset");
+      document.body.style.removeProperty("--terminal-mobile-dock-space");
+      return;
+    }
+
+    session.mobileViewportRaf = window.requestAnimationFrame(() => {
+      session.mobileViewportRaf = 0;
+      // visualViewport gives the keyboard-safe visible area on Android/iOS so the fixed dock can stay above the IME.
+      const { visibleHeight, keyboardOffset } = mobileViewportMetrics();
+      const inputActive = document.activeElement === els.terminalInput;
+
+      document.body.style.setProperty("--terminal-mobile-viewport-height", `${visibleHeight}px`);
+      document.body.style.setProperty("--terminal-visual-keyboard-offset", `${keyboardOffset}px`);
+      document.body.classList.toggle("terminal-mobile-keyboard-open", inputActive && keyboardOffset > 0);
+      measureTerminalDockSpace();
+    });
+  }
+
+  function revealActiveTerminalInput() {
+    if (!isMobileTerminalLayout() || !els.terminalInput || document.activeElement !== els.terminalInput) {
+      return;
+    }
+
+    const panel = els.terminalPanel;
+    if (!panel) return;
+
+    // Keep the terminal feed on its own scroller so mobile layout changes do not hide the newest output.
+    scrollTerminal();
+    syncMobileViewportMetrics();
+
+    const { visibleHeight, offsetTop } = mobileViewportMetrics();
+    const safeTop = offsetTop + 10;
+    const safeBottom = offsetTop + visibleHeight - 14;
+    const panelRect = panel.getBoundingClientRect();
+
+    if (panelRect.top < safeTop || panelRect.bottom > safeBottom) {
+      panel.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+    }
+
+    const dockRect = (els.terminalMobileDock || els.terminalForm).getBoundingClientRect();
+    const promptRect = (els.terminalPrompt || els.terminalForm).getBoundingClientRect();
+
+    if (dockRect.bottom > safeBottom) {
+      window.scrollBy({ top: dockRect.bottom - safeBottom + 12, behavior: "auto" });
+    } else if (promptRect.top < safeTop) {
+      window.scrollBy({ top: promptRect.top - safeTop - 8, behavior: "auto" });
+    }
+  }
+
+  function scheduleMobileTerminalReveal(delay = 72) {
+    session.mobileRevealRaf = cancelScheduledFrame(session.mobileRevealRaf);
+    session.mobileRevealTimer = cancelScheduledTimeout(session.mobileRevealTimer);
+
+    if (!isMobileTerminalLayout()) {
+      return;
+    }
+
+    const runReveal = () => {
+      session.mobileRevealRaf = window.requestAnimationFrame(() => {
+        session.mobileRevealRaf = 0;
+        revealActiveTerminalInput();
+      });
+    };
+
+    if (delay <= 0) {
+      runReveal();
+      return;
+    }
+
+    session.mobileRevealTimer = window.setTimeout(() => {
+      session.mobileRevealTimer = 0;
+      runReveal();
+    }, delay);
+  }
 
   function configuredScenarioPool() {
     const source = Array.isArray(ScenarioEngine.scenarios) ? ScenarioEngine.scenarios : [];
@@ -290,6 +446,7 @@
   }
 
   function scrollTerminal() {
+    if (!els.terminalOutput) return;
     els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
   }
 
@@ -464,6 +621,9 @@
 
     renderHintLadder();
     updatePrompt();
+    if (document.activeElement === els.terminalInput) {
+      scheduleMobileTerminalReveal(0);
+    }
   }
 
   function announceScenario() {
@@ -536,7 +696,8 @@
         started: session.scenarioStarted
       }
     }));
-    if (focus && els.terminalInput) {
+    syncMobileViewportMetrics();
+    if (focus && els.terminalInput && !isMobileTerminalLayout()) {
       els.terminalInput.focus();
     }
   }
@@ -2574,6 +2735,9 @@
     }
 
     renderPanel();
+    if (document.activeElement === els.terminalInput) {
+      scheduleMobileTerminalReveal(0);
+    }
   }
 
   function showHint() {
@@ -2653,6 +2817,45 @@
           recallHistory(1);
         }
       });
+
+      els.terminalInput.addEventListener("focus", () => {
+        session.mobileBlurTimer = cancelScheduledTimeout(session.mobileBlurTimer);
+        syncMobileInputState(true);
+        syncMobileViewportMetrics();
+        scheduleMobileTerminalReveal();
+      });
+
+      els.terminalInput.addEventListener("click", () => {
+        if (!isMobileTerminalLayout()) return;
+        syncMobileInputState(true);
+        scheduleMobileTerminalReveal(0);
+      });
+
+      els.terminalInput.addEventListener("blur", () => {
+        session.mobileBlurTimer = cancelScheduledTimeout(session.mobileBlurTimer);
+        session.mobileBlurTimer = window.setTimeout(() => {
+          session.mobileBlurTimer = 0;
+          if (document.activeElement !== els.terminalInput) {
+            syncMobileInputState(false);
+            syncMobileViewportMetrics();
+          }
+        }, 140);
+      });
+    }
+
+    const handleViewportChange = () => {
+      syncMobileViewportMetrics();
+      if (document.activeElement === els.terminalInput) {
+        scheduleMobileTerminalReveal(48);
+      }
+    };
+
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("orientationchange", handleViewportChange);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleViewportChange);
+      window.visualViewport.addEventListener("scroll", handleViewportChange);
     }
   }
 
@@ -2683,6 +2886,7 @@
   };
 
   bindEvents();
+  syncMobileViewportMetrics();
   if (pageConfig.autoStart === false) {
     previewScenario(0);
   } else {
