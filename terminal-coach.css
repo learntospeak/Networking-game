@@ -431,6 +431,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   padding: 22px;
@@ -1168,6 +1169,7 @@
       0 18px 40px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(56, 189, 248, 0.08);
     backdrop-filter: blur(18px);
+    touch-action: pan-y;
   }
 
   .terminal-mobile-context {
@@ -1294,6 +1296,31 @@
   }
 
   /* Keyboard-open state trims the dock further so the prompt and newest output stay visible above the IME. */
+  .terminal-page.terminal-mobile-keyboard-open {
+    height: var(--terminal-mobile-viewport-height);
+    overflow: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .rack-room,
+  .terminal-page.terminal-mobile-keyboard-open .terminal-shell {
+    min-height: calc(var(--terminal-mobile-viewport-height) - 2px);
+    max-height: var(--terminal-mobile-viewport-height);
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .router-top,
+  .terminal-page.terminal-mobile-keyboard-open .terminal-header {
+    display: none;
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .terminal-panel {
+    min-height: clamp(320px, calc(var(--terminal-mobile-viewport-height) - 18px), 820px);
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .terminal-output-shell {
+    min-height: clamp(250px, calc(var(--terminal-mobile-viewport-height) - var(--terminal-mobile-dock-space) - 16px), 820px);
+  }
+
   .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-dock {
     max-height: clamp(168px, calc(var(--terminal-mobile-viewport-height) * 0.34), 252px);
   }

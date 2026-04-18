@@ -185,7 +185,8 @@
     const focusRect = focusTarget.getBoundingClientRect();
 
     if (panelRect.top < safeTop || panelRect.bottom > safeBottom) {
-      panel.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+      // Use the nearest edge so the browser keeps the terminal stable instead of snapping the viewport back to the panel start.
+      panel.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
     }
 
     if (focusRect.top < safeTop || focusRect.bottom > safeBottom) {
@@ -2874,19 +2875,25 @@
       });
     }
 
-    const handleViewportChange = () => {
+    const handleViewportResize = () => {
       syncMobileViewportMetrics();
       if (document.activeElement === els.terminalInput) {
         scheduleMobileTerminalReveal(48);
       }
     };
 
-    window.addEventListener("resize", handleViewportChange);
-    window.addEventListener("orientationchange", handleViewportChange);
+    const handleViewportScroll = () => {
+      // visualViewport scroll also fires during manual page drags on mobile; only refresh the measurements here so the browser
+      // does not keep forcing the viewport back to the prompt while the user is trying to inspect recent terminal output.
+      syncMobileViewportMetrics();
+    };
+
+    window.addEventListener("resize", handleViewportResize);
+    window.addEventListener("orientationchange", handleViewportResize);
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", handleViewportChange);
-      window.visualViewport.addEventListener("scroll", handleViewportChange);
+      window.visualViewport.addEventListener("resize", handleViewportResize);
+      window.visualViewport.addEventListener("scroll", handleViewportScroll);
     }
   }
 
