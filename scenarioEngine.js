@@ -86,6 +86,42 @@
     };
   }
 
+  function ciscoEnv(config = {}) {
+    const hostname = config.hostname || "Router";
+    const interfaces = config.interfaces || commonCiscoInterfaces();
+    const staticRoutes = config.staticRoutes || commonCiscoStaticRoutes();
+
+    return {
+      platform: "cisco",
+      host: hostname,
+      home: "/",
+      cwd: "/",
+      directories: ["/"],
+      files: [],
+      processes: [],
+      targets: config.targets || commonCiscoTargets(),
+      router: {
+        hostname,
+        mode: config.mode || "user-exec",
+        selectedInterface: config.selectedInterface || null,
+        configDirty: Boolean(config.configDirty),
+        version: config.version || "Cisco IOS Software, 1900 Software (C1900-UNIVERSALK9-M), Version 15.4(3)M",
+        model: config.model || "Cisco 1941/K9",
+        image: config.image || "flash:c1900-universalk9-mz.SPA.154-3.M.bin",
+        serialNumber: config.serialNumber || "FTX0001ABCD",
+        uptime: config.uptime || "2 weeks, 4 days, 1 hour, 12 minutes",
+        configRegister: config.configRegister || "0x2102",
+        interfaces,
+        staticRoutes,
+        startupConfig: config.startupConfig || buildCiscoStartupConfigSnapshot({
+          hostname,
+          interfaces,
+          staticRoutes
+        })
+      }
+    };
+  }
+
   function commonTargets() {
     return clone([
       {
@@ -131,6 +167,85 @@
         ]
       }
     ]);
+  }
+
+  function commonCiscoTargets() {
+    return clone([
+      {
+        ip: "192.168.10.10",
+        hostname: "branch-pc",
+        aliases: ["branch-pc", "pc1", "lan-host"],
+        reachable: true,
+        os: "Windows Workstation",
+        ports: []
+      },
+      {
+        ip: "198.51.100.2",
+        hostname: "isp-gateway",
+        aliases: ["isp", "wan-gw"],
+        reachable: true,
+        os: "Upstream Router",
+        ports: []
+      },
+      {
+        ip: "172.16.30.10",
+        hostname: "hq-file",
+        aliases: ["hq", "hq-file", "remote-lan"],
+        reachable: true,
+        os: "Linux Server",
+        ports: []
+      }
+    ]);
+  }
+
+  function commonCiscoInterfaces() {
+    return clone([
+      {
+        name: "GigabitEthernet0/0",
+        aliases: ["g0/0", "gi0/0"],
+        ipAddress: "",
+        subnetMask: "",
+        adminUp: false,
+        lineProtocol: false,
+        description: "Branch user LAN"
+      },
+      {
+        name: "GigabitEthernet0/1",
+        aliases: ["g0/1", "gi0/1"],
+        ipAddress: "198.51.100.1",
+        subnetMask: "255.255.255.252",
+        adminUp: true,
+        lineProtocol: true,
+        description: "WAN uplink to ISP"
+      },
+      {
+        name: "Loopback0",
+        aliases: ["lo0"],
+        ipAddress: "10.255.255.1",
+        subnetMask: "255.255.255.255",
+        adminUp: true,
+        lineProtocol: true,
+        description: "Management loopback"
+      }
+    ]);
+  }
+
+  function commonCiscoStaticRoutes() {
+    return clone([
+      {
+        network: "0.0.0.0",
+        mask: "0.0.0.0",
+        nextHop: "198.51.100.2"
+      }
+    ]);
+  }
+
+  function buildCiscoStartupConfigSnapshot({ hostname, interfaces, staticRoutes }) {
+    return clone({
+      hostname,
+      interfaces: interfaces || commonCiscoInterfaces(),
+      staticRoutes: staticRoutes || commonCiscoStaticRoutes()
+    });
   }
 
   function commonWindowsEnvVars() {
@@ -308,12 +423,14 @@
 
   function shellDisplayLabel(shell) {
     if (shell === "cmd") return "Windows CMD";
+    if (shell === "cisco") return "Cisco IOS CLI";
     if (shell === "metasploit") return "Metasploit";
     return "Linux Terminal";
   }
 
   function environmentCategoryLabel(category) {
     if (category === "windows") return "Windows Terminal Learning";
+    if (category === "cisco") return "Cisco CLI Lab";
     if (category === "cyber") return "Cyber Challenge Mode";
     return "Linux Terminal Learning";
   }
@@ -352,7 +469,7 @@
       return provided;
     }
 
-    const environmentCategory = config.environmentCategory || (config.mode === "challenge" ? "cyber" : shell === "cmd" ? "windows" : "linux");
+    const environmentCategory = config.environmentCategory || (config.mode === "challenge" ? "cyber" : shell === "cmd" ? "windows" : shell === "cisco" ? "cisco" : "linux");
     const location = environment.cwd || environment.home || "";
 
     if (environmentCategory === "cyber") {
@@ -375,6 +492,16 @@
       return contexts;
     }
 
+    if (environmentCategory === "cisco") {
+      return [
+        {
+          label: config.deviceLabel || "Training Router",
+          role: shellDisplayLabel(shell),
+          detail: environment.router?.hostname || environment.host || "Router"
+        }
+      ];
+    }
+
     return [
       {
         label: shell === "cmd" ? "Windows Host" : "Linux Host",
@@ -385,7 +512,7 @@
   }
 
   function buildScenarioContextMetadata(config, environment, shell) {
-    const environmentCategory = config.environmentCategory || (config.mode === "challenge" ? "cyber" : shell === "cmd" ? "windows" : "linux");
+    const environmentCategory = config.environmentCategory || (config.mode === "challenge" ? "cyber" : shell === "cmd" ? "windows" : shell === "cisco" ? "cisco" : "linux");
 
     return {
       environmentCategory,
@@ -476,6 +603,77 @@
     return {
       ...extras,
       postCheck: (_, state) => state.pendingShutdown && String(state.pendingShutdown.kind) === String(kind)
+    };
+  }
+
+  function routerModeMatch(mode, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => String(state.router?.mode || "") === String(mode)
+    };
+  }
+
+  function ciscoHostnameMatch(hostname, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => String(state.router?.hostname || "") === String(hostname)
+    };
+  }
+
+  function ciscoInterfaceStatusMatch(name, adminUp, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => Array.isArray(state.router?.interfaces)
+        && state.router.interfaces.some((iface) => String(iface.name).toLowerCase() === String(name).toLowerCase()
+          && Boolean(iface.adminUp) === Boolean(adminUp))
+    };
+  }
+
+  function ciscoInterfaceAddressMatch(name, ipAddress, subnetMask, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => Array.isArray(state.router?.interfaces)
+        && state.router.interfaces.some((iface) => String(iface.name).toLowerCase() === String(name).toLowerCase()
+          && String(iface.ipAddress || "") === String(ipAddress)
+          && String(iface.subnetMask || "") === String(subnetMask))
+    };
+  }
+
+  function ciscoInterfaceDescriptionMatch(name, description, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => Array.isArray(state.router?.interfaces)
+        && state.router.interfaces.some((iface) => String(iface.name).toLowerCase() === String(name).toLowerCase()
+          && String(iface.description || "") === String(description))
+    };
+  }
+
+  function ciscoStartupConfigMatch(extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => {
+        const startup = state.router?.startupConfig;
+        if (!startup) return false;
+
+        const runningInterfaces = JSON.stringify(state.router?.interfaces || []);
+        const startupInterfaces = JSON.stringify(startup.interfaces || []);
+        const runningRoutes = JSON.stringify(state.router?.staticRoutes || []);
+        const startupRoutes = JSON.stringify(startup.staticRoutes || []);
+
+        return String(state.router?.hostname || "") === String(startup.hostname || "")
+          && runningInterfaces === startupInterfaces
+          && runningRoutes === startupRoutes;
+      }
+    };
+  }
+
+  function ciscoStaticRouteMatch(network, mask, nextHop, extras = {}) {
+    return {
+      ...extras,
+      postCheck: (_, state) => Array.isArray(state.router?.staticRoutes)
+        && state.router.staticRoutes.some((route) => String(route.network) === String(network)
+          && String(route.mask) === String(mask)
+          && String(route.nextHop) === String(nextHop))
     };
   }
 
@@ -707,12 +905,19 @@
         explorationRule(commandMatch("cd"), "Exploration is valid. If you move into a candidate directory, confirm it with pwd or ls.", "Real operators often probe the tree before they commit to a final path."),
         explorationRule(commandMatch("cat"), "Reading a file can be useful once you have narrowed the path.", "Use file reads to confirm clues after discovery has reduced the search space.")
       );
-    } else {
+    } else if (scenario.shell === "cmd") {
       rules.push(
         explorationRule(commandMatch("dir"), "Good discovery step. dir is how you inspect the current Windows workspace before changing state.", "Use the listing to decide which folder or file actually matches the task."),
         explorationRule(commandMatch("cd"), "Exploration is valid. Moving into a candidate folder is fine if you verify what is inside it next.", "In CMD, directory changes are part of discovery when the exact path is not yet obvious."),
         explorationRule(commandMatch("type"), "Reading a file is a valid way to gather evidence after you have found the right location.", "Use type to confirm clues from a specific note or log once the path is narrowed."),
         explorationRule(commandMatch("findstr"), "Filtering is a sensible move once you already know which Windows file contains the signal.", "Use findstr after you have read or located the right file.")
+      );
+    } else if (scenario.shell === "cisco") {
+      rules.push(
+        explorationRule(commandMatch("enable"), "Good first move. On Cisco gear, privilege level matters before you can inspect or change most state.", "Move into privileged EXEC first, then decide whether you only need show commands or a config mode change."),
+        explorationRule(rawMatch(/^show\s+version$/i), "Useful discovery. show version confirms the platform and IOS context before you change anything.", "Use version output to ground yourself, then pivot to interface or routing evidence."),
+        explorationRule(rawMatch(/^show\s+ip\s+interface\s+brief$/i), "Good discovery step. show ip interface brief is the fast way to spot status and addressing issues.", "Use the interface summary to choose the exact interface you need to inspect or configure."),
+        explorationRule(rawMatch(/^show\s+interfaces(?:\s+\S+)?$/i), "Useful exploration. Detailed interface output can confirm whether the problem is status, addressing, or description related.", "Use the interface evidence to decide whether the next move belongs in privileged mode or configuration mode.")
       );
     }
 
@@ -778,7 +983,7 @@
       return "application";
     }
 
-    if (category === "nmap scanning workflows" || category === "netcat workflows" || category === "networking basics") {
+    if (category === "nmap scanning workflows" || category === "netcat workflows" || category === "networking basics" || category === "cisco cli fundamentals") {
       return "network";
     }
 
@@ -790,7 +995,7 @@
       return "exploitation";
     }
 
-    if (/\bnmap\b|\bnetcat\b|\bnc\b|\bport\b|\bports\b|\bhost\b|\bscan\b|\blistener\b|\bconnect\b|\bping\b|\bsmtp\b|\btcp\b|\budp\b/.test(combined)) {
+    if (/\bnmap\b|\bnetcat\b|\bnc\b|\bport\b|\bports\b|\bhost\b|\bscan\b|\blistener\b|\bconnect\b|\bping\b|\bsmtp\b|\btcp\b|\budp\b|\brouter\b|\binterface\b|\broute\b|\bios\b|\bcisco\b/.test(combined)) {
       return "network";
     }
 
@@ -816,8 +1021,14 @@
       layer: inferScenarioLayer(scenario)
     };
 
-    const shell = layeredScenario.shell || (layeredScenario.environment?.platform === "cmd" ? "cmd" : "linux");
-    const environment = layeredScenario.environment || (shell === "cmd" ? cmdEnv() : linuxEnv());
+    const shell = layeredScenario.shell || (
+      layeredScenario.environment?.platform === "cmd"
+        ? "cmd"
+        : layeredScenario.environment?.platform === "cisco"
+          ? "cisco"
+          : "linux"
+    );
+    const environment = layeredScenario.environment || (shell === "cmd" ? cmdEnv() : shell === "cisco" ? ciscoEnv() : linuxEnv());
     const contextMeta = buildScenarioContextMetadata(layeredScenario, environment, shell);
 
     return {
@@ -1844,11 +2055,56 @@
     };
   }
 
+  function ciscoScenario(config) {
+    const environment = ciscoEnv(config.environment || {});
+    const contextMeta = buildScenarioContextMetadata(config, environment, "cisco");
+
+    return {
+      id: config.id,
+      title: config.title,
+      category: config.category,
+      mode: config.mode || "lesson",
+      hiddenSteps: Boolean(config.hiddenSteps),
+      challengeObjective: config.challengeObjective || "",
+      successConditions: config.successConditions || [],
+      allowedApproaches: config.allowedApproaches || [],
+      difficulty: config.difficulty || config.level,
+      layers: Array.isArray(config.layers) && config.layers.length ? config.layers : [config.layer || inferScenarioLayer(config)],
+      layer: config.layer || inferScenarioLayer(config),
+      level: config.level,
+      shell: "cisco",
+      scenarioIntro: config.scenarioIntro || "",
+      commandFocus: config.commandFocus || [],
+      acceptedCommands: config.acceptedCommands || [],
+      simulatedOutput: config.simulatedOutput || [],
+      successCondition: config.successCondition || "",
+      feedbackText: config.feedbackText || "",
+      environmentCategory: contextMeta.environmentCategory,
+      environmentLabel: contextMeta.environmentLabel,
+      environmentPolicy: contextMeta.environmentPolicy,
+      machineContexts: contextMeta.machineContexts,
+      objective: config.objective,
+      allowedFlexibility: config.allowedFlexibility || "Stay inside Cisco IOS commands and move through the correct mode changes for the task.",
+      environment,
+      steps: config.steps
+    };
+  }
+
   function windowsLessonScenario(config) {
     return cmdScenario({
       level: config.level || config.difficulty || "Beginner",
       difficulty: config.difficulty || config.level || "Beginner",
       allowedFlexibility: config.allowedFlexibility || "Stay inside practical CMD commands. Relative or absolute Windows paths are both fine when the end state or evidence is correct.",
+      ...config
+    });
+  }
+
+  function ciscoLessonScenario(config) {
+    return ciscoScenario({
+      category: config.category || "Cisco CLI fundamentals",
+      level: config.level || config.difficulty || "Beginner",
+      difficulty: config.difficulty || config.level || "Beginner",
+      allowedFlexibility: config.allowedFlexibility || "Cisco accepts the exact IOS workflow or a close equivalent that reaches the same router state safely.",
       ...config
     });
   }
@@ -4463,6 +4719,568 @@
     }),
   ];
 
+  const generatedCiscoCurriculumScenarios = [
+    ciscoLessonScenario({
+      id: "cisco-enter-privileged-mode",
+      title: "Enter and Exit Privileged Mode",
+      category: "Cisco CLI fundamentals",
+      objective: "Move from user EXEC into privileged EXEC, then step back out cleanly so you understand the first Cisco mode boundary.",
+      scenarioIntro: "Cisco routers change prompt symbols as your privilege level changes. This first scenario is about reading the prompt and moving between `>` and `#` deliberately.",
+      commandFocus: ["enable", "disable"],
+      acceptedCommands: ["enable", "disable"],
+      simulatedOutput: ["BranchRTR#", "BranchRTR>"],
+      successCondition: "The prompt changes into privileged EXEC and then back to user EXEC.",
+      feedbackText: "Prompt awareness matters on Cisco devices because the same word can be valid or invalid depending on the current mode.",
+      environment: {
+        hostname: "BranchRTR"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode from the `>` prompt.",
+          hints: ["Start with the command that unlocks the `#` prompt.", "On Cisco gear, this is the first step before deeper inspection or config work.", "Try `enable`."],
+          explanation: "Privileged EXEC mode opens the inspection and configuration path. The prompt changing from `>` to `#` is the visible confirmation.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Return to user EXEC mode so you can recognise the reverse transition too.",
+          hints: ["Use the command that drops you from `#` back to `>`.", "This is the clean way to leave privileged EXEC without leaving the device session.", "Try `disable`."],
+          explanation: "Beginners should learn both directions of the prompt transition so they do not lose track of privilege level.",
+          successFeedback: "You returned to user EXEC mode.",
+          accepts: [routerModeMatch("user-exec", { raw: /^disable$/i })]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-show-version-and-status",
+      title: "Review Version and Interface Status",
+      category: "Cisco CLI fundamentals",
+      objective: "Check the router platform details, then use the quick interface summary to spot which ports are up, down, or unconfigured.",
+      scenarioIntro: "Before changing a router, operators usually confirm what box they are on and what the interface summary already says.",
+      commandFocus: ["enable", "show version", "show ip interface brief"],
+      acceptedCommands: ["enable", "show version", "show ip interface brief"],
+      simulatedOutput: ["Cisco IOS Software, 1900 Software", "GigabitEthernet0/0 unassigned administratively down down"],
+      successCondition: "You confirm the router version and the current interface summary.",
+      feedbackText: "show version gives platform context, while show ip interface brief gives the fastest operational summary.",
+      environment: {
+        hostname: "EdgeRTR"
+      },
+      steps: [
+        step({
+          objective: "Move into privileged EXEC mode first.",
+          hints: ["The summary and config inspection workflow starts from `#`.", "Use the privilege command first.", "Try `enable`."],
+          explanation: "Even when a show command could be available elsewhere, teaching a stable `enable` first workflow helps beginners stay oriented.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Display the IOS version and hardware summary.",
+          hints: ["Use the Cisco show command that reports IOS, hardware, uptime, and image details.", "You are not looking at config yet.", "Try `show version`."],
+          explanation: "show version confirms the platform and IOS image before you judge any interface or routing output.",
+          successFeedback: "You reviewed the router version output.",
+          accepts: [rawMatch(/^show\s+version$/i)]
+        }),
+        step({
+          objective: "Display the quick interface summary.",
+          hints: ["Now move from platform context to interface state.", "Use the fast summary command, not the detailed interface output yet.", "Try `show ip interface brief`."],
+          explanation: "show ip interface brief is the normal first stop when you need to see status and addressing at a glance.",
+          successFeedback: "You reviewed the interface status summary.",
+          accepts: [rawMatch(/^show\s+ip\s+interface\s+brief$/i)]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-interface-description",
+      title: "Inspect an Interface and Add a Description",
+      category: "Cisco CLI fundamentals",
+      objective: "Inspect the detailed state of the LAN interface, enter interface configuration mode, and label it clearly.",
+      scenarioIntro: "Descriptions do not change packet flow, but they make real router configurations easier to read and troubleshoot later.",
+      commandFocus: ["enable", "show interfaces", "configure terminal", "interface", "description", "exit"],
+      acceptedCommands: ["enable", "show interfaces GigabitEthernet0/0", "configure terminal", "interface g0/0", "description Branch User LAN", "exit"],
+      simulatedOutput: ["GigabitEthernet0/0 is administratively down, line protocol is down", "description Branch User LAN"],
+      successCondition: "You inspect the interface details, apply a description, and exit back to global configuration mode.",
+      feedbackText: "Detailed interface views explain the problem; descriptions make the config easier to read next time.",
+      environment: {
+        hostname: "BranchRTR"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["Start by moving from `>` to `#`.", "Use the standard privilege command.", "Try `enable`."],
+          explanation: "Cisco configuration work begins by consciously entering privileged EXEC mode.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Display the detailed output for GigabitEthernet0/0.",
+          hints: ["Use the detailed interface command against the LAN port.", "A short form like g0/0 is fine.", "Try `show interfaces GigabitEthernet0/0` or `show interfaces g0/0`."],
+          explanation: "The detailed interface view tells you whether the issue is admin state, line protocol, errors, or another interface-specific detail.",
+          successFeedback: "You inspected the detailed interface output.",
+          accepts: [rawMatch(/^show\s+interfaces\s+(?:gigabitethernet0\/0|gi0\/0|g0\/0)$/i)]
+        }),
+        step({
+          objective: "Enter global configuration mode.",
+          hints: ["You need to leave show commands and enter config mode now.", "The standard transition command is two words.", "Try `configure terminal`."],
+          explanation: "configure terminal moves the router from observation into controlled configuration changes.",
+          successFeedback: "You entered global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^configure\s+terminal$/i })]
+        }),
+        step({
+          objective: "Move into the GigabitEthernet0/0 interface configuration context.",
+          hints: ["Select the interface before you try to label it.", "A short or full interface name is fine.", "Try `interface g0/0`."],
+          explanation: "Cisco keeps interface-specific changes inside an interface submode so you can target one port at a time.",
+          successFeedback: "You entered interface configuration mode.",
+          accepts: [routerModeMatch("interface-config", { raw: /^interface\s+(?:gigabitethernet0\/0|gi0\/0|g0\/0)$/i })]
+        }),
+        step({
+          objective: "Add the description `Branch User LAN` to the interface.",
+          hints: ["Stay in interface config mode.", "Use the description command followed by the exact label.", "Try `description Branch User LAN`."],
+          explanation: "Descriptions are simple but valuable because they tell the next operator what the interface is for without reverse-engineering the topology.",
+          successFeedback: "You labeled the interface clearly.",
+          accepts: [ciscoInterfaceDescriptionMatch("GigabitEthernet0/0", "Branch User LAN", { raw: /^description\s+Branch\s+User\s+LAN$/i })]
+        }),
+        step({
+          objective: "Exit back to global configuration mode.",
+          hints: ["Leave the interface submode without going all the way back to `#` yet.", "Use the mode-exit command once.", "Try `exit`."],
+          explanation: "Cisco uses nested modes. Learning to back out one level at a time is part of reading and controlling the prompt.",
+          successFeedback: "You moved back to global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^exit$/i })]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-no-shutdown-lan",
+      title: "Bring a Shutdown Interface Up",
+      category: "Cisco CLI fundamentals",
+      objective: "Move into the LAN interface configuration mode, bring the interface up, and verify that the admin state changed.",
+      scenarioIntro: "An `administratively down` interface is usually a configuration issue, not a bad cable. This scenario teaches the beginner fix path.",
+      commandFocus: ["enable", "configure terminal", "interface", "no shutdown", "end", "show ip interface brief"],
+      acceptedCommands: ["enable", "configure terminal", "interface g0/0", "no shutdown", "end", "show ip interface brief"],
+      simulatedOutput: ["GigabitEthernet0/0 changed state to up", "GigabitEthernet0/0 unassigned up up"],
+      successCondition: "The target interface is no longer shutdown and the prompt returns to privileged EXEC for verification.",
+      feedbackText: "The prompt and the interface summary together tell you whether the port is administratively disabled or actually active.",
+      environment: {
+        hostname: "BranchRTR"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["The router is still at the `>` prompt.", "Start by moving to `#`.", "Try `enable`."],
+          explanation: "Privilege first keeps the Cisco workflow consistent for new learners.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Enter global configuration mode.",
+          hints: ["You need config mode before you can alter an interface.", "Use the standard Cisco command.", "Try `configure terminal`."],
+          explanation: "Configuration mode is the router's guarded change area.",
+          successFeedback: "You entered global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^configure\s+terminal$/i })]
+        }),
+        step({
+          objective: "Select GigabitEthernet0/0 for configuration.",
+          hints: ["Pick the LAN interface before changing its state.", "A short or full interface name is fine.", "Try `interface g0/0`."],
+          explanation: "The interface submode narrows the command scope to one port.",
+          successFeedback: "You entered the LAN interface context.",
+          accepts: [routerModeMatch("interface-config", { raw: /^interface\s+(?:gigabitethernet0\/0|gi0\/0|g0\/0)$/i })]
+        }),
+        step({
+          objective: "Bring the interface up administratively.",
+          hints: ["Remove the shutdown state rather than adding more config first.", "This Cisco command begins with `no`.", "Try `no shutdown`."],
+          explanation: "no shutdown is the standard fix for an administratively down Cisco interface.",
+          successFeedback: "You brought the interface out of shutdown.",
+          accepts: [ciscoInterfaceStatusMatch("GigabitEthernet0/0", true, { raw: /^no\s+shutdown$/i })]
+        }),
+        step({
+          objective: "Return directly to privileged EXEC mode.",
+          hints: ["Leave config mode cleanly instead of typing exit multiple times.", "Cisco has a command that jumps straight back to `#`.", "Try `end`."],
+          explanation: "end is the quick way to leave nested config modes and return to privileged EXEC.",
+          successFeedback: "You returned to privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^end$/i })]
+        }),
+        step({
+          objective: "Verify the interface status from the summary view.",
+          hints: ["Finish with the quick summary command.", "You want to confirm the admin state is no longer down.", "Try `show ip interface brief`."],
+          explanation: "Verification is what turns a configuration guess into a finished change.",
+          successFeedback: "You verified that the interface is up.",
+          accepts: [rawMatch(/^show\s+ip\s+interface\s+brief$/i)]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-assign-ip-address",
+      title: "Assign an Interface IP Address",
+      category: "Cisco CLI fundamentals",
+      objective: "Configure the LAN interface with the correct IPv4 address and mask, then confirm it appears in the summary output.",
+      scenarioIntro: "Cisco routers need you to enter the interface submode before you can assign IPv4 addressing. The prompt tells you when you are in the right place.",
+      commandFocus: ["enable", "configure terminal", "interface", "ip address", "no shutdown", "end", "show ip interface brief"],
+      acceptedCommands: ["enable", "configure terminal", "interface g0/0", "ip address 192.168.10.1 255.255.255.0", "no shutdown", "end", "show ip interface brief"],
+      simulatedOutput: ["GigabitEthernet0/0 192.168.10.1 up up"],
+      successCondition: "GigabitEthernet0/0 shows the expected IPv4 address in the interface summary.",
+      feedbackText: "Addressing belongs on the interface itself, and verification belongs back in privileged EXEC mode.",
+      environment: {
+        hostname: "BranchRTR",
+        interfaces: [
+          {
+            name: "GigabitEthernet0/0",
+            aliases: ["g0/0", "gi0/0"],
+            ipAddress: "",
+            subnetMask: "",
+            adminUp: false,
+            lineProtocol: false,
+            description: "Branch User LAN"
+          },
+          {
+            name: "GigabitEthernet0/1",
+            aliases: ["g0/1", "gi0/1"],
+            ipAddress: "198.51.100.1",
+            subnetMask: "255.255.255.252",
+            adminUp: true,
+            lineProtocol: true,
+            description: "WAN uplink to ISP"
+          },
+          {
+            name: "Loopback0",
+            aliases: ["lo0"],
+            ipAddress: "10.255.255.1",
+            subnetMask: "255.255.255.255",
+            adminUp: true,
+            lineProtocol: true,
+            description: "Management loopback"
+          }
+        ]
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["Start by moving into `#` mode.", "Cisco config work begins from privileged EXEC.", "Try `enable`."],
+          explanation: "This keeps the router workflow predictable before you start changing interfaces.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Enter global configuration mode.",
+          hints: ["You need `(config)#` before you can target an interface.", "Use the standard two-word command.", "Try `configure terminal`."],
+          explanation: "Global config is the staging area for interface, routing, and device-level changes.",
+          successFeedback: "You entered global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^configure\s+terminal$/i })]
+        }),
+        step({
+          objective: "Select GigabitEthernet0/0 for configuration.",
+          hints: ["Enter the LAN interface submode.", "Use the full or short interface name.", "Try `interface g0/0`."],
+          explanation: "Cisco keeps interface addressing scoped to the selected interface mode.",
+          successFeedback: "You entered the interface configuration mode.",
+          accepts: [routerModeMatch("interface-config", { raw: /^interface\s+(?:gigabitethernet0\/0|gi0\/0|g0\/0)$/i })]
+        }),
+        step({
+          objective: "Assign `192.168.10.1 255.255.255.0` to the interface.",
+          hints: ["Stay in interface mode.", "Use the Cisco IPv4 addressing command followed by IP and mask.", "Try `ip address 192.168.10.1 255.255.255.0`."],
+          explanation: "Router interfaces carry the Layer 3 address that hosts in that subnet will use as their gateway.",
+          successFeedback: "You assigned the interface IPv4 address.",
+          accepts: [ciscoInterfaceAddressMatch("GigabitEthernet0/0", "192.168.10.1", "255.255.255.0", { raw: /^ip\s+address\s+192\.168\.10\.1\s+255\.255\.255\.0$/i })]
+        }),
+        step({
+          objective: "Bring the interface up if needed.",
+          hints: ["Addressing alone is not enough if the port is still shutdown.", "Use the Cisco command that removes the admin-down state.", "Try `no shutdown`."],
+          explanation: "A valid IP on a shutdown interface still leaves the network unusable. The port must be administratively up as well.",
+          successFeedback: "You enabled the interface.",
+          accepts: [ciscoInterfaceStatusMatch("GigabitEthernet0/0", true, { raw: /^no\s+shutdown$/i })]
+        }),
+        step({
+          objective: "Return to privileged EXEC mode.",
+          hints: ["Jump back out of config mode cleanly.", "Use the command that returns directly to `#`.", "Try `end`."],
+          explanation: "Verification should happen from privileged EXEC mode after the change is staged.",
+          successFeedback: "You returned to privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^end$/i })]
+        }),
+        step({
+          objective: "Verify the interface address in the summary output.",
+          hints: ["Finish with the fast summary command.", "You want to see the new IP on GigabitEthernet0/0.", "Try `show ip interface brief`."],
+          explanation: "The interface summary is the quick proof that the new IP address really landed where you expected.",
+          successFeedback: "You confirmed the new interface address.",
+          accepts: [rawMatch(/^show\s+ip\s+interface\s+brief$/i)]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-change-hostname",
+      title: "Change the Router Hostname",
+      category: "Cisco CLI fundamentals",
+      objective: "Rename the router to match the branch role and confirm the prompt changes to the new hostname.",
+      scenarioIntro: "Cisco prompt changes are not cosmetic. They tell you which device you are on, especially when you have multiple consoles or saved configs open.",
+      commandFocus: ["enable", "configure terminal", "hostname", "end"],
+      acceptedCommands: ["enable", "configure terminal", "hostname BranchRTR", "end"],
+      simulatedOutput: ["BranchRTR(config)#", "BranchRTR#"],
+      successCondition: "The router prompt reflects the new hostname.",
+      feedbackText: "A clear hostname reduces mistakes when you manage more than one device.",
+      environment: {
+        hostname: "Router"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["Start by moving into `#` mode.", "Cisco config changes start from privileged EXEC.", "Try `enable`."],
+          explanation: "This is the normal entry point into safe device changes.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Enter global configuration mode.",
+          hints: ["You need `(config)#` before changing the device hostname.", "Use the standard configuration command.", "Try `configure terminal`."],
+          explanation: "Device-level settings like hostname live in global config mode.",
+          successFeedback: "You entered global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^configure\s+terminal$/i })]
+        }),
+        step({
+          objective: "Rename the router to `BranchRTR`.",
+          hints: ["Use the hostname command followed by the new router name.", "The new name is BranchRTR.", "Try `hostname BranchRTR`."],
+          explanation: "A descriptive hostname is basic but important operational hygiene on network devices.",
+          successFeedback: "You updated the router hostname.",
+          accepts: [ciscoHostnameMatch("BranchRTR", { raw: /^hostname\s+BranchRTR$/i })]
+        }),
+        step({
+          objective: "Return to privileged EXEC mode so you can see the new prompt clearly.",
+          hints: ["Leave global config without stepping down to user EXEC.", "Use the direct return command.", "Try `end`."],
+          explanation: "The best confirmation is seeing the new hostname at the privileged EXEC prompt.",
+          successFeedback: "You returned to privileged EXEC mode with the new hostname visible.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^end$/i })]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-review-and-save-config",
+      title: "Review Running vs Startup Config and Save",
+      category: "Cisco CLI fundamentals",
+      objective: "Inspect the active config, compare it to startup config, then save the running configuration to startup.",
+      scenarioIntro: "Cisco beginners often confuse running config with startup config. This lab makes the difference visible before saving.",
+      commandFocus: ["enable", "show running-config", "show startup-config", "copy running-config startup-config", "write memory"],
+      acceptedCommands: ["enable", "show running-config", "show startup-config", "copy running-config startup-config", "write memory"],
+      simulatedOutput: ["hostname BranchRTR", "Building configuration...", "[OK]"],
+      successCondition: "Startup config matches the running config after the save command.",
+      feedbackText: "Running config is live RAM state. Startup config is what survives a reboot.",
+      environment: {
+        hostname: "BranchRTR",
+        configDirty: true,
+        interfaces: [
+          {
+            name: "GigabitEthernet0/0",
+            aliases: ["g0/0", "gi0/0"],
+            ipAddress: "192.168.10.1",
+            subnetMask: "255.255.255.0",
+            adminUp: true,
+            lineProtocol: true,
+            description: "Branch User LAN"
+          },
+          {
+            name: "GigabitEthernet0/1",
+            aliases: ["g0/1", "gi0/1"],
+            ipAddress: "198.51.100.1",
+            subnetMask: "255.255.255.252",
+            adminUp: true,
+            lineProtocol: true,
+            description: "WAN uplink to ISP"
+          },
+          {
+            name: "Loopback0",
+            aliases: ["lo0"],
+            ipAddress: "10.255.255.1",
+            subnetMask: "255.255.255.255",
+            adminUp: true,
+            lineProtocol: true,
+            description: "Management loopback"
+          }
+        ],
+        startupConfig: buildCiscoStartupConfigSnapshot({
+          hostname: "Router",
+          interfaces: commonCiscoInterfaces(),
+          staticRoutes: commonCiscoStaticRoutes()
+        })
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["The config review starts from `#`.", "Use the standard privilege command.", "Try `enable`."],
+          explanation: "Configuration inspection and save operations happen from privileged EXEC mode.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Display the active running configuration.",
+          hints: ["Use the show command for the current live config in RAM.", "This is not the saved boot config yet.", "Try `show running-config`."],
+          explanation: "show running-config tells you what the router is currently using, not what it will reboot with.",
+          successFeedback: "You reviewed the running config.",
+          accepts: [rawMatch(/^show\s+running-config$/i)]
+        }),
+        step({
+          objective: "Display the saved startup configuration.",
+          hints: ["Now compare against the boot-time copy.", "Use the Cisco show command for startup config.", "Try `show startup-config`."],
+          explanation: "Seeing both outputs before saving teaches the difference between active config and reboot-persistent config.",
+          successFeedback: "You reviewed the startup config.",
+          accepts: [rawMatch(/^show\s+startup-config$/i)]
+        }),
+        step({
+          objective: "Save the running configuration to startup configuration.",
+          hints: ["You can use the longer copy command or the classic short save command.", "Either valid command is acceptable in this lab.", "Try `copy running-config startup-config` or `write memory`."],
+          explanation: "Saving commits the current running state into the startup config so it survives a reboot.",
+          successFeedback: "You saved the running config to startup config.",
+          accepts: [
+            ciscoStartupConfigMatch({ raw: /^copy\s+running-config\s+startup-config$/i }),
+            ciscoStartupConfigMatch({ raw: /^write\s+memory$/i })
+          ]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-connectivity-checks",
+      title: "Test Connectivity with Ping and Traceroute",
+      category: "Cisco CLI fundamentals",
+      objective: "Use ping to confirm direct reachability, then traceroute to build a simple path view to a remote host.",
+      scenarioIntro: "Routers are often the best place to test connectivity because they sit on the forwarding path itself.",
+      commandFocus: ["enable", "ping", "traceroute"],
+      acceptedCommands: ["enable", "ping 198.51.100.2", "traceroute 172.16.30.10"],
+      simulatedOutput: ["!!!!!", "Tracing the route to 172.16.30.10"],
+      successCondition: "You confirm direct reachability and then inspect the path toward the remote destination.",
+      feedbackText: "Ping answers the basic 'can I reach it?' question; traceroute begins answering 'how do I reach it?'.",
+      environment: {
+        hostname: "BranchRTR"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["Start from the Cisco prompt transition again.", "Move from `>` to `#` first.", "Try `enable`."],
+          explanation: "Keeping the learner in a consistent workflow matters more than saving one command.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Ping the upstream next hop at `198.51.100.2`.",
+          hints: ["Start with the nearest path check first.", "The target is the ISP-side next hop.", "Try `ping 198.51.100.2`."],
+          explanation: "A successful ping to the next hop tells you the local WAN adjacency is alive before you test deeper paths.",
+          successFeedback: "You confirmed upstream reachability.",
+          accepts: [rawMatch(/^ping\s+198\.51\.100\.2$/i)]
+        }),
+        step({
+          objective: "Run traceroute toward `172.16.30.10`.",
+          hints: ["Now move from reachability to path visibility.", "Use the Cisco traceroute command against the remote host.", "Try `traceroute 172.16.30.10`."],
+          explanation: "Traceroute is the next layer of reasoning after ping because it shows where the path actually goes.",
+          successFeedback: "You traced the path toward the remote host.",
+          accepts: [rawMatch(/^traceroute\s+172\.16\.30\.10$/i)]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-add-static-route",
+      title: "Add and Verify a Static Route",
+      category: "Cisco CLI fundamentals",
+      objective: "Add a basic static route for the HQ subnet and confirm it appears in the routing table.",
+      scenarioIntro: "This lab teaches the simplest safe routing change: adding one clear static route and checking the router table afterwards.",
+      commandFocus: ["enable", "configure terminal", "ip route", "end", "show ip route"],
+      acceptedCommands: ["enable", "configure terminal", "ip route 172.16.30.0 255.255.255.0 198.51.100.2", "end", "show ip route"],
+      simulatedOutput: ["S 172.16.30.0/24 [1/0] via 198.51.100.2", "Gateway of last resort is 198.51.100.2"],
+      successCondition: "The new static route appears in the routing table.",
+      feedbackText: "Static routes are simple to understand because you can see the destination network, mask, and chosen next hop directly.",
+      environment: {
+        hostname: "BranchRTR"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["Start with the privilege transition.", "Move into `#` first.", "Try `enable`."],
+          explanation: "This keeps routing changes inside the same deliberate configuration workflow as other Cisco labs.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Enter global configuration mode.",
+          hints: ["Routing changes happen in global config mode.", "Use the standard command.", "Try `configure terminal`."],
+          explanation: "Static routes are device-level settings, so they belong in global config mode rather than interface config.",
+          successFeedback: "You entered global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^configure\s+terminal$/i })]
+        }),
+        step({
+          objective: "Add a static route for `172.16.30.0/24` via `198.51.100.2`.",
+          hints: ["Use the Cisco static-route command with destination, mask, and next hop.", "The network is 172.16.30.0 with mask 255.255.255.0.", "Try `ip route 172.16.30.0 255.255.255.0 198.51.100.2`."],
+          explanation: "A static route tells the router exactly where to forward traffic for a destination network.",
+          successFeedback: "You added the new static route.",
+          accepts: [ciscoStaticRouteMatch("172.16.30.0", "255.255.255.0", "198.51.100.2", { raw: /^ip\s+route\s+172\.16\.30\.0\s+255\.255\.255\.0\s+198\.51\.100\.2$/i })]
+        }),
+        step({
+          objective: "Return to privileged EXEC mode.",
+          hints: ["Leave config mode before you inspect the route table.", "Use the direct mode-return command.", "Try `end`."],
+          explanation: "After making the change, jump back out and verify from the operational prompt.",
+          successFeedback: "You returned to privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^end$/i })]
+        }),
+        step({
+          objective: "Display the routing table.",
+          hints: ["Use the show command that focuses on IPv4 routes.", "You are looking for the new static route entry.", "Try `show ip route`."],
+          explanation: "The routing table is the authoritative place to confirm that the router accepted the new route.",
+          successFeedback: "You verified the static route in the routing table.",
+          accepts: [rawMatch(/^show\s+ip\s+route$/i)]
+        })
+      ]
+    }),
+    ciscoLessonScenario({
+      id: "cisco-shutdown-unused-interface",
+      title: "Shutdown an Unused Interface",
+      category: "Cisco CLI fundamentals",
+      objective: "Move into the unused WAN-facing interface and administratively shut it down so you can recognise the reverse of `no shutdown`.",
+      scenarioIntro: "Beginners should learn both directions of interface state changes. Unused interfaces are often shut down intentionally.",
+      commandFocus: ["enable", "configure terminal", "interface", "shutdown", "end", "show ip interface brief"],
+      acceptedCommands: ["enable", "configure terminal", "interface g0/1", "shutdown", "end", "show ip interface brief"],
+      simulatedOutput: ["GigabitEthernet0/1 changed state to administratively down", "GigabitEthernet0/1 198.51.100.1 administratively down down"],
+      successCondition: "GigabitEthernet0/1 shows as administratively down in the interface summary.",
+      feedbackText: "Learning both `shutdown` and `no shutdown` helps beginners understand whether the interface problem is deliberate configuration or something else.",
+      environment: {
+        hostname: "BranchRTR"
+      },
+      steps: [
+        step({
+          objective: "Enter privileged EXEC mode.",
+          hints: ["Move from `>` to `#` first.", "The interface shutdown path starts the same way as other config tasks.", "Try `enable`."],
+          explanation: "Privilege level stays explicit throughout the Cisco curriculum.",
+          successFeedback: "You entered privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^enable$/i })]
+        }),
+        step({
+          objective: "Enter global configuration mode.",
+          hints: ["You need `(config)#` before you can target the interface.", "Use the two-word config command.", "Try `configure terminal`."],
+          explanation: "Global config is the step between privileged EXEC and interface submode.",
+          successFeedback: "You entered global configuration mode.",
+          accepts: [routerModeMatch("global-config", { raw: /^configure\s+terminal$/i })]
+        }),
+        step({
+          objective: "Select GigabitEthernet0/1 for configuration.",
+          hints: ["This time the target is the WAN-facing interface.", "Use a full or short interface name.", "Try `interface g0/1`."],
+          explanation: "Target the exact interface before changing its administrative state.",
+          successFeedback: "You entered the GigabitEthernet0/1 interface context.",
+          accepts: [routerModeMatch("interface-config", { raw: /^interface\s+(?:gigabitethernet0\/1|gi0\/1|g0\/1)$/i })]
+        }),
+        step({
+          objective: "Administratively shut the interface down.",
+          hints: ["This is the reverse of `no shutdown`.", "Use the single-word Cisco command.", "Try `shutdown`."],
+          explanation: "shutdown intentionally disables the interface at the configuration level, which is why the summary will say administratively down.",
+          successFeedback: "You shut the interface down.",
+          accepts: [ciscoInterfaceStatusMatch("GigabitEthernet0/1", false, { raw: /^shutdown$/i })]
+        }),
+        step({
+          objective: "Return to privileged EXEC mode.",
+          hints: ["Leave config mode cleanly so you can verify the state.", "Use the command that jumps back to `#`.", "Try `end`."],
+          explanation: "Ending the config session before verification keeps the workflow clean and readable.",
+          successFeedback: "You returned to privileged EXEC mode.",
+          accepts: [routerModeMatch("privileged-exec", { raw: /^end$/i })]
+        }),
+        step({
+          objective: "Verify the interface summary.",
+          hints: ["Use the fast interface summary again.", "You want to see the target port as administratively down.", "Try `show ip interface brief`."],
+          explanation: "Verification closes the loop and teaches what the shutdown state looks like in the summary view.",
+          successFeedback: "You confirmed the interface is administratively down.",
+          accepts: [rawMatch(/^show\s+ip\s+interface\s+brief$/i)]
+        })
+      ]
+    })
+  ];
+
   const generatedMixedScenarios = [
     linuxScenario({
       id: "download-extract-inspect",
@@ -4784,6 +5602,7 @@
   const refinedMetasploitScenarios = generatedMetasploitScenarios.map(refineScenario);
   const refinedTroubleshootScenarios = generatedTroubleshootScenarios.map(refineScenario);
   const refinedWindowsCurriculumScenarios = generatedWindowsCurriculumScenarios.map(refineScenario);
+  const refinedCiscoCurriculumScenarios = generatedCiscoCurriculumScenarios.map(refineScenario);
   const refinedMixedScenarios = generatedMixedScenarios.map(refineScenario);
 
   const scenarios = [
@@ -4802,6 +5621,7 @@
     ...refinedMetasploitScenarios,
     ...refinedTroubleshootScenarios,
     ...refinedWindowsCurriculumScenarios,
+    ...refinedCiscoCurriculumScenarios,
     ...refinedMixedScenarios
   ];
 
@@ -4820,14 +5640,14 @@
     title: "string",
     category: "string",
     mode: "lesson | challenge",
-    environmentCategory: "linux | windows | cyber",
-    environmentLabel: "Linux Terminal Learning | Windows Terminal Learning | Cyber Challenge Mode",
+    environmentCategory: "linux | windows | cisco | cyber",
+    environmentLabel: "Linux Terminal Learning | Windows Terminal Learning | Cisco CLI Lab | Cyber Challenge Mode",
     environmentPolicy: "segregated | combined",
     layer: "network | application | exploitation",
     layers: ["network", "application"],
     level: "Beginner | Intermediate | Advanced",
     difficulty: "Beginner | Intermediate | Advanced | custom challenge difficulty",
-    shell: "linux | cmd | metasploit",
+    shell: "linux | cmd | cisco | metasploit",
     objective: "string",
     scenarioIntro: "string",
     commandFocus: ["command names"],

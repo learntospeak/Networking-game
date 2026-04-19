@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terminal Coach</title>
+  <title>Cisco CLI Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260419d">
   <link rel="stylesheet" href="./terminal-coach.css?v=20260419d">
   <script src="./commandsData.js?v=20260419d" defer></script>
@@ -11,46 +11,17 @@
   <script src="./coachEngine.js?v=20260416c" defer></script>
   <script src="./scenarioEngine.js?v=20260419d" defer></script>
   <script>
-    (() => {
-      const params = new URLSearchParams(window.location.search);
-      const requestedTrack = (params.get("track") || "").toLowerCase();
-      const track = requestedTrack === "windows" ? "windows" : "linux";
-
-      const trackConfig = {
-        linux: {
-          environmentCategory: "linux",
-          pageKicker: "Linux Terminal Learning",
-          pageTitle: "Linux Terminal Coach",
-          pageIntro: "Practice Linux-first workflows with one shell context at a time. Windows commands stay out of view unless a lesson is explicitly built to compare environments.",
-          initialMessage: "Linux terminal lessons loaded. This track stays inside a Linux shell unless a scenario explicitly says otherwise.",
-          commandSheetDefaultCategory: "Linux",
-          commandSheetCategories: ["Linux", "Nmap", "Netcat", "Metasploit"]
-        },
-        windows: {
-          environmentCategory: "windows",
-          pageKicker: "Windows Terminal Learning",
-          pageTitle: "Windows Terminal Coach",
-          pageIntro: "Practice Windows CMD workflows in a dedicated track so new learners are not forced to translate Linux syntax mid-lesson.",
-          initialMessage: "Windows terminal lessons loaded. This track stays inside CMD unless a scenario explicitly says otherwise.",
-          commandSheetDefaultCategory: "Windows CMD",
-          commandSheetCategories: ["Windows CMD"]
-        }
-      };
-
-      const active = trackConfig[track];
-
-      window.TerminalCoachConfig = {
-        mode: "lesson",
-        environmentCategory: active.environmentCategory,
-        pageKicker: active.pageKicker,
-        pageTitle: active.pageTitle,
-        pageIntro: active.pageIntro,
-        initialMessage: active.initialMessage,
-        commandSheetDefaultCategory: active.commandSheetDefaultCategory,
-        commandSheetCategories: active.commandSheetCategories,
-        scenarioFilter: (scenario) => scenario.mode !== "challenge" && scenario.environmentCategory === active.environmentCategory
-      };
-    })();
+    window.TerminalCoachConfig = {
+      mode: "lesson",
+      environmentCategory: "cisco",
+      pageKicker: "Cisco CLI Lab",
+      pageTitle: "Cisco Router CLI Coach",
+      pageIntro: "Practice Cisco IOS prompts, privilege levels, interface configuration, routing checks, and save workflows in guided router scenarios.",
+      initialMessage: "Cisco CLI lessons loaded. This track stays inside router EXEC and configuration modes so the prompt always tells you where you are.",
+      commandSheetDefaultCategory: "Cisco CLI",
+      commandSheetCategories: ["Cisco CLI"],
+      scenarioFilter: (scenario) => scenario.mode !== "challenge" && scenario.environmentCategory === "cisco"
+    };
   </script>
   <script src="./terminalEngine.js?v=20260419d" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
@@ -60,8 +31,8 @@
     <div class="router-shell terminal-shell">
       <div class="router-top">
         <div>
-          <div class="router-brand">NET-LAB TERMINAL COACH</div>
-          <div class="terminal-subbrand">Typed workflows, adaptive coaching, and stateful command practice</div>
+          <div class="router-brand">NET-LAB CISCO CLI LAB</div>
+          <div class="terminal-subbrand">Router prompts, configuration modes, and beginner IOS workflows</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -73,13 +44,13 @@
 
       <header class="terminal-header">
         <div>
-          <p id="terminalPageKicker" class="terminal-kicker">Linux Terminal Learning</p>
-          <h1 id="terminalPageTitle">Linux Terminal Coach</h1>
-          <p id="terminalPageIntro" class="terminal-intro">Practice Linux-first workflows with one shell context at a time. Windows commands stay out of view unless a lesson is explicitly built to compare environments.</p>
+          <p id="terminalPageKicker" class="terminal-kicker">Cisco CLI Lab</p>
+          <h1 id="terminalPageTitle">Cisco Router CLI Coach</h1>
+          <p id="terminalPageIntro" class="terminal-intro">Practice Cisco IOS prompts, privilege levels, interface configuration, routing checks, and save workflows in guided router scenarios.</p>
           <nav class="environment-route-nav" aria-label="Learning paths">
             <a id="linuxTrackLink" class="environment-route-link" href="./terminal-coach.html?track=linux">Linux Terminal Learning</a>
             <a id="windowsTrackLink" class="environment-route-link" href="./terminal-coach.html?track=windows">Windows Terminal Learning</a>
-            <a id="ciscoTrackLink" class="environment-route-link" href="./cisco-cli-lab.html">Cisco CLI Lab</a>
+            <a id="ciscoTrackLink" class="environment-route-link is-active" href="./cisco-cli-lab.html">Cisco CLI Lab</a>
             <a id="challengeTrackLink" class="environment-route-link" href="./challenge-mode.html">Cyber Challenge Mode</a>
           </nav>
         </div>
@@ -90,13 +61,13 @@
         <div class="mode-panel-head">
           <div>
             <h2>Scenario Progress</h2>
-            <p class="panel-copy">This trainer keeps environment state, accepts multiple valid workflows, and coaches you through mistakes instead of collapsing into multiple choice.</p>
+            <p class="panel-copy">This Cisco lab keeps the same progression, hints, and stateful feedback architecture as the terminal coach, but swaps in router prompts, mode transitions, and IOS-style outputs.</p>
           </div>
           <div class="status-cluster">
-            <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
+            <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 8+</div>
             <div id="stepCountBadge" class="status-badge">Task 1 / 4</div>
-            <div id="environmentBadge" class="status-badge environment-badge">Linux Terminal Learning</div>
-            <div id="shellBadge" class="status-badge">Linux</div>
+            <div id="environmentBadge" class="status-badge environment-badge">Cisco CLI Lab</div>
+            <div id="shellBadge" class="status-badge">Cisco IOS CLI</div>
             <div id="currentLayerBadge" class="status-badge current-layer-badge" data-layer="network">NETWORK Layer</div>
           </div>
         </div>
@@ -105,31 +76,31 @@
       <div class="terminal-layout">
         <aside class="lab-panel scenario-panel">
           <div class="scenario-card">
-            <p id="scenarioCategory" class="scenario-category">File System Navigation</p>
-            <h2 id="scenarioTitle" class="scenario-title">Log Triage on a Linux Host</h2>
+            <p id="scenarioCategory" class="scenario-category">Cisco CLI Fundamentals</p>
+            <h2 id="scenarioTitle" class="scenario-title">Enter and Exit Privileged Mode</h2>
             <p id="scenarioLevel" class="scenario-level">Beginner</p>
             <div class="scenario-meta-row">
-              <span id="scenarioEnvironmentBadge" class="scenario-mini-badge">Linux Terminal Learning</span>
+              <span id="scenarioEnvironmentBadge" class="scenario-mini-badge">Cisco CLI Lab</span>
             </div>
-            <p id="scenarioObjective" class="scenario-objective">Move into the right directory, find the rotated log, and inspect the crash clues without leaving the terminal.</p>
-            <div id="scenarioFlex" class="scenario-flex">Allowed flexibility: any valid path form is acceptable as long as it reaches the right result.</div>
+            <p id="scenarioObjective" class="scenario-objective">Move from user EXEC into privileged EXEC, then step back out cleanly so you understand the first Cisco mode boundary.</p>
+            <div id="scenarioFlex" class="scenario-flex">Allowed flexibility: stay inside Cisco IOS commands and move through the correct prompt transitions for the task.</div>
           </div>
 
           <div class="scenario-support-grid">
             <article class="support-card">
               <h3>Environment Context</h3>
-              <p id="environmentSummary">Linux Terminal learning. Commands stay inside one Linux shell unless a lesson explicitly says otherwise.</p>
+              <p id="environmentSummary">Cisco CLI Lab keeps you inside router exec and configuration modes so prompt symbols, interface scope, and routing changes stay obvious.</p>
               <ul id="machineContextList" class="machine-context-list"></ul>
             </article>
 
             <article class="support-card">
               <h3>Current Task</h3>
-              <p id="stepObjective">Identify your working directory before you move deeper into the host.</p>
+              <p id="stepObjective">Enter privileged EXEC mode from the `>` prompt.</p>
             </article>
 
             <article class="support-card">
               <h3>Mentor Signal</h3>
-              <p id="coachSignal">Strong operators confirm context before they touch files, processes, or services.</p>
+              <p id="coachSignal">Read the prompt first. On Cisco gear, the prompt symbol is part of the evidence.</p>
             </article>
 
             <article class="support-card">
@@ -146,7 +117,6 @@
               <p id="progressSummary">0 scenarios completed in this session.</p>
             </article>
           </div>
-
         </aside>
 
         <section class="lab-panel terminal-panel">
@@ -159,14 +129,14 @@
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
               <div class="terminal-mobile-context-head">
-                <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Linux Terminal Learning</p>
+                <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Cisco CLI Lab</p>
                 <button id="mobileContextToggleBtn" class="terminal-mobile-context-toggle" type="button" aria-expanded="true" aria-controls="mobileScenarioTitle mobileStepObjective mobileMachineContext mobileCoachSignal">Hide Context</button>
               </div>
               <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
-              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
-              <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>
-              <p id="mobileMachineContext" class="terminal-mobile-machine">Linux Host | /home/student</p>
-              <p id="mobileCoachSignal" class="terminal-mobile-signal">Work from evidence. Good operators confirm context before they act.</p>
+              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Enter and Exit Privileged Mode</p>
+              <p id="mobileStepObjective" class="terminal-mobile-objective">Enter privileged EXEC mode from the `>` prompt.</p>
+              <p id="mobileMachineContext" class="terminal-mobile-machine">Training Router | Cisco IOS CLI | BranchRTR</p>
+              <p id="mobileCoachSignal" class="terminal-mobile-signal">Read the prompt first. On Cisco gear, the prompt symbol is part of the evidence.</p>
             </div>
 
             <div class="trainer-controls terminal-controls">
@@ -179,7 +149,7 @@
 
             <div id="terminalDockInputMount" class="terminal-dock-input-mount">
               <form id="terminalForm" class="terminal-input-shell" autocomplete="off">
-                <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">student@lab:~$</label>
+                <label id="terminalPrompt" class="terminal-prompt-label" for="terminalInput">[NETWORK] BranchRTR&gt;</label>
                 <input id="terminalInput" class="terminal-input" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="send">
                 <button id="runCommandBtn" class="terminal-run-btn" type="submit">Run</button>
               </form>
@@ -202,7 +172,7 @@
 
             <label class="command-sheet-search-shell" for="commandSheetSearch">
               <span class="command-sheet-search-label">Search commands, flags, or meanings</span>
-              <input id="commandSheetSearch" class="command-sheet-search" type="search" placeholder="Search pwd, -sV, taskkill, set RHOSTS..." autocomplete="off" spellcheck="false">
+              <input id="commandSheetSearch" class="command-sheet-search" type="search" placeholder="Search show ip interface brief, ip route, no shutdown..." autocomplete="off" spellcheck="false">
             </label>
 
             <div id="commandSheetTabs" class="command-sheet-tabs" role="tablist" aria-label="Command categories"></div>

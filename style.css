@@ -302,6 +302,10 @@ button::before {
     0 16px 30px rgba(2, 6, 23, 0.28);
 }
 
+.learning-hub-panel {
+  margin-bottom: 18px;
+}
+
 .learning-paths-head {
   margin-bottom: 14px;
 }
@@ -389,6 +393,11 @@ button::before {
   border-color: #22c55e;
 }
 
+.learning-path-card-subnetting {
+  background: linear-gradient(180deg, #243f16 0%, #111827 100%);
+  border-color: #84cc16;
+}
+
 .learning-path-card-linux::before {
   background: #22c55e;
   box-shadow:
@@ -396,9 +405,21 @@ button::before {
     0 0 16px rgba(34, 197, 94, 0.5);
 }
 
+.learning-path-card-subnetting::before {
+  background: #84cc16;
+  box-shadow:
+    0 0 0 2px rgba(132, 204, 22, 0.14),
+    0 0 16px rgba(132, 204, 22, 0.5);
+}
+
 .learning-path-card-challenge {
   background: linear-gradient(180deg, #30134a 0%, #111827 100%);
   border-color: #c084fc;
+}
+
+.learning-path-card-cisco {
+  background: linear-gradient(180deg, #4a250d 0%, #111827 100%);
+  border-color: #f59e0b;
 }
 
 .learning-path-card-web {
@@ -420,12 +441,27 @@ button::before {
     0 0 16px rgba(34, 211, 238, 0.5);
 }
 
+.learning-path-card-cisco::before {
+  background: #f59e0b;
+  box-shadow:
+    0 0 0 2px rgba(245, 158, 11, 0.14),
+    0 0 16px rgba(245, 158, 11, 0.5);
+}
+
 .learning-path-card-windows:hover {
   border-color: #93c5fd;
 }
 
+.learning-path-card-subnetting:hover {
+  border-color: #bef264;
+}
+
 .learning-path-card-linux:hover {
   border-color: #86efac;
+}
+
+.learning-path-card-cisco:hover {
+  border-color: #fcd34d;
 }
 
 .learning-path-card-web:hover {
@@ -434,6 +470,71 @@ button::before {
 
 .learning-path-card-challenge:hover {
   border-color: #d8b4fe;
+}
+
+.hub-section-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid #334155;
+  background: linear-gradient(180deg, rgba(4, 8, 15, 0.95) 0%, rgba(9, 14, 23, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 34px rgba(2, 6, 23, 0.26);
+}
+
+.subnetting-section-panel {
+  border-color: rgba(132, 204, 22, 0.3);
+  background: linear-gradient(180deg, rgba(10, 16, 8, 0.94) 0%, rgba(9, 14, 23, 0.98) 100%);
+}
+
+.hub-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hub-section-head h3,
+.hub-section-head p {
+  margin: 0;
+}
+
+.hub-section-head p {
+  margin-top: 8px;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.hub-section-jump {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px 0 28px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: rgba(8, 12, 18, 0.88);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.hub-section-jump::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #84cc16;
+  box-shadow:
+    0 0 0 2px rgba(132, 204, 22, 0.14),
+    0 0 12px rgba(132, 204, 22, 0.45);
 }
 
 #question {
@@ -626,6 +727,10 @@ hr {
   .learning-path-card {
     min-height: 0;
     padding: 16px 16px 16px 42px;
+  }
+
+  .hub-section-head {
+    flex-direction: column;
   }
 }
 

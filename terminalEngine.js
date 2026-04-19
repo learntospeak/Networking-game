@@ -16,6 +16,7 @@
     pageIntro: document.getElementById("terminalPageIntro"),
     linuxTrackLink: document.getElementById("linuxTrackLink"),
     windowsTrackLink: document.getElementById("windowsTrackLink"),
+    ciscoTrackLink: document.getElementById("ciscoTrackLink"),
     challengeTrackLink: document.getElementById("challengeTrackLink"),
     scenarioCountBadge: document.getElementById("scenarioCountBadge"),
     stepCountBadge: document.getElementById("stepCountBadge"),
@@ -101,6 +102,10 @@
       && els.terminalDockInputMount
       && els.terminalForm
     );
+  }
+
+  function isCiscoState() {
+    return typeof StateManager.isCiscoState === "function" && StateManager.isCiscoState(session.state);
   }
 
   function syncTerminalInputPlacement() {
@@ -318,7 +323,9 @@
       return "cyber";
     }
 
-    return scenario?.shell === "cmd" ? "windows" : "linux";
+    if (scenario?.shell === "cmd") return "windows";
+    if (scenario?.shell === "cisco") return "cisco";
+    return "linux";
   }
 
   function scenarioEnvironmentLabel(scenario = currentScenario()) {
@@ -328,6 +335,7 @@
 
     const category = scenarioEnvironmentCategory(scenario);
     if (category === "windows") return "Windows Terminal Learning";
+    if (category === "cisco") return "Cisco CLI Lab";
     if (category === "cyber") return "Cyber Challenge Mode";
     return "Linux Terminal Learning";
   }
@@ -358,6 +366,10 @@
       return `${label} keeps command input on the Analyst Box. Remote machines and application evidence are listed separately so the active shell stays obvious.`;
     }
 
+    if (scenarioEnvironmentCategory(scenario) === "cisco") {
+      return `${label} keeps you inside Cisco exec and configuration modes so router prompts, interface context, and routing changes stay explicit.`;
+    }
+
     const shellText = scenario?.shell === "cmd" ? "Windows CMD" : "Linux terminal";
     return `${label} keeps commands inside one ${shellText} unless the lesson explicitly says otherwise.`;
   }
@@ -370,6 +382,7 @@
     [
       [els.linuxTrackLink, activeCategory === "linux"],
       [els.windowsTrackLink, activeCategory === "windows"],
+      [els.ciscoTrackLink, activeCategory === "cisco"],
       [els.challengeTrackLink, activeCategory === "cyber"]
     ].forEach(([element, active]) => {
       if (!element) return;
@@ -480,6 +493,11 @@
   function getCommandReference(rawInput) {
     if (!CommandsData || typeof CommandsData.lookupForInput !== "function") {
       return null;
+    }
+
+    if (isCiscoState()) {
+      const reference = CommandsData.lookupForInput(rawInput, ["Cisco CLI"]);
+      return reference?.category === "Cisco CLI" ? reference : null;
     }
 
     const windowsShell = StateManager.isWindowsState(session.state);
@@ -623,6 +641,7 @@
       return "Connection";
     }
 
+    if (isCiscoState()) return "Cisco IOS CLI";
     return StateManager.isWindowsState(session.state) ? "Windows CMD" : "Linux";
   }
 
@@ -714,6 +733,9 @@
     printLine(`Environment: ${shellLabel()} shell`, "dim");
     if (machineSummary) {
       printLine(`Machine context: ${machineSummary}`, "dim");
+    }
+    if (scenario.scenarioIntro) {
+      printLine(`Context: ${scenario.scenarioIntro}`, "dim");
     }
     if (challengePresentation) {
       const knownTargets = scenarioKnownTargets(scenario);
@@ -1192,6 +1214,226 @@
     ];
   }
 
+  function ciscoRouterState() {
+    return session.state.router || {};
+  }
+
+  function ciscoInterfaces() {
+    return Array.isArray(ciscoRouterState().interfaces) ? ciscoRouterState().interfaces : [];
+  }
+
+  function normalizeCiscoInterfaceName(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const lowered = raw.toLowerCase();
+
+    if (lowered.startsWith("gigabitethernet")) {
+      return `GigabitEthernet${raw.slice("gigabitethernet".length)}`;
+    }
+
+    if (lowered.startsWith("gi")) {
+      return `GigabitEthernet${raw.slice(2)}`;
+    }
+
+    if (lowered.startsWith("g")) {
+      return `GigabitEthernet${raw.slice(1)}`;
+    }
+
+    if (lowered.startsWith("loopback")) {
+      return `Loopback${raw.slice("loopback".length)}`;
+    }
+
+    if (lowered.startsWith("lo")) {
+      return `Loopback${raw.slice(2)}`;
+    }
+
+    return raw;
+  }
+
+  function findCiscoInterface(name) {
+    const normalized = normalizeCiscoInterfaceName(name).toLowerCase();
+    return ciscoInterfaces().find((iface) => {
+      const aliases = [iface.name, ...(iface.aliases || [])]
+        .map((value) => normalizeCiscoInterfaceName(value).toLowerCase());
+      return aliases.includes(normalized);
+    }) || null;
+  }
+
+  function ciscoSelectedInterface() {
+    return findCiscoInterface(ciscoRouterState().selectedInterface);
+  }
+
+  function ciscoInterfaceStatus(iface) {
+    return iface?.adminUp ? "up" : "administratively down";
+  }
+
+  function ciscoInterfaceProtocol(iface) {
+    return iface?.adminUp && iface?.lineProtocol ? "up" : "down";
+  }
+
+  function ipv4ToInt(ip) {
+    const octets = String(ip || "").split(".").map((value) => Number(value));
+    if (octets.length !== 4 || octets.some((value) => Number.isNaN(value) || value < 0 || value > 255)) {
+      return null;
+    }
+
+    return ((octets[0] << 24) >>> 0)
+      + ((octets[1] << 16) >>> 0)
+      + ((octets[2] << 8) >>> 0)
+      + (octets[3] >>> 0);
+  }
+
+  function intToIpv4(value) {
+    return [
+      (value >>> 24) & 255,
+      (value >>> 16) & 255,
+      (value >>> 8) & 255,
+      value & 255
+    ].join(".");
+  }
+
+  function maskToPrefix(mask) {
+    const binary = String(mask || "")
+      .split(".")
+      .map((value) => Number(value).toString(2).padStart(8, "0"))
+      .join("");
+    return binary.split("").filter((bit) => bit === "1").length;
+  }
+
+  function networkAddressFor(ip, mask) {
+    const ipInt = ipv4ToInt(ip);
+    const maskInt = ipv4ToInt(mask);
+    if (ipInt === null || maskInt === null) return null;
+    return intToIpv4(ipInt & maskInt);
+  }
+
+  function snapshotCiscoRunningConfig() {
+    const router = ciscoRouterState();
+    return {
+      hostname: router.hostname || session.state.host || "Router",
+      interfaces: ciscoInterfaces().map((iface) => ({ ...iface })),
+      staticRoutes: (router.staticRoutes || []).map((route) => ({ ...route }))
+    };
+  }
+
+  function saveCiscoRunningConfig() {
+    session.state.router.startupConfig = snapshotCiscoRunningConfig();
+    session.state.router.configDirty = false;
+  }
+
+  function markCiscoConfigDirty() {
+    if (!isCiscoState()) return;
+    session.state.router.configDirty = true;
+  }
+
+  function setCiscoMode(mode, selectedInterface = null) {
+    if (!isCiscoState()) return;
+    session.state.router.mode = mode;
+    session.state.router.selectedInterface = selectedInterface;
+  }
+
+  function requireCiscoMode(allowedModes, guidance) {
+    const currentMode = String(ciscoRouterState().mode || "user-exec");
+    if (allowedModes.includes(currentMode)) {
+      return null;
+    }
+
+    return errorResult(guidance, "wrong_context");
+  }
+
+  function formatCiscoInterfaceBriefOutput() {
+    return [
+      "Interface              IP-Address      OK? Method Status                Protocol",
+      ...ciscoInterfaces().map((iface) => {
+        const ipText = iface.ipAddress || "unassigned";
+        return `${String(iface.name).padEnd(22)} ${String(ipText).padEnd(15)} YES manual ${String(ciscoInterfaceStatus(iface)).padEnd(21)} ${ciscoInterfaceProtocol(iface)}`;
+      })
+    ];
+  }
+
+  function formatCiscoInterfaceDetailOutput(iface) {
+    if (!iface) {
+      return ["% Interface not found"];
+    }
+
+    return [
+      `${iface.name} is ${ciscoInterfaceStatus(iface)}, line protocol is ${ciscoInterfaceProtocol(iface)}`,
+      `  Description: ${iface.description || "not set"}`,
+      `  Internet address is ${iface.ipAddress ? `${iface.ipAddress}/${maskToPrefix(iface.subnetMask)}` : "unassigned"}`,
+      "  MTU 1500 bytes, BW 1000000 Kbit/sec, DLY 10 usec,",
+      "     reliability 255/255, txload 1/255, rxload 1/255"
+    ];
+  }
+
+  function buildCiscoConfigLines(snapshot) {
+    const config = snapshot || snapshotCiscoRunningConfig();
+    const lines = [
+      "Building configuration...",
+      "",
+      "Current configuration : 612 bytes",
+      "!",
+      `hostname ${config.hostname || "Router"}`
+    ];
+
+    (config.interfaces || []).forEach((iface) => {
+      lines.push(`interface ${iface.name}`);
+      if (iface.description) {
+        lines.push(` description ${iface.description}`);
+      }
+      if (iface.ipAddress && iface.subnetMask) {
+        lines.push(` ip address ${iface.ipAddress} ${iface.subnetMask}`);
+      }
+      lines.push(iface.adminUp ? " no shutdown" : " shutdown");
+      lines.push("!");
+    });
+
+    (config.staticRoutes || []).forEach((route) => {
+      lines.push(`ip route ${route.network} ${route.mask} ${route.nextHop}`);
+    });
+
+    lines.push("end");
+    return lines;
+  }
+
+  function formatCiscoVersionOutput() {
+    const router = ciscoRouterState();
+    return [
+      router.version || "Cisco IOS Software, 1900 Software (C1900-UNIVERSALK9-M), Version 15.4(3)M",
+      `${router.model || "Cisco 1941/K9"} processor with 491520K/32768K bytes of memory.`,
+      `${router.model || "Cisco 1941/K9"} uptime is ${router.uptime || "2 weeks, 4 days, 1 hour, 12 minutes"}`,
+      `System image file is "${router.image || "flash:c1900-universalk9-mz.SPA.154-3.M.bin"}"`,
+      `Processor board ID ${router.serialNumber || "FTX0001ABCD"}`,
+      `Configuration register is ${router.configRegister || "0x2102"}`
+    ];
+  }
+
+  function formatCiscoRouteOutput() {
+    const router = ciscoRouterState();
+    const lines = [
+      "Codes: C - connected, S - static",
+      "",
+      "Gateway of last resort is 198.51.100.2 to network 0.0.0.0",
+      ""
+    ];
+
+    ciscoInterfaces()
+      .filter((iface) => iface.adminUp && iface.lineProtocol && iface.ipAddress && iface.subnetMask)
+      .forEach((iface) => {
+        const network = networkAddressFor(iface.ipAddress, iface.subnetMask);
+        const prefix = maskToPrefix(iface.subnetMask);
+        if (!network) return;
+        lines.push(`C    ${network}/${prefix} is directly connected, ${iface.name}`);
+      });
+
+    (router.staticRoutes || []).forEach((route) => {
+      const prefix = maskToPrefix(route.mask);
+      const code = route.network === "0.0.0.0" && route.mask === "0.0.0.0" ? "S*" : "S";
+      lines.push(`${code}   ${route.network}/${prefix} [1/0] via ${route.nextHop}`);
+    });
+
+    return lines;
+  }
+
   function formatIpconfigOutput(showAll = false) {
     const adapters = session.state.networkAdapters || [];
     const lines = [];
@@ -1643,6 +1885,9 @@
   }
 
   function executeCopy(parsed) {
+    if (isCiscoState()) {
+      return executeCiscoCopy(parsed);
+    }
     if (parsed.args.length < 2) return errorResult("The syntax of the command is incorrect.", "syntax_error");
     const copied = StateManager.copyPath(session.state, parsed.args[0], parsed.args[1]);
     if (!copied.ok) return errorResult(copied.error);
@@ -1708,7 +1953,10 @@
     return okResult(`${nodeAttributeCodes(node).join(" ").padEnd(8)} ${StateManager.displayPath(session.state, node.path)}`);
   }
 
-  function executeHostname() {
+  function executeHostname(parsed) {
+    if (isCiscoState()) {
+      return executeCiscoHostname(parsed);
+    }
     return okResult((session.state.systemInfo || {}).hostName || session.state.host);
   }
 
@@ -1771,6 +2019,253 @@
       return okResult([]);
     }
     return okResult(StateManager.getPrompt(session.state));
+  }
+
+  function executeCiscoEnable() {
+    if (!isCiscoState()) {
+      return errorResult("That command is not available in this training shell.", "invalid_command");
+    }
+
+    if (ciscoRouterState().mode === "user-exec") {
+      setCiscoMode("privileged-exec");
+    }
+
+    return okResult([]);
+  }
+
+  function executeCiscoDisable() {
+    if (!isCiscoState()) {
+      return errorResult("That command is not available in this training shell.", "invalid_command");
+    }
+
+    if (ciscoRouterState().mode !== "privileged-exec") {
+      return errorResult("% disable is only available from privileged EXEC mode.", "wrong_context");
+    }
+
+    setCiscoMode("user-exec");
+    return okResult([]);
+  }
+
+  function executeCiscoConfigure(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["privileged-exec"], "% Enter privileged EXEC mode with `enable` before entering configuration mode.");
+    if (modeError) return modeError;
+
+    if (String(parsed.args.join(" ")).toLowerCase() !== "terminal") {
+      return errorResult("% configure terminal is the supported form in this trainer.", "syntax_error");
+    }
+
+    setCiscoMode("global-config");
+    return okResult(["Enter configuration commands, one per line. End with CNTL/Z."]);
+  }
+
+  function executeCiscoExit() {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+
+    switch (ciscoRouterState().mode) {
+      case "interface-config":
+        setCiscoMode("global-config");
+        return okResult([]);
+      case "global-config":
+        setCiscoMode("privileged-exec");
+        return okResult([]);
+      case "privileged-exec":
+        setCiscoMode("user-exec");
+        return okResult([]);
+      default:
+        return errorResult("% Nothing to exit from in the current Cisco mode.", "wrong_context");
+    }
+  }
+
+  function executeCiscoEnd() {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["global-config", "interface-config"], "% end is useful after you have entered configuration mode.");
+    if (modeError) return modeError;
+    setCiscoMode("privileged-exec");
+    return okResult([]);
+  }
+
+  function executeCiscoShow(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const subcommand = String(parsed.args.join(" ")).trim().toLowerCase();
+
+    if (subcommand === "version") {
+      const modeError = requireCiscoMode(["user-exec", "privileged-exec"], "% show version is available from EXEC mode.");
+      if (modeError) return modeError;
+      return okResult(formatCiscoVersionOutput());
+    }
+
+    if (subcommand === "ip interface brief") {
+      const modeError = requireCiscoMode(["user-exec", "privileged-exec"], "% Leave configuration mode before using show ip interface brief in this trainer.");
+      if (modeError) return modeError;
+      return okResult(formatCiscoInterfaceBriefOutput());
+    }
+
+    if (subcommand.startsWith("interfaces")) {
+      const modeError = requireCiscoMode(["user-exec", "privileged-exec"], "% Leave configuration mode before using show interfaces in this trainer.");
+      if (modeError) return modeError;
+      const ifaceName = parsed.args.slice(1).join(" ");
+      return okResult(formatCiscoInterfaceDetailOutput(ifaceName ? findCiscoInterface(ifaceName) : ciscoInterfaces()[0]));
+    }
+
+    if (subcommand === "running-config") {
+      const modeError = requireCiscoMode(["privileged-exec"], "% show running-config requires privileged EXEC mode.");
+      if (modeError) return modeError;
+      return okResult(buildCiscoConfigLines(snapshotCiscoRunningConfig()));
+    }
+
+    if (subcommand === "startup-config") {
+      const modeError = requireCiscoMode(["privileged-exec"], "% show startup-config requires privileged EXEC mode.");
+      if (modeError) return modeError;
+      const startup = ciscoRouterState().startupConfig;
+      return okResult(startup ? buildCiscoConfigLines(startup) : ["startup-config is not present"]);
+    }
+
+    if (subcommand === "ip route") {
+      const modeError = requireCiscoMode(["privileged-exec"], "% show ip route requires privileged EXEC mode.");
+      if (modeError) return modeError;
+      return okResult(formatCiscoRouteOutput());
+    }
+
+    return errorResult("% Unsupported show command in this trainer.", "wrong_context");
+  }
+
+  function executeCiscoHostname(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["global-config"], "% hostname is only valid in global configuration mode.");
+    if (modeError) return modeError;
+
+    const nextHostname = String(parsed.args[0] || "").trim();
+    if (!nextHostname) return errorResult("% hostname requires a device name.", "syntax_error");
+
+    session.state.router.hostname = nextHostname;
+    session.state.host = nextHostname;
+    markCiscoConfigDirty();
+    return okResult([]);
+  }
+
+  function executeCiscoInterface(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["global-config"], "% interface is only valid from global configuration mode.");
+    if (modeError) return modeError;
+
+    const iface = findCiscoInterface(parsed.args.join(" "));
+    if (!iface) return errorResult("% Interface not found in this trainer.", "runtime_error");
+
+    setCiscoMode("interface-config", iface.name);
+    return okResult([]);
+  }
+
+  function executeCiscoDescription(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["interface-config"], "% description is only valid in interface configuration mode.");
+    if (modeError) return modeError;
+    const iface = ciscoSelectedInterface();
+    if (!iface) return errorResult("% No interface selected.", "wrong_context");
+
+    const description = parsed.args.join(" ").trim();
+    if (!description) return errorResult("% description requires text after the command.", "syntax_error");
+
+    iface.description = description;
+    markCiscoConfigDirty();
+    return okResult([]);
+  }
+
+  function executeCiscoIp(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const action = String(parsed.args[0] || "").toLowerCase();
+
+    if (action === "address") {
+      const modeError = requireCiscoMode(["interface-config"], "% ip address is only valid in interface configuration mode.");
+      if (modeError) return modeError;
+      const iface = ciscoSelectedInterface();
+      if (!iface) return errorResult("% No interface selected.", "wrong_context");
+
+      const ipAddress = parsed.args[1];
+      const subnetMask = parsed.args[2];
+      if (!ipAddress || !subnetMask) {
+        return errorResult("% ip address requires an IPv4 address and subnet mask.", "syntax_error");
+      }
+
+      iface.ipAddress = ipAddress;
+      iface.subnetMask = subnetMask;
+      iface.lineProtocol = Boolean(iface.adminUp);
+      markCiscoConfigDirty();
+      return okResult([]);
+    }
+
+    if (action === "route") {
+      const modeError = requireCiscoMode(["global-config"], "% ip route is only valid in global configuration mode.");
+      if (modeError) return modeError;
+      const network = parsed.args[1];
+      const mask = parsed.args[2];
+      const nextHop = parsed.args[3];
+      if (!network || !mask || !nextHop) {
+        return errorResult("% ip route requires destination network, mask, and next-hop.", "syntax_error");
+      }
+
+      session.state.router.staticRoutes = (session.state.router.staticRoutes || []).filter((route) => !(route.network === network && route.mask === mask));
+      session.state.router.staticRoutes.push({ network, mask, nextHop });
+      markCiscoConfigDirty();
+      return okResult([]);
+    }
+
+    return errorResult("% Unsupported ip subcommand in this trainer.", "wrong_context");
+  }
+
+  function executeCiscoNo(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const subcommand = String(parsed.args[0] || "").toLowerCase();
+    if (subcommand !== "shutdown") {
+      return errorResult("% Unsupported no subcommand in this trainer.", "wrong_context");
+    }
+
+    const modeError = requireCiscoMode(["interface-config"], "% no shutdown is only valid in interface configuration mode.");
+    if (modeError) return modeError;
+    const iface = ciscoSelectedInterface();
+    if (!iface) return errorResult("% No interface selected.", "wrong_context");
+
+    iface.adminUp = true;
+    iface.lineProtocol = true;
+    markCiscoConfigDirty();
+    return okResult([`${iface.name} changed state to up`]);
+  }
+
+  function executeCiscoShutdown() {
+    if (!isCiscoState()) return executeShutdown();
+    const modeError = requireCiscoMode(["interface-config"], "% shutdown is only valid in interface configuration mode.");
+    if (modeError) return modeError;
+    const iface = ciscoSelectedInterface();
+    if (!iface) return errorResult("% No interface selected.", "wrong_context");
+
+    iface.adminUp = false;
+    iface.lineProtocol = false;
+    markCiscoConfigDirty();
+    return okResult([`${iface.name} changed state to administratively down`]);
+  }
+
+  function executeCiscoWrite(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["privileged-exec"], "% write memory requires privileged EXEC mode.");
+    if (modeError) return modeError;
+    if (String(parsed.args.join(" ")).toLowerCase() !== "memory") {
+      return errorResult("% write memory is the supported write command in this trainer.", "syntax_error");
+    }
+
+    saveCiscoRunningConfig();
+    return okResult(["Building configuration...", "[OK]"]);
+  }
+
+  function executeCiscoCopy(parsed) {
+    if (!isCiscoState()) return errorResult("That command is not available in this training shell.", "invalid_command");
+    const modeError = requireCiscoMode(["privileged-exec"], "% copy running-config startup-config requires privileged EXEC mode.");
+    if (modeError) return modeError;
+    if (String(parsed.args.join(" ")).toLowerCase() !== "running-config startup-config") {
+      return errorResult("% copy running-config startup-config is the supported save form in this trainer.", "syntax_error");
+    }
+
+    saveCiscoRunningConfig();
+    return okResult(["Destination filename [startup-config]?", "", "Building configuration...", "[OK]"]);
   }
 
   function executeTar(parsed) {
@@ -1838,12 +2333,24 @@
 
   function executePing(parsed) {
     const targetValue = parsed.args[0];
-    if (!targetValue) return errorResult("ping: missing destination", "syntax_error");
+    if (!targetValue) return errorResult(isCiscoState() ? "% ping requires a destination." : "ping: missing destination", "syntax_error");
     const target = resolveNetworkTarget(targetValue);
     if (!target || !target.reachable) {
+      if (isCiscoState()) {
+        return errorResult(`% Unrecognized host or address, or protocol not running.`, "runtime_error");
+      }
       return StateManager.isWindowsState(session.state)
         ? errorResult(`Ping request could not find host ${targetValue}.`)
         : errorResult(`PING ${targetValue}: host unreachable`);
+    }
+
+    if (isCiscoState()) {
+      return okResult([
+        `Type escape sequence to abort.`,
+        `Sending 5, 100-byte ICMP Echos to ${target.ip}, timeout is 2 seconds:`,
+        "!!!!!",
+        "Success rate is 100 percent (5/5), round-trip min/avg/max = 1/2/4 ms"
+      ]);
     }
 
     if (StateManager.isWindowsState(session.state)) {
@@ -1874,6 +2381,20 @@
       `  2    <1 ms    <1 ms    <1 ms  ${target.ip}`,
       "",
       "Trace complete."
+    ]);
+  }
+
+  function executeTraceroute(parsed) {
+    const targetValue = parsed.args[0];
+    if (!targetValue) return errorResult("% traceroute requires a destination.", "syntax_error");
+    const target = resolveNetworkTarget(targetValue);
+    if (!target || !target.reachable) return errorResult(`% Unrecognized host or address, or protocol not running.`, "runtime_error");
+    return okResult([
+      `Type escape sequence to abort.`,
+      `Tracing the route to ${target.hostname || target.ip} [${target.ip}]`,
+      "",
+      "  1  198.51.100.2  1 msec  1 msec  1 msec",
+      `  2  ${target.ip}  2 msec  2 msec  2 msec`
     ]);
   }
 
@@ -2070,6 +2591,9 @@
   }
 
   function executeShutdown(parsed) {
+    if (isCiscoState()) {
+      return executeCiscoShutdown(parsed);
+    }
     if (hasFlag(parsed, "/A")) {
       session.state.pendingShutdown = null;
       return okResult("Shutdown cancelled.");
@@ -2426,6 +2950,14 @@
   function commandAllowedInCurrentShell(command) {
     if (!command) return true;
 
+    if (isCiscoState()) {
+      const ciscoCommands = new Set([
+        "enable", "disable", "configure", "exit", "end", "write", "copy", "show",
+        "hostname", "interface", "ip", "no", "shutdown", "description", "ping", "traceroute"
+      ]);
+      return ciscoCommands.has(command);
+    }
+
     const windowsShell = StateManager.isWindowsState(session.state);
     if (!windowsShell && session.state.metasploit.active && command === "set") {
       return true;
@@ -2438,12 +2970,13 @@
       "tasklist", "taskkill", "sc", "net", "wmic", "driverquery", "query", "where", "fc", "shutdown", "schtasks"
     ]);
     const linuxOnly = new Set(["pwd", "ls", "touch", "cat", "grep", "cp", "mv", "rm", "ps", "kill", "wget", "searchsploit"]);
+    const ciscoOnly = new Set(["enable", "disable", "configure", "show", "end", "write", "interface", "ip", "no", "description", "traceroute"]);
 
     if (windowsShell) {
-      return !linuxOnly.has(command);
+      return !linuxOnly.has(command) && !ciscoOnly.has(command);
     }
 
-    return !windowsOnly.has(command);
+    return !windowsOnly.has(command) && !ciscoOnly.has(command);
   }
 
   function executeCommand(parsed, pipedInput = []) {
@@ -2462,6 +2995,18 @@
     }
 
     switch (parsed.command) {
+      case "enable":
+        return executeCiscoEnable(parsed);
+      case "disable":
+        return executeCiscoDisable(parsed);
+      case "configure":
+        return executeCiscoConfigure(parsed);
+      case "exit":
+        return executeCiscoExit(parsed);
+      case "end":
+        return executeCiscoEnd(parsed);
+      case "show":
+        return executeCiscoShow(parsed);
       case "pwd":
         return executePwd(parsed);
       case "ls":
@@ -2531,6 +3076,8 @@
         return executeCls(parsed);
       case "prompt":
         return executePrompt(parsed);
+      case "write":
+        return executeCiscoWrite(parsed);
       case "tar":
         return executeTar(parsed);
       case "wget":
@@ -2547,6 +3094,8 @@
         return executePing(parsed);
       case "tracert":
         return executeTracert(parsed);
+      case "traceroute":
+        return executeTraceroute(parsed);
       case "pathping":
         return executePathping(parsed);
       case "nslookup":
@@ -2577,6 +3126,14 @@
         return executeFc(parsed);
       case "shutdown":
         return executeShutdown(parsed);
+      case "interface":
+        return executeCiscoInterface(parsed);
+      case "ip":
+        return executeCiscoIp(parsed);
+      case "no":
+        return executeCiscoNo(parsed);
+      case "description":
+        return executeCiscoDescription(parsed);
       case "schtasks":
         return executeSchtasks(parsed);
       case "nmap":

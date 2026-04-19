@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subnet Quiz</title>
-  <link rel="stylesheet" href="./style.css">
-  <script src="./script.js" defer></script>
+  <title>Networking Learning Hub</title>
+  <link rel="stylesheet" href="./style.css?v=20260419d">
+  <script src="./script.js?v=20260416c" defer></script>
 </head>
 <body>
   <div class="rack-room">
@@ -20,7 +20,7 @@
         </div>
       </div>
 
-  <h1>Networking Quiz</h1>
+  <h1>Networking Learning Hub</h1>
 
   <div id="topButtons">
     <button id="practiceToggle" class="section-btn active" type="button">Practice</button>
@@ -28,50 +28,35 @@
   </div>
 
   <div id="practiceSection">
-    <div id="modeButtons">
-      <button class="mode-btn" data-mode="cidrToHosts" type="button">Hosts</button>
-      <button class="mode-btn" data-mode="hostsToCidr" type="button">Network Bits</button>
-      <button class="mode-btn" data-mode="cidrToMask" type="button">Subnet Mask</button>
-      <button class="mode-btn" data-mode="bitsToValue" type="button">Bits Value</button>
-      <button class="mode-btn" data-mode="networkAddress" type="button">Network Address</button>
-      <button class="mode-btn" data-mode="broadcastAddress" type="button">Broadcast</button>
-      <button class="mode-btn" data-mode="usableRange" type="button">Usable Range</button>
-      <button class="mode-btn" data-mode="hostRequirement" type="button">Hosts Required</button>
-    </div>
-
-    <hr>
-
-    <h3 align="center">Commands & Security</h3>
-    <div id="extraButtons">
-      <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
-      <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
-    </div>
-
-    <div id="examModeRow">
-      <button id="examModeBtn" class="section-btn exam-btn" type="button">Exam Mode</button>
-    </div>
-
-    <div id="protocolMergeRow">
-      <a id="protocolMergeLink" class="section-btn panel-link protocol-link" href="./protocol-merge.html">Protocol Lab</a>
-    </div>
-
-    <section id="learningPathsPanel" class="learning-paths-panel">
+    <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">
       <div class="learning-paths-head">
-        <h3>Guided Learning Paths</h3>
-        <p>Choose the learning surface first so Windows commands, Linux commands, browser traffic labs, and cyber challenge context stay clearly separated.</p>
+        <h3>Choose a Lab</h3>
+        <p>Start in the right lab first so subnetting, Cisco CLI, Linux, Windows, web traffic, and cyber challenge workflows stay clearly separated as the app grows.</p>
       </div>
 
       <div class="learning-path-grid">
+        <a class="learning-path-card learning-path-card-subnetting" href="#subnettingLabSection">
+          <span class="learning-path-kicker">Networking</span>
+          <span class="learning-path-title">Subnetting Lab</span>
+          <span class="learning-path-copy">Practice CIDR, masks, host counts, usable ranges, protocol basics, and exam-style subnetting drills in the original networking trainer.</span>
+        </a>
+
         <a class="learning-path-card learning-path-card-windows" href="./terminal-coach.html?track=windows">
           <span class="learning-path-kicker">Windows</span>
-          <span class="learning-path-title">Windows Terminal Learning</span>
+          <span class="learning-path-title">Windows Terminal Lab</span>
           <span class="learning-path-copy">CMD-only learning with Windows file paths, process tools, and troubleshooting workflows.</span>
         </a>
 
         <a class="learning-path-card learning-path-card-linux" href="./terminal-coach.html?track=linux">
           <span class="learning-path-kicker">Linux</span>
-          <span class="learning-path-title">Linux Terminal Learning</span>
+          <span class="learning-path-title">Linux Terminal Lab</span>
           <span class="learning-path-copy">Linux-first lessons with one shell context at a time so beginners are not translating commands mid-task.</span>
+        </a>
+
+        <a class="learning-path-card learning-path-card-cisco" href="./cisco-cli-lab.html">
+          <span class="learning-path-kicker">Cisco</span>
+          <span class="learning-path-title">Cisco CLI Lab</span>
+          <span class="learning-path-copy">Guided router CLI practice with Cisco-style prompts, exec modes, interface configuration, routing checks, and save workflows.</span>
         </a>
 
         <a class="learning-path-card learning-path-card-web" href="./web-http-lab.html">
@@ -88,29 +73,66 @@
       </div>
     </section>
 
-    <div class="display-panel">
-    <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
-    <p id="examStatus" hidden></p>
-    <div id="diagram"></div>
-    <div id="answers"></div>
+    <section id="subnettingLabSection" class="hub-section-panel subnetting-section-panel">
+      <div class="hub-section-head">
+        <div>
+          <h3>Subnetting Lab</h3>
+          <p>Keep subnetting practice in its own dedicated area. This section covers CIDR, host counts, masks, ranges, commands, protocol basics, and exam-mode drills without mixing in the other learning tracks.</p>
+        </div>
+        <a class="hub-section-jump" href="#learningPathsPanel">Back to Lab Hub</a>
+      </div>
 
-    <p id="hint" class="hint"></p>
-    <p id="feedback"></p>
+      <div id="modeButtons">
+        <button class="mode-btn" data-mode="cidrToHosts" type="button">Hosts</button>
+        <button class="mode-btn" data-mode="hostsToCidr" type="button">Network Bits</button>
+        <button class="mode-btn" data-mode="cidrToMask" type="button">Subnet Mask</button>
+        <button class="mode-btn" data-mode="bitsToValue" type="button">Bits Value</button>
+        <button class="mode-btn" data-mode="networkAddress" type="button">Network Address</button>
+        <button class="mode-btn" data-mode="broadcastAddress" type="button">Broadcast</button>
+        <button class="mode-btn" data-mode="usableRange" type="button">Usable Range</button>
+        <button class="mode-btn" data-mode="hostRequirement" type="button">Hosts Required</button>
+      </div>
 
-    <div id="actionButtons">
-      <button id="hintBtn" type="button" hidden>Hint</button>
-      <button id="nextBtn" type="button" hidden>Next</button>
-      <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
-      <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
-    </div>
-    </div>
+      <hr>
 
-    <div class="scoreboard">
-      <h3>Score</h3>
-      <p>Streak: <span id="streak">0</span></p>
-      <p>Correct: <span id="correct">0</span></p>
-      <p>Wrong: <span id="wrong">0</span></p>
-    </div>
+      <h3 align="center">Commands & Security</h3>
+      <div id="extraButtons">
+        <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
+        <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
+      </div>
+
+      <div id="examModeRow">
+        <button id="examModeBtn" class="section-btn exam-btn" type="button">Exam Mode</button>
+      </div>
+
+      <div id="protocolMergeRow">
+        <a id="protocolMergeLink" class="section-btn panel-link protocol-link" href="./protocol-merge.html">Protocol Lab</a>
+      </div>
+
+      <div class="display-panel">
+      <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
+      <p id="examStatus" hidden></p>
+      <div id="diagram"></div>
+      <div id="answers"></div>
+
+      <p id="hint" class="hint"></p>
+      <p id="feedback"></p>
+
+      <div id="actionButtons">
+        <button id="hintBtn" type="button" hidden>Hint</button>
+        <button id="nextBtn" type="button" hidden>Next</button>
+        <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
+        <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
+      </div>
+      </div>
+
+      <div class="scoreboard">
+        <h3>Score</h3>
+        <p>Streak: <span id="streak">0</span></p>
+        <p>Correct: <span id="correct">0</span></p>
+        <p>Wrong: <span id="wrong">0</span></p>
+      </div>
+    </section>
   </div>
 
   <div id="cheatSheetSection" hidden>

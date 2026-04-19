@@ -7,6 +7,10 @@
     return state.platform === "cmd";
   }
 
+  function isCiscoState(state) {
+    return state.platform === "cisco";
+  }
+
   function getRootPath(state) {
     return isWindowsState(state) ? "C:/" : "/";
   }
@@ -405,14 +409,16 @@
 
   function createState(environment) {
     const base = clone(environment);
+    const ciscoPlatform = base.platform === "cisco";
+    const defaultCiscoHostname = base.hostname || base.host || "Router";
     const state = {
       platform: base.platform || "linux",
       shell: base.platform || "linux",
-      user: base.user || (base.platform === "cmd" ? "student" : "student"),
-      host: base.host || "lab",
+      user: base.user || (base.platform === "cmd" ? "student" : ciscoPlatform ? "" : "student"),
+      host: base.host || (ciscoPlatform ? defaultCiscoHostname : "lab"),
       drive: base.drive || "C:",
-      cwd: base.cwd || (base.platform === "cmd" ? "C:/Users/student" : "/home/student"),
-      home: base.home || (base.platform === "cmd" ? "C:/Users/student" : "/home/student"),
+      cwd: base.cwd || (base.platform === "cmd" ? "C:/Users/student" : ciscoPlatform ? "/" : "/home/student"),
+      home: base.home || (base.platform === "cmd" ? "C:/Users/student" : ciscoPlatform ? "/" : "/home/student"),
       fs: {},
       processes: clone(base.processes || []),
       targets: clone(base.targets || []),
@@ -446,8 +452,27 @@
       },
       activeConnection: null,
       history: [],
-      completedScenarioIds: clone(base.completedScenarioIds || [])
+      completedScenarioIds: clone(base.completedScenarioIds || []),
+      router: clone(base.router || {
+        hostname: defaultCiscoHostname,
+        mode: "user-exec",
+        selectedInterface: null,
+        configDirty: false,
+        version: base.version || "Cisco IOS Software, 1900 Software (C1900-UNIVERSALK9-M), Version 15.4(3)M",
+        model: base.model || "Cisco 1941/K9",
+        image: base.image || "flash:c1900-universalk9-mz.SPA.154-3.M.bin",
+        serialNumber: base.serialNumber || "FTX0001ABCD",
+        uptime: base.uptime || "2 weeks, 4 days, 1 hour, 12 minutes",
+        configRegister: base.configRegister || "0x2102",
+        interfaces: clone(base.interfaces || []),
+        staticRoutes: clone(base.staticRoutes || []),
+        startupConfig: clone(base.startupConfig || null)
+      })
     };
+
+    if (ciscoPlatform) {
+      state.host = state.router.hostname || defaultCiscoHostname;
+    }
 
     ensureDirectory(state, getRootPath(state));
     ensureDirectory(state, state.home);
@@ -460,6 +485,22 @@
   }
 
   function getPrompt(state) {
+    if (isCiscoState(state)) {
+      const routerState = state.router || {};
+      const hostName = routerState.hostname || state.host || "Router";
+
+      switch (routerState.mode) {
+        case "privileged-exec":
+          return `${hostName}#`;
+        case "global-config":
+          return `${hostName}(config)#`;
+        case "interface-config":
+          return `${hostName}(config-if)#`;
+        default:
+          return `${hostName}>`;
+      }
+    }
+
     if (state.metasploit.active) return "msf6 >";
     if (state.activeConnection) {
       if (state.activeConnection.type === "smtp") return "smtp>";
@@ -513,6 +554,7 @@
     findTarget,
     recordDiscovery,
     extractArchive,
-    isWindowsState
+    isWindowsState,
+    isCiscoState
   };
 })();

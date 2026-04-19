@@ -203,6 +203,12 @@
   color: #93c5fd;
 }
 
+.terminal-page[data-environment-category="cisco"] .environment-badge {
+  border-color: rgba(251, 191, 36, 0.34);
+  background: rgba(38, 24, 7, 0.92);
+  color: #fcd34d;
+}
+
 .terminal-page[data-environment-category="cyber"] .environment-badge {
   border-color: rgba(192, 132, 252, 0.34);
   background: rgba(28, 14, 38, 0.92);
