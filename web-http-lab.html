@@ -118,9 +118,27 @@
               <div class="http-panel-head">
                 <div>
                   <h2>Request Panel</h2>
-                  <p class="http-panel-copy">Read the request line, headers, and body exactly like a learner-friendly capture view.</p>
+                  <p class="http-panel-copy">Edit the request, send it, and compare the raw preview to the response that comes back.</p>
                 </div>
                 <div id="requestBadge" class="http-surface-pill">Request ready</div>
+              </div>
+              <div id="requestWorkbench" class="http-request-workbench" hidden>
+                <div class="http-request-workbench-head">
+                  <div>
+                    <p class="http-mini-label">Interactive Request Editor</p>
+                    <p id="requestWorkbenchNote" class="http-mini-copy">Change the important parts of the request, then send it to the simulated server.</p>
+                  </div>
+                  <div id="requestFocusFields" class="http-summary-chips"></div>
+                </div>
+                <div id="requestEditorFields" class="http-request-editor-grid"></div>
+                <div class="http-submit-row">
+                  <button id="sendRequestBtn" type="button">Send Request</button>
+                  <button id="resetRequestBtn" type="button">Reset Request</button>
+                </div>
+              </div>
+              <div class="http-raw-head">
+                <p class="http-mini-label">Raw Request Preview</p>
+                <p id="requestPreviewNote" class="http-mini-copy">The raw request preview updates as you edit the workbench.</p>
               </div>
               <pre id="requestRaw" class="http-raw-block"></pre>
             </article>
@@ -133,6 +151,7 @@
                 </div>
                 <div id="responseBadge" class="http-surface-pill">Waiting</div>
               </div>
+              <p id="responseSummary" class="http-response-summary">Send a request to generate a response.</p>
               <pre id="responseRaw" class="http-raw-block"></pre>
             </article>
 
