@@ -401,11 +401,23 @@ button::before {
   border-color: #c084fc;
 }
 
+.learning-path-card-web {
+  background: linear-gradient(180deg, #12384d 0%, #111827 100%);
+  border-color: #22d3ee;
+}
+
 .learning-path-card-challenge::before {
   background: #c084fc;
   box-shadow:
     0 0 0 2px rgba(192, 132, 252, 0.14),
     0 0 16px rgba(192, 132, 252, 0.5);
+}
+
+.learning-path-card-web::before {
+  background: #22d3ee;
+  box-shadow:
+    0 0 0 2px rgba(34, 211, 238, 0.14),
+    0 0 16px rgba(34, 211, 238, 0.5);
 }
 
 .learning-path-card-windows:hover {
@@ -414,6 +426,10 @@ button::before {
 
 .learning-path-card-linux:hover {
   border-color: #86efac;
+}
+
+.learning-path-card-web:hover {
+  border-color: #67e8f9;
 }
 
 .learning-path-card-challenge:hover {

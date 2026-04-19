@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web &amp; HTTP Lab</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./web-http-lab.css">
+  <script src="./web-http-lab-data.js" defer></script>
+  <script src="./web-http-lab.js" defer></script>
+</head>
+<body class="http-page">
+  <div class="rack-room">
+    <div class="router-shell http-shell">
+      <div class="router-top">
+        <div>
+          <div class="router-brand">NET-LAB WEB PANEL</div>
+          <div class="http-subbrand">Browser traffic, cookies, sessions, and proxy learning</div>
+        </div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <header class="http-header">
+        <div>
+          <p class="http-kicker">Guided Web Traffic Trainer</p>
+          <h1>Web &amp; HTTP Lab</h1>
+          <p class="http-intro">
+            Learn how browser requests, responses, headers, cookies, sessions, proxy interception,
+            and discoverability fit together without dropping everything into a terminal-only workflow.
+          </p>
+        </div>
+        <a class="http-nav-link" href="./index.html">Back to Main App</a>
+      </header>
+
+      <div class="http-layout">
+        <aside class="http-panel http-selector-panel">
+          <div class="http-panel-head">
+            <div>
+              <h2>Lessons</h2>
+              <p class="http-panel-copy">Start with the basics, then move into cookies, sessions, interception, and discoverability.</p>
+            </div>
+            <div id="labStatus" class="http-status idle">Ready</div>
+          </div>
+
+          <div class="http-progress-row">
+            <span class="http-progress-label">Curriculum</span>
+            <span id="completedCount" class="http-progress-value">0 / 0 complete</span>
+          </div>
+
+          <div id="lessonList" class="http-lesson-list"></div>
+        </aside>
+
+        <main class="http-main">
+          <section class="http-panel http-overview-panel">
+            <div class="http-overview-head">
+              <div>
+                <div class="http-badge-row">
+                  <span id="lessonCategory" class="http-badge">HTTP Fundamentals</span>
+                  <span id="lessonDifficulty" class="http-badge http-badge-muted">Beginner</span>
+                  <span id="lessonStepBadge" class="http-badge http-badge-accent">Step 1 of 3</span>
+                </div>
+                <h2 id="lessonTitle">Web &amp; HTTP Lab</h2>
+              </div>
+              <div id="lessonCompletion" class="http-completion-pill">Lesson ready</div>
+            </div>
+
+            <p id="lessonIntro" class="http-overview-copy">
+              Load a lesson to inspect requests, responses, cookies, sessions, and proxy state in the lab workspace.
+            </p>
+
+            <div>
+              <h3>Learning Objectives</h3>
+              <ul id="objectiveList" class="http-objective-list"></ul>
+            </div>
+
+            <div class="http-overview-footer">
+              <div>
+                <p class="http-mini-label">Recommended Next Lesson</p>
+                <p id="recommendedNextLesson" class="http-mini-copy">Choose a lesson to begin.</p>
+              </div>
+              <div>
+                <p class="http-mini-label">Lesson Focus</p>
+                <p id="lessonExplanation" class="http-mini-copy">This panel will summarise the current lesson.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="http-panel http-browser-panel">
+            <div class="http-panel-head">
+              <div>
+                <h2>Browser Context</h2>
+                <p class="http-panel-copy">A lightweight lab browser view so learners can connect the URL bar to the traffic below.</p>
+              </div>
+            </div>
+
+            <div class="http-browser-shell">
+              <div class="http-browser-bar">
+                <span class="http-browser-dot"></span>
+                <span class="http-browser-dot"></span>
+                <span class="http-browser-dot"></span>
+                <div id="browserUrl" class="http-url-bar">https://example.lab/</div>
+              </div>
+              <div class="http-browser-body">
+                <h3 id="browserTitle">Waiting for lesson</h3>
+                <p id="browserNote" class="http-browser-note">Load a lesson to inspect a fictional browser workflow.</p>
+                <div id="browserChipRow" class="http-summary-chips"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="http-workspace-grid">
+            <article class="http-panel http-traffic-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Request Panel</h2>
+                  <p class="http-panel-copy">Read the request line, headers, and body exactly like a learner-friendly capture view.</p>
+                </div>
+                <div id="requestBadge" class="http-surface-pill">Request ready</div>
+              </div>
+              <pre id="requestRaw" class="http-raw-block"></pre>
+            </article>
+
+            <article class="http-panel http-traffic-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Response Panel</h2>
+                  <p class="http-panel-copy">See how the server answered, or why there is no response yet when interception pauses a request.</p>
+                </div>
+                <div id="responseBadge" class="http-surface-pill">Waiting</div>
+              </div>
+              <pre id="responseRaw" class="http-raw-block"></pre>
+            </article>
+
+            <article class="http-panel http-state-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Cookies &amp; Session</h2>
+                  <p class="http-panel-copy">Track what the browser is carrying between requests.</p>
+                </div>
+              </div>
+
+              <div class="http-state-stack">
+                <section class="http-state-card">
+                  <p class="http-mini-label">Cookies</p>
+                  <div id="cookiesList" class="http-cookie-list"></div>
+                </section>
+
+                <section class="http-state-card">
+                  <p class="http-mini-label">Session</p>
+                  <p id="sessionState" class="http-state-copy"></p>
+                  <p id="sessionId" class="http-state-copy http-state-copy-accent"></p>
+                  <p id="sessionNote" class="http-state-note"></p>
+                </section>
+              </div>
+            </article>
+
+            <article class="http-panel http-state-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Cache &amp; Proxy</h2>
+                  <p class="http-panel-copy">Connect browser state to interception and caching behavior.</p>
+                </div>
+              </div>
+
+              <div class="http-state-stack">
+                <section class="http-state-card">
+                  <p class="http-mini-label">Cache</p>
+                  <p id="cacheStatus" class="http-state-copy"></p>
+                  <p id="cacheNote" class="http-state-note"></p>
+                </section>
+
+                <section class="http-state-card">
+                  <p class="http-mini-label">Proxy</p>
+                  <p id="proxyStatus" class="http-state-copy"></p>
+                  <p id="proxyNote" class="http-state-note"></p>
+                </section>
+              </div>
+            </article>
+
+            <article class="http-panel http-state-panel http-discovery-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Discoverability View</h2>
+                  <p class="http-panel-copy">Use this area for crawl-tree style lessons without turning the lab into a scanner clone.</p>
+                </div>
+              </div>
+
+              <p id="discoverabilitySummary" class="http-state-note"></p>
+              <div id="discoverabilityTree" class="http-tree"></div>
+            </article>
+          </section>
+
+          <div class="http-guidance-grid">
+            <section class="http-panel http-task-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2 id="stepTitle">Current Task</h2>
+                  <p id="stepMeta" class="http-panel-copy">Choose a lesson to begin the guided workflow.</p>
+                </div>
+                <div id="taskState" class="http-feedback-badge idle">Waiting for action</div>
+              </div>
+
+              <p id="stepPrompt" class="http-task-prompt">Inspect the workspace, use the answer panel, and step through each lesson in order.</p>
+              <div class="http-callout">
+                <p class="http-mini-label">Success Condition</p>
+                <p id="successCondition" class="http-mini-copy">Each lesson explains what correct observation or action should achieve.</p>
+              </div>
+
+              <div class="http-callout">
+                <p class="http-mini-label">Feedback</p>
+                <p id="feedbackText" class="http-mini-copy">Pick a lesson to start.</p>
+              </div>
+
+              <div class="http-callout">
+                <p class="http-mini-label">Why It Matters</p>
+                <p id="stepExplanation" class="http-mini-copy">This panel will explain each step after you work through it.</p>
+              </div>
+
+              <div class="http-callout">
+                <p class="http-mini-label">Hint</p>
+                <p id="hintText" class="http-mini-copy">Hints will appear here when needed.</p>
+              </div>
+
+              <div class="http-action-row">
+                <button id="hintBtn" type="button">Show Hint</button>
+                <button id="nextBtn" type="button" hidden>Next Step</button>
+              </div>
+            </section>
+
+            <section class="http-panel http-answer-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2 id="answerTitle">Answer Panel</h2>
+                  <p id="answerSubtitle" class="http-panel-copy">Interaction controls will appear here for the active step.</p>
+                </div>
+              </div>
+
+              <div id="interactionBody" class="http-interaction-body"></div>
+            </section>
+          </div>
+        </main>
+      </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port active"></div>
+        <div class="port"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port active"></div>
+        <div class="port"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
