@@ -1154,7 +1154,10 @@
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-panel {
-    min-height: clamp(360px, calc(var(--terminal-mobile-viewport-height) - 110px), 820px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
   }
 
   .terminal-output-shell {
@@ -1163,7 +1166,8 @@
 
   .terminal-page.terminal-mobile-inline-input .terminal-output-shell {
     order: 1;
-    min-height: clamp(250px, calc(var(--terminal-mobile-viewport-height) - 218px), 760px);
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .terminal-output {
@@ -1174,8 +1178,9 @@
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-output {
-    padding-bottom: 0;
-    scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    padding-bottom: 12px;
+    scroll-padding-bottom: calc(56px + env(safe-area-inset-bottom));
+    cursor: text;
   }
 
   .layer-transition-banner {
@@ -1280,22 +1285,19 @@
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot {
+    order: 2;
     display: block;
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    margin: 12px -14px -14px;
+    flex: 0 0 auto;
     padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(71, 85, 105, 0.5);
-    background:
-      linear-gradient(180deg, rgba(1, 10, 16, 0) 0%, rgba(1, 10, 16, 0.92) 18%, rgba(1, 10, 16, 0.99) 100%);
+    border-top: 1px solid rgba(71, 85, 105, 0.4);
+    background: linear-gradient(180deg, rgba(1, 10, 16, 0.98) 0%, rgba(1, 10, 16, 1) 100%);
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input-shell {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 8px;
     align-items: center;
-    scroll-margin-bottom: 12px;
+    scroll-margin-bottom: 0;
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-prompt-label {
@@ -1312,14 +1314,11 @@
     background: transparent;
     box-shadow: none;
     color: #f8fafc;
+    caret-color: #f8fafc;
   }
 
   .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-run-btn {
-    width: auto;
-    min-width: 74px;
-    min-height: 34px;
-    padding: 6px 8px 6px 24px;
-    font-size: 11px;
+    display: none;
   }
 
   /* While the mobile terminal is active, collapse duplicate context panels so the shell gets the usable viewport. */
@@ -1357,7 +1356,7 @@
   }
 
   .terminal-page.terminal-mobile-inline-input.terminal-mobile-active .terminal-output-shell {
-    min-height: clamp(250px, calc(var(--terminal-mobile-viewport-height) - 218px), 760px);
+    min-height: 0;
   }
 
   .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-context {
@@ -1445,11 +1444,13 @@
   }
 
   .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-panel {
-    min-height: clamp(320px, calc(var(--terminal-mobile-viewport-height) - 8px), 860px);
+    min-height: 0;
+    height: calc(var(--terminal-mobile-viewport-height) - 8px);
   }
 
   .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-output-shell {
-    min-height: clamp(260px, calc(var(--terminal-mobile-viewport-height) - 96px), 860px);
+    min-height: 0;
+    flex: 1 1 auto;
   }
 
   .terminal-page .router-ports {

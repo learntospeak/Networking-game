@@ -115,15 +115,6 @@
     if (target && els.terminalForm.parentElement !== target) {
       target.appendChild(els.terminalForm);
     }
-
-    if (
-      inlineMobileInput
-      && els.terminalOutput
-      && els.terminalInlineInputSlot
-      && els.terminalInlineInputSlot.parentElement === els.terminalOutput
-    ) {
-      els.terminalOutput.appendChild(els.terminalInlineInputSlot);
-    }
   }
 
   function mobileViewportMetrics() {
@@ -516,17 +507,22 @@
 
   function appendTerminalNode(node) {
     if (!els.terminalOutput) return;
-
-    if (
-      usesInlineMobileInput()
-      && els.terminalInlineInputSlot
-      && els.terminalInlineInputSlot.parentElement === els.terminalOutput
-    ) {
-      els.terminalOutput.insertBefore(node, els.terminalInlineInputSlot);
-      return;
-    }
-
     els.terminalOutput.appendChild(node);
+  }
+
+  function focusTerminalInputAtEnd() {
+    if (!els.terminalInput) return;
+    const valueLength = els.terminalInput.value.length;
+    syncMobileInputState(true);
+    els.terminalInput.focus({ preventScroll: true });
+    if (typeof els.terminalInput.setSelectionRange === "function") {
+      els.terminalInput.setSelectionRange(valueLength, valueLength);
+    }
+    scheduleMobileTerminalReveal(0);
+  }
+
+  function shouldIgnoreTerminalTap(target) {
+    return Boolean(target?.closest("button, a, input, textarea, select, label"));
   }
 
   function printLine(text, type = "system") {
@@ -2927,6 +2923,15 @@
             syncMobileViewportMetrics();
           }
         }, 140);
+      });
+    }
+
+    if (els.terminalOutput) {
+      els.terminalOutput.addEventListener("click", (event) => {
+        if (!usesInlineMobileInput() || shouldIgnoreTerminalTap(event.target)) {
+          return;
+        }
+        focusTerminalInputAtEnd();
       });
     }
 

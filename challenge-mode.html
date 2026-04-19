@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Challenge Mode</title>
   <link rel="stylesheet" href="./style.css?v=20260416c">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260418e">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260419a">
   <link rel="stylesheet" href="./challenge-mode.css?v=20260418d">
   <script src="./commandsData.js?v=20260416c" defer></script>
   <script src="./stateManager.js?v=20260416c" defer></script>
   <script src="./coachEngine.js?v=20260416c" defer></script>
   <script src="./scenarioEngine.js?v=20260416c" defer></script>
   <script src="./challenge-mode.js?v=20260416c" defer></script>
-  <script src="./terminalEngine.js?v=20260418e" defer></script>
+  <script src="./terminalEngine.js?v=20260419a" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
 <body class="terminal-page challenge-page">
@@ -135,10 +135,9 @@
         <section class="lab-panel terminal-panel">
           <div id="layerTransitionBanner" class="layer-transition-banner" data-layer="network" hidden></div>
           <div class="terminal-output-shell">
-            <div id="terminalOutput" class="terminal-output" aria-live="polite">
-              <div id="terminalInlineInputSlot" class="terminal-inline-input-slot"></div>
-            </div>
+            <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
           </div>
+          <div id="terminalInlineInputSlot" class="terminal-inline-input-slot"></div>
 
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
