@@ -537,6 +537,25 @@ button::before {
     0 0 12px rgba(132, 204, 22, 0.45);
 }
 
+.page-nav-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.page-back-link {
+  min-height: 42px;
+}
+
+.subnetting-lab-panel {
+  margin-top: 0;
+}
+
+.section-subhead {
+  margin: 0 0 12px;
+  text-align: center;
+}
+
 #question {
   margin-top: 20px;
   margin-bottom: 10px;
@@ -731,6 +750,10 @@ hr {
 
   .hub-section-head {
     flex-direction: column;
+  }
+
+  .page-nav-row {
+    margin-bottom: 12px;
   }
 }
 

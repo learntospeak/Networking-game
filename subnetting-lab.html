@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subnetting Lab</title>
+  <link rel="stylesheet" href="./style.css?v=20260421a">
+  <script src="./script.js?v=20260416c" defer></script>
+</head>
+<body>
+  <div class="rack-room">
+    <div class="router-shell">
+      <div class="router-top">
+        <div class="router-brand">NET-LAB SWITCH PANEL</div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <div class="page-nav-row">
+        <a class="hub-section-jump page-back-link" href="./index.html">Back to Main App</a>
+      </div>
+
+      <h1>Subnetting Lab</h1>
+
+      <div id="topButtons">
+        <button id="practiceToggle" class="section-btn active" type="button">Practice</button>
+        <button id="cheatSheetToggle" class="section-btn" type="button">Cheat Sheet</button>
+      </div>
+
+      <div id="practiceSection">
+        <section class="hub-section-panel subnetting-section-panel subnetting-lab-panel">
+          <div class="hub-section-head">
+            <div>
+              <h3>Subnetting Practice</h3>
+              <p>Work through CIDR, masks, host counts, usable ranges, commands, protocol basics, and exam-style subnetting drills in a dedicated networking lab.</p>
+            </div>
+            <a class="hub-section-jump" href="./protocol-merge.html">Open Protocol Lab</a>
+          </div>
+
+          <div id="modeButtons">
+            <button class="mode-btn" data-mode="cidrToHosts" type="button">Hosts</button>
+            <button class="mode-btn" data-mode="hostsToCidr" type="button">Network Bits</button>
+            <button class="mode-btn" data-mode="cidrToMask" type="button">Subnet Mask</button>
+            <button class="mode-btn" data-mode="bitsToValue" type="button">Bits Value</button>
+            <button class="mode-btn" data-mode="networkAddress" type="button">Network Address</button>
+            <button class="mode-btn" data-mode="broadcastAddress" type="button">Broadcast</button>
+            <button class="mode-btn" data-mode="usableRange" type="button">Usable Range</button>
+            <button class="mode-btn" data-mode="hostRequirement" type="button">Hosts Required</button>
+          </div>
+
+          <hr>
+
+          <h3 class="section-subhead">Commands &amp; Security</h3>
+          <div id="extraButtons">
+            <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
+            <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
+          </div>
+
+          <div id="examModeRow">
+            <button id="examModeBtn" class="section-btn exam-btn" type="button">Exam Mode</button>
+          </div>
+
+          <div id="protocolMergeRow">
+            <a id="protocolMergeLink" class="section-btn panel-link protocol-link" href="./protocol-merge.html">Protocol Lab</a>
+          </div>
+
+          <div class="display-panel">
+            <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
+            <p id="examStatus" hidden></p>
+            <div id="diagram"></div>
+            <div id="answers"></div>
+
+            <p id="hint" class="hint"></p>
+            <p id="feedback"></p>
+
+            <div id="actionButtons">
+              <button id="hintBtn" type="button" hidden>Hint</button>
+              <button id="nextBtn" type="button" hidden>Next</button>
+              <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
+              <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
+            </div>
+          </div>
+
+          <div class="scoreboard">
+            <h3>Score</h3>
+            <p>Streak: <span id="streak">0</span></p>
+            <p>Correct: <span id="correct">0</span></p>
+            <p>Wrong: <span id="wrong">0</span></p>
+          </div>
+        </section>
+      </div>
+
+      <div id="cheatSheetSection" hidden>
+        <h2>Cheat Sheet</h2>
+
+        <h3>Subnet Basics</h3>
+        <p>
+          Network = first address in the subnet<br>
+          Broadcast = last address in the subnet<br>
+          Usable range = everything in between
+        </p>
+
+        <h3>Host Sizes</h3>
+        <p>
+          /24 = 254 hosts<br>
+          /25 = 126 hosts<br>
+          /26 = 62 hosts<br>
+          /27 = 30 hosts<br>
+          /28 = 14 hosts<br>
+          /29 = 6 hosts<br>
+          /30 = 2 hosts
+        </p>
+
+        <h3>Block Sizes</h3>
+        <p>
+          /25 = 128<br>
+          /26 = 64<br>
+          /27 = 32<br>
+          /28 = 16<br>
+          /29 = 8<br>
+          /30 = 4
+        </p>
+
+        <h3>Quick Rules</h3>
+        <p>
+          Network = multiples of the block size<br>
+          Broadcast = network + block size - 1<br>
+          First usable = network + 1<br>
+          Last usable = broadcast - 1
+        </p>
+
+        <h3>Commands</h3>
+        <p>
+          show run = current active config<br>
+          show start = saved startup config<br>
+          show version = IOS version and system details<br>
+          show interface = interface details, errors, bandwidth<br>
+          show flash = files stored in flash memory
+        </p>
+
+        <h3>Switch Management</h3>
+        <p>
+          A normal switch IP is for remote management only<br>
+          A normal switch is not the default gateway<br>
+          Switch management IP is usually on a virtual interface
+        </p>
+
+        <h3>Security</h3>
+        <p>
+          SSH = secure and encrypted<br>
+          Telnet = insecure and clear text
+        </p>
+      </div>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

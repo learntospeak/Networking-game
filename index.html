@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Networking Learning Hub</title>
-  <link rel="stylesheet" href="./style.css?v=20260419d">
-  <script src="./script.js?v=20260416c" defer></script>
+  <link rel="stylesheet" href="./style.css?v=20260421a">
 </head>
 <body>
   <div class="rack-room">
@@ -20,182 +19,54 @@
         </div>
       </div>
 
-  <h1>Networking Learning Hub</h1>
+      <h1>Networking Learning Hub</h1>
 
-  <div id="topButtons">
-    <button id="practiceToggle" class="section-btn active" type="button">Practice</button>
-    <button id="cheatSheetToggle" class="section-btn" type="button">Cheat Sheet</button>
-  </div>
+      <section id="practiceSection">
+        <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">
+          <div class="learning-paths-head">
+            <h3>Choose a Lab</h3>
+            <p>Launch each learning area from its own dedicated page so subnetting, Cisco CLI, Linux, Windows, web traffic, and cyber challenge workflows stay clearly separated.</p>
+          </div>
 
-  <div id="practiceSection">
-    <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">
-      <div class="learning-paths-head">
-        <h3>Choose a Lab</h3>
-        <p>Start in the right lab first so subnetting, Cisco CLI, Linux, Windows, web traffic, and cyber challenge workflows stay clearly separated as the app grows.</p>
-      </div>
+          <div class="learning-path-grid">
+            <a class="learning-path-card learning-path-card-subnetting" href="./subnetting-lab.html">
+              <span class="learning-path-kicker">Networking</span>
+              <span class="learning-path-title">Subnetting Lab</span>
+              <span class="learning-path-copy">Practice CIDR, masks, host counts, usable ranges, protocol basics, exam-mode drills, and the subnetting cheat sheet in a dedicated networking trainer page.</span>
+            </a>
 
-      <div class="learning-path-grid">
-        <a class="learning-path-card learning-path-card-subnetting" href="#subnettingLabSection">
-          <span class="learning-path-kicker">Networking</span>
-          <span class="learning-path-title">Subnetting Lab</span>
-          <span class="learning-path-copy">Practice CIDR, masks, host counts, usable ranges, protocol basics, and exam-style subnetting drills in the original networking trainer.</span>
-        </a>
+            <a class="learning-path-card learning-path-card-windows" href="./terminal-coach.html?track=windows">
+              <span class="learning-path-kicker">Windows</span>
+              <span class="learning-path-title">Windows Terminal Lab</span>
+              <span class="learning-path-copy">CMD-only learning with Windows file paths, process tools, and troubleshooting workflows.</span>
+            </a>
 
-        <a class="learning-path-card learning-path-card-windows" href="./terminal-coach.html?track=windows">
-          <span class="learning-path-kicker">Windows</span>
-          <span class="learning-path-title">Windows Terminal Lab</span>
-          <span class="learning-path-copy">CMD-only learning with Windows file paths, process tools, and troubleshooting workflows.</span>
-        </a>
+            <a class="learning-path-card learning-path-card-linux" href="./terminal-coach.html?track=linux">
+              <span class="learning-path-kicker">Linux</span>
+              <span class="learning-path-title">Linux Terminal Lab</span>
+              <span class="learning-path-copy">Linux-first lessons with one shell context at a time so beginners are not translating commands mid-task.</span>
+            </a>
 
-        <a class="learning-path-card learning-path-card-linux" href="./terminal-coach.html?track=linux">
-          <span class="learning-path-kicker">Linux</span>
-          <span class="learning-path-title">Linux Terminal Lab</span>
-          <span class="learning-path-copy">Linux-first lessons with one shell context at a time so beginners are not translating commands mid-task.</span>
-        </a>
+            <a class="learning-path-card learning-path-card-cisco" href="./cisco-cli-lab.html">
+              <span class="learning-path-kicker">Cisco</span>
+              <span class="learning-path-title">Cisco CLI Lab</span>
+              <span class="learning-path-copy">Guided router CLI practice with Cisco-style prompts, exec modes, interface configuration, routing checks, and save workflows.</span>
+            </a>
 
-        <a class="learning-path-card learning-path-card-cisco" href="./cisco-cli-lab.html">
-          <span class="learning-path-kicker">Cisco</span>
-          <span class="learning-path-title">Cisco CLI Lab</span>
-          <span class="learning-path-copy">Guided router CLI practice with Cisco-style prompts, exec modes, interface configuration, routing checks, and save workflows.</span>
-        </a>
+            <a class="learning-path-card learning-path-card-web" href="./web-http-lab.html">
+              <span class="learning-path-kicker">Web</span>
+              <span class="learning-path-title">Web &amp; HTTP Lab</span>
+              <span class="learning-path-copy">Guided browser, request, cookie, session, cache, proxy, and discoverability lessons that complement the terminal tracks.</span>
+            </a>
 
-        <a class="learning-path-card learning-path-card-web" href="./web-http-lab.html">
-          <span class="learning-path-kicker">Web</span>
-          <span class="learning-path-title">Web &amp; HTTP Lab</span>
-          <span class="learning-path-copy">Guided browser, request, cookie, session, cache, proxy, and discoverability lessons that complement the terminal tracks.</span>
-        </a>
-
-        <a class="learning-path-card learning-path-card-challenge" href="./challenge-mode.html">
-          <span class="learning-path-kicker">Cyber</span>
-          <span class="learning-path-title">Cyber Challenge Mode</span>
-          <span class="learning-path-copy">Evidence-driven labs with explicit machine context like Analyst Box, Linux Server, Windows Host, or target systems.</span>
-        </a>
-      </div>
-    </section>
-
-    <section id="subnettingLabSection" class="hub-section-panel subnetting-section-panel">
-      <div class="hub-section-head">
-        <div>
-          <h3>Subnetting Lab</h3>
-          <p>Keep subnetting practice in its own dedicated area. This section covers CIDR, host counts, masks, ranges, commands, protocol basics, and exam-mode drills without mixing in the other learning tracks.</p>
-        </div>
-        <a class="hub-section-jump" href="#learningPathsPanel">Back to Lab Hub</a>
-      </div>
-
-      <div id="modeButtons">
-        <button class="mode-btn" data-mode="cidrToHosts" type="button">Hosts</button>
-        <button class="mode-btn" data-mode="hostsToCidr" type="button">Network Bits</button>
-        <button class="mode-btn" data-mode="cidrToMask" type="button">Subnet Mask</button>
-        <button class="mode-btn" data-mode="bitsToValue" type="button">Bits Value</button>
-        <button class="mode-btn" data-mode="networkAddress" type="button">Network Address</button>
-        <button class="mode-btn" data-mode="broadcastAddress" type="button">Broadcast</button>
-        <button class="mode-btn" data-mode="usableRange" type="button">Usable Range</button>
-        <button class="mode-btn" data-mode="hostRequirement" type="button">Hosts Required</button>
-      </div>
-
-      <hr>
-
-      <h3 align="center">Commands & Security</h3>
-      <div id="extraButtons">
-        <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
-        <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
-      </div>
-
-      <div id="examModeRow">
-        <button id="examModeBtn" class="section-btn exam-btn" type="button">Exam Mode</button>
-      </div>
-
-      <div id="protocolMergeRow">
-        <a id="protocolMergeLink" class="section-btn panel-link protocol-link" href="./protocol-merge.html">Protocol Lab</a>
-      </div>
-
-      <div class="display-panel">
-      <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
-      <p id="examStatus" hidden></p>
-      <div id="diagram"></div>
-      <div id="answers"></div>
-
-      <p id="hint" class="hint"></p>
-      <p id="feedback"></p>
-
-      <div id="actionButtons">
-        <button id="hintBtn" type="button" hidden>Hint</button>
-        <button id="nextBtn" type="button" hidden>Next</button>
-        <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
-        <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
-      </div>
-      </div>
-
-      <div class="scoreboard">
-        <h3>Score</h3>
-        <p>Streak: <span id="streak">0</span></p>
-        <p>Correct: <span id="correct">0</span></p>
-        <p>Wrong: <span id="wrong">0</span></p>
-      </div>
-    </section>
-  </div>
-
-  <div id="cheatSheetSection" hidden>
-    <h2>Cheat Sheet</h2>
-
-    <h3>Subnet Basics</h3>
-    <p>
-      Network = first address in the subnet<br>
-      Broadcast = last address in the subnet<br>
-      Usable range = everything in between
-    </p>
-
-    <h3>Host Sizes</h3>
-    <p>
-      /24 = 254 hosts<br>
-      /25 = 126 hosts<br>
-      /26 = 62 hosts<br>
-      /27 = 30 hosts<br>
-      /28 = 14 hosts<br>
-      /29 = 6 hosts<br>
-      /30 = 2 hosts
-    </p>
-
-    <h3>Block Sizes</h3>
-    <p>
-      /25 = 128<br>
-      /26 = 64<br>
-      /27 = 32<br>
-      /28 = 16<br>
-      /29 = 8<br>
-      /30 = 4
-    </p>
-
-    <h3>Quick Rules</h3>
-    <p>
-      Network = multiples of the block size<br>
-      Broadcast = network + block size - 1<br>
-      First usable = network + 1<br>
-      Last usable = broadcast - 1
-    </p>
-
-    <h3>Commands</h3>
-    <p>
-      show run = current active config<br>
-      show start = saved startup config<br>
-      show version = IOS version and system details<br>
-      show interface = interface details, errors, bandwidth<br>
-      show flash = files stored in flash memory
-    </p>
-
-    <h3>Switch Management</h3>
-    <p>
-      A normal switch IP is for remote management only<br>
-      A normal switch is not the default gateway<br>
-      Switch management IP is usually on a virtual interface
-    </p>
-
-    <h3>Security</h3>
-    <p>
-      SSH = secure and encrypted<br>
-      Telnet = insecure and clear text
-    </p>
-  </div>
+            <a class="learning-path-card learning-path-card-challenge" href="./challenge-mode.html">
+              <span class="learning-path-kicker">Cyber</span>
+              <span class="learning-path-title">Cyber Challenge Mode</span>
+              <span class="learning-path-copy">Evidence-driven labs with explicit machine context like Analyst Box, Linux Server, Windows Host, or target systems.</span>
+            </a>
+          </div>
+        </section>
+      </section>
 
       <div class="router-ports" aria-hidden="true">
         <div class="port connected"><span class="cable"></span></div>
