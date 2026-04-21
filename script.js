@@ -703,6 +703,7 @@ const securityQuestions = [
 ];
 
 const els = {
+  appSectionShell: document.getElementById("appSectionShell"),
   practiceToggle: document.getElementById("practiceToggle"),
   cheatSheetToggle: document.getElementById("cheatSheetToggle"),
   practiceSection: document.getElementById("practiceSection"),
@@ -723,6 +724,10 @@ const els = {
   wrong: document.getElementById("wrong"),
   scoreboard: document.querySelector(".scoreboard")
 };
+
+const NetlabApp = window.NetlabApp;
+const SECTION_ID = "subnetting-lab";
+let savedProgressRecord = null;
 
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 const subnetExamModes = [
@@ -757,8 +762,239 @@ const state = {
   examIndex: 0,
   examScore: 0,
   examQuestionCount: 10,
-  usedExamQuestions: new Set()
+  usedExamQuestions: new Set(),
+  completedModes: new Set(),
+  resumePromptVisible: false
 };
+
+function formatModeLabel(mode) {
+  const button = modeButtons.find((item) => item.dataset.mode === mode);
+  return button ? button.textContent : "Subnetting Practice";
+}
+
+function captureAnswerButtons() {
+  return Array.from(els.answers.querySelectorAll("button")).map((button) => ({
+    text: button.textContent,
+    disabled: button.disabled,
+    className: button.className
+  }));
+}
+
+function restoreAnswerButtons(buttons) {
+  els.answers.innerHTML = "";
+
+  (buttons || []).forEach((buttonState) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = String(buttonState.text || "");
+    btn.className = buttonState.className || "";
+    btn.disabled = Boolean(buttonState.disabled);
+    btn.addEventListener("click", () => checkAnswer(btn.textContent));
+    els.answers.appendChild(btn);
+  });
+}
+
+function buildProgressSnapshot() {
+  // Subnetting mode state is mostly UI-driven, so resume stores the active question and answer buttons as rendered.
+  return {
+    currentAnswer: state.currentAnswer,
+    currentMode: state.currentMode,
+    currentCidr: state.currentCidr,
+    currentBits: [...state.currentBits],
+    correct: state.correct,
+    wrong: state.wrong,
+    currentIp: state.currentIp,
+    currentNetwork: state.currentNetwork,
+    currentBroadcast: state.currentBroadcast,
+    currentBlockSize: state.currentBlockSize,
+    currentHintText: state.currentHintText,
+    streak: state.streak,
+    recentCommandQuestions: [...state.recentCommandQuestions],
+    recentSecurityQuestions: [...state.recentSecurityQuestions],
+    examModeActive: state.examModeActive,
+    examFinished: state.examFinished,
+    examQuestions: NetlabApp ? NetlabApp.clone(state.examQuestions) : JSON.parse(JSON.stringify(state.examQuestions)),
+    examIndex: state.examIndex,
+    examScore: state.examScore,
+    examQuestionCount: state.examQuestionCount,
+    usedExamQuestions: Array.from(state.usedExamQuestions),
+    completedModes: Array.from(state.completedModes),
+    ui: {
+      practiceHidden: els.practiceSection.hidden,
+      cheatSheetHidden: els.cheatSheetSection.hidden,
+      scoreboardHidden: els.scoreboard.hidden,
+      questionText: els.question.textContent,
+      questionPlaceholder: els.question.classList.contains("question-placeholder"),
+      diagramHtml: els.diagram.innerHTML,
+      answers: captureAnswerButtons(),
+      hintText: els.hint.textContent,
+      feedbackText: els.feedback.textContent,
+      feedbackClass: els.feedback.className,
+      hintBtnHidden: els.hintBtn.hidden,
+      nextBtnHidden: els.nextBtn.hidden,
+      nextBtnText: els.nextBtn.textContent,
+      examStatusHidden: els.examStatus.hidden,
+      examStatusText: els.examStatus.textContent,
+      restartExamBtnHidden: els.restartExamBtn.hidden,
+      exitExamBtnHidden: els.exitExamBtn.hidden
+    }
+  };
+}
+
+function persistSectionProgress() {
+  if (!NetlabApp) {
+    return;
+  }
+
+  const modeLabel = state.examModeActive
+    ? `Exam Mode - Question ${Math.min(state.examIndex + 1, state.examQuestionCount)}`
+    : state.currentMode
+      ? formatModeLabel(state.currentMode)
+      : (els.cheatSheetSection.hidden ? "Practice Lobby" : "Cheat Sheet");
+
+  savedProgressRecord = NetlabApp.saveSectionProgress(SECTION_ID, {
+    sectionLabel: "Subnetting Lab",
+    currentItemId: state.examModeActive ? "exam-mode" : state.currentMode,
+    currentItemLabel: modeLabel,
+    completedCount: state.completedModes.size,
+    totalCount: modeButtons.length,
+    summaryText: `Score ${state.correct} correct / ${state.wrong} wrong`,
+    state: buildProgressSnapshot()
+  });
+  state.resumePromptVisible = false;
+  renderSectionShell();
+}
+
+function restoreSavedProgress(savedState) {
+  if (!savedState) {
+    return false;
+  }
+
+  state.currentAnswer = savedState.currentAnswer || "";
+  state.currentMode = savedState.currentMode || "";
+  state.currentCidr = Number(savedState.currentCidr) || 0;
+  state.currentBits = Array.isArray(savedState.currentBits) ? savedState.currentBits : [];
+  state.correct = Number(savedState.correct) || 0;
+  state.wrong = Number(savedState.wrong) || 0;
+  state.currentIp = Number(savedState.currentIp) || 0;
+  state.currentNetwork = Number(savedState.currentNetwork) || 0;
+  state.currentBroadcast = Number(savedState.currentBroadcast) || 0;
+  state.currentBlockSize = Number(savedState.currentBlockSize) || 0;
+  state.currentHintText = savedState.currentHintText || "";
+  state.streak = Number(savedState.streak) || 0;
+  state.recentCommandQuestions = Array.isArray(savedState.recentCommandQuestions) ? savedState.recentCommandQuestions : [];
+  state.recentSecurityQuestions = Array.isArray(savedState.recentSecurityQuestions) ? savedState.recentSecurityQuestions : [];
+  state.examModeActive = Boolean(savedState.examModeActive);
+  state.examFinished = Boolean(savedState.examFinished);
+  state.examQuestions = Array.isArray(savedState.examQuestions) ? savedState.examQuestions : [];
+  state.examIndex = Number(savedState.examIndex) || 0;
+  state.examScore = Number(savedState.examScore) || 0;
+  state.examQuestionCount = Number(savedState.examQuestionCount) || 10;
+  state.usedExamQuestions = new Set(Array.isArray(savedState.usedExamQuestions) ? savedState.usedExamQuestions : []);
+  state.completedModes = new Set(Array.isArray(savedState.completedModes) ? savedState.completedModes : []);
+
+  const ui = savedState.ui || {};
+  els.practiceSection.hidden = Boolean(ui.practiceHidden);
+  els.cheatSheetSection.hidden = Boolean(ui.cheatSheetHidden);
+  els.scoreboard.hidden = Boolean(ui.scoreboardHidden);
+  els.practiceToggle.classList.toggle("active", !els.practiceSection.hidden);
+  els.cheatSheetToggle.classList.toggle("active", !els.cheatSheetSection.hidden);
+
+  updateScoreboard();
+  updateActiveMode(state.examModeActive ? "" : state.currentMode);
+  setExamControlsDisabled(state.examModeActive && !state.examFinished);
+  setQuestion(ui.questionText || "Select a mode to begin", Boolean(ui.questionPlaceholder));
+  els.diagram.innerHTML = ui.diagramHtml || "";
+  restoreAnswerButtons(ui.answers);
+  els.hint.textContent = ui.hintText || "";
+  els.feedback.textContent = ui.feedbackText || "";
+  els.feedback.className = ui.feedbackClass || "";
+  els.hintBtn.hidden = Boolean(ui.hintBtnHidden);
+  els.nextBtn.hidden = Boolean(ui.nextBtnHidden);
+  els.nextBtn.textContent = ui.nextBtnText || "Next";
+  els.examStatus.hidden = Boolean(ui.examStatusHidden);
+  els.examStatus.textContent = ui.examStatusText || "";
+  els.restartExamBtn.hidden = Boolean(ui.restartExamBtnHidden);
+  els.exitExamBtn.hidden = Boolean(ui.exitExamBtnHidden);
+  state.resumePromptVisible = false;
+
+  NetlabApp?.clearLaunchAction();
+  return true;
+}
+
+function renderSectionShell() {
+  if (!els.appSectionShell || !NetlabApp) {
+    return;
+  }
+
+  const profile = NetlabApp.getActiveProfile();
+  const record = savedProgressRecord || NetlabApp.getSectionProgress(SECTION_ID);
+  const showResume = Boolean(record && state.resumePromptVisible);
+  const completionText = record && showResume
+    ? `${record.completedCount}/${record.totalCount || modeButtons.length}`
+    : `${state.completedModes.size}/${modeButtons.length}`;
+  const lastItem = record?.currentItemLabel || (state.currentMode ? formatModeLabel(state.currentMode) : "Not started");
+
+  els.appSectionShell.innerHTML = [
+    "<div class=\"app-shell-head\">",
+    "  <div>",
+    "    <p class=\"app-shell-kicker\">Progress</p>",
+    "    <h2>Resume Subnetting Lab</h2>",
+    "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
+      ? "Saved progress is available for this subnetting track. Resume the last mode or start the lab over from the beginning."
+      : "Profile: " + profile.label + ". This page saves the current mode, score, and active question locally so you can return to it later.") + "</p>",
+    "  </div>",
+    "</div>",
+    "<div class=\"app-shell-badges\">",
+    "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
+    "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
+    "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>",
+    "</div>",
+    "<div class=\"app-shell-actions\">",
+    (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
+    "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
+    "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
+    "</div>",
+    "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile on this browser. " + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>"
+  ].join("");
+
+  const resumeBtn = document.getElementById("resumeSectionBtn");
+  const startOverBtn = document.getElementById("startOverSectionBtn");
+  const resetProgressBtn = document.getElementById("resetProgressBtn");
+
+  if (resumeBtn && record) {
+    resumeBtn.addEventListener("click", () => {
+      restoreSavedProgress(record.state);
+      renderSectionShell();
+    });
+  }
+
+  if (startOverBtn) {
+    startOverBtn.addEventListener("click", () => {
+      window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
+    });
+  }
+
+  if (resetProgressBtn) {
+    resetProgressBtn.addEventListener("click", () => {
+      if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+        return;
+      }
+
+      NetlabApp.clearActiveProfileProgress();
+      window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
+    });
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function formatCidr(cidr) {
   const hostBits = 32 - cidr;
@@ -816,6 +1052,11 @@ function showPractice(force = false) {
   if (!state.currentMode && !state.examModeActive) {
     resetIntroState();
   }
+
+  renderSectionShell();
+  if (NetlabApp && !state.resumePromptVisible) {
+    persistSectionProgress();
+  }
 }
 
 function showCheatSheet() {
@@ -825,6 +1066,10 @@ function showCheatSheet() {
   els.cheatSheetSection.hidden = false;
   els.practiceToggle.classList.remove("active");
   els.cheatSheetToggle.classList.add("active");
+  renderSectionShell();
+  if (!state.resumePromptVisible) {
+    persistSectionProgress();
+  }
 }
 
 function resetIntroState() {
@@ -999,6 +1244,7 @@ function startExamMode() {
   els.scoreboard.hidden = true;
 
   generateExamQuestion();
+  persistSectionProgress();
 }
 
 function generateExamQuestion() {
@@ -1017,15 +1263,18 @@ function generateExamQuestion() {
 
   if (currentExamQuestion.type === "command") {
     renderQuestionObject(currentExamQuestion.data, "commandQuiz");
+    persistSectionProgress();
     return;
   }
 
   if (currentExamQuestion.type === "security") {
     renderQuestionObject(currentExamQuestion.data, "securityQuiz");
+    persistSectionProgress();
     return;
   }
 
   renderCurrentModeQuestion(currentExamQuestion.mode);
+  persistSectionProgress();
 }
 
 function markAnswerButtons(answer, isCorrect) {
@@ -1068,6 +1317,7 @@ function submitExamAnswer(answer) {
   els.nextBtn.hidden = false;
   els.nextBtn.textContent =
     state.examIndex === state.examQuestionCount - 1 ? "Finish Exam" : "Next Question";
+  persistSectionProgress();
 }
 
 function advanceExamQuestion() {
@@ -1102,6 +1352,7 @@ function finishExamMode() {
 
   els.restartExamBtn.hidden = false;
   els.exitExamBtn.hidden = false;
+  persistSectionProgress();
 }
 
 function exitExamMode() {
@@ -1119,6 +1370,7 @@ function exitExamMode() {
 
   showPractice(true);
   resetIntroState();
+  persistSectionProgress();
 }
 
 function setSubnetState({ cidr, ip, blockSize, network, broadcast }) {
@@ -1330,6 +1582,7 @@ function nextQuestion() {
   showPractice();
   resetQuestionUi({ showHint: true });
   renderCurrentModeQuestion(state.currentMode);
+  persistSectionProgress();
 }
 
 function showHint() {
@@ -1339,6 +1592,7 @@ function showHint() {
 
   if (state.currentMode === "commandQuiz" || state.currentMode === "securityQuiz") {
     els.hint.textContent = state.currentHintText;
+    persistSectionProgress();
     return;
   }
 
@@ -1387,6 +1641,8 @@ function showHint() {
   if (state.currentMode === "hostRequirement") {
     els.hint.textContent = "Hint: Choose the smallest subnet that fits. /24=254, /25=126, /26=62, /27=30, /28=14, /29=6, /30=2.";
   }
+
+  persistSectionProgress();
 }
 
 function answerUsesPartialMatch() {
@@ -1420,15 +1676,18 @@ function checkAnswer(answer) {
   updateScoreboard();
   els.nextBtn.hidden = false;
   els.hintBtn.hidden = true;
+  persistSectionProgress();
 }
 
 function setMode(mode) {
   if (state.examModeActive) return;
 
   state.currentMode = mode;
+  state.completedModes.add(mode);
   updateActiveMode(mode);
   showPractice();
   startQuiz();
+  persistSectionProgress();
 }
 
 function bindEvents() {
@@ -1452,8 +1711,38 @@ function bindEvents() {
   modeButtons.forEach((button) => {
     button.addEventListener("click", () => setMode(button.dataset.mode));
   });
+
+  window.addEventListener("netlab:authchange", () => {
+    savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+    state.resumePromptVisible = Boolean(savedProgressRecord);
+    renderSectionShell();
+  });
+
+  window.addEventListener("netlab:progresschange", () => {
+    savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+    if (!savedProgressRecord) {
+      state.resumePromptVisible = false;
+    }
+    renderSectionShell();
+  });
 }
+
+if (NetlabApp?.getLaunchAction() === "start") {
+  NetlabApp.resetSectionProgress(SECTION_ID);
+  NetlabApp.clearLaunchAction();
+}
+
+savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
 
 bindEvents();
 updateScoreboard();
-showPractice();
+if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord.state)) {
+  renderSectionShell();
+} else {
+  showPractice();
+  if (NetlabApp?.getLaunchAction()) {
+    NetlabApp.clearLaunchAction();
+  }
+  renderSectionShell();
+}

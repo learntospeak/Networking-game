@@ -1,5 +1,6 @@
 (function () {
   const { StateManager, CoachEngine, ScenarioEngine, CommandsData } = window;
+  const NetlabApp = window.NetlabApp;
   const pageConfig = window.TerminalCoachConfig || {};
 
   if (!StateManager || !CoachEngine || !ScenarioEngine) {
@@ -14,6 +15,7 @@
     pageKicker: document.getElementById("terminalPageKicker"),
     pageTitle: document.getElementById("terminalPageTitle"),
     pageIntro: document.getElementById("terminalPageIntro"),
+    appSectionShell: document.getElementById("appSectionShell"),
     linuxTrackLink: document.getElementById("linuxTrackLink"),
     windowsTrackLink: document.getElementById("windowsTrackLink"),
     ciscoTrackLink: document.getElementById("ciscoTrackLink"),
@@ -74,8 +76,11 @@
     mobileRevealRaf: 0,
     mobileRevealTimer: 0,
     mobileBlurTimer: 0,
-    mobileContextCollapsed: false
+    mobileContextCollapsed: false,
+    terminalEntries: [],
+    resumePromptVisible: false
   };
+  let savedProgressRecord = null;
 
   function cancelScheduledFrame(id) {
     if (id) {
@@ -293,6 +298,30 @@
   }
 
   session.scenarios = configuredScenarioPool();
+
+  function currentSectionId() {
+    if (pageConfig.sectionId) {
+      return pageConfig.sectionId;
+    }
+
+    if (pageConfig.mode === "challenge") {
+      return "cyber-challenge";
+    }
+
+    if (pageConfig.environmentCategory === "windows") {
+      return "windows-terminal";
+    }
+
+    if (pageConfig.environmentCategory === "cisco") {
+      return "cisco-cli";
+    }
+
+    return "linux-terminal";
+  }
+
+  function sectionLabel() {
+    return pageConfig.pageKicker || pageConfig.pageTitle || scenarioEnvironmentLabel(currentScenario());
+  }
 
   function currentScenario() {
     return session.scenarios[session.scenarioIndex];
@@ -528,6 +557,13 @@
     els.terminalOutput.appendChild(node);
   }
 
+  function recordTerminalEntry(text, type) {
+    session.terminalEntries.push({
+      text: String(text),
+      type: type
+    });
+  }
+
   function focusTerminalInputAtEnd() {
     if (!els.terminalInput) return;
     const valueLength = els.terminalInput.value.length;
@@ -547,6 +583,7 @@
     const line = document.createElement("div");
     line.className = `terminal-line ${type}`;
     line.textContent = text;
+    recordTerminalEntry(text, type);
     appendTerminalNode(line);
     scrollTerminal();
   }
@@ -559,8 +596,33 @@
     });
   }
 
-  function clearTerminal() {
+  function clearTerminal(resetEntries = true) {
     els.terminalOutput.innerHTML = "";
+    if (resetEntries) {
+      session.terminalEntries = [];
+    }
+  }
+
+  function restoreTerminalEntries(entries) {
+    clearTerminal(false);
+    session.terminalEntries = [];
+
+    (entries || []).forEach((entry) => {
+      if (!entry || entry.text === undefined || entry.text === null) {
+        return;
+      }
+
+      const line = document.createElement("div");
+      line.className = `terminal-line ${entry.type || "system"}`;
+      line.textContent = String(entry.text);
+      session.terminalEntries.push({
+        text: String(entry.text),
+        type: entry.type || "system"
+      });
+      appendTerminalNode(line);
+    });
+
+    scrollTerminal();
   }
 
   function getLayerLabel(layer = session.currentLayer) {
@@ -715,9 +777,190 @@
 
     renderHintLadder();
     updatePrompt();
+    renderSectionShell();
     if (document.activeElement === els.terminalInput) {
       scheduleMobileTerminalReveal(0);
     }
+  }
+
+  function buildProgressSnapshot() {
+    const scenario = currentScenario();
+    const step = currentStep();
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
+
+    // Terminal tracks are stateful, so resume stores both the selected scenario and the mutated shell state.
+    return {
+      scenarioId: scenario.id,
+      scenarioIndex: session.scenarioIndex,
+      stepIndex: session.stepIndex,
+      completedScenarioIds: Array.from(session.completedScenarioIds),
+      attemptsForStep: session.attemptsForStep,
+      hintLevel: session.hintLevel,
+      commandHistory: session.commandHistory.slice(),
+      historyIndex: session.historyIndex,
+      scenarioCompleted: session.scenarioCompleted,
+      scenarioStarted: session.scenarioStarted,
+      currentLayer: session.currentLayer,
+      mobileContextCollapsed: session.mobileContextCollapsed,
+      terminalEntries: NetlabApp ? NetlabApp.clone(session.terminalEntries) : session.terminalEntries.slice(),
+      runtimeState: StateManager.clone(session.state),
+      currentItemLabel: challengePresentation
+        ? scenario.title
+        : `${scenario.title} - ${step.objective}`
+    };
+  }
+
+  function persistSectionProgress() {
+    if (!NetlabApp || !session.scenarios.length) {
+      return;
+    }
+
+    const scenario = currentScenario();
+    const step = currentStep();
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const summaryText = challengePresentation
+      ? `${session.completedScenarioIds.size}/${totalScenarios()} challenges completed`
+      : `${session.completedScenarioIds.size}/${totalScenarios()} scenarios completed`;
+
+    savedProgressRecord = NetlabApp.saveSectionProgress(currentSectionId(), {
+      sectionLabel: sectionLabel(),
+      currentItemId: scenario.id,
+      currentItemLabel: challengePresentation
+        ? scenario.title
+        : `${scenario.title} - ${step.objective}`,
+      completedCount: session.completedScenarioIds.size,
+      totalCount: totalScenarios(),
+      summaryText: summaryText,
+      state: buildProgressSnapshot()
+    });
+
+    session.resumePromptVisible = false;
+  }
+
+  function restoreSavedProgress(record) {
+    const snapshot = record?.state;
+    if (!snapshot) {
+      return false;
+    }
+
+    const scenarioIndex = session.scenarios.findIndex((scenario) => scenario.id === snapshot.scenarioId);
+    if (scenarioIndex < 0) {
+      return false;
+    }
+
+    session.scenarioIndex = scenarioIndex;
+    session.stepIndex = Math.max(0, Math.min(Number(snapshot.stepIndex) || 0, currentScenario().steps.length - 1));
+    session.completedScenarioIds = new Set(Array.isArray(snapshot.completedScenarioIds) ? snapshot.completedScenarioIds : []);
+    session.attemptsForStep = Number(snapshot.attemptsForStep) || 0;
+    session.hintLevel = Number.isFinite(Number(snapshot.hintLevel)) ? Number(snapshot.hintLevel) : -1;
+    session.commandHistory = Array.isArray(snapshot.commandHistory) ? snapshot.commandHistory : [];
+    session.historyIndex = Number(snapshot.historyIndex) || session.commandHistory.length;
+    session.scenarioCompleted = Boolean(snapshot.scenarioCompleted);
+    session.scenarioStarted = Boolean(snapshot.scenarioStarted);
+    session.currentLayer = snapshot.currentLayer || currentScenario().layer || "application";
+    session.mobileContextCollapsed = Boolean(snapshot.mobileContextCollapsed);
+    session.state = snapshot.runtimeState ? StateManager.clone(snapshot.runtimeState) : StateManager.createState(currentScenario().environment);
+
+    restoreTerminalEntries(snapshot.terminalEntries || []);
+    if (!session.terminalEntries.length) {
+      if (session.scenarioStarted) {
+        announceScenario();
+      } else if (pageConfig.initialMessage) {
+        printLine(pageConfig.initialMessage, "coach");
+      }
+    }
+
+    setMobileContextCollapsed(session.mobileContextCollapsed);
+    setCurrentLayer(session.currentLayer);
+    renderPanel();
+    document.dispatchEvent(new CustomEvent("terminalcoach:scenariochange", {
+      detail: {
+        scenario: currentScenario(),
+        index: session.scenarioIndex,
+        total: totalScenarios(),
+        mode: pageConfig.mode || currentScenario().mode || "lesson",
+        started: session.scenarioStarted
+      }
+    }));
+    NetlabApp.clearLaunchAction();
+    session.resumePromptVisible = false;
+    savedProgressRecord = record;
+    return true;
+  }
+
+  function renderSectionShell() {
+    if (!els.appSectionShell || !NetlabApp || !session.scenarios.length) {
+      return;
+    }
+
+    const profile = NetlabApp.getActiveProfile();
+    const activeScenario = currentScenario();
+    const activeStep = currentStep();
+    const record = savedProgressRecord || NetlabApp.getSectionProgress(currentSectionId());
+    const showResume = Boolean(record && session.resumePromptVisible);
+    const completionText = record && showResume
+      ? `${record.completedCount}/${record.totalCount || totalScenarios()}`
+      : `${session.completedScenarioIds.size}/${totalScenarios()}`;
+    const lastItem = record?.currentItemLabel || (scenarioUsesChallengePresentation(activeScenario) ? activeScenario.title : `${activeScenario.title} - ${activeStep.objective}`);
+
+    els.appSectionShell.innerHTML = [
+      "<div class=\"app-shell-head\">",
+      "  <div>",
+      "    <p class=\"app-shell-kicker\">Progress</p>",
+      "    <h2>Resume " + escapeHtml(sectionLabel()) + "</h2>",
+      "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
+        ? "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning."
+        : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state locally.") + "</p>",
+      "  </div>",
+      "</div>",
+      "<div class=\"app-shell-badges\">",
+      "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
+      "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
+      "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>",
+      "</div>",
+      "<div class=\"app-shell-actions\">",
+      (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
+      "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
+      "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
+      "</div>",
+      "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile on this browser. " + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>"
+    ].join("");
+
+    const resumeBtn = document.getElementById("resumeSectionBtn");
+    const startOverBtn = document.getElementById("startOverSectionBtn");
+    const resetProgressBtn = document.getElementById("resetProgressBtn");
+
+    if (resumeBtn && record) {
+      resumeBtn.addEventListener("click", () => {
+        restoreSavedProgress(record);
+      });
+    }
+
+    if (startOverBtn) {
+      startOverBtn.addEventListener("click", () => {
+        window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
+      });
+    }
+
+    if (resetProgressBtn) {
+      resetProgressBtn.addEventListener("click", () => {
+        if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+          return;
+        }
+
+        NetlabApp.clearActiveProfileProgress();
+        window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
+      });
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function announceScenario() {
@@ -767,6 +1010,7 @@
     const announce = options.announce !== false;
     const transition = options.transition !== false;
     const focus = options.focus !== false;
+    const persist = options.persist !== false;
     const previousLayer = session.currentLayer;
     session.scenarioIndex = ((index % totalScenarios()) + totalScenarios()) % totalScenarios();
     resetScenarioState();
@@ -793,6 +1037,9 @@
         started: session.scenarioStarted
       }
     }));
+    if (persist) {
+      persistSectionProgress();
+    }
     syncMobileViewportMetrics();
     if (focus && els.terminalInput && !isMobileTerminalLayout()) {
       els.terminalInput.focus();
@@ -800,7 +1047,7 @@
   }
 
   function previewScenario(index) {
-    loadScenario(index, { announce: false, transition: false, focus: false });
+    loadScenario(index, { announce: false, transition: false, focus: false, persist: false });
   }
 
   function markScenarioComplete() {
@@ -808,6 +1055,7 @@
     session.scenarioCompleted = true;
     printLine("Scenario complete. You reached the objective with live command input.", "success");
     renderPanel();
+    persistSectionProgress();
   }
 
   function advanceStep(count = 1) {
@@ -832,6 +1080,7 @@
     if (challengePresentation) {
       printLine("Progress recorded. Keep investigating and let the evidence drive the next move.", "coach");
       renderPanel();
+      persistSectionProgress();
       return;
     }
     if (currentStep().context) {
@@ -839,6 +1088,7 @@
     }
     printLine(`Next task: ${currentStep().objective}`, "coach");
     renderPanel();
+    persistSectionProgress();
   }
 
   function pushHistory(command) {
@@ -3367,6 +3617,7 @@
     }
 
     renderPanel();
+    persistSectionProgress();
     if (document.activeElement === els.terminalInput) {
       scheduleMobileTerminalReveal(0);
     }
@@ -3403,6 +3654,7 @@
     const hint = CoachEngine.getHint(currentStep(), session.hintLevel, session.state);
     printLine(`Hint ${session.hintLevel + 1} [${hintContextLabel()}]: ${hint}`, "coach");
     renderPanel();
+    persistSectionProgress();
   }
 
   function resetScenario() {
@@ -3512,6 +3764,20 @@
       window.visualViewport.addEventListener("resize", handleViewportResize);
       window.visualViewport.addEventListener("scroll", handleViewportScroll);
     }
+
+    window.addEventListener("netlab:authchange", () => {
+      savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(currentSectionId()) : null;
+      session.resumePromptVisible = Boolean(savedProgressRecord);
+      renderSectionShell();
+    });
+
+    window.addEventListener("netlab:progresschange", () => {
+      savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(currentSectionId()) : null;
+      if (!savedProgressRecord) {
+        session.resumePromptVisible = false;
+      }
+      renderSectionShell();
+    });
   }
 
   function loadScenarioById(id) {
@@ -3544,9 +3810,28 @@
   syncTerminalInputPlacement();
   setMobileContextCollapsed(false);
   syncMobileViewportMetrics();
+  if (NetlabApp?.getLaunchAction() === "start") {
+    NetlabApp.resetSectionProgress(currentSectionId());
+    NetlabApp.clearLaunchAction();
+  }
+  savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(currentSectionId()) : null;
+  session.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
+
+  if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord)) {
+    return;
+  }
+
+  if (NetlabApp?.getLaunchAction()) {
+    NetlabApp.clearLaunchAction();
+  }
+
   if (pageConfig.autoStart === false) {
     previewScenario(0);
   } else {
-    loadScenario(0);
+    loadScenario(0, { persist: false });
+  }
+
+  if (!savedProgressRecord) {
+    persistSectionProgress();
   }
 })();

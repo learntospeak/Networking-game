@@ -1,5 +1,6 @@
 (function () {
-  const STORAGE_KEY = "web-http-lab-progress-v2";
+  const NetlabApp = window.NetlabApp;
+  const SECTION_ID = "web-http-lab";
   const DEFAULT_FEEDBACK = "Use the request editor and Send Request to test the next step.";
 
   // Step-specific simulators let the lab stay modular while turning selected lessons into send-and-observe exercises.
@@ -1517,14 +1518,17 @@
     requestDraft: null,
     requestDirty: false,
     lastSentRequest: null,
-    liveExplanation: ""
+    liveExplanation: "",
+    resumePromptVisible: false
   };
 
   const els = {};
+  let savedProgressRecord = null;
 
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
+    const launchAction = NetlabApp?.getLaunchAction() || "";
     state.lessons = Array.isArray(window.WebHttpLabData && window.WebHttpLabData.lessons)
       ? window.WebHttpLabData.lessons
       : [];
@@ -1538,8 +1542,16 @@
 
     hydrateProgress();
     bindStaticEvents();
-    resetStepRuntime();
+    if (!savedProgressRecord || launchAction !== "resume" || !restoreSavedProgress(savedProgressRecord.state)) {
+      if (launchAction) {
+        NetlabApp?.clearLaunchAction();
+      }
+      resetStepRuntime();
+    }
     render();
+    if (!savedProgressRecord) {
+      persistProgress();
+    }
   }
 
   function cacheElements() {
@@ -1599,6 +1611,7 @@
     els.answerTitle = document.getElementById("answerTitle");
     els.answerSubtitle = document.getElementById("answerSubtitle");
     els.interactionBody = document.getElementById("interactionBody");
+    els.appSectionShell = document.getElementById("appSectionShell");
   }
 
   function bindStaticEvents() {
@@ -1606,36 +1619,77 @@
     els.nextBtn.addEventListener("click", advanceProgress);
     els.sendRequestBtn.addEventListener("click", sendCurrentRequest);
     els.resetRequestBtn.addEventListener("click", resetCurrentRequestDraft);
+
+    window.addEventListener("netlab:authchange", function () {
+      savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+      state.resumePromptVisible = Boolean(savedProgressRecord);
+      render();
+    });
+
+    window.addEventListener("netlab:progresschange", function () {
+      savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+      state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp.getLaunchAction() !== "resume");
+      renderSectionShell();
+    });
   }
 
   function hydrateProgress() {
-    let saved = {};
-
-    try {
-      saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}");
-    } catch (error) {
-      saved = {};
+    if (NetlabApp && NetlabApp.getLaunchAction() === "start") {
+      NetlabApp.resetSectionProgress(SECTION_ID);
+      NetlabApp.clearLaunchAction();
     }
 
-    state.completedLessons = saved.completedLessons && typeof saved.completedLessons === "object"
-      ? saved.completedLessons
-      : {};
+    savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+    const savedState = savedProgressRecord?.state || {};
 
-    const savedIndex = findLessonIndex(saved.currentLessonId);
-    state.lessonIndex = savedIndex >= 0 ? savedIndex : 0;
+    state.completedLessons = savedState.completedLessons && typeof savedState.completedLessons === "object"
+      ? savedState.completedLessons
+      : {};
+    state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
+
+    if (NetlabApp?.getLaunchAction() !== "resume") {
+      state.lessonIndex = 0;
+      state.stepIndex = 0;
+    }
   }
 
   function persistProgress() {
+    if (!NetlabApp) {
+      return;
+    }
+
+    // The shared progress layer stores enough step state to reopen the request workbench where the learner left it.
     const payload = {
-      currentLessonId: currentLesson() ? currentLesson().id : null,
-      completedLessons: state.completedLessons
+      sectionLabel: "Web & HTTP Lab",
+      currentItemId: currentStep() ? currentStep().id : "",
+      currentItemLabel: currentLesson()
+        ? currentLesson().title + " - Step " + (state.stepIndex + 1)
+        : "Not started",
+      completedCount: Object.keys(state.completedLessons).length,
+      totalCount: state.lessons.length,
+      summaryText: state.stepSolved ? "Current step complete" : "Current step in progress",
+      state: {
+        lessonId: currentLesson() ? currentLesson().id : "",
+        stepIndex: state.stepIndex,
+        completedLessons: state.completedLessons,
+        currentWorkspace: state.currentWorkspace,
+        feedbackTone: state.feedbackTone,
+        feedbackText: state.feedbackText,
+        hintText: state.hintText,
+        stepSolved: state.stepSolved,
+        hintIndex: state.hintIndex,
+        selectedOptionId: state.selectedOptionId,
+        selectedOptionIds: Array.from(state.selectedOptionIds),
+        fieldValues: state.fieldValues,
+        requestDraft: state.requestDraft,
+        requestDirty: state.requestDirty,
+        lastSentRequest: state.lastSentRequest,
+        liveExplanation: state.liveExplanation
+      }
     };
 
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch (error) {
-      // Ignore storage errors so the lab still works in stricter browsers.
-    }
+    savedProgressRecord = NetlabApp.saveSectionProgress(SECTION_ID, payload);
+    renderSectionShell();
   }
 
   function currentLesson() {
@@ -1685,6 +1739,46 @@
     }
   }
 
+  function restoreSavedProgress(savedState) {
+    if (!savedState) {
+      return false;
+    }
+
+    const lessonIndex = findLessonIndex(savedState.lessonId);
+    if (lessonIndex < 0) {
+      return false;
+    }
+
+    state.lessonIndex = lessonIndex;
+    state.stepIndex = Math.max(0, Math.min(Number(savedState.stepIndex) || 0, currentLesson().interactiveSteps.length - 1));
+    state.completedLessons = savedState.completedLessons && typeof savedState.completedLessons === "object"
+      ? savedState.completedLessons
+      : {};
+    state.currentWorkspace = cloneData(savedState.currentWorkspace);
+    state.feedbackTone = savedState.feedbackTone || "idle";
+    state.feedbackText = savedState.feedbackText || DEFAULT_FEEDBACK;
+    state.hintText = savedState.hintText || "Hints will appear here when needed.";
+    state.stepSolved = Boolean(savedState.stepSolved);
+    state.hintIndex = Number(savedState.hintIndex) || 0;
+    state.selectedOptionId = savedState.selectedOptionId || "";
+    state.selectedOptionIds = new Set(Array.isArray(savedState.selectedOptionIds) ? savedState.selectedOptionIds : []);
+    state.fieldValues = savedState.fieldValues && typeof savedState.fieldValues === "object"
+      ? savedState.fieldValues
+      : {};
+    state.requestDraft = cloneData(savedState.requestDraft);
+    state.requestDirty = Boolean(savedState.requestDirty);
+    state.lastSentRequest = cloneData(savedState.lastSentRequest);
+    state.liveExplanation = savedState.liveExplanation || "";
+    state.resumePromptVisible = false;
+
+    if (!state.currentWorkspace) {
+      resetStepRuntime();
+    }
+
+    NetlabApp?.clearLaunchAction();
+    return true;
+  }
+
   function initializeRequestLab(step, requestLab) {
     const seedRequest = requestLab.buildInitialRequest
       ? requestLab.buildInitialRequest(cloneData(step.workspace.request), cloneData(step.workspace), step)
@@ -1702,11 +1796,74 @@
   }
 
   function render() {
+    renderSectionShell();
     renderLessonList();
     renderOverview();
     renderWorkspace();
     renderTask();
     renderInteraction();
+  }
+
+  function renderSectionShell() {
+    if (!els.appSectionShell || !NetlabApp) {
+      return;
+    }
+
+    const profile = NetlabApp.getActiveProfile();
+    const completion = Object.keys(state.completedLessons).length + " / " + state.lessons.length;
+    const lastSaved = savedProgressRecord || NetlabApp.getSectionProgress(SECTION_ID);
+    const showResume = Boolean(lastSaved && state.resumePromptVisible);
+
+    els.appSectionShell.innerHTML = [
+      "<div class=\"app-shell-head\">",
+      "  <div>",
+      "    <p class=\"app-shell-kicker\">Progress</p>",
+      "    <h2>Resume Web &amp; HTTP Lab</h2>",
+      "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
+        ? "Saved progress found for this browser profile. Resume your last lesson or restart the lab from the beginning."
+        : "Current profile: " + profile.label + ". Progress saves locally so the lab can reopen at the last lesson and step.") + "</p>",
+      "  </div>",
+      "</div>",
+      "<div class=\"app-shell-badges\">",
+      "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
+      "  <span class=\"status-badge\">Completed: " + escapeHtml(completion) + "</span>",
+      "  <span class=\"status-badge\">Last active: " + escapeHtml(lastSaved ? lastSaved.currentItemLabel : currentLesson().title) + "</span>",
+      "</div>",
+      "<div class=\"app-shell-actions\">",
+      (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
+      "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
+      "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
+      "</div>",
+      "<p class=\"app-shell-note\">Sign up or log in from the main hub if you want a separate local progress bucket. " + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>"
+    ].join("");
+
+    const resumeBtn = document.getElementById("resumeSectionBtn");
+    const startOverBtn = document.getElementById("startOverSectionBtn");
+    const resetProgressBtn = document.getElementById("resetProgressBtn");
+
+    if (resumeBtn && lastSaved) {
+      resumeBtn.addEventListener("click", function () {
+        restoreSavedProgress(lastSaved.state);
+        render();
+      });
+    }
+
+    if (startOverBtn) {
+      startOverBtn.addEventListener("click", function () {
+        window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
+      });
+    }
+
+    if (resetProgressBtn) {
+      resetProgressBtn.addEventListener("click", function () {
+        if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+          return;
+        }
+
+        NetlabApp.clearActiveProfileProgress();
+        window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
+      });
+    }
   }
 
   function renderMissingData() {
@@ -2419,6 +2576,7 @@
     }
 
     resetStepRuntime();
+    persistProgress();
     render();
   }
 
@@ -2498,6 +2656,7 @@
   function markIncorrect(message) {
     state.feedbackTone = "warning";
     state.feedbackText = message;
+    persistProgress();
     renderTask();
   }
 
@@ -2534,6 +2693,7 @@
     const nextHintIndex = Math.min(state.hintIndex, hints.length - 1);
     state.hintText = hints[nextHintIndex];
     state.hintIndex = Math.min(state.hintIndex + 1, hints.length);
+    persistProgress();
     renderTask();
   }
 
@@ -2564,6 +2724,7 @@
 
     state.stepIndex = 0;
     resetStepRuntime();
+    persistProgress();
     render();
   }
 

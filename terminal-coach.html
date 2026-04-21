@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
-  <link rel="stylesheet" href="./style.css?v=20260419d">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260419d">
+  <link rel="stylesheet" href="./style.css?v=20260421b">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260421a">
+  <script src="./app-data.js?v=20260421a" defer></script>
   <script src="./commandsData.js?v=20260419d" defer></script>
   <script src="./stateManager.js?v=20260419d" defer></script>
   <script src="./coachEngine.js?v=20260416c" defer></script>
@@ -41,6 +42,7 @@
 
       window.TerminalCoachConfig = {
         mode: "lesson",
+        sectionId: track === "windows" ? "windows-terminal" : "linux-terminal",
         environmentCategory: active.environmentCategory,
         pageKicker: active.pageKicker,
         pageTitle: active.pageTitle,
@@ -52,7 +54,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260419d" defer></script>
+  <script src="./terminalEngine.js?v=20260421a" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
 <body class="terminal-page">
@@ -85,6 +87,8 @@
         </div>
         <a class="terminal-nav-link" href="./index.html">Back to Main App</a>
       </header>
+
+      <section id="appSectionShell" class="lab-panel app-shell-panel app-section-shell"></section>
 
       <section class="lab-panel terminal-meta-panel">
         <div class="mode-panel-head">

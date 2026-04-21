@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Networking Learning Hub</title>
-  <link rel="stylesheet" href="./style.css?v=20260421a">
+  <link rel="stylesheet" href="./style.css?v=20260421b">
+  <script src="./app-data.js?v=20260421a" defer></script>
+  <script src="./index.js?v=20260421a" defer></script>
 </head>
 <body>
   <div class="rack-room">
@@ -21,6 +23,11 @@
 
       <h1>Networking Learning Hub</h1>
 
+      <div class="hub-utility-grid">
+        <section id="hubAccountPanel" class="hub-section-panel app-shell-panel"></section>
+        <section id="hubResumePanel" class="hub-section-panel app-shell-panel"></section>
+      </div>
+
       <section id="practiceSection">
         <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">
           <div class="learning-paths-head">
@@ -29,40 +36,46 @@
           </div>
 
           <div class="learning-path-grid">
-            <a class="learning-path-card learning-path-card-subnetting" href="./subnetting-lab.html">
+            <a class="learning-path-card learning-path-card-subnetting" data-section-id="subnetting-lab" href="./subnetting-lab.html">
               <span class="learning-path-kicker">Networking</span>
               <span class="learning-path-title">Subnetting Lab</span>
               <span class="learning-path-copy">Practice CIDR, masks, host counts, usable ranges, protocol basics, exam-mode drills, and the subnetting cheat sheet in a dedicated networking trainer page.</span>
+              <span class="learning-path-status" data-progress-slot="subnetting-lab">No saved progress yet.</span>
             </a>
 
-            <a class="learning-path-card learning-path-card-windows" href="./terminal-coach.html?track=windows">
+            <a class="learning-path-card learning-path-card-windows" data-section-id="windows-terminal" href="./terminal-coach.html?track=windows">
               <span class="learning-path-kicker">Windows</span>
               <span class="learning-path-title">Windows Terminal Lab</span>
               <span class="learning-path-copy">CMD-only learning with Windows file paths, process tools, and troubleshooting workflows.</span>
+              <span class="learning-path-status" data-progress-slot="windows-terminal">No saved progress yet.</span>
             </a>
 
-            <a class="learning-path-card learning-path-card-linux" href="./terminal-coach.html?track=linux">
+            <a class="learning-path-card learning-path-card-linux" data-section-id="linux-terminal" href="./terminal-coach.html?track=linux">
               <span class="learning-path-kicker">Linux</span>
               <span class="learning-path-title">Linux Terminal Lab</span>
               <span class="learning-path-copy">Linux-first lessons with one shell context at a time so beginners are not translating commands mid-task.</span>
+              <span class="learning-path-status" data-progress-slot="linux-terminal">No saved progress yet.</span>
             </a>
 
-            <a class="learning-path-card learning-path-card-cisco" href="./cisco-cli-lab.html">
+            <a class="learning-path-card learning-path-card-cisco" data-section-id="cisco-cli" href="./cisco-cli-lab.html">
               <span class="learning-path-kicker">Cisco</span>
               <span class="learning-path-title">Cisco CLI Lab</span>
               <span class="learning-path-copy">Guided router CLI practice with Cisco-style prompts, exec modes, interface configuration, routing checks, and save workflows.</span>
+              <span class="learning-path-status" data-progress-slot="cisco-cli">No saved progress yet.</span>
             </a>
 
-            <a class="learning-path-card learning-path-card-web" href="./web-http-lab.html">
+            <a class="learning-path-card learning-path-card-web" data-section-id="web-http-lab" href="./web-http-lab.html">
               <span class="learning-path-kicker">Web</span>
               <span class="learning-path-title">Web &amp; HTTP Lab</span>
               <span class="learning-path-copy">Guided browser, request, cookie, session, cache, proxy, and discoverability lessons that complement the terminal tracks.</span>
+              <span class="learning-path-status" data-progress-slot="web-http-lab">No saved progress yet.</span>
             </a>
 
-            <a class="learning-path-card learning-path-card-challenge" href="./challenge-mode.html">
+            <a class="learning-path-card learning-path-card-challenge" data-section-id="cyber-challenge" href="./challenge-mode.html">
               <span class="learning-path-kicker">Cyber</span>
               <span class="learning-path-title">Cyber Challenge Mode</span>
               <span class="learning-path-copy">Evidence-driven labs with explicit machine context like Analyst Box, Linux Server, Windows Host, or target systems.</span>
+              <span class="learning-path-status" data-progress-slot="cyber-challenge">No saved progress yet.</span>
             </a>
           </div>
         </section>
