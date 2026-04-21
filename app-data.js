@@ -3,6 +3,8 @@
   const LEGACY_PROGRESS_STORAGE_KEY = "netlab-progress-v1";
   const GUEST_PROGRESS_STORAGE_KEY = "netlab-guest-progress-v2";
   const GUEST_PROFILE_ID = "guest";
+  // The app only has one Supabase table today, so lightweight account-wide reward/settings data lives in a reserved row.
+  const META_SECTION_ID = "__profile_meta__";
   const LOCAL_AUTH_NOTE = "Signed-in accounts sync progress with Supabase. If you stay in guest mode, progress remains on this browser only.";
 
   const SECTION_DEFS = {
@@ -41,9 +43,11 @@
     initPromise: null,
     session: null,
     profile: guestProfile(),
+    profileState: defaultProfileState(),
     progressBucket: emptyBucket(),
     rowIdsBySection: {},
-    authSubscription: null
+    authSubscription: null,
+    rewardToastTimer: 0
   };
 
   function emptyBucket() {
@@ -51,6 +55,16 @@
       lastActiveSectionId: "",
       lastUpdatedAt: 0,
       sections: {}
+    };
+  }
+
+  function defaultProfileState() {
+    return {
+      coins: 0,
+      rewardClaims: {},
+      preferences: {
+        soundEnabled: true
+      }
     };
   }
 
@@ -138,10 +152,27 @@
 
   function normalizeGuestProgressStore(store) {
     return {
-      version: 2,
+      version: 3,
       lastActiveSectionId: typeof store?.lastActiveSectionId === "string" ? store.lastActiveSectionId : "",
       lastUpdatedAt: normaliseNumber(store?.lastUpdatedAt),
-      sections: store?.sections && typeof store.sections === "object" ? store.sections : {}
+      sections: store?.sections && typeof store.sections === "object" ? store.sections : {},
+      profileState: normalizeProfileState(store?.profileState)
+    };
+  }
+
+  function normalizeProfileState(state) {
+    const fallback = defaultProfileState();
+    const rewardClaims = state?.rewardClaims && typeof state.rewardClaims === "object" ? state.rewardClaims : {};
+    const soundEnabled = typeof state?.preferences?.soundEnabled === "boolean"
+      ? state.preferences.soundEnabled
+      : fallback.preferences.soundEnabled;
+
+    return {
+      coins: Math.max(0, normaliseNumber(state?.coins)),
+      rewardClaims: clone(rewardClaims) || {},
+      preferences: {
+        soundEnabled: soundEnabled
+      }
     };
   }
 
@@ -184,6 +215,7 @@
 
   function hydrateGuestProgress() {
     const store = readGuestProgressStore();
+    runtime.profileState = normalizeProfileState(store.profileState);
     const records = Object.keys(store.sections || {}).map(function (sectionId) {
       return normaliseProgressRecord(sectionId, store.sections[sectionId] || {});
     });
@@ -195,7 +227,8 @@
     saveGuestProgressStore({
       lastActiveSectionId: runtime.progressBucket.lastActiveSectionId,
       lastUpdatedAt: runtime.progressBucket.lastUpdatedAt,
-      sections: runtime.progressBucket.sections
+      sections: runtime.progressBucket.sections,
+      profileState: runtime.profileState
     });
   }
 
@@ -236,6 +269,7 @@
   function clearCachedProgress() {
     runtime.progressBucket = emptyBucket();
     runtime.rowIdsBySection = {};
+    runtime.profileState = defaultProfileState();
     if (runtime.profile.isGuest) {
       persistGuestProgress();
     }
@@ -265,6 +299,142 @@
     return "Guest progress stays on this browser until you sign in.";
   }
 
+  function getProfileState() {
+    return clone(runtime.profileState);
+  }
+
+  function getCoinsTotal() {
+    return normaliseNumber(runtime.profileState?.coins);
+  }
+
+  function isSoundEnabled() {
+    return Boolean(runtime.profileState?.preferences?.soundEnabled !== false);
+  }
+
+  function getDashboardStats() {
+    const progressMap = runtime.progressBucket.sections || {};
+    const records = Object.values(progressMap);
+    const completedSections = records.filter(function (record) {
+      return record.totalCount && record.completedCount >= record.totalCount;
+    }).length;
+    const startedSections = records.filter(function (record) {
+      return record.completedCount > 0 || record.currentItemLabel !== "Not started";
+    }).length;
+    const completedItems = records.reduce(function (sum, record) {
+      return sum + normaliseNumber(record.completedCount);
+    }, 0);
+
+    return {
+      coins: getCoinsTotal(),
+      completedSections: completedSections,
+      startedSections: startedSections,
+      completedItems: completedItems
+    };
+  }
+
+  function soundContext() {
+    if (!window.AudioContext && !window.webkitAudioContext) {
+      return null;
+    }
+
+    if (!runtime.audioContext) {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      runtime.audioContext = new AudioCtor();
+    }
+
+    return runtime.audioContext;
+  }
+
+  function playSuccessSound() {
+    if (!isSoundEnabled()) {
+      return;
+    }
+
+    const context = soundContext();
+    if (!context) {
+      return;
+    }
+
+    if (context.state === "suspended" && typeof context.resume === "function") {
+      context.resume().catch(function () {
+        return null;
+      });
+    }
+
+    const now = context.currentTime;
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.connect(context.destination);
+
+    const notes = [
+      { frequency: 523.25, start: 0, duration: 0.08 },
+      { frequency: 659.25, start: 0.09, duration: 0.11 }
+    ];
+
+    notes.forEach(function (note) {
+      const oscillator = context.createOscillator();
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(note.frequency, now + note.start);
+      oscillator.connect(gain);
+      oscillator.start(now + note.start);
+      oscillator.stop(now + note.start + note.duration);
+    });
+
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+  }
+
+  function ensureRewardToast() {
+    if (typeof document === "undefined" || !document.body) {
+      return null;
+    }
+
+    let toast = document.getElementById("netlabRewardToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "netlabRewardToast";
+      toast.className = "reward-toast";
+      toast.setAttribute("aria-live", "polite");
+      document.body.appendChild(toast);
+    }
+
+    return toast;
+  }
+
+  function showRewardToast(reward) {
+    const toast = ensureRewardToast();
+    if (!toast || !reward) {
+      return;
+    }
+
+    toast.innerHTML = [
+      "<p class=\"reward-toast-kicker\">" + escapeHtml(reward.title || "Complete") + "</p>",
+      "<div class=\"reward-toast-row\">",
+      "  <strong class=\"reward-toast-coins\">+" + escapeHtml(String(reward.coins || 0)) + " Coins</strong>",
+      "  <span class=\"reward-toast-message\">" + escapeHtml(reward.message || "Progress recorded.") + "</span>",
+      "</div>"
+    ].join("");
+    toast.classList.add("is-visible");
+
+    if (runtime.rewardToastTimer) {
+      window.clearTimeout(runtime.rewardToastTimer);
+    }
+
+    runtime.rewardToastTimer = window.setTimeout(function () {
+      toast.classList.remove("is-visible");
+      runtime.rewardToastTimer = 0;
+    }, 2400);
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function normaliseRemoteProgressRow(row) {
     const payload = row?.progress_data && typeof row.progress_data === "object" ? row.progress_data : {};
 
@@ -280,6 +450,11 @@
       updatedAt: payload.updatedAt || Date.parse(row.updated_at || "") || Date.now(),
       state: payload.state
     });
+  }
+
+  function extractProfileStateFromRow(row) {
+    const payload = row?.progress_data && typeof row.progress_data === "object" ? row.progress_data : {};
+    return normalizeProfileState(payload.profileState || payload);
   }
 
   async function loadCloudProgress(userId) {
@@ -300,10 +475,21 @@
     }
 
     const rowIds = {};
-    const records = Array.isArray(data) ? data.map(function (row) {
-      rowIds[row.section_id] = row.id;
-      return normaliseRemoteProgressRow(row);
-    }) : [];
+    runtime.profileState = defaultProfileState();
+    const records = [];
+
+    if (Array.isArray(data)) {
+      data.forEach(function (row) {
+        rowIds[row.section_id] = row.id;
+
+        if (row.section_id === META_SECTION_ID) {
+          runtime.profileState = extractProfileStateFromRow(row);
+          return;
+        }
+
+        records.push(normaliseRemoteProgressRow(row));
+      });
+    }
 
     hydrateBucket(records, rowIds);
   }
@@ -455,9 +641,148 @@
     }
   }
 
+  async function saveProfileStateToCloud() {
+    const supabase = getSupabaseClient();
+    if (!supabase || runtime.profile.isGuest) {
+      return;
+    }
+
+    const payload = {
+      user_id: runtime.profile.id,
+      section_id: META_SECTION_ID,
+      section_label: "Profile Meta",
+      current_item: "Coins: " + getCoinsTotal(),
+      completed_count: 0,
+      progress_data: {
+        profileState: runtime.profileState,
+        updatedAt: Date.now()
+      },
+      updated_at: new Date().toISOString()
+    };
+
+    const rowId = runtime.rowIdsBySection[META_SECTION_ID];
+
+    if (rowId) {
+      const { error } = await supabase
+        .from("user_progress")
+        .update(payload)
+        .eq("id", rowId)
+        .eq("user_id", runtime.profile.id);
+
+      if (!error) {
+        return;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("user_progress")
+      .insert(payload)
+      .select("id, section_id")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.id) {
+      runtime.rowIdsBySection[META_SECTION_ID] = data.id;
+    }
+  }
+
+  function persistProfileState(reason, detail) {
+    if (runtime.profile.isGuest) {
+      persistGuestProgress();
+    } else {
+      saveProfileStateToCloud().catch(function (error) {
+        console.error("Failed to save Supabase profile state.", error);
+      });
+    }
+
+    emit("netlab:profilemetachange", {
+      reason: reason || "profile-state",
+      profileState: getProfileState(),
+      detail: clone(detail || null)
+    });
+  }
+
+  function setSoundEnabled(enabled) {
+    runtime.profileState.preferences.soundEnabled = Boolean(enabled);
+    persistProfileState("sound-toggle", {
+      soundEnabled: runtime.profileState.preferences.soundEnabled
+    });
+    return isSoundEnabled();
+  }
+
+  function coinsForDifficulty(value, floor) {
+    const difficulty = String(value || "").trim().toLowerCase();
+    let amount = 5;
+
+    if (difficulty.includes("medium") || difficulty.includes("intermediate")) {
+      amount = 10;
+    } else if (difficulty.includes("hard") || difficulty.includes("advanced") || difficulty.includes("challenge")) {
+      amount = 20;
+    }
+
+    if (Number.isFinite(Number(floor))) {
+      amount = Math.max(amount, Number(floor));
+    }
+
+    return amount;
+  }
+
+  function awardCoins(payload) {
+    const rewardKey = String(payload?.key || "").trim();
+    const coins = Math.max(0, normaliseNumber(payload?.coins));
+    const firstTimeOnly = payload?.firstTimeOnly !== false;
+
+    if (!rewardKey || !coins) {
+      return null;
+    }
+
+    // Reward claims prevent easy farming by default; a completion only pays out once per profile unless a caller opts out.
+    if (firstTimeOnly && runtime.profileState.rewardClaims[rewardKey]) {
+      return null;
+    }
+
+    runtime.profileState.coins += coins;
+    runtime.profileState.rewardClaims[rewardKey] = {
+      coins: coins,
+      grantedAt: Date.now(),
+      title: payload?.title || "",
+      message: payload?.message || ""
+    };
+
+    const reward = {
+      key: rewardKey,
+      coins: coins,
+      title: payload?.title || "Progress Reward",
+      message: payload?.message || "Progress recorded.",
+      totalCoins: runtime.profileState.coins
+    };
+
+    persistProfileState("reward-granted", reward);
+    showRewardToast(reward);
+    playSuccessSound();
+    return clone(reward);
+  }
+
+  function maybeAwardSectionMilestone(sectionId, record) {
+    if (!record || !record.totalCount || record.completedCount < record.totalCount) {
+      return null;
+    }
+
+    return awardCoins({
+      key: "section-milestone:" + sectionId + ":complete-all",
+      coins: 20,
+      title: "Section Milestone",
+      message: record.sectionLabel + " fully completed."
+    });
+  }
+
   function saveSectionProgress(sectionId, payload) {
     const record = normaliseProgressRecord(sectionId, payload || {});
     cacheProgressRecord(sectionId, record);
+    maybeAwardSectionMilestone(sectionId, record);
     emit("netlab:progresschange", { sectionId: sectionId, record: clone(record) });
 
     if (!runtime.profile.isGuest) {
@@ -516,6 +841,11 @@
   function clearActiveProfileProgress() {
     clearCachedProgress();
     emit("netlab:progresschange", { sectionId: null, record: null });
+    emit("netlab:profilemetachange", {
+      reason: "progress-reset",
+      profileState: getProfileState(),
+      detail: null
+    });
 
     if (!runtime.profile.isGuest) {
       clearCloudProgress().catch(function (error) {
@@ -665,12 +995,19 @@
       return runtime.ready;
     },
     getActiveProfile: getActiveProfile,
+    getProfileState: getProfileState,
+    getCoinsTotal: getCoinsTotal,
+    getDashboardStats: getDashboardStats,
     getProgressStorageLabel: function () {
       return getProgressStorageLabel(runtime.profile);
     },
     getProfileStorageNote: function () {
       return getProfileStorageNote(runtime.profile);
     },
+    isSoundEnabled: isSoundEnabled,
+    setSoundEnabled: setSoundEnabled,
+    awardCoins: awardCoins,
+    coinsForDifficulty: coinsForDifficulty,
     signUpProfile: signUpProfile,
     logInProfile: logInProfile,
     logOutProfile: logOutProfile,

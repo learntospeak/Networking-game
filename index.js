@@ -19,6 +19,7 @@
   async function init() {
     els.accountPanel = document.getElementById("hubAccountPanel");
     els.resumePanel = document.getElementById("hubResumePanel");
+    els.quickStats = document.getElementById("hubQuickStats");
     els.cardProgressSlots = Array.from(document.querySelectorAll("[data-progress-slot]"));
 
     renderLoadingState();
@@ -30,6 +31,7 @@
   function bindGlobalEvents() {
     window.addEventListener("netlab:authchange", renderAll);
     window.addEventListener("netlab:progresschange", renderAll);
+    window.addEventListener("netlab:profilemetachange", renderAll);
   }
 
   function renderLoadingState() {
@@ -47,9 +49,32 @@
   }
 
   function renderAll() {
+    renderQuickStats();
     renderAccountPanel();
     renderResumePanel();
     renderCardProgress();
+  }
+
+  function renderQuickStats() {
+    if (!els.quickStats) {
+      return;
+    }
+
+    const stats = NetlabApp.getDashboardStats();
+    els.quickStats.innerHTML = [
+      renderHeroStat("Coins", stats.coins),
+      renderHeroStat("Labs Started", stats.startedSections),
+      renderHeroStat("Items Complete", stats.completedItems)
+    ].join("");
+  }
+
+  function renderHeroStat(label, value) {
+    return [
+      "<div class=\"hub-hero-stat\">",
+      "  <span class=\"hub-hero-stat-value\">" + escapeHtml(String(value)) + "</span>",
+      "  <span class=\"hub-hero-stat-label\">" + escapeHtml(label) + "</span>",
+      "</div>"
+    ].join("");
   }
 
   function renderAccountPanel() {
@@ -73,6 +98,7 @@
       "<div class=\"app-shell-badges hub-account-badges\">",
       "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "No account required" : "Cloud sync active") + "</span>",
       "  <span class=\"status-badge\">" + escapeHtml(NetlabApp.getProgressStorageLabel()) + "</span>",
+      "  <span class=\"status-badge\">" + escapeHtml("Coins: " + NetlabApp.getCoinsTotal()) + "</span>",
       "</div>",
       renderAuthActions(profile),
       view.authMode === "signup" ? renderSignUpForm() : "",
@@ -90,6 +116,7 @@
         "<div class=\"app-shell-actions hub-account-actions\">",
         "  <button id=\"logInBtn\" class=\"app-action-btn hub-account-btn\" type=\"button\">Sign In</button>",
         "  <button id=\"signUpBtn\" class=\"app-action-btn app-action-btn-muted hub-account-btn\" type=\"button\">Sign Up</button>",
+        "  <button id=\"soundToggleBtn\" class=\"app-action-btn app-action-btn-muted hub-account-btn\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
         "</div>"
       ].join("");
     }
@@ -97,6 +124,7 @@
     return [
       "<div class=\"app-shell-actions hub-account-actions\">",
       "  <button id=\"logOutBtn\" class=\"app-action-btn hub-account-btn\" type=\"button\">Log Out</button>",
+      "  <button id=\"soundToggleBtn\" class=\"app-action-btn app-action-btn-muted hub-account-btn\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "</div>"
     ].join("");
   }
@@ -147,6 +175,7 @@
     const signUpBtn = document.getElementById("signUpBtn");
     const logInBtn = document.getElementById("logInBtn");
     const logOutBtn = document.getElementById("logOutBtn");
+    const soundToggleBtn = document.getElementById("soundToggleBtn");
     const cancelAuthBtn = document.getElementById("cancelAuthBtn");
     const signUpForm = document.getElementById("signUpForm");
     const logInForm = document.getElementById("logInForm");
@@ -185,6 +214,13 @@
           view.notice = "Signed out. Guest mode is active again.";
         }
 
+        renderAll();
+      });
+    }
+
+    if (soundToggleBtn) {
+      soundToggleBtn.addEventListener("click", function () {
+        NetlabApp.setSoundEnabled(!NetlabApp.isSoundEnabled());
         renderAll();
       });
     }

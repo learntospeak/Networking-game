@@ -363,6 +363,37 @@ button::before {
   margin-top: 16px;
 }
 
+.hub-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.hub-hero-stat {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background: rgba(4, 8, 15, 0.62);
+}
+
+.hub-hero-stat-value {
+  display: block;
+  color: #f8fafc;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.hub-hero-stat-label {
+  display: block;
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .hub-account-panel {
   min-height: 0;
   padding: 16px 18px;
@@ -414,6 +445,59 @@ button::before {
   margin-top: 0;
   margin-bottom: 18px;
   text-align: left;
+}
+
+.reward-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2000;
+  min-width: min(320px, calc(100vw - 24px));
+  max-width: 360px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(250, 204, 21, 0.38);
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(17, 24, 39, 0.96) 0%, rgba(4, 8, 15, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 34px rgba(2, 6, 23, 0.32);
+  color: #f8fafc;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.reward-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reward-toast-kicker {
+  margin: 0;
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.reward-toast-row {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.reward-toast-coins {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.reward-toast-message {
+  color: #dbe4f0;
+  line-height: 1.5;
 }
 
 .learning-paths-head {
@@ -1467,6 +1551,10 @@ h3 {
     font-size: 26px;
   }
 
+  .hub-hero-stats {
+    grid-template-columns: 1fr;
+  }
+
   .hub-account-panel,
   .hub-resume-panel {
     text-align: left;
@@ -1521,5 +1609,13 @@ h3 {
   .app-action-btn,
   .app-action-link {
     width: 100%;
+  }
+
+  .reward-toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    min-width: 0;
+    max-width: none;
   }
 }

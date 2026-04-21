@@ -1641,6 +1641,10 @@
       state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp.getLaunchAction() !== "resume");
       renderSectionShell();
     });
+
+    window.addEventListener("netlab:profilemetachange", function () {
+      renderSectionShell();
+    });
   }
 
   function hydrateProgress() {
@@ -1714,6 +1718,19 @@
   function currentRequestLab() {
     const step = currentStep();
     return step ? REQUEST_LABS[step.id] || null : null;
+  }
+
+  function awardLessonCompletionIfNeeded(lesson, alreadyCompleted) {
+    if (alreadyCompleted || !lesson || !NetlabApp?.awardCoins) {
+      return;
+    }
+
+    NetlabApp.awardCoins({
+      key: `web-lesson-complete:${lesson.id}`,
+      coins: NetlabApp.coinsForDifficulty(lesson.difficulty, 5),
+      title: "Lesson Complete",
+      message: lesson.title
+    });
   }
 
   function resetStepRuntime() {
@@ -1837,11 +1854,13 @@
       "<div class=\"app-shell-badges\">",
       "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
       "  <span class=\"status-badge\">Completed: " + escapeHtml(completion) + "</span>",
+      "  <span class=\"status-badge\">Coins: " + escapeHtml(NetlabApp.getCoinsTotal()) + "</span>",
       "  <span class=\"status-badge\">Last active: " + escapeHtml(lastSaved ? lastSaved.currentItemLabel : currentLesson().title) + "</span>",
       "</div>",
       "<div class=\"app-shell-actions\">",
       (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
+      "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
       "<p class=\"app-shell-note\">Reset Progress clears all saved web lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
@@ -1849,6 +1868,7 @@
 
     const resumeBtn = document.getElementById("resumeSectionBtn");
     const startOverBtn = document.getElementById("startOverSectionBtn");
+    const toggleSoundBtn = document.getElementById("toggleSoundBtn");
     const resetProgressBtn = document.getElementById("resetProgressBtn");
 
     if (resumeBtn && lastSaved) {
@@ -1861,6 +1881,13 @@
     if (startOverBtn) {
       startOverBtn.addEventListener("click", function () {
         window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
+      });
+    }
+
+    if (toggleSoundBtn) {
+      toggleSoundBtn.addEventListener("click", function () {
+        NetlabApp.setSoundEnabled(!NetlabApp.isSoundEnabled());
+        renderSectionShell();
       });
     }
 
@@ -2562,7 +2589,10 @@
       if (!wasSolved) {
         state.stepSolved = true;
         if (state.stepIndex === currentLesson().interactiveSteps.length - 1) {
-          state.completedLessons[currentLesson().id] = true;
+          const lesson = currentLesson();
+          const alreadyCompleted = Boolean(state.completedLessons[lesson.id]);
+          state.completedLessons[lesson.id] = true;
+          awardLessonCompletionIfNeeded(lesson, alreadyCompleted);
         }
         persistProgress();
       }
@@ -2683,7 +2713,9 @@
 
     const lesson = currentLesson();
     if (state.stepIndex === lesson.interactiveSteps.length - 1) {
+      const alreadyCompleted = Boolean(state.completedLessons[lesson.id]);
       state.completedLessons[lesson.id] = true;
+      awardLessonCompletionIfNeeded(lesson, alreadyCompleted);
     }
 
     persistProgress();

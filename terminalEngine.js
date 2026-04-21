@@ -910,17 +910,19 @@
       "    <h2>Resume " + escapeHtml(sectionLabel()) + "</h2>",
       "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
         ? "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning."
-        : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state locally.") + "</p>",
+        : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.") + "</p>",
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges\">",
       "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
       "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
+      "  <span class=\"status-badge\">Coins: " + escapeHtml(NetlabApp.getCoinsTotal()) + "</span>",
       "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>",
       "</div>",
       "<div class=\"app-shell-actions\">",
       (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
+      "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
       "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
@@ -928,6 +930,7 @@
 
     const resumeBtn = document.getElementById("resumeSectionBtn");
     const startOverBtn = document.getElementById("startOverSectionBtn");
+    const toggleSoundBtn = document.getElementById("toggleSoundBtn");
     const resetProgressBtn = document.getElementById("resetProgressBtn");
 
     if (resumeBtn && record) {
@@ -939,6 +942,13 @@
     if (startOverBtn) {
       startOverBtn.addEventListener("click", () => {
         window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
+      });
+    }
+
+    if (toggleSoundBtn) {
+      toggleSoundBtn.addEventListener("click", () => {
+        NetlabApp.setSoundEnabled(!NetlabApp.isSoundEnabled());
+        renderSectionShell();
       });
     }
 
@@ -1051,9 +1061,21 @@
   }
 
   function markScenarioComplete() {
-    session.completedScenarioIds.add(currentScenario().id);
+    const scenario = currentScenario();
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const firstCompletion = !session.completedScenarioIds.has(scenario.id);
+
+    session.completedScenarioIds.add(scenario.id);
     session.scenarioCompleted = true;
     printLine("Scenario complete. You reached the objective with live command input.", "success");
+    if (firstCompletion && NetlabApp?.awardCoins) {
+      NetlabApp.awardCoins({
+        key: `scenario-complete:${currentSectionId()}:${scenario.id}`,
+        coins: NetlabApp.coinsForDifficulty(scenario.difficulty, challengePresentation ? 10 : 5),
+        title: challengePresentation ? "Challenge Complete" : "Lesson Complete",
+        message: scenario.title
+      });
+    }
     renderPanel();
     persistSectionProgress();
   }
@@ -3776,6 +3798,10 @@
       if (!savedProgressRecord) {
         session.resumePromptVisible = false;
       }
+      renderSectionShell();
+    });
+
+    window.addEventListener("netlab:profilemetachange", () => {
       renderSectionShell();
     });
   }
