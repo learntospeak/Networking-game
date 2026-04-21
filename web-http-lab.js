@@ -1525,9 +1525,19 @@
   const els = {};
   let savedProgressRecord = null;
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", function () {
+    init().catch(function (error) {
+      console.error("Web & HTTP Lab failed to initialise.", error);
+      bindElements();
+      renderMissingData();
+    });
+  });
 
-  function init() {
+  async function init() {
+    if (NetlabApp?.whenReady) {
+      await NetlabApp.whenReady();
+    }
+
     const launchAction = NetlabApp?.getLaunchAction() || "";
     state.lessons = Array.isArray(window.WebHttpLabData && window.WebHttpLabData.lessons)
       ? window.WebHttpLabData.lessons
@@ -1820,8 +1830,8 @@
       "    <p class=\"app-shell-kicker\">Progress</p>",
       "    <h2>Resume Web &amp; HTTP Lab</h2>",
       "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
-        ? "Saved progress found for this browser profile. Resume your last lesson or restart the lab from the beginning."
-        : "Current profile: " + profile.label + ". Progress saves locally so the lab can reopen at the last lesson and step.") + "</p>",
+        ? "Saved progress found for the active profile. Resume your last lesson or restart the lab from the beginning."
+        : "Current profile: " + profile.label + ". Progress can reopen this lab at the last lesson and step.") + "</p>",
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges\">",
@@ -1834,7 +1844,7 @@
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
-      "<p class=\"app-shell-note\">Sign up or log in from the main hub if you want a separate local progress bucket. " + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>"
+      "<p class=\"app-shell-note\">Reset Progress clears all saved web lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
     ].join("");
 
     const resumeBtn = document.getElementById("resumeSectionBtn");
@@ -1856,7 +1866,7 @@
 
     if (resetProgressBtn) {
       resetProgressBtn.addEventListener("click", function () {
-        if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+        if (!window.confirm("Clear all saved progress for the current profile?")) {
           return;
         }
 

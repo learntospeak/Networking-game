@@ -1,11 +1,9 @@
 (function () {
-  // The current app is front-end only, so auth and progress both live in browser storage.
-  // These helpers keep the storage shape stable so a future backend can replace the CRUD calls
-  // without forcing every lab page to redesign its own progress model.
-  const AUTH_STORAGE_KEY = "netlab-local-auth-v1";
-  const PROGRESS_STORAGE_KEY = "netlab-progress-v1";
+  const SupabaseConfig = window.NetlabSupabase;
+  const LEGACY_PROGRESS_STORAGE_KEY = "netlab-progress-v1";
+  const GUEST_PROGRESS_STORAGE_KEY = "netlab-guest-progress-v2";
   const GUEST_PROFILE_ID = "guest";
-  const LOCAL_AUTH_NOTE = "Local-only profile scaffolding. Profiles and progress stay in this browser until a real backend is added.";
+  const LOCAL_AUTH_NOTE = "Signed-in accounts sync progress with Supabase. If you stay in guest mode, progress remains on this browser only.";
 
   const SECTION_DEFS = {
     "subnetting-lab": {
@@ -38,6 +36,24 @@
     }
   };
 
+  const runtime = {
+    ready: false,
+    initPromise: null,
+    session: null,
+    profile: guestProfile(),
+    progressBucket: emptyBucket(),
+    rowIdsBySection: {},
+    authSubscription: null
+  };
+
+  function emptyBucket() {
+    return {
+      lastActiveSectionId: "",
+      lastUpdatedAt: 0,
+      sections: {}
+    };
+  }
+
   function clone(value) {
     if (value === undefined || value === null) {
       return value;
@@ -64,36 +80,8 @@
     }
   }
 
-  function normalizeAuthStore(store) {
-    return {
-      version: 1,
-      mode: "local-mock",
-      currentProfileId: typeof store?.currentProfileId === "string" ? store.currentProfileId : "",
-      profiles: Array.isArray(store?.profiles) ? store.profiles : []
-    };
-  }
-
-  function normalizeProgressStore(store) {
-    return {
-      version: 1,
-      byProfile: store?.byProfile && typeof store.byProfile === "object" ? store.byProfile : {}
-    };
-  }
-
-  function readAuthStore() {
-    return normalizeAuthStore(loadJson(AUTH_STORAGE_KEY, {}));
-  }
-
-  function writeAuthStore(store) {
-    saveJson(AUTH_STORAGE_KEY, normalizeAuthStore(store));
-  }
-
-  function readProgressStore() {
-    return normalizeProgressStore(loadJson(PROGRESS_STORAGE_KEY, {}));
-  }
-
-  function writeProgressStore(store) {
-    saveJson(PROGRESS_STORAGE_KEY, normalizeProgressStore(store));
+  function emit(name, detail) {
+    window.dispatchEvent(new CustomEvent(name, { detail: detail }));
   }
 
   function guestProfile() {
@@ -102,54 +90,29 @@
       username: "Guest",
       email: "",
       label: "Guest Mode",
-      authType: "local-mock",
+      authType: "guest-local",
       isGuest: true
     };
   }
 
-  function sanitizeProfile(profile) {
-    if (!profile) {
+  function buildProfileFromUser(user) {
+    if (!user) {
       return guestProfile();
     }
 
+    const metadata = user.user_metadata || {};
+    const email = String(user.email || "").trim();
+    const preferredLabel = String(metadata.display_name || metadata.username || "").trim();
+    const fallbackLabel = email.includes("@") ? email.split("@")[0] : "Learner";
+
     return {
-      id: profile.id,
-      username: profile.username,
-      email: profile.email || "",
-      label: profile.username,
-      authType: profile.authType || "local-mock",
+      id: user.id,
+      username: preferredLabel || fallbackLabel,
+      email: email,
+      label: preferredLabel || email || fallbackLabel,
+      authType: "supabase",
       isGuest: false
     };
-  }
-
-  function getActiveProfile() {
-    const store = readAuthStore();
-    const profile = store.profiles.find(function (item) {
-      return item.id === store.currentProfileId;
-    });
-
-    return profile ? sanitizeProfile(profile) : guestProfile();
-  }
-
-  function emit(name, detail) {
-    window.dispatchEvent(new CustomEvent(name, { detail: detail }));
-  }
-
-  function ensureProfileBucket(store, profileId) {
-    if (!store.byProfile[profileId]) {
-      store.byProfile[profileId] = {
-        lastActiveSectionId: "",
-        lastUpdatedAt: 0,
-        sections: {}
-      };
-    }
-
-    return store.byProfile[profileId];
-  }
-
-  function getActiveBucket(store) {
-    const profile = getActiveProfile();
-    return ensureProfileBucket(store, profile.id);
   }
 
   function normaliseNumber(value) {
@@ -164,7 +127,7 @@
       sectionLabel: payload.sectionLabel || section.label || sectionId,
       href: payload.href || section.href || "./index.html",
       currentItemId: payload.currentItemId || "",
-      currentItemLabel: payload.currentItemLabel || "Not started",
+      currentItemLabel: payload.currentItemLabel || payload.currentItem || "Not started",
       completedCount: normaliseNumber(payload.completedCount),
       totalCount: Number.isFinite(Number(payload.totalCount)) ? Number(payload.totalCount) : null,
       summaryText: payload.summaryText || "",
@@ -173,141 +136,67 @@
     };
   }
 
-  async function hashPassword(password) {
-    // This is only a local profile gate for a static app. Real authentication still needs a backend.
-    if (!window.crypto || !window.crypto.subtle) {
-      throw new Error("This browser does not support local password hashing.");
-    }
-
-    const bytes = new TextEncoder().encode(password);
-    const digest = await window.crypto.subtle.digest("SHA-256", bytes);
-    return Array.from(new Uint8Array(digest)).map(function (value) {
-      return value.toString(16).padStart(2, "0");
-    }).join("");
-  }
-
-  function findProfileByIdentifier(store, identifier) {
-    const needle = String(identifier || "").trim().toLowerCase();
-    return store.profiles.find(function (profile) {
-      return String(profile.username || "").trim().toLowerCase() === needle
-        || String(profile.email || "").trim().toLowerCase() === needle;
-    });
-  }
-
-  async function signUpLocalProfile(payload) {
-    const username = String(payload?.username || "").trim();
-    const email = String(payload?.email || "").trim();
-    const password = String(payload?.password || "");
-    const store = readAuthStore();
-
-    if (!username) {
-      return { ok: false, error: "Enter a username." };
-    }
-
-    if (!email) {
-      return { ok: false, error: "Enter an email address." };
-    }
-
-    if (password.length < 6) {
-      return { ok: false, error: "Use at least 6 characters for the local profile password." };
-    }
-
-    if (findProfileByIdentifier(store, username)) {
-      return { ok: false, error: "That username is already in use on this browser." };
-    }
-
-    if (findProfileByIdentifier(store, email)) {
-      return { ok: false, error: "That email is already in use on this browser." };
-    }
-
-    const profile = {
-      id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-      username: username,
-      email: email,
-      passwordHash: await hashPassword(password),
-      authType: "local-mock",
-      createdAt: Date.now()
+  function normalizeGuestProgressStore(store) {
+    return {
+      version: 2,
+      lastActiveSectionId: typeof store?.lastActiveSectionId === "string" ? store.lastActiveSectionId : "",
+      lastUpdatedAt: normaliseNumber(store?.lastUpdatedAt),
+      sections: store?.sections && typeof store.sections === "object" ? store.sections : {}
     };
-
-    store.profiles.push(profile);
-    store.currentProfileId = profile.id;
-    writeAuthStore(store);
-    emit("netlab:authchange", { profile: sanitizeProfile(profile) });
-
-    return { ok: true, profile: sanitizeProfile(profile) };
   }
 
-  async function logInLocalProfile(payload) {
-    const identifier = String(payload?.identifier || "").trim();
-    const password = String(payload?.password || "");
-    const store = readAuthStore();
+  function readLegacyGuestBucket() {
+    const legacy = loadJson(LEGACY_PROGRESS_STORAGE_KEY, {});
+    const guestBucket = legacy?.byProfile?.[GUEST_PROFILE_ID];
+    return guestBucket && typeof guestBucket === "object" ? guestBucket : null;
+  }
 
-    if (!identifier || !password) {
-      return { ok: false, error: "Enter both your username/email and password." };
+  function readGuestProgressStore() {
+    const modernStore = loadJson(GUEST_PROGRESS_STORAGE_KEY, null);
+    if (modernStore) {
+      return normalizeGuestProgressStore(modernStore);
     }
 
-    const profile = findProfileByIdentifier(store, identifier);
-    if (!profile) {
-      return { ok: false, error: "No local profile matches that username or email." };
+    const legacyGuest = readLegacyGuestBucket();
+    if (legacyGuest) {
+      const migrated = normalizeGuestProgressStore(legacyGuest);
+      saveGuestProgressStore(migrated);
+      return migrated;
     }
 
-    const passwordHash = await hashPassword(password);
-    if (profile.passwordHash !== passwordHash) {
-      return { ok: false, error: "The password does not match this local profile." };
-    }
-
-    store.currentProfileId = profile.id;
-    writeAuthStore(store);
-    emit("netlab:authchange", { profile: sanitizeProfile(profile) });
-
-    return { ok: true, profile: sanitizeProfile(profile) };
+    return normalizeGuestProgressStore({});
   }
 
-  function logOutLocalProfile() {
-    const store = readAuthStore();
-    store.currentProfileId = "";
-    writeAuthStore(store);
-    emit("netlab:authchange", { profile: guestProfile() });
-    return { ok: true };
+  function saveGuestProgressStore(store) {
+    saveJson(GUEST_PROGRESS_STORAGE_KEY, normalizeGuestProgressStore(store));
   }
 
-  function saveSectionProgress(sectionId, payload) {
-    const store = readProgressStore();
-    const bucket = getActiveBucket(store);
-    const record = normaliseProgressRecord(sectionId, payload || {});
+  function hydrateBucket(records, rowIdsBySection) {
+    runtime.progressBucket = emptyBucket();
+    runtime.rowIdsBySection = rowIdsBySection ? clone(rowIdsBySection) : {};
 
-    // Progress is keyed by the active local profile so guest work and signed-in local profiles stay separate.
-    bucket.sections[sectionId] = record;
-    bucket.lastActiveSectionId = sectionId;
-    bucket.lastUpdatedAt = record.updatedAt;
-    writeProgressStore(store);
-    emit("netlab:progresschange", { sectionId: sectionId, record: clone(record) });
-    return clone(record);
+    records.forEach(function (record) {
+      runtime.progressBucket.sections[record.sectionId] = clone(record);
+    });
+
+    recomputeLastActive(runtime.progressBucket);
   }
 
-  function getSectionProgress(sectionId) {
-    const store = readProgressStore();
-    const bucket = getActiveBucket(store);
-    return clone(bucket.sections[sectionId] || null);
+  function hydrateGuestProgress() {
+    const store = readGuestProgressStore();
+    const records = Object.keys(store.sections || {}).map(function (sectionId) {
+      return normaliseProgressRecord(sectionId, store.sections[sectionId] || {});
+    });
+
+    hydrateBucket(records, {});
   }
 
-  function getAllSectionProgress() {
-    const store = readProgressStore();
-    const bucket = getActiveBucket(store);
-    return clone(bucket.sections || {});
-  }
-
-  function getLastActiveProgress() {
-    const sections = Object.values(getAllSectionProgress());
-    if (!sections.length) {
-      return null;
-    }
-
-    return sections
-      .slice()
-      .sort(function (left, right) {
-        return normaliseNumber(right.updatedAt) - normaliseNumber(left.updatedAt);
-      })[0] || null;
+  function persistGuestProgress() {
+    saveGuestProgressStore({
+      lastActiveSectionId: runtime.progressBucket.lastActiveSectionId,
+      lastUpdatedAt: runtime.progressBucket.lastUpdatedAt,
+      sections: runtime.progressBucket.sections
+    });
   }
 
   function recomputeLastActive(bucket) {
@@ -326,24 +215,406 @@
     bucket.lastUpdatedAt = latest.updatedAt;
   }
 
-  function resetSectionProgress(sectionId) {
-    const store = readProgressStore();
-    const bucket = getActiveBucket(store);
+  function cacheProgressRecord(sectionId, record) {
+    runtime.progressBucket.sections[sectionId] = clone(record);
+    runtime.progressBucket.lastActiveSectionId = sectionId;
+    runtime.progressBucket.lastUpdatedAt = record.updatedAt;
+    if (runtime.profile.isGuest) {
+      persistGuestProgress();
+    }
+  }
 
-    delete bucket.sections[sectionId];
-    recomputeLastActive(bucket);
-    writeProgressStore(store);
+  function removeCachedProgress(sectionId) {
+    delete runtime.progressBucket.sections[sectionId];
+    delete runtime.rowIdsBySection[sectionId];
+    recomputeLastActive(runtime.progressBucket);
+    if (runtime.profile.isGuest) {
+      persistGuestProgress();
+    }
+  }
+
+  function clearCachedProgress() {
+    runtime.progressBucket = emptyBucket();
+    runtime.rowIdsBySection = {};
+    if (runtime.profile.isGuest) {
+      persistGuestProgress();
+    }
+  }
+
+  function getSupabaseClient() {
+    return SupabaseConfig && SupabaseConfig.client ? SupabaseConfig.client : null;
+  }
+
+  function getActiveProfile() {
+    return clone(runtime.profile);
+  }
+
+  function getProgressStorageLabel(profile) {
+    if (profile && !profile.isGuest) {
+      return "Supabase cloud sync";
+    }
+
+    return "Guest browser storage";
+  }
+
+  function getProfileStorageNote(profile) {
+    if (profile && !profile.isGuest) {
+      return "Progress is saved to Supabase for this signed-in account.";
+    }
+
+    return "Guest progress stays on this browser until you sign in.";
+  }
+
+  function normaliseRemoteProgressRow(row) {
+    const payload = row?.progress_data && typeof row.progress_data === "object" ? row.progress_data : {};
+
+    return normaliseProgressRecord(row.section_id, {
+      sectionLabel: row.section_label,
+      href: payload.href,
+      currentItemId: payload.currentItemId,
+      currentItemLabel: payload.currentItemLabel || row.current_item,
+      currentItem: row.current_item,
+      completedCount: row.completed_count,
+      totalCount: payload.totalCount,
+      summaryText: payload.summaryText,
+      updatedAt: payload.updatedAt || Date.parse(row.updated_at || "") || Date.now(),
+      state: payload.state
+    });
+  }
+
+  async function loadCloudProgress(userId) {
+    const supabase = getSupabaseClient();
+    if (!supabase || !userId) {
+      hydrateGuestProgress();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("user_progress")
+      .select("id, user_id, section_id, section_label, current_item, completed_count, progress_data, updated_at")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const rowIds = {};
+    const records = Array.isArray(data) ? data.map(function (row) {
+      rowIds[row.section_id] = row.id;
+      return normaliseRemoteProgressRow(row);
+    }) : [];
+
+    hydrateBucket(records, rowIds);
+  }
+
+  async function updateRuntimeFromSession(session) {
+    const supabase = getSupabaseClient();
+
+    if (!supabase || !session?.user) {
+      runtime.session = null;
+      runtime.profile = guestProfile();
+      hydrateGuestProgress();
+      return;
+    }
+
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      throw error;
+    }
+
+    const user = data?.user || session.user;
+    runtime.session = session;
+    runtime.profile = buildProfileFromUser(user);
+    await loadCloudProgress(user.id);
+  }
+
+  function scheduleAuthRefresh(session) {
+    window.setTimeout(async function () {
+      try {
+        await updateRuntimeFromSession(session);
+        emit("netlab:authchange", { profile: getActiveProfile() });
+        emit("netlab:progresschange", { sectionId: null, record: null });
+      } catch (error) {
+        console.error("Failed to refresh auth state from Supabase.", error);
+      }
+    }, 0);
+  }
+
+  async function initialise() {
+    if (runtime.ready) {
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      runtime.profile = guestProfile();
+      hydrateGuestProgress();
+      runtime.ready = true;
+      return;
+    }
+
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      throw error;
+    }
+
+    await updateRuntimeFromSession(data?.session || null);
+
+    if (!runtime.authSubscription) {
+      runtime.authSubscription = supabase.auth.onAuthStateChange(function (_event, session) {
+        scheduleAuthRefresh(session);
+      });
+    }
+
+    runtime.ready = true;
+  }
+
+  function whenReady() {
+    if (!runtime.initPromise) {
+      runtime.initPromise = initialise().catch(function (error) {
+        console.error("NetlabApp failed to initialise.", error);
+        runtime.profile = guestProfile();
+        hydrateGuestProgress();
+        runtime.ready = true;
+      });
+    }
+
+    return runtime.initPromise;
+  }
+
+  function getSectionProgress(sectionId) {
+    return clone(runtime.progressBucket.sections[sectionId] || null);
+  }
+
+  function getAllSectionProgress() {
+    return clone(runtime.progressBucket.sections || {});
+  }
+
+  function getLastActiveProgress() {
+    const sections = Object.values(runtime.progressBucket.sections || {});
+    if (!sections.length) {
+      return null;
+    }
+
+    return clone(sections.slice().sort(function (left, right) {
+      return normaliseNumber(right.updatedAt) - normaliseNumber(left.updatedAt);
+    })[0] || null);
+  }
+
+  async function saveProgressToCloud(sectionId, record) {
+    const supabase = getSupabaseClient();
+    if (!supabase || runtime.profile.isGuest) {
+      return;
+    }
+
+    const payload = {
+      user_id: runtime.profile.id,
+      section_id: sectionId,
+      section_label: record.sectionLabel,
+      current_item: record.currentItemLabel,
+      completed_count: record.completedCount,
+      progress_data: {
+        href: record.href,
+        currentItemId: record.currentItemId,
+        currentItemLabel: record.currentItemLabel,
+        totalCount: record.totalCount,
+        summaryText: record.summaryText,
+        state: record.state,
+        updatedAt: record.updatedAt
+      },
+      updated_at: new Date(record.updatedAt).toISOString()
+    };
+
+    const rowId = runtime.rowIdsBySection[sectionId];
+
+    if (rowId) {
+      const { error } = await supabase
+        .from("user_progress")
+        .update(payload)
+        .eq("id", rowId)
+        .eq("user_id", runtime.profile.id);
+
+      if (!error) {
+        return;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("user_progress")
+      .insert(payload)
+      .select("id, section_id")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.id) {
+      runtime.rowIdsBySection[sectionId] = data.id;
+    }
+  }
+
+  function saveSectionProgress(sectionId, payload) {
+    const record = normaliseProgressRecord(sectionId, payload || {});
+    cacheProgressRecord(sectionId, record);
+    emit("netlab:progresschange", { sectionId: sectionId, record: clone(record) });
+
+    if (!runtime.profile.isGuest) {
+      saveProgressToCloud(sectionId, record).catch(function (error) {
+        console.error("Failed to save Supabase progress.", error);
+      });
+    }
+
+    return clone(record);
+  }
+
+  async function deleteCloudSectionProgress(sectionId) {
+    const supabase = getSupabaseClient();
+    if (!supabase || runtime.profile.isGuest) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("user_progress")
+      .delete()
+      .eq("user_id", runtime.profile.id)
+      .eq("section_id", sectionId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  function resetSectionProgress(sectionId) {
+    removeCachedProgress(sectionId);
     emit("netlab:progresschange", { sectionId: sectionId, record: null });
+
+    if (!runtime.profile.isGuest) {
+      deleteCloudSectionProgress(sectionId).catch(function (error) {
+        console.error("Failed to reset Supabase progress for section.", error);
+      });
+    }
+  }
+
+  async function clearCloudProgress() {
+    const supabase = getSupabaseClient();
+    if (!supabase || runtime.profile.isGuest) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("user_progress")
+      .delete()
+      .eq("user_id", runtime.profile.id);
+
+    if (error) {
+      throw error;
+    }
   }
 
   function clearActiveProfileProgress() {
-    const store = readProgressStore();
-    const bucket = getActiveBucket(store);
-    bucket.sections = {};
-    bucket.lastActiveSectionId = "";
-    bucket.lastUpdatedAt = 0;
-    writeProgressStore(store);
+    clearCachedProgress();
     emit("netlab:progresschange", { sectionId: null, record: null });
+
+    if (!runtime.profile.isGuest) {
+      clearCloudProgress().catch(function (error) {
+        console.error("Failed to clear Supabase progress for account.", error);
+      });
+    }
+  }
+
+  async function signUpProfile(payload) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return { ok: false, error: "Supabase is not available in this build." };
+    }
+
+    const username = String(payload?.username || "").trim();
+    const email = String(payload?.email || "").trim();
+    const password = String(payload?.password || "");
+
+    if (!email) {
+      return { ok: false, error: "Enter an email address." };
+    }
+
+    if (password.length < 6) {
+      return { ok: false, error: "Use at least 6 characters for the password." };
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: username ? { display_name: username } : {}
+      }
+    });
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    const pendingConfirmation = !data?.session;
+    if (!pendingConfirmation && data?.session) {
+      await updateRuntimeFromSession(data.session);
+      emit("netlab:authchange", { profile: getActiveProfile() });
+      emit("netlab:progresschange", { sectionId: null, record: null });
+    }
+
+    return {
+      ok: true,
+      pendingConfirmation: pendingConfirmation,
+      message: pendingConfirmation
+        ? "Account created. Check your email for the confirmation link before logging in."
+        : "Account created and signed in.",
+      profile: getActiveProfile()
+    };
+  }
+
+  async function logInProfile(payload) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return { ok: false, error: "Supabase is not available in this build." };
+    }
+
+    const email = String(payload?.email || "").trim();
+    const password = String(payload?.password || "");
+
+    if (!email || !password) {
+      return { ok: false, error: "Enter both your email and password." };
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    await updateRuntimeFromSession(data?.session || null);
+    emit("netlab:authchange", { profile: getActiveProfile() });
+    emit("netlab:progresschange", { sectionId: null, record: null });
+
+    return { ok: true, profile: getActiveProfile() };
+  }
+
+  async function logOutProfile() {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+    }
+
+    runtime.session = null;
+    runtime.profile = guestProfile();
+    hydrateGuestProgress();
+    emit("netlab:authchange", { profile: getActiveProfile() });
+    emit("netlab:progresschange", { sectionId: null, record: null });
+    return { ok: true };
   }
 
   function getSectionDefinition(sectionId) {
@@ -389,10 +660,24 @@
   window.NetlabApp = {
     LOCAL_AUTH_NOTE: LOCAL_AUTH_NOTE,
     SECTION_DEFS: clone(SECTION_DEFS),
+    whenReady: whenReady,
+    isReady: function () {
+      return runtime.ready;
+    },
     getActiveProfile: getActiveProfile,
-    signUpLocalProfile: signUpLocalProfile,
-    logInLocalProfile: logInLocalProfile,
-    logOutLocalProfile: logOutLocalProfile,
+    getProgressStorageLabel: function () {
+      return getProgressStorageLabel(runtime.profile);
+    },
+    getProfileStorageNote: function () {
+      return getProfileStorageNote(runtime.profile);
+    },
+    signUpProfile: signUpProfile,
+    logInProfile: logInProfile,
+    logOutProfile: logOutProfile,
+    // Aliases kept so existing UI code can be migrated incrementally without breaking older calls.
+    signUpLocalProfile: signUpProfile,
+    logInLocalProfile: logInProfile,
+    logOutLocalProfile: logOutProfile,
     saveSectionProgress: saveSectionProgress,
     getSectionProgress: getSectionProgress,
     getAllSectionProgress: getAllSectionProgress,

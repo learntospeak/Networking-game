@@ -955,7 +955,7 @@ function renderSectionShell() {
     "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
     "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
     "</div>",
-    "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile on this browser. " + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>"
+    "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
   ].join("");
 
   const resumeBtn = document.getElementById("resumeSectionBtn");
@@ -977,7 +977,7 @@ function renderSectionShell() {
 
   if (resetProgressBtn) {
     resetProgressBtn.addEventListener("click", () => {
-      if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+      if (!window.confirm("Clear all saved progress for the current profile?")) {
         return;
       }
 
@@ -1727,22 +1727,31 @@ function bindEvents() {
   });
 }
 
-if (NetlabApp?.getLaunchAction() === "start") {
-  NetlabApp.resetSectionProgress(SECTION_ID);
-  NetlabApp.clearLaunchAction();
-}
+async function bootSubnettingLab() {
+  if (NetlabApp?.whenReady) {
+    await NetlabApp.whenReady();
+  }
 
-savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
-state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
+  if (NetlabApp?.getLaunchAction() === "start") {
+    NetlabApp.resetSectionProgress(SECTION_ID);
+    NetlabApp.clearLaunchAction();
+  }
 
-bindEvents();
-updateScoreboard();
-if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord.state)) {
-  renderSectionShell();
-} else {
+  savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
+  state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
+
+  bindEvents();
+  updateScoreboard();
+  if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord.state)) {
+    renderSectionShell();
+    return;
+  }
+
   showPractice();
   if (NetlabApp?.getLaunchAction()) {
     NetlabApp.clearLaunchAction();
   }
   renderSectionShell();
 }
+
+bootSubnettingLab();

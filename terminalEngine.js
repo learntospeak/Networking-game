@@ -923,7 +923,7 @@
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
-      "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile on this browser. " + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>"
+      "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
     ].join("");
 
     const resumeBtn = document.getElementById("resumeSectionBtn");
@@ -944,7 +944,7 @@
 
     if (resetProgressBtn) {
       resetProgressBtn.addEventListener("click", () => {
-        if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+        if (!window.confirm("Clear all saved progress for the current profile?")) {
           return;
         }
 
@@ -3806,32 +3806,41 @@
     previousScenario
   };
 
-  bindEvents();
-  syncTerminalInputPlacement();
-  setMobileContextCollapsed(false);
-  syncMobileViewportMetrics();
-  if (NetlabApp?.getLaunchAction() === "start") {
-    NetlabApp.resetSectionProgress(currentSectionId());
-    NetlabApp.clearLaunchAction();
-  }
-  savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(currentSectionId()) : null;
-  session.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
+  async function bootTerminalEngine() {
+    bindEvents();
+    syncTerminalInputPlacement();
+    setMobileContextCollapsed(false);
+    syncMobileViewportMetrics();
 
-  if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord)) {
-    return;
+    if (NetlabApp?.whenReady) {
+      await NetlabApp.whenReady();
+    }
+
+    if (NetlabApp?.getLaunchAction() === "start") {
+      NetlabApp.resetSectionProgress(currentSectionId());
+      NetlabApp.clearLaunchAction();
+    }
+    savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(currentSectionId()) : null;
+    session.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
+
+    if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord)) {
+      return;
+    }
+
+    if (NetlabApp?.getLaunchAction()) {
+      NetlabApp.clearLaunchAction();
+    }
+
+    if (pageConfig.autoStart === false) {
+      previewScenario(0);
+    } else {
+      loadScenario(0, { persist: false });
+    }
+
+    if (!savedProgressRecord) {
+      persistSectionProgress();
+    }
   }
 
-  if (NetlabApp?.getLaunchAction()) {
-    NetlabApp.clearLaunchAction();
-  }
-
-  if (pageConfig.autoStart === false) {
-    previewScenario(0);
-  } else {
-    loadScenario(0, { persist: false });
-  }
-
-  if (!savedProgressRecord) {
-    persistSectionProgress();
-  }
+  bootTerminalEngine();
 })();

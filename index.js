@@ -8,6 +8,7 @@
   const view = {
     authMode: "",
     error: "",
+    notice: "",
     busy: false
   };
 
@@ -15,18 +16,46 @@
 
   document.addEventListener("DOMContentLoaded", init);
 
-  function init() {
+  async function init() {
     els.accountPanel = document.getElementById("hubAccountPanel");
     els.resumePanel = document.getElementById("hubResumePanel");
     els.cardProgressSlots = Array.from(document.querySelectorAll("[data-progress-slot]"));
 
-    renderAll();
+    renderLoadingState();
     bindGlobalEvents();
+    await NetlabApp.whenReady();
+    renderAll();
   }
 
   function bindGlobalEvents() {
     window.addEventListener("netlab:authchange", renderAll);
     window.addEventListener("netlab:progresschange", renderAll);
+  }
+
+  function renderLoadingState() {
+    if (els.accountPanel) {
+      els.accountPanel.innerHTML = [
+        "<div class=\"app-shell-head\">",
+        "  <div>",
+        "    <p class=\"app-shell-kicker\">Account</p>",
+        "    <h2>Progress Profile</h2>",
+        "    <p class=\"app-shell-copy\">Connecting to the account and progress service...</p>",
+        "  </div>",
+        "</div>"
+      ].join("");
+    }
+
+    if (els.resumePanel) {
+      els.resumePanel.innerHTML = [
+        "<div class=\"app-shell-head\">",
+        "  <div>",
+        "    <p class=\"app-shell-kicker\">Resume</p>",
+        "    <h2>Pick Up Later</h2>",
+        "    <p class=\"app-shell-copy\">Loading saved progress...</p>",
+        "  </div>",
+        "</div>"
+      ].join("");
+    }
   }
 
   function renderAll() {
@@ -48,17 +77,19 @@
       "  <div>",
       "    <p class=\"app-shell-kicker\">Account</p>",
       "    <h2>Progress Profile</h2>",
-      "    <p class=\"app-shell-copy\">Use guest mode or create a local browser profile so progress can be kept in separate buckets until a real backend exists.</p>",
+      "    <p class=\"app-shell-copy\">Use guest mode for browser-only progress, or sign in with Supabase email/password so progress follows your account.</p>",
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges\">",
-      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "Profile: Guest Mode" : "Profile: " + profile.username) + "</span>",
-      "  <span class=\"status-badge\">" + escapeHtml(isGuest ? "Local browser storage" : "Local-only sign-in scaffold") + "</span>",
+      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "Profile: Guest Mode" : "Profile: " + profile.label) + "</span>",
+      "  <span class=\"status-badge\">" + escapeHtml(NetlabApp.getProgressStorageLabel()) + "</span>",
+      (!isGuest && profile.email ? "  <span class=\"status-badge\">" + escapeHtml(profile.email) + "</span>" : ""),
       "</div>",
       "<p class=\"app-shell-note\">" + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>",
       renderAuthActions(profile),
       view.authMode === "signup" ? renderSignUpForm() : "",
       view.authMode === "login" ? renderLogInForm() : "",
+      view.notice ? "<p class=\"app-shell-note\">" + escapeHtml(view.notice) + "</p>" : "",
       view.error ? "<p class=\"app-shell-error\">" + escapeHtml(view.error) + "</p>" : ""
     ].join("");
 
@@ -86,19 +117,19 @@
     return [
       "<form id=\"signUpForm\" class=\"app-auth-form\">",
       "  <label class=\"app-form-field\">",
-      "    <span>Username</span>",
-      "    <input id=\"signUpUsername\" class=\"app-shell-input\" type=\"text\" autocomplete=\"username\">",
+      "    <span>Display Name</span>",
+      "    <input id=\"signUpUsername\" class=\"app-shell-input\" type=\"text\" autocomplete=\"nickname\">",
       "  </label>",
       "  <label class=\"app-form-field\">",
       "    <span>Email</span>",
-      "    <input id=\"signUpEmail\" class=\"app-shell-input\" type=\"email\" autocomplete=\"email\">",
+      "    <input id=\"signUpEmail\" class=\"app-shell-input\" type=\"email\" autocomplete=\"email\" required>",
       "  </label>",
       "  <label class=\"app-form-field\">",
       "    <span>Password</span>",
-      "    <input id=\"signUpPassword\" class=\"app-shell-input\" type=\"password\" autocomplete=\"new-password\">",
+      "    <input id=\"signUpPassword\" class=\"app-shell-input\" type=\"password\" autocomplete=\"new-password\" required>",
       "  </label>",
       "  <div class=\"app-shell-actions\">",
-      "    <button class=\"app-action-btn\" type=\"submit\">Create Local Profile</button>",
+      "    <button class=\"app-action-btn\" type=\"submit\"" + (view.busy ? " disabled" : "") + ">Create Account</button>",
       "    <button id=\"cancelAuthBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Cancel</button>",
       "  </div>",
       "</form>"
@@ -109,15 +140,15 @@
     return [
       "<form id=\"logInForm\" class=\"app-auth-form\">",
       "  <label class=\"app-form-field\">",
-      "    <span>Username or Email</span>",
-      "    <input id=\"logInIdentifier\" class=\"app-shell-input\" type=\"text\" autocomplete=\"username\">",
+      "    <span>Email</span>",
+      "    <input id=\"logInEmail\" class=\"app-shell-input\" type=\"email\" autocomplete=\"email\" required>",
       "  </label>",
       "  <label class=\"app-form-field\">",
       "    <span>Password</span>",
-      "    <input id=\"logInPassword\" class=\"app-shell-input\" type=\"password\" autocomplete=\"current-password\">",
+      "    <input id=\"logInPassword\" class=\"app-shell-input\" type=\"password\" autocomplete=\"current-password\" required>",
       "  </label>",
       "  <div class=\"app-shell-actions\">",
-      "    <button class=\"app-action-btn\" type=\"submit\">Log In</button>",
+      "    <button class=\"app-action-btn\" type=\"submit\"" + (view.busy ? " disabled" : "") + ">Log In</button>",
       "    <button id=\"cancelAuthBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Cancel</button>",
       "  </div>",
       "</form>"
@@ -136,6 +167,7 @@
       signUpBtn.addEventListener("click", function () {
         view.authMode = "signup";
         view.error = "";
+        view.notice = "";
         renderAccountPanel();
       });
     }
@@ -144,15 +176,27 @@
       logInBtn.addEventListener("click", function () {
         view.authMode = "login";
         view.error = "";
+        view.notice = "";
         renderAccountPanel();
       });
     }
 
     if (logOutBtn) {
-      logOutBtn.addEventListener("click", function () {
-        NetlabApp.logOutLocalProfile();
-        view.authMode = "";
+      logOutBtn.addEventListener("click", async function () {
+        view.busy = true;
         view.error = "";
+        view.notice = "";
+        renderAccountPanel();
+        const result = await NetlabApp.logOutProfile();
+        view.busy = false;
+
+        if (!result.ok) {
+          view.error = result.error || "Unable to log out right now.";
+        } else {
+          view.authMode = "";
+          view.notice = "Signed out. Guest progress is now active on this browser.";
+        }
+
         renderAll();
       });
     }
@@ -161,6 +205,7 @@
       cancelAuthBtn.addEventListener("click", function () {
         view.authMode = "";
         view.error = "";
+        view.notice = "";
         renderAccountPanel();
       });
     }
@@ -168,12 +213,18 @@
     if (signUpForm) {
       signUpForm.addEventListener("submit", async function (event) {
         event.preventDefault();
+        view.busy = true;
         view.error = "";
-        const result = await NetlabApp.signUpLocalProfile({
+        view.notice = "";
+        renderAccountPanel();
+
+        const result = await NetlabApp.signUpProfile({
           username: document.getElementById("signUpUsername").value,
           email: document.getElementById("signUpEmail").value,
           password: document.getElementById("signUpPassword").value
         });
+
+        view.busy = false;
 
         if (!result.ok) {
           view.error = result.error;
@@ -181,7 +232,8 @@
           return;
         }
 
-        view.authMode = "";
+        view.notice = result.message || "Account created.";
+        view.authMode = result.pendingConfirmation ? "login" : "";
         renderAll();
       });
     }
@@ -189,11 +241,17 @@
     if (logInForm) {
       logInForm.addEventListener("submit", async function (event) {
         event.preventDefault();
+        view.busy = true;
         view.error = "";
-        const result = await NetlabApp.logInLocalProfile({
-          identifier: document.getElementById("logInIdentifier").value,
+        view.notice = "";
+        renderAccountPanel();
+
+        const result = await NetlabApp.logInProfile({
+          email: document.getElementById("logInEmail").value,
           password: document.getElementById("logInPassword").value
         });
+
+        view.busy = false;
 
         if (!result.ok) {
           view.error = result.error;
@@ -202,6 +260,7 @@
         }
 
         view.authMode = "";
+        view.notice = "Signed in. Progress will now sync for this account.";
         renderAll();
       });
     }
@@ -227,7 +286,7 @@
         "<div class=\"app-shell-actions\">",
         "  <button id=\"resetActiveProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
         "</div>",
-        "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile in this browser.</p>"
+        "<p class=\"app-shell-note\">" + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
       ].join("");
 
       bindResetOnly();
@@ -252,7 +311,7 @@
       "  <button id=\"startOverLastBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"resetActiveProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
-      "<p class=\"app-shell-note\">Progress is stored for " + escapeHtml(profile.label) + " in this browser only.</p>"
+      "<p class=\"app-shell-note\">" + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
     ].join("");
 
     const startOverBtn = document.getElementById("startOverLastBtn");
@@ -273,7 +332,7 @@
     }
 
     resetBtn.addEventListener("click", function () {
-      if (!window.confirm("Clear all saved progress for the current profile on this browser?")) {
+      if (!window.confirm("Clear all saved progress for the current profile?")) {
         return;
       }
 
