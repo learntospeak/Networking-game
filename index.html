@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Networking Learning Hub</title>
-  <link rel="stylesheet" href="./style.css?v=20260421b">
+  <link rel="stylesheet" href="./style.css?v=20260421c">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260421sup1" defer></script>
@@ -25,16 +25,27 @@
 
       <h1>Networking Learning Hub</h1>
 
-      <div class="hub-utility-grid">
-        <section id="hubAccountPanel" class="hub-section-panel app-shell-panel"></section>
-        <section id="hubResumePanel" class="hub-section-panel app-shell-panel"></section>
-      </div>
+      <section class="hub-page-top">
+        <section class="hub-hero-panel">
+          <p class="hub-hero-kicker">Play First</p>
+          <h2>Choose a lab and start learning straight away.</h2>
+          <p class="hub-hero-copy">You can use the app without an account. Sign in only if you want your progress to sync across devices and return with the same profile later.</p>
+          <div class="hub-hero-badges">
+            <span class="status-badge status-badge-blue">Guest mode supported</span>
+            <span class="status-badge">Supabase sync optional</span>
+          </div>
+        </section>
+
+        <section id="hubAccountPanel" class="hub-section-panel app-shell-panel hub-account-panel"></section>
+      </section>
+
+      <section id="hubResumePanel" class="hub-section-panel app-shell-panel hub-resume-panel"></section>
 
       <section id="practiceSection">
         <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">
           <div class="learning-paths-head">
             <h3>Choose a Lab</h3>
-            <p>Launch each learning area from its own dedicated page so subnetting, Cisco CLI, Linux, Windows, web traffic, and cyber challenge workflows stay clearly separated.</p>
+            <p>Open any lab directly. Subnetting, Linux, Windows, Cisco, Web &amp; HTTP, and Challenge Mode each live in their own dedicated workspace so the learning context stays clear.</p>
           </div>
 
           <div class="learning-path-grid">

@@ -35,26 +35,14 @@
   function renderLoadingState() {
     if (els.accountPanel) {
       els.accountPanel.innerHTML = [
-        "<div class=\"app-shell-head\">",
-        "  <div>",
-        "    <p class=\"app-shell-kicker\">Account</p>",
-        "    <h2>Progress Profile</h2>",
-        "    <p class=\"app-shell-copy\">Connecting to the account and progress service...</p>",
-        "  </div>",
-        "</div>"
+        "<p class=\"hub-account-label\">Account</p>",
+        "<p class=\"hub-account-copy\">Checking session...</p>"
       ].join("");
     }
 
     if (els.resumePanel) {
-      els.resumePanel.innerHTML = [
-        "<div class=\"app-shell-head\">",
-        "  <div>",
-        "    <p class=\"app-shell-kicker\">Resume</p>",
-        "    <h2>Pick Up Later</h2>",
-        "    <p class=\"app-shell-copy\">Loading saved progress...</p>",
-        "  </div>",
-        "</div>"
-      ].join("");
+      els.resumePanel.hidden = true;
+      els.resumePanel.innerHTML = "";
     }
   }
 
@@ -73,19 +61,19 @@
     const isGuest = profile.isGuest;
 
     els.accountPanel.innerHTML = [
-      "<div class=\"app-shell-head\">",
+      "<div class=\"hub-account-head\">",
       "  <div>",
-      "    <p class=\"app-shell-kicker\">Account</p>",
-      "    <h2>Progress Profile</h2>",
-      "    <p class=\"app-shell-copy\">Use guest mode for browser-only progress, or sign in with Supabase email/password so progress follows your account.</p>",
+      "    <p class=\"hub-account-label\">Account</p>",
+      "    <h2 class=\"hub-account-title\">" + escapeHtml(isGuest ? "Guest Mode" : profile.label) + "</h2>",
+      "    <p class=\"hub-account-copy\">" + escapeHtml(isGuest
+        ? "You can use the app without an account. Sign in to save your progress across devices."
+        : (profile.email || "Signed in. Progress sync is active for this account.")) + "</p>",
       "  </div>",
       "</div>",
-      "<div class=\"app-shell-badges\">",
-      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "Profile: Guest Mode" : "Profile: " + profile.label) + "</span>",
+      "<div class=\"app-shell-badges hub-account-badges\">",
+      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "No account required" : "Cloud sync active") + "</span>",
       "  <span class=\"status-badge\">" + escapeHtml(NetlabApp.getProgressStorageLabel()) + "</span>",
-      (!isGuest && profile.email ? "  <span class=\"status-badge\">" + escapeHtml(profile.email) + "</span>" : ""),
       "</div>",
-      "<p class=\"app-shell-note\">" + escapeHtml(NetlabApp.LOCAL_AUTH_NOTE) + "</p>",
       renderAuthActions(profile),
       view.authMode === "signup" ? renderSignUpForm() : "",
       view.authMode === "login" ? renderLogInForm() : "",
@@ -99,23 +87,23 @@
   function renderAuthActions(profile) {
     if (profile.isGuest) {
       return [
-        "<div class=\"app-shell-actions\">",
-        "  <button id=\"signUpBtn\" class=\"app-action-btn\" type=\"button\">Sign Up</button>",
-        "  <button id=\"logInBtn\" class=\"app-action-btn\" type=\"button\">Log In</button>",
+        "<div class=\"app-shell-actions hub-account-actions\">",
+        "  <button id=\"logInBtn\" class=\"app-action-btn hub-account-btn\" type=\"button\">Sign In</button>",
+        "  <button id=\"signUpBtn\" class=\"app-action-btn app-action-btn-muted hub-account-btn\" type=\"button\">Sign Up</button>",
         "</div>"
       ].join("");
     }
 
     return [
-      "<div class=\"app-shell-actions\">",
-      "  <button id=\"logOutBtn\" class=\"app-action-btn\" type=\"button\">Log Out</button>",
+      "<div class=\"app-shell-actions hub-account-actions\">",
+      "  <button id=\"logOutBtn\" class=\"app-action-btn hub-account-btn\" type=\"button\">Log Out</button>",
       "</div>"
     ].join("");
   }
 
   function renderSignUpForm() {
     return [
-      "<form id=\"signUpForm\" class=\"app-auth-form\">",
+      "<form id=\"signUpForm\" class=\"app-auth-form hub-account-form\">",
       "  <label class=\"app-form-field\">",
       "    <span>Display Name</span>",
       "    <input id=\"signUpUsername\" class=\"app-shell-input\" type=\"text\" autocomplete=\"nickname\">",
@@ -128,9 +116,9 @@
       "    <span>Password</span>",
       "    <input id=\"signUpPassword\" class=\"app-shell-input\" type=\"password\" autocomplete=\"new-password\" required>",
       "  </label>",
-      "  <div class=\"app-shell-actions\">",
-      "    <button class=\"app-action-btn\" type=\"submit\"" + (view.busy ? " disabled" : "") + ">Create Account</button>",
-      "    <button id=\"cancelAuthBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Cancel</button>",
+      "  <div class=\"app-shell-actions hub-account-actions\">",
+      "    <button class=\"app-action-btn hub-account-btn\" type=\"submit\"" + (view.busy ? " disabled" : "") + ">Create Account</button>",
+      "    <button id=\"cancelAuthBtn\" class=\"app-action-btn app-action-btn-muted hub-account-btn\" type=\"button\">Cancel</button>",
       "  </div>",
       "</form>"
     ].join("");
@@ -138,7 +126,7 @@
 
   function renderLogInForm() {
     return [
-      "<form id=\"logInForm\" class=\"app-auth-form\">",
+      "<form id=\"logInForm\" class=\"app-auth-form hub-account-form\">",
       "  <label class=\"app-form-field\">",
       "    <span>Email</span>",
       "    <input id=\"logInEmail\" class=\"app-shell-input\" type=\"email\" autocomplete=\"email\" required>",
@@ -147,9 +135,9 @@
       "    <span>Password</span>",
       "    <input id=\"logInPassword\" class=\"app-shell-input\" type=\"password\" autocomplete=\"current-password\" required>",
       "  </label>",
-      "  <div class=\"app-shell-actions\">",
-      "    <button class=\"app-action-btn\" type=\"submit\"" + (view.busy ? " disabled" : "") + ">Log In</button>",
-      "    <button id=\"cancelAuthBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Cancel</button>",
+      "  <div class=\"app-shell-actions hub-account-actions\">",
+      "    <button class=\"app-action-btn hub-account-btn\" type=\"submit\"" + (view.busy ? " disabled" : "") + ">Log In</button>",
+      "    <button id=\"cancelAuthBtn\" class=\"app-action-btn app-action-btn-muted hub-account-btn\" type=\"button\">Cancel</button>",
       "  </div>",
       "</form>"
     ].join("");
@@ -194,7 +182,7 @@
           view.error = result.error || "Unable to log out right now.";
         } else {
           view.authMode = "";
-          view.notice = "Signed out. Guest progress is now active on this browser.";
+          view.notice = "Signed out. Guest mode is active again.";
         }
 
         renderAll();
@@ -275,39 +263,28 @@
     const lastProgress = NetlabApp.getLastActiveProgress();
 
     if (!lastProgress) {
-      els.resumePanel.innerHTML = [
-        "<div class=\"app-shell-head\">",
-        "  <div>",
-        "    <p class=\"app-shell-kicker\">Resume</p>",
-        "    <h2>Pick Up Later</h2>",
-        "    <p class=\"app-shell-copy\">Saved progress will appear here for " + escapeHtml(profile.label) + " once you start working through a lab.</p>",
-        "  </div>",
-        "</div>",
-        "<div class=\"app-shell-actions\">",
-        "  <button id=\"resetActiveProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
-        "</div>",
-        "<p class=\"app-shell-note\">" + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
-      ].join("");
-
-      bindResetOnly();
+      els.resumePanel.hidden = true;
+      els.resumePanel.innerHTML = "";
       return;
     }
 
+    els.resumePanel.hidden = false;
     const completion = formatCompletion(lastProgress);
     els.resumePanel.innerHTML = [
       "<div class=\"app-shell-head\">",
       "  <div>",
-      "    <p class=\"app-shell-kicker\">Resume</p>",
-      "    <h2>Continue Your Last Lab</h2>",
+      "    <p class=\"app-shell-kicker\">Continue</p>",
+      "    <h2>Continue Where You Left Off</h2>",
       "    <p class=\"app-shell-copy\">Last worked on: " + escapeHtml(lastProgress.sectionLabel + " - " + lastProgress.currentItemLabel) + "</p>",
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges\">",
       "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(completion) + "</span>",
+      "  <span class=\"status-badge\">" + escapeHtml(profile.label) + "</span>",
       (lastProgress.summaryText ? "  <span class=\"status-badge\">" + escapeHtml(lastProgress.summaryText) + "</span>" : ""),
       "</div>",
       "<div class=\"app-shell-actions\">",
-      "  <a class=\"app-action-link\" href=\"" + escapeHtml(NetlabApp.buildSectionUrl(lastProgress.sectionId, "resume")) + "\">Resume Where You Left Off</a>",
+      "  <a class=\"app-action-link\" href=\"" + escapeHtml(NetlabApp.buildSectionUrl(lastProgress.sectionId, "resume")) + "\">Resume</a>",
       "  <button id=\"startOverLastBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"resetActiveProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
