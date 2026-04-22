@@ -237,16 +237,17 @@
     if (signUpForm) {
       signUpForm.addEventListener("submit", async function (event) {
         event.preventDefault();
+        const payload = {
+          username: document.getElementById("signUpUsername").value,
+          email: document.getElementById("signUpEmail").value,
+          password: document.getElementById("signUpPassword").value
+        };
         view.busy = true;
         view.error = "";
         view.notice = "";
         renderAccountPanel();
 
-        const result = await NetlabApp.signUpProfile({
-          username: document.getElementById("signUpUsername").value,
-          email: document.getElementById("signUpEmail").value,
-          password: document.getElementById("signUpPassword").value
-        });
+        const result = await NetlabApp.signUpProfile(payload);
 
         view.busy = false;
 
@@ -265,15 +266,16 @@
     if (logInForm) {
       logInForm.addEventListener("submit", async function (event) {
         event.preventDefault();
+        const payload = {
+          email: document.getElementById("logInEmail").value,
+          password: document.getElementById("logInPassword").value
+        };
         view.busy = true;
         view.error = "";
         view.notice = "";
         renderAccountPanel();
 
-        const result = await NetlabApp.logInProfile({
-          email: document.getElementById("logInEmail").value,
-          password: document.getElementById("logInPassword").value
-        });
+        const result = await NetlabApp.logInProfile(payload);
 
         view.busy = false;
 
