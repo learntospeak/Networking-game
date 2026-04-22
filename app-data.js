@@ -299,6 +299,10 @@
     return "Guest progress stays on this browser until you sign in.";
   }
 
+  function buildEmailConfirmationUrl() {
+    return new URL("./auth-confirmed.html", window.location.href).href;
+  }
+
   function getProfileState() {
     return clone(runtime.profileState);
   }
@@ -876,7 +880,8 @@
       email: email,
       password: password,
       options: {
-        data: username ? { display_name: username } : {}
+        data: username ? { display_name: username } : {},
+        emailRedirectTo: buildEmailConfirmationUrl()
       }
     });
 

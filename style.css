@@ -447,6 +447,15 @@ button::before {
   text-align: left;
 }
 
+.auth-confirm-shell {
+  max-width: 780px;
+}
+
+.auth-confirm-panel {
+  margin-top: 0;
+  text-align: left;
+}
+
 .reward-toast {
   position: fixed;
   right: 18px;
@@ -879,6 +888,33 @@ button::before {
 .app-shell-error {
   margin: 12px 0 0;
   line-height: 1.6;
+}
+
+.app-shell-banner {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.8);
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.app-shell-banner-success {
+  border-color: rgba(74, 222, 128, 0.42);
+  background: rgba(20, 83, 45, 0.22);
+  color: #bbf7d0;
+}
+
+.app-shell-banner-info {
+  border-color: rgba(56, 189, 248, 0.36);
+  background: rgba(14, 42, 74, 0.22);
+  color: #bae6fd;
+}
+
+.app-shell-banner-error {
+  border-color: rgba(248, 113, 113, 0.42);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fecaca;
 }
 
 .app-shell-note {

@@ -9,6 +9,7 @@
     authMode: "",
     error: "",
     notice: "",
+    noticeTone: "info",
     busy: false
   };
 
@@ -77,6 +78,16 @@
     ].join("");
   }
 
+  function normalizeAuthErrorMessage(message) {
+    const text = String(message || "").trim();
+
+    if (/email not confirmed/i.test(text)) {
+      return "Your account was created, but the email address is not confirmed yet. Open the confirmation email, click the link, then come back here and log in with your email address.";
+    }
+
+    return text || "Authentication failed. Please try again.";
+  }
+
   function renderAccountPanel() {
     if (!els.accountPanel) {
       return;
@@ -100,11 +111,12 @@
       "  <span class=\"status-badge\">" + escapeHtml(NetlabApp.getProgressStorageLabel()) + "</span>",
       "  <span class=\"status-badge\">" + escapeHtml("Coins: " + NetlabApp.getCoinsTotal()) + "</span>",
       "</div>",
+      view.notice ? "<div class=\"app-shell-banner app-shell-banner-" + escapeHtml(view.noticeTone || "info") + "\">" + escapeHtml(view.notice) + "</div>" : "",
+      view.error ? "<div class=\"app-shell-banner app-shell-banner-error\">" + escapeHtml(view.error) + "</div>" : "",
       renderAuthActions(profile),
       view.authMode === "signup" ? renderSignUpForm() : "",
       view.authMode === "login" ? renderLogInForm() : "",
-      view.notice ? "<p class=\"app-shell-note\">" + escapeHtml(view.notice) + "</p>" : "",
-      view.error ? "<p class=\"app-shell-error\">" + escapeHtml(view.error) + "</p>" : ""
+      ""
     ].join("");
 
     bindAccountActions();
@@ -185,6 +197,7 @@
         view.authMode = "signup";
         view.error = "";
         view.notice = "";
+        view.noticeTone = "info";
         renderAccountPanel();
       });
     }
@@ -194,6 +207,7 @@
         view.authMode = "login";
         view.error = "";
         view.notice = "";
+        view.noticeTone = "info";
         renderAccountPanel();
       });
     }
@@ -203,6 +217,7 @@
         view.busy = true;
         view.error = "";
         view.notice = "";
+        view.noticeTone = "info";
         renderAccountPanel();
         const result = await NetlabApp.logOutProfile();
         view.busy = false;
@@ -212,6 +227,7 @@
         } else {
           view.authMode = "";
           view.notice = "Signed out. Guest mode is active again.";
+          view.noticeTone = "info";
         }
 
         renderAll();
@@ -230,6 +246,7 @@
         view.authMode = "";
         view.error = "";
         view.notice = "";
+        view.noticeTone = "info";
         renderAccountPanel();
       });
     }
@@ -245,6 +262,7 @@
         view.busy = true;
         view.error = "";
         view.notice = "";
+        view.noticeTone = "info";
         renderAccountPanel();
 
         const result = await NetlabApp.signUpProfile(payload);
@@ -252,12 +270,15 @@
         view.busy = false;
 
         if (!result.ok) {
-          view.error = result.error;
+          view.error = normalizeAuthErrorMessage(result.error);
           renderAccountPanel();
           return;
         }
 
-        view.notice = result.message || "Account created.";
+        view.notice = result.pendingConfirmation
+          ? "Account created. Check your email inbox and spam folder for the confirmation link, then log in with your email address."
+          : (result.message || "Account created.");
+        view.noticeTone = "success";
         view.authMode = result.pendingConfirmation ? "login" : "";
         renderAll();
       });
@@ -273,6 +294,7 @@
         view.busy = true;
         view.error = "";
         view.notice = "";
+        view.noticeTone = "info";
         renderAccountPanel();
 
         const result = await NetlabApp.logInProfile(payload);
@@ -280,13 +302,14 @@
         view.busy = false;
 
         if (!result.ok) {
-          view.error = result.error;
+          view.error = normalizeAuthErrorMessage(result.error);
           renderAccountPanel();
           return;
         }
 
         view.authMode = "";
         view.notice = "Signed in. Progress will now sync for this account.";
+        view.noticeTone = "success";
         renderAll();
       });
     }
