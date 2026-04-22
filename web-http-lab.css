@@ -89,15 +89,267 @@
 }
 
 .http-layout {
-  display: grid;
-  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+  display: block;
 }
 
 .http-main {
   display: grid;
   gap: 20px;
+}
+
+.http-flow-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.http-flow-status {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.http-overview-footer-tight {
+  margin-top: 0;
+}
+
+.http-overview-panel-compact {
+  gap: 16px;
+}
+
+.http-overview-quick-grid,
+.http-diagram-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.http-lesson-path {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.http-path-card {
+  position: relative;
+  min-height: 118px;
+  padding: 16px 16px 16px 42px;
+  border-radius: 18px;
+  border: 1px solid rgba(51, 65, 85, 0.92);
+  background: linear-gradient(180deg, rgba(8, 16, 26, 0.98) 0%, rgba(9, 16, 24, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.http-path-card::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #64748b;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.16);
+}
+
+.http-path-card.is-active {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.16),
+    0 12px 24px rgba(14, 165, 233, 0.14);
+}
+
+.http-path-card.is-active::before {
+  background: #38bdf8;
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.16),
+    0 0 14px rgba(56, 189, 248, 0.34);
+}
+
+.http-path-card.is-complete {
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.http-path-card.is-complete::before {
+  background: #22c55e;
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.16),
+    0 0 14px rgba(34, 197, 94, 0.32);
+}
+
+.http-path-card.is-locked {
+  opacity: 0.7;
+}
+
+.http-path-step {
+  display: block;
+  margin-bottom: 6px;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.http-path-title {
+  display: block;
+  color: #f8fafc;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.http-path-copy {
+  display: block;
+  margin-top: 8px;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.http-path-lock {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 12px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.http-flow-diagram,
+.http-request-diagram {
+  display: grid;
+  gap: 14px;
+}
+
+.http-diagram-lane {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.http-flow-node,
+.http-flow-arrow {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.76);
+}
+
+.http-flow-node {
+  display: grid;
+  align-content: center;
+  min-width: 138px;
+  padding: 10px 12px;
+}
+
+.http-flow-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 108px;
+  padding: 10px 12px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.http-flow-node.is-browser {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.http-flow-node.is-proxy {
+  border-color: rgba(250, 204, 21, 0.46);
+}
+
+.http-flow-node.is-server {
+  border-color: rgba(34, 197, 94, 0.42);
+}
+
+.http-flow-node-label {
+  display: block;
+  color: #f8fafc;
+  font-weight: 800;
+}
+
+.http-flow-node-copy {
+  display: block;
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.http-flow-caption {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.http-request-line-diagram {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.http-request-segment {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.76);
+  color: #dbeafe;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.http-request-segment.is-highlight {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.14);
+}
+
+.http-request-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.http-request-detail-card {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.76);
+}
+
+.http-request-detail-card.is-highlight {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.14);
+}
+
+.http-request-detail-title {
+  margin: 0 0 6px;
+  color: #facc15;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.http-request-detail-copy {
+  margin: 0;
+  color: #dbeafe;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .http-panel {
@@ -823,10 +1075,8 @@
 }
 
 @media (max-width: 1180px) {
-  .http-layout {
-    grid-template-columns: 1fr;
-  }
-
+  .http-overview-quick-grid,
+  .http-diagram-grid,
   .http-workspace-grid,
   .http-guidance-grid,
   .http-overview-footer {
@@ -844,6 +1094,14 @@
     flex-direction: column;
     gap: 14px;
     margin-bottom: 18px;
+  }
+
+  .http-flow-head {
+    flex-direction: column;
+  }
+
+  .http-flow-status {
+    justify-items: start;
   }
 
   .http-panel {
@@ -869,7 +1127,7 @@
     padding: 10px;
   }
 
-  .http-lesson-card {
+  .http-path-card {
     min-height: 0;
     padding: 14px 14px 14px 40px;
   }
@@ -877,6 +1135,10 @@
   .http-raw-block {
     min-height: 220px;
     font-size: 12px;
+  }
+
+  .http-request-detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .http-request-field-grid {
@@ -891,6 +1153,8 @@
 @media (max-width: 520px) {
   .http-layout,
   .http-main,
+  .http-overview-quick-grid,
+  .http-diagram-grid,
   .http-workspace-grid,
   .http-guidance-grid,
   .http-state-stack,
@@ -900,8 +1164,32 @@
   }
 
   .http-choice-card,
-  .http-lesson-card {
+  .http-path-card {
     padding-left: 38px;
+  }
+
+  .http-lesson-path,
+  .http-request-line-diagram {
+    grid-template-columns: 1fr;
+  }
+
+  .http-request-line-diagram {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .http-flow-node,
+  .http-flow-arrow {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .http-diagram-lane {
+    align-items: stretch;
+  }
+
+  .http-lesson-path {
+    grid-template-columns: 1fr;
   }
 
   .http-tree-node[data-depth="1"] {

@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260421reward1">
-  <link rel="stylesheet" href="./web-http-lab.css">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260422flow1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260421reward1" defer></script>
   <script src="./web-http-lab-data.js" defer></script>
-  <script src="./web-http-lab.js?v=20260421reward1" defer></script>
+  <script src="./web-http-lab.js?v=20260422flow1" defer></script>
 </head>
 <body class="http-page">
   <div class="rack-room">
@@ -43,56 +43,88 @@
       <section id="appSectionShell" class="http-panel app-shell-panel http-section-shell"></section>
 
       <div class="http-layout">
-        <aside class="http-panel http-selector-panel">
-          <div class="http-panel-head">
-            <div>
-              <h2>Lessons</h2>
-              <p class="http-panel-copy">Start with the basics, then move into cookies, sessions, interception, and discoverability.</p>
-            </div>
-            <div id="labStatus" class="http-status idle">Ready</div>
-          </div>
-
-          <div class="http-progress-row">
-            <span class="http-progress-label">Curriculum</span>
-            <span id="completedCount" class="http-progress-value">0 / 0 complete</span>
-          </div>
-
-          <div id="lessonList" class="http-lesson-list"></div>
-        </aside>
-
         <main class="http-main">
-          <section class="http-panel http-overview-panel">
-            <div class="http-overview-head">
+          <section class="http-panel http-flow-panel">
+            <div class="http-flow-head">
               <div>
-                <div class="http-badge-row">
-                  <span id="lessonCategory" class="http-badge">HTTP Fundamentals</span>
-                  <span id="lessonDifficulty" class="http-badge http-badge-muted">Beginner</span>
-                  <span id="lessonStepBadge" class="http-badge http-badge-accent">Step 1 of 3</span>
-                </div>
+                <p class="http-mini-label">Step-By-Step Curriculum</p>
                 <h2 id="lessonTitle">Web &amp; HTTP Lab</h2>
+                <p id="lessonIntro" class="http-overview-copy">
+                  Load a lesson to inspect requests, responses, cookies, sessions, and proxy state in the lab workspace.
+                </p>
               </div>
-              <div id="lessonCompletion" class="http-completion-pill">Lesson ready</div>
+              <div class="http-flow-status">
+                <div id="labStatus" class="http-status idle">Ready</div>
+                <div id="lessonCompletion" class="http-completion-pill">Lesson ready</div>
+              </div>
             </div>
 
-            <p id="lessonIntro" class="http-overview-copy">
-              Load a lesson to inspect requests, responses, cookies, sessions, and proxy state in the lab workspace.
-            </p>
-
-            <div>
-              <h3>Learning Objectives</h3>
-              <ul id="objectiveList" class="http-objective-list"></ul>
+            <div class="http-badge-row">
+              <span id="lessonCategory" class="http-badge">HTTP Fundamentals</span>
+              <span id="lessonDifficulty" class="http-badge http-badge-muted">Beginner</span>
+              <span id="lessonStepBadge" class="http-badge http-badge-accent">Step 1 of 3</span>
             </div>
 
-            <div class="http-overview-footer">
+            <div class="http-progress-row">
+              <span class="http-progress-label">Curriculum</span>
+              <span id="completedCount" class="http-progress-value">0 / 0 complete</span>
+            </div>
+
+            <div class="http-overview-footer http-overview-footer-tight">
               <div>
-                <p class="http-mini-label">Recommended Next Lesson</p>
-                <p id="recommendedNextLesson" class="http-mini-copy">Choose a lesson to begin.</p>
+                <p class="http-mini-label">Current Position</p>
+                <p id="curriculumMeta" class="http-mini-copy">Lesson 1 of 1 | Step 1 of 1</p>
               </div>
               <div>
-                <p class="http-mini-label">Lesson Focus</p>
+                <p class="http-mini-label">Next Unlock</p>
+                <p id="recommendedNextLesson" class="http-mini-copy">Finish this lesson to unlock the next one.</p>
+              </div>
+            </div>
+
+            <div id="lessonList" class="http-lesson-path"></div>
+          </section>
+
+          <section class="http-panel http-overview-panel http-overview-panel-compact">
+            <div class="http-panel-head">
+              <div>
+                <h2>Current Concept</h2>
+                <p class="http-panel-copy">Each step focuses on one concept, one action, and one result.</p>
+              </div>
+            </div>
+
+            <div class="http-overview-quick-grid">
+              <section class="http-state-card">
+                <p class="http-mini-label">In Plain Language</p>
                 <p id="lessonExplanation" class="http-mini-copy">This panel will summarise the current lesson.</p>
-              </div>
+              </section>
+
+              <section class="http-state-card">
+                <p class="http-mini-label">Focus Areas</p>
+                <div id="objectiveList" class="http-summary-chips"></div>
+              </section>
             </div>
+          </section>
+
+          <section class="http-diagram-grid">
+            <article class="http-panel http-diagram-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Traffic Flow</h2>
+                  <p class="http-panel-copy">See the request move through the lab one hop at a time.</p>
+                </div>
+              </div>
+              <div id="flowDiagram" class="http-flow-diagram"></div>
+            </article>
+
+            <article class="http-panel http-diagram-panel">
+              <div class="http-panel-head">
+                <div>
+                  <h2>Request Anatomy</h2>
+                  <p class="http-panel-copy">Highlight the method, path, headers, and cookies that matter in this step.</p>
+                </div>
+              </div>
+              <div id="requestDiagram" class="http-request-diagram"></div>
+            </article>
           </section>
 
           <section class="http-panel http-browser-panel">

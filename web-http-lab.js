@@ -1568,6 +1568,7 @@
     els.labStatus = document.getElementById("labStatus");
     els.completedCount = document.getElementById("completedCount");
     els.lessonList = document.getElementById("lessonList");
+    els.curriculumMeta = document.getElementById("curriculumMeta");
     els.lessonCategory = document.getElementById("lessonCategory");
     els.lessonDifficulty = document.getElementById("lessonDifficulty");
     els.lessonStepBadge = document.getElementById("lessonStepBadge");
@@ -1582,6 +1583,8 @@
     els.browserTitle = document.getElementById("browserTitle");
     els.browserNote = document.getElementById("browserNote");
     els.browserChipRow = document.getElementById("browserChipRow");
+    els.flowDiagram = document.getElementById("flowDiagram");
+    els.requestDiagram = document.getElementById("requestDiagram");
 
     els.requestBadge = document.getElementById("requestBadge");
     els.requestWorkbench = document.getElementById("requestWorkbench");
@@ -1827,6 +1830,7 @@
     renderLessonList();
     renderOverview();
     renderWorkspace();
+    renderDiagrams();
     renderTask();
     renderInteraction();
   }
@@ -1908,6 +1912,12 @@
     els.labStatus.className = "http-status bad";
     els.lessonList.innerHTML = "<div class=\"http-empty-state\">The Web &amp; HTTP Lab data file did not load.</div>";
     els.interactionBody.innerHTML = "<div class=\"http-empty-state\">Refresh the page and try again.</div>";
+    if (els.flowDiagram) {
+      els.flowDiagram.innerHTML = "<div class=\"http-empty-state\">The visual flow will appear once the lesson data loads.</div>";
+    }
+    if (els.requestDiagram) {
+      els.requestDiagram.innerHTML = "<div class=\"http-empty-state\">The request anatomy diagram will appear once a lesson is available.</div>";
+    }
   }
 
   function renderLessonList() {
@@ -1932,44 +1942,31 @@
     els.lessonList.innerHTML = "";
 
     state.lessons.forEach(function (item, index) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "http-lesson-card";
+      const card = document.createElement("article");
+      const isActive = index === state.lessonIndex;
+      const isComplete = Boolean(state.completedLessons[item.id]);
+      const isLocked = index > unlockedLessonIndex();
+      card.className = "http-path-card";
 
-      if (index === state.lessonIndex) {
-        button.classList.add("is-active");
+      if (isActive) {
+        card.classList.add("is-active");
       }
 
-      if (state.completedLessons[item.id]) {
-        button.classList.add("is-complete");
+      if (isComplete) {
+        card.classList.add("is-complete");
       }
 
-      const intro = item.scenarioIntro || "";
-      const shortCopy = intro.length > 116 ? intro.slice(0, 113).trimEnd() + "..." : intro;
+      if (isLocked) {
+        card.classList.add("is-locked");
+      }
 
-      button.innerHTML =
-        "<span class=\"http-lesson-kicker\">" + escapeHtml(item.category) + "</span>" +
-        "<span class=\"http-lesson-title\">" + escapeHtml(item.title) + "</span>" +
-        "<span class=\"http-lesson-copy\">" + escapeHtml(shortCopy) + "</span>" +
-        "<span class=\"http-lesson-meta\">" +
-        "<span class=\"http-lesson-chip\">" + escapeHtml(item.difficulty) + "</span>" +
-        "<span class=\"http-lesson-chip\">" + item.interactiveSteps.length + " steps</span>" +
-        (state.completedLessons[item.id] ? "<span class=\"http-lesson-chip\">Completed</span>" : "") +
-        "</span>";
+      card.innerHTML =
+        "<span class=\"http-path-step\">Lesson " + (index + 1) + "</span>" +
+        "<span class=\"http-path-title\">" + escapeHtml(item.title) + "</span>" +
+        "<span class=\"http-path-copy\">" + escapeHtml(shortScenario(item.scenarioIntro)) + "</span>" +
+        "<span class=\"http-path-lock\">" + escapeHtml(pathStatusLabel(item, index)) + "</span>";
 
-      button.addEventListener("click", function () {
-        if (index === state.lessonIndex) {
-          return;
-        }
-
-        state.lessonIndex = index;
-        state.stepIndex = 0;
-        resetStepRuntime();
-        persistProgress();
-        render();
-      });
-
-      els.lessonList.appendChild(button);
+      els.lessonList.appendChild(card);
     });
   }
 
@@ -1983,9 +1980,14 @@
     els.lessonDifficulty.textContent = lesson.difficulty;
     els.lessonStepBadge.textContent = "Step " + (state.stepIndex + 1) + " of " + lesson.interactiveSteps.length;
     els.lessonTitle.textContent = lesson.title;
-    els.lessonIntro.textContent = lesson.scenarioIntro;
-    els.lessonExplanation.textContent = lesson.explanation;
-    els.recommendedNextLesson.textContent = recommended ? recommended.title : "No next lesson configured.";
+    els.lessonIntro.textContent = compactStepIntro(lesson, step, requestLab);
+    els.lessonExplanation.textContent = compactConceptText(lesson, step, requestLab);
+    els.recommendedNextLesson.textContent = recommended
+      ? "Finish this lesson to unlock " + recommended.title + "."
+      : "You are on the final lesson in this path.";
+    if (els.curriculumMeta) {
+      els.curriculumMeta.textContent = "Lesson " + (state.lessonIndex + 1) + " of " + state.lessons.length + " | Step " + (state.stepIndex + 1) + " of " + lesson.interactiveSteps.length;
+    }
 
     const completionText = state.completedLessons[lesson.id]
       ? "Lesson complete"
@@ -1997,15 +1999,246 @@
     els.lessonCompletion.className = "http-completion-pill " + (state.completedLessons[lesson.id] ? "complete" : "pending");
 
     els.objectiveList.innerHTML = "";
-    lesson.learningObjectives.forEach(function (objective) {
-      const item = document.createElement("li");
+    focusItemsFor(lesson, step, requestLab).forEach(function (objective) {
+      const item = document.createElement("span");
+      item.className = "http-chip";
       item.textContent = objective;
       els.objectiveList.appendChild(item);
     });
+  }
 
-    if (requestLab) {
-      els.lessonExplanation.textContent = lesson.explanation;
+  function shortScenario(text) {
+    return truncateText(text, 92);
+  }
+
+  function truncateText(text, maxLength) {
+    const source = String(text || "").replace(/\s+/g, " ").trim();
+
+    if (!source) {
+      return "";
     }
+
+    if (source.length <= maxLength) {
+      return source;
+    }
+
+    return source.slice(0, maxLength - 3).trimEnd() + "...";
+  }
+
+  function compactStepIntro(lesson, step, requestLab) {
+    const lead = requestLab && requestLab.title ? requestLab.title : step.title;
+    const body = requestLab && requestLab.prompt ? requestLab.prompt : lesson.scenarioIntro;
+    return truncateText(lead + ". " + body, 170);
+  }
+
+  function compactConceptText(lesson, step, requestLab) {
+    const concept = state.liveExplanation || step.explanation || lesson.explanation || lesson.scenarioIntro;
+    const prefix = requestLab ? "Change the request, then watch what the server does. " : "";
+    return truncateText(prefix + concept, 170);
+  }
+
+  function compactTaskPrompt(prompt) {
+    return truncateText(prompt, 150);
+  }
+
+  function focusItemsFor(lesson, step, requestLab) {
+    if (requestLab && Array.isArray(requestLab.focusFields) && requestLab.focusFields.length) {
+      return requestLab.focusFields.slice(0, 4);
+    }
+
+    const interactionType = step && step.interaction ? step.interaction.type : "";
+    const focus = [];
+
+    if (interactionType === "field-check") {
+      focus.push("Read the request line", "Check the response line");
+    } else if (interactionType === "single-choice" || interactionType === "multi-select") {
+      focus.push("Compare the visible evidence", "Pick the safest answer");
+    } else if (interactionType === "proxy-control") {
+      focus.push("Browser", "Proxy", "Server");
+    } else if (interactionType === "spider-select") {
+      focus.push("Discoverable pages", "Visible crawl clues");
+    }
+
+    if (lesson && Array.isArray(lesson.learningObjectives)) {
+      lesson.learningObjectives.slice(0, 2).forEach(function (item) {
+        focus.push(truncateText(item, 38));
+      });
+    }
+
+    return uniqueNames(focus).slice(0, 4);
+  }
+
+  function unlockedLessonIndex() {
+    const firstIncompleteIndex = state.lessons.findIndex(function (lesson) {
+      return !state.completedLessons[lesson.id];
+    });
+
+    if (firstIncompleteIndex === -1) {
+      return state.lessons.length - 1;
+    }
+
+    return Math.max(state.lessonIndex, firstIncompleteIndex);
+  }
+
+  function pathStatusLabel(lesson, index) {
+    if (state.completedLessons[lesson.id]) {
+      return "Completed";
+    }
+
+    if (index === state.lessonIndex) {
+      return state.stepSolved && state.stepIndex === lesson.interactiveSteps.length - 1
+        ? "Ready to unlock next"
+        : "Current lesson";
+    }
+
+    if (index > unlockedLessonIndex()) {
+      return "Locked until previous lesson is done";
+    }
+
+    return "Up next";
+  }
+
+  function renderDiagrams() {
+    if (!els.flowDiagram || !els.requestDiagram) {
+      return;
+    }
+
+    const workspace = state.currentWorkspace || {};
+    const request = currentRequestLab() && state.requestDraft
+      ? requestFromDraft(state.requestDraft)
+      : (workspace.request || null);
+    const response = workspace.response || null;
+    const proxy = workspace.proxy || {};
+    const cookies = Array.isArray(workspace.cookies) ? workspace.cookies : [];
+
+    els.flowDiagram.innerHTML = buildFlowDiagram(request, response, proxy);
+    els.requestDiagram.innerHTML = buildRequestDiagram(request, cookies, currentRequestLab());
+  }
+
+  function buildFlowDiagram(request, response, proxy) {
+    if (!request) {
+      return "<div class=\"http-empty-state\">Load a step to see the browser to server flow.</div>";
+    }
+
+    const showProxy = shouldShowProxy(proxy);
+    const route = [
+      "<div class=\"http-diagram-lane\">",
+      buildFlowNode("Browser", truncateText(composeLabUrl(request, state.currentWorkspace?.browser?.url || "https://example.lab/"), 40), "is-browser"),
+      "<div class=\"http-flow-arrow\">" + escapeHtml(truncateText(request.method + " " + request.path, 28)) + "</div>"
+    ];
+
+    if (showProxy) {
+      route.push(buildFlowNode("Proxy", truncateText(proxy.status || "Interception", 28), "is-proxy"));
+      route.push("<div class=\"http-flow-arrow\">" + escapeHtml(proxy.requestPaused ? "Held here" : "Forwarded") + "</div>");
+    }
+
+    route.push(buildFlowNode("Server", getHeaderValue(request.headers, "Host") || "target host", "is-server"));
+    route.push("</div>");
+
+    const responseText = response
+      ? response.statusCode + " " + response.statusText
+      : (proxy.requestPaused ? "No response yet" : "Waiting for send");
+
+    route.push(
+      "<div class=\"http-diagram-lane\">" +
+      "<div class=\"http-flow-arrow\">" + escapeHtml(responseText) + "</div>" +
+      buildFlowNode("Response", truncateText(responseSummaryText(currentRequestLab(), response, proxy), 48), "is-browser") +
+      "</div>"
+    );
+
+    route.push("<p class=\"http-flow-caption\">" + escapeHtml(flowCaption(request, response, proxy)) + "</p>");
+    return route.join("");
+  }
+
+  function buildFlowNode(label, copy, className) {
+    return (
+      "<div class=\"http-flow-node " + escapeHtml(className || "") + "\">" +
+      "<span class=\"http-flow-node-label\">" + escapeHtml(label) + "</span>" +
+      "<span class=\"http-flow-node-copy\">" + escapeHtml(copy || "") + "</span>" +
+      "</div>"
+    );
+  }
+
+  function buildRequestDiagram(request, cookies, requestLab) {
+    if (!request) {
+      return "<div class=\"http-empty-state\">The request anatomy appears once a step loads a request.</div>";
+    }
+
+    const pathParts = splitPath(request.path);
+    const focusFields = requestLab && Array.isArray(requestLab.focusFields) ? requestLab.focusFields : [];
+    const cookieHeader = getHeaderValue(request.headers, "Cookie");
+    const contentType = getHeaderValue(request.headers, "Content-Type");
+    const requestBody = String(request.body || "").trim();
+
+    return [
+      "<div class=\"http-request-line-diagram\">",
+      buildRequestSegment(request.method || "GET", isFocusFieldHighlighted("Method", focusFields)),
+      buildRequestSegment(pathParts.pathname || "/", isFocusFieldHighlighted("Path", focusFields) || isFocusFieldHighlighted("Query parameters", focusFields)),
+      buildRequestSegment(pathParts.queryString ? "?" + pathParts.queryString : "No query", isFocusFieldHighlighted("Query parameters", focusFields)),
+      buildRequestSegment(request.version || "HTTP/1.1", false),
+      "</div>",
+      "<div class=\"http-request-detail-grid\">",
+      buildRequestDetailCard("Host header", getHeaderValue(request.headers, "Host") || "Not set", isFocusFieldHighlighted("Host", focusFields)),
+      buildRequestDetailCard("Cookie header", cookieHeader || (cookies.length ? "Cookies available" : "No Cookie header"), isFocusFieldHighlighted("Cookie", focusFields)),
+      buildRequestDetailCard("Content-Type", contentType || "No body type", isFocusFieldHighlighted("Content-Type", focusFields)),
+      buildRequestDetailCard("Body", requestBody || "No request body", isFocusFieldHighlighted("Body", focusFields)),
+      "</div>",
+      "<p class=\"http-flow-caption\">" + escapeHtml(requestAnatomyCaption(request, requestLab, cookies)) + "</p>"
+    ].join("");
+  }
+
+  function buildRequestSegment(value, isHighlight) {
+    return "<span class=\"http-request-segment" + (isHighlight ? " is-highlight" : "") + "\">" + escapeHtml(value) + "</span>";
+  }
+
+  function buildRequestDetailCard(label, value, isHighlight) {
+    return (
+      "<article class=\"http-request-detail-card" + (isHighlight ? " is-highlight" : "") + "\">" +
+      "<p class=\"http-request-detail-title\">" + escapeHtml(label) + "</p>" +
+      "<p class=\"http-request-detail-copy\">" + escapeHtml(truncateText(value, 80)) + "</p>" +
+      "</article>"
+    );
+  }
+
+  function shouldShowProxy(proxy) {
+    const status = normalizeText(proxy && proxy.status ? proxy.status : "");
+    return Boolean(status && status !== "pass-through");
+  }
+
+  function isFocusFieldHighlighted(fieldName, focusFields) {
+    return (focusFields || []).some(function (field) {
+      const normalized = normalizeText(field);
+      const target = normalizeText(fieldName);
+      return normalized === target || normalized.indexOf(target) >= 0 || target.indexOf(normalized) >= 0;
+    });
+  }
+
+  function flowCaption(request, response, proxy) {
+    if (state.requestDirty) {
+      return "You changed the request draft. Press Send Request to update the server response.";
+    }
+
+    if (proxy.requestPaused) {
+      return "The request is paused at the proxy, so the server has not answered yet.";
+    }
+
+    if (!response) {
+      return "The browser is ready, but the current step has not sent a request yet.";
+    }
+
+    return "The browser sent " + request.method + " " + request.path + " and the server replied with " + response.statusCode + " " + response.statusText + ".";
+  }
+
+  function requestAnatomyCaption(request, requestLab, cookies) {
+    if (requestLab && Array.isArray(requestLab.focusFields) && requestLab.focusFields.length) {
+      return "This step mainly cares about " + requestLab.focusFields.slice(0, 3).join(", ") + ".";
+    }
+
+    if (cookies.length) {
+      return "Cookies ride inside the Cookie header, so the browser can carry state between requests.";
+    }
+
+    return "Read the method first, then the path, then the headers that give the server more context.";
   }
 
   function renderWorkspace() {
@@ -2211,10 +2444,10 @@
 
     els.stepTitle.textContent = requestLab && requestLab.title ? requestLab.title : step.title;
     els.stepMeta.textContent = "Lesson " + (state.lessonIndex + 1) + " of " + state.lessons.length + " | Step " + (state.stepIndex + 1) + " of " + lesson.interactiveSteps.length;
-    els.stepPrompt.textContent = requestLab && requestLab.prompt ? requestLab.prompt : step.prompt;
-    els.successCondition.textContent = requestLab && requestLab.successCondition ? requestLab.successCondition : step.successCondition;
-    els.feedbackText.textContent = state.feedbackText;
-    els.stepExplanation.textContent = state.liveExplanation || (state.stepSolved ? step.explanation : lesson.explanation);
+    els.stepPrompt.textContent = compactTaskPrompt(requestLab && requestLab.prompt ? requestLab.prompt : step.prompt);
+    els.successCondition.textContent = truncateText(requestLab && requestLab.successCondition ? requestLab.successCondition : step.successCondition, 130);
+    els.feedbackText.textContent = truncateText(state.feedbackText, 150);
+    els.stepExplanation.textContent = truncateText(state.liveExplanation || (state.stepSolved ? step.explanation : lesson.explanation), 150);
     els.hintText.textContent = state.hintText;
 
     let badgeText = "Waiting for action";
@@ -2284,7 +2517,7 @@
 
   function renderRequestLabGuidance(step, requestLab) {
     els.answerTitle.textContent = requestLab.title || step.title;
-    els.answerSubtitle.textContent = "Edit the request in the Request Panel, then press Send Request to generate a new response.";
+    els.answerSubtitle.textContent = "Change the request, press Send, then compare the result.";
     els.interactionBody.innerHTML = "";
 
     const wrapper = document.createElement("div");
@@ -2292,11 +2525,11 @@
 
     const intro = document.createElement("p");
     intro.className = "http-answer-copy";
-    intro.textContent = requestLab.editorNote;
+    intro.textContent = truncateText(requestLab.editorNote, 140);
     wrapper.appendChild(intro);
 
     if (requestLab.responseGuide) {
-      wrapper.appendChild(buildGuidanceCallout("Response logic", requestLab.responseGuide));
+      wrapper.appendChild(buildGuidanceCallout("Response logic", truncateText(requestLab.responseGuide, 140)));
     }
 
     if (requestLab.focusFields && requestLab.focusFields.length) {
@@ -2329,7 +2562,7 @@
     intro.className = "http-answer-copy";
     intro.textContent = interaction.type === "request-editor"
       ? "Edit the safe training field below, then replay the request."
-      : "Fill in the missing details from the request and response panels.";
+      : "Use the visible request and response details to fill the blanks.";
     wrapper.appendChild(intro);
 
     const form = document.createElement("form");
@@ -2385,8 +2618,8 @@
     const intro = document.createElement("p");
     intro.className = "http-answer-copy";
     intro.textContent = multiSelect
-      ? "Select every answer that matches the current evidence, then submit the selection."
-      : "Choose the best answer for this step, then submit it.";
+      ? "Select every option that matches the evidence, then submit."
+      : "Choose the best answer for this step, then submit.";
     wrapper.appendChild(intro);
 
     const optionGrid = document.createElement("div");
@@ -2795,7 +3028,7 @@
     }
 
     const nextLesson = nextLessonFor(lesson);
-    return nextLesson ? "Open Next Lesson" : "Replay Lesson";
+    return nextLesson ? "Next Lesson" : "Replay Lesson";
   }
 
   function interactionSubtitle(type) {
@@ -2824,7 +3057,7 @@
 
     const hints = activeHints(step, requestLab);
     if (state.stepIndex === currentLesson().interactiveSteps.length - 1) {
-      return "Lesson complete. Open the next lesson when you are ready.";
+      return "Lesson complete. Continue when you are ready for the next lesson.";
     }
 
     if (hints.length) {
@@ -2934,6 +3167,7 @@
         : "https://example.lab/"
     );
     els.responseSummary.textContent = responseSummaryText(currentRequestLab(), state.currentWorkspace && state.currentWorkspace.response, state.currentWorkspace && state.currentWorkspace.proxy ? state.currentWorkspace.proxy : {});
+    renderDiagrams();
   }
 
   function draftFromRequest(request) {
