@@ -1519,7 +1519,10 @@
     requestDirty: false,
     lastSentRequest: null,
     liveExplanation: "",
-    resumePromptVisible: false
+    resumePromptVisible: false,
+    visualFlowStep: 0,
+    visualMode: "get",
+    visualExplainKey: "get"
   };
 
   const els = {};
@@ -1701,7 +1704,10 @@
         requestDraft: state.requestDraft,
         requestDirty: state.requestDirty,
         lastSentRequest: state.lastSentRequest,
-        liveExplanation: state.liveExplanation
+        liveExplanation: state.liveExplanation,
+        visualFlowStep: state.visualFlowStep,
+        visualMode: state.visualMode,
+        visualExplainKey: state.visualExplainKey
       }
     };
 
@@ -1720,7 +1726,11 @@
 
   function currentRequestLab() {
     const step = currentStep();
-    return step ? REQUEST_LABS[step.id] || null : null;
+    if (!step || isVisualBasicsLesson()) {
+      return null;
+    }
+
+    return REQUEST_LABS[step.id] || null;
   }
 
   function awardLessonCompletionIfNeeded(lesson, alreadyCompleted) {
@@ -1753,6 +1763,9 @@
     state.requestDirty = false;
     state.lastSentRequest = null;
     state.liveExplanation = "";
+    state.visualMode = normalizeVisualMode("", step);
+    state.visualFlowStep = 0;
+    state.visualExplainKey = defaultVisualExplainKey(state.visualMode);
 
     if (!step) {
       return;
@@ -1799,6 +1812,9 @@
     state.requestDirty = Boolean(savedState.requestDirty);
     state.lastSentRequest = cloneData(savedState.lastSentRequest);
     state.liveExplanation = savedState.liveExplanation || "";
+    state.visualFlowStep = clampVisualFlowStep(savedState.visualFlowStep);
+    state.visualMode = normalizeVisualMode(savedState.visualMode, currentStep());
+    state.visualExplainKey = savedState.visualExplainKey || defaultVisualExplainKey(state.visualMode);
     state.resumePromptVisible = false;
 
     if (!state.currentWorkspace) {
@@ -2103,142 +2119,491 @@
       return;
     }
 
-    const workspace = state.currentWorkspace || {};
-    const request = currentRequestLab() && state.requestDraft
-      ? requestFromDraft(state.requestDraft)
-      : (workspace.request || null);
-    const response = workspace.response || null;
-    const proxy = workspace.proxy || {};
-    const cookies = Array.isArray(workspace.cookies) ? workspace.cookies : [];
-
-    els.flowDiagram.innerHTML = buildFlowDiagram(request, response, proxy);
-    els.requestDiagram.innerHTML = buildRequestDiagram(request, cookies, currentRequestLab());
+    const scene = currentDiagramScene();
+    els.flowDiagram.innerHTML = buildFlowDiagram(scene);
+    els.requestDiagram.innerHTML = buildRequestDiagram(scene);
+    bindDiagramInteractions();
   }
 
-  function buildFlowDiagram(request, response, proxy) {
-    if (!request) {
+  function currentDiagramScene() {
+    const workspace = state.currentWorkspace || {};
+    const requestLab = currentRequestLab();
+
+    // Lesson one stays visual-first by swapping in a teaching scene instead of the heavier request editor flow.
+    if (isVisualBasicsLesson()) {
+      return buildBasicsVisualScene(requestLab);
+    }
+
+    const request = requestLab && state.requestDraft
+      ? requestFromDraft(state.requestDraft)
+      : (workspace.request || null);
+
+    return {
+      request: request,
+      response: workspace.response || null,
+      browser: workspace.browser || {},
+      proxy: normalizeProxyState(workspace.proxy || {}),
+      cookies: Array.isArray(workspace.cookies) ? workspace.cookies : [],
+      requestLab: requestLab,
+      lesson: currentLesson(),
+      step: currentStep(),
+      isVisualBasics: false,
+      visualMode: normalizeVisualMode(request ? request.method : "", currentStep())
+    };
+  }
+
+  function isVisualBasicsLesson() {
+    const lesson = currentLesson();
+    return Boolean(lesson && lesson.id === "http-request-basics");
+  }
+
+  function buildBasicsVisualScene(requestLab) {
+    const lesson = state.lessons.find(function (item) {
+      return item.id === "http-request-basics";
+    });
+    const stepId = state.visualMode === "post" ? "http-basics-post-read" : "http-basics-get";
+    const step = lesson && Array.isArray(lesson.interactiveSteps)
+      ? lesson.interactiveSteps.find(function (item) { return item.id === stepId; }) || lesson.interactiveSteps[0]
+      : currentStep();
+    const workspace = cloneData(step && step.workspace ? step.workspace : {});
+    const request = cloneData(workspace.request || null);
+
+    if (request && !getHeaderValue(request.headers, "User-Agent")) {
+      setHeaderValue(request.headers, "User-Agent", "LabBrowser/5.1 (Student Edition)");
+    }
+
+    return {
+      request: request,
+      response: cloneData(workspace.response || null),
+      browser: cloneData(workspace.browser || {}),
+      proxy: normalizeProxyState(workspace.proxy || {}),
+      cookies: Array.isArray(workspace.cookies) ? cloneData(workspace.cookies) : [],
+      requestLab: requestLab,
+      lesson: currentLesson(),
+      step: currentStep(),
+      isVisualBasics: true,
+      visualMode: state.visualMode
+    };
+  }
+
+  function normalizeProxyState(proxy) {
+    return {
+      status: proxy && proxy.status ? proxy.status : "Pass-through",
+      note: proxy && proxy.note ? proxy.note : "The proxy can inspect traffic, or simply forward it untouched.",
+      requestPaused: Boolean(proxy && proxy.requestPaused)
+    };
+  }
+
+  function normalizeVisualMode(value, step) {
+    const normalized = normalizeText(value);
+
+    if (normalized === "get" || normalized === "post") {
+      return normalized;
+    }
+
+    if (step && includesText(step.id, "post")) {
+      return "post";
+    }
+
+    if (step && step.workspace && step.workspace.request && normalizeText(step.workspace.request.method) === "post") {
+      return "post";
+    }
+
+    return "get";
+  }
+
+  function defaultVisualExplainKey(mode) {
+    return normalizeText(mode) === "post" ? "post" : "get";
+  }
+
+  function clampVisualFlowStep(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.min(Math.floor(numeric), 5));
+  }
+
+  function buildFlowDiagram(scene) {
+    if (!scene.request) {
       return "<div class=\"http-empty-state\">Load a step to see the browser to server flow.</div>";
     }
 
-    const showProxy = shouldShowProxy(proxy);
-    const route = [
-      "<div class=\"http-diagram-lane\">",
-      buildFlowNode("Browser", truncateText(composeLabUrl(request, state.currentWorkspace?.browser?.url || "https://example.lab/"), 40), "is-browser"),
-      "<div class=\"http-flow-arrow\">" + escapeHtml(truncateText(request.method + " " + request.path, 28)) + "</div>"
+    const stages = flowStagesForScene(scene);
+    const arrows = flowArrowLabelsForScene(scene);
+    const activeStageIndex = Math.max(0, Math.min(state.visualFlowStep, stages.length - 1));
+    const currentStage = stages[activeStageIndex];
+
+    const parts = [
+      "<div class=\"http-visual-toolbar\">",
+      scene.isVisualBasics ? buildVisualModeToggle(scene.visualMode) : "<div class=\"http-visual-mode-label\">Current example: " + escapeHtml(scene.request.method || "HTTP") + "</div>",
+      "<div class=\"http-visual-controls\">",
+      "<span class=\"http-chip\">Flow step " + (activeStageIndex + 1) + " of " + stages.length + "</span>",
+      "<button type=\"button\" class=\"http-mini-action\" data-http-flow-action=\"next\"" + (activeStageIndex >= stages.length - 1 ? " disabled" : "") + ">Next Step</button>",
+      "<button type=\"button\" class=\"http-mini-action\" data-http-flow-action=\"replay\">Replay Flow</button>",
+      "<button type=\"button\" class=\"http-mini-action\" data-http-flow-action=\"reset\">Reset View</button>",
+      "</div>",
+      "</div>",
+      "<div class=\"http-flow-track\">"
     ];
 
-    if (showProxy) {
-      route.push(buildFlowNode("Proxy", truncateText(proxy.status || "Interception", 28), "is-proxy"));
-      route.push("<div class=\"http-flow-arrow\">" + escapeHtml(proxy.requestPaused ? "Held here" : "Forwarded") + "</div>");
-    }
+    stages.forEach(function (stage, index) {
+      if (index > 0) {
+        const arrowStateClass = index - 1 < activeStageIndex
+          ? (index - 1 === activeStageIndex - 1 ? " is-active" : " is-complete")
+          : "";
+        parts.push(
+          "<div class=\"http-flow-stage-arrow" + arrowStateClass + "\">" +
+          "<span class=\"http-flow-stage-arrow-label\">" + escapeHtml(arrows[index - 1]) + "</span>" +
+          "</div>"
+        );
+      }
 
-    route.push(buildFlowNode("Server", getHeaderValue(request.headers, "Host") || "target host", "is-server"));
-    route.push("</div>");
+      const nodeStateClass = index < activeStageIndex
+        ? " is-complete"
+        : index === activeStageIndex
+          ? " is-active"
+          : "";
 
-    const responseText = response
-      ? response.statusCode + " " + response.statusText
-      : (proxy.requestPaused ? "No response yet" : "Waiting for send");
+      parts.push(
+        "<article class=\"http-flow-stage " + escapeHtml(stage.accentClass) + nodeStateClass + "\">" +
+        "<p class=\"http-flow-stage-title\">" + escapeHtml(stage.label) + "</p>" +
+        "<p class=\"http-flow-stage-chip\">" + escapeHtml(stage.chip) + "</p>" +
+        "</article>"
+      );
+    });
 
-    route.push(
-      "<div class=\"http-diagram-lane\">" +
-      "<div class=\"http-flow-arrow\">" + escapeHtml(responseText) + "</div>" +
-      buildFlowNode("Response", truncateText(responseSummaryText(currentRequestLab(), response, proxy), 48), "is-browser") +
+    parts.push("</div>");
+    parts.push(
+      "<div class=\"http-flow-stage-copy\">" +
+      "<p class=\"http-mini-label\">Right now</p>" +
+      "<p class=\"http-mini-copy\">" + escapeHtml(currentStage.copy) + "</p>" +
       "</div>"
     );
 
-    route.push("<p class=\"http-flow-caption\">" + escapeHtml(flowCaption(request, response, proxy)) + "</p>");
-    return route.join("");
+    return parts.join("");
   }
 
-  function buildFlowNode(label, copy, className) {
-    return (
-      "<div class=\"http-flow-node " + escapeHtml(className || "") + "\">" +
-      "<span class=\"http-flow-node-label\">" + escapeHtml(label) + "</span>" +
-      "<span class=\"http-flow-node-copy\">" + escapeHtml(copy || "") + "</span>" +
-      "</div>"
-    );
-  }
-
-  function buildRequestDiagram(request, cookies, requestLab) {
-    if (!request) {
-      return "<div class=\"http-empty-state\">The request anatomy appears once a step loads a request.</div>";
-    }
-
-    const pathParts = splitPath(request.path);
-    const focusFields = requestLab && Array.isArray(requestLab.focusFields) ? requestLab.focusFields : [];
-    const cookieHeader = getHeaderValue(request.headers, "Cookie");
-    const contentType = getHeaderValue(request.headers, "Content-Type");
-    const requestBody = String(request.body || "").trim();
+  function flowStagesForScene(scene) {
+    const request = scene.request;
+    const response = scene.response;
+    const method = request && request.method ? request.method : "GET";
 
     return [
-      "<div class=\"http-request-line-diagram\">",
-      buildRequestSegment(request.method || "GET", isFocusFieldHighlighted("Method", focusFields)),
-      buildRequestSegment(pathParts.pathname || "/", isFocusFieldHighlighted("Path", focusFields) || isFocusFieldHighlighted("Query parameters", focusFields)),
-      buildRequestSegment(pathParts.queryString ? "?" + pathParts.queryString : "No query", isFocusFieldHighlighted("Query parameters", focusFields)),
-      buildRequestSegment(request.version || "HTTP/1.1", false),
-      "</div>",
-      "<div class=\"http-request-detail-grid\">",
-      buildRequestDetailCard("Host header", getHeaderValue(request.headers, "Host") || "Not set", isFocusFieldHighlighted("Host", focusFields)),
-      buildRequestDetailCard("Cookie header", cookieHeader || (cookies.length ? "Cookies available" : "No Cookie header"), isFocusFieldHighlighted("Cookie", focusFields)),
-      buildRequestDetailCard("Content-Type", contentType || "No body type", isFocusFieldHighlighted("Content-Type", focusFields)),
-      buildRequestDetailCard("Body", requestBody || "No request body", isFocusFieldHighlighted("Body", focusFields)),
-      "</div>",
-      "<p class=\"http-flow-caption\">" + escapeHtml(requestAnatomyCaption(request, requestLab, cookies)) + "</p>"
+      {
+        label: "Browser",
+        chip: scene.browser && scene.browser.title ? scene.browser.title : "Browser tab",
+        copy: method === "POST"
+          ? "The browser is about to submit data because the user completed a form or action."
+          : "The browser is about to ask for a page or some data."
+        ,
+        accentClass: "is-browser"
+      },
+      {
+        label: "Request",
+        chip: truncateText(method + " " + request.path, 26),
+        copy: method === "POST"
+          ? "The browser builds a POST request, which sends data to the server."
+          : "The browser builds a GET request, which asks the server to return something."
+        ,
+        accentClass: "is-request"
+      },
+      {
+        label: "Proxy",
+        chip: scene.proxy.status || "Pass-through",
+        copy: scene.proxy.requestPaused
+          ? "The proxy is holding the request so it can be inspected before it reaches the server."
+          : "A proxy can inspect the request, or simply forward it unchanged."
+        ,
+        accentClass: "is-proxy"
+      },
+      {
+        label: "Server",
+        chip: getHeaderValue(request.headers, "Host") || "target host",
+        copy: "The server reads the method, path, headers, cookies, and body to decide how to answer.",
+        accentClass: "is-server"
+      },
+      {
+        label: "Response",
+        chip: response ? response.statusCode + " " + response.statusText : "Waiting",
+        copy: response
+          ? "The server sends back a status code, headers, and usually a body."
+          : "The server has not answered yet, so there is no response to return."
+        ,
+        accentClass: "is-response"
+      },
+      {
+        label: "Browser",
+        chip: response ? "Show result" : "Await response",
+        copy: response
+          ? "The browser renders the result and may also store cookies or cache hints."
+          : "Once the response comes back, the browser can show the result to the user."
+        ,
+        accentClass: "is-browser-return"
+      }
+    ];
+  }
+
+  function flowArrowLabelsForScene(scene) {
+    return [
+      truncateText(scene.request.method + " " + scene.request.path, 26),
+      scene.proxy.requestPaused ? "Inspect" : "Forward",
+      "Deliver",
+      scene.response ? scene.response.statusCode + " " + scene.response.statusText : "Generate reply",
+      "Render"
+    ];
+  }
+
+  function buildVisualModeToggle(activeMode) {
+    return [
+      "<div class=\"http-example-toggle\">",
+      "<button type=\"button\" class=\"http-example-btn" + (activeMode === "get" ? " is-active" : "") + "\" data-http-example=\"get\">GET example</button>",
+      "<button type=\"button\" class=\"http-example-btn" + (activeMode === "post" ? " is-active" : "") + "\" data-http-example=\"post\">POST example</button>",
+      "</div>"
     ].join("");
   }
 
-  function buildRequestSegment(value, isHighlight) {
-    return "<span class=\"http-request-segment" + (isHighlight ? " is-highlight" : "") + "\">" + escapeHtml(value) + "</span>";
+  function buildRequestDiagram(scene) {
+    if (!scene.request) {
+      return "<div class=\"http-empty-state\">The request anatomy appears once a step loads a request.</div>";
+    }
+
+    const request = scene.request;
+    const response = scene.response;
+    const pathParts = splitPath(request.path);
+    const cookieHeader = getHeaderValue(request.headers, "Cookie");
+    const contentType = getHeaderValue(request.headers, "Content-Type");
+    const requestBody = String(request.body || "").trim();
+    const selectedExplainKey = state.visualExplainKey || defaultVisualExplainKey(scene.visualMode);
+    const explanation = visualExplanationForKey(selectedExplainKey, scene);
+
+    return [
+      "<p class=\"http-click-note\">Tap any highlighted term to see what it means in plain English.</p>",
+      "<div class=\"http-request-line-diagram\">",
+      buildClickableTerm(request.method || "GET", methodExplainKey(request.method), selectedExplainKey === methodExplainKey(request.method)),
+      buildClickableTerm(pathParts.pathname || "/", "path", selectedExplainKey === "path"),
+      buildClickableTerm(pathParts.queryString ? "?" + pathParts.queryString : "No query", "path", selectedExplainKey === "path"),
+      buildClickableTerm(request.version || "HTTP/1.1", "http-version", selectedExplainKey === "http-version"),
+      "</div>",
+      "<div class=\"http-request-detail-grid\">",
+      buildClickableDetail("Host", getHeaderValue(request.headers, "Host") || "Not set", "host", selectedExplainKey === "host"),
+      buildClickableDetail("User-Agent", getHeaderValue(request.headers, "User-Agent") || "Not shown in this example", "user-agent", selectedExplainKey === "user-agent"),
+      buildClickableDetail("Cookie", cookieHeader || "No cookie in this example", "cookie", selectedExplainKey === "cookie"),
+      buildClickableDetail("Response code", response ? response.statusCode + " " + response.statusText : "No response yet", "response-code", selectedExplainKey === "response-code"),
+      buildClickableDetail("Content-Type", contentType || "No request body type", "content-type", selectedExplainKey === "content-type"),
+      buildClickableDetail("Body", requestBody || "No body in this example", "body", selectedExplainKey === "body"),
+      "</div>",
+      scene.isVisualBasics
+        ? "<div class=\"http-compare-grid\">" + buildCompareCard("GET", "Ask for a page or data.", scene.visualMode === "get") + buildCompareCard("POST", "Send or submit data.", scene.visualMode === "post") + "</div>"
+        : "",
+      "<div class=\"http-explainer-card\">",
+      "<p class=\"http-mini-label\">What does this mean?</p>",
+      "<h3 class=\"http-explainer-title\">" + escapeHtml(explanation.title) + "</h3>",
+      "<p class=\"http-mini-copy\">" + escapeHtml(explanation.copy) + "</p>",
+      "</div>"
+    ].join("");
   }
 
-  function buildRequestDetailCard(label, value, isHighlight) {
+  function buildClickableTerm(value, explainKey, isSelected) {
+    return "<button type=\"button\" class=\"http-request-term" + (isSelected ? " is-selected" : "") + "\" data-http-explainer=\"" + escapeHtml(explainKey) + "\">" + escapeHtml(value) + "</button>";
+  }
+
+  function buildClickableDetail(label, value, explainKey, isSelected) {
     return (
-      "<article class=\"http-request-detail-card" + (isHighlight ? " is-highlight" : "") + "\">" +
+      "<button type=\"button\" class=\"http-request-detail-card http-request-detail-btn" + (isSelected ? " is-selected" : "") + "\" data-http-explainer=\"" + escapeHtml(explainKey) + "\">" +
       "<p class=\"http-request-detail-title\">" + escapeHtml(label) + "</p>" +
-      "<p class=\"http-request-detail-copy\">" + escapeHtml(truncateText(value, 80)) + "</p>" +
-      "</article>"
+      "<p class=\"http-request-detail-copy\">" + escapeHtml(truncateText(value, 88)) + "</p>" +
+      "</button>"
     );
   }
 
-  function shouldShowProxy(proxy) {
-    const status = normalizeText(proxy && proxy.status ? proxy.status : "");
-    return Boolean(status && status !== "pass-through");
+  function buildCompareCard(label, copy, isActive) {
+    return (
+      "<div class=\"http-compare-card" + (isActive ? " is-active" : "") + "\">" +
+      "<p class=\"http-compare-title\">" + escapeHtml(label) + "</p>" +
+      "<p class=\"http-compare-copy\">" + escapeHtml(copy) + "</p>" +
+      "</div>"
+    );
   }
 
-  function isFocusFieldHighlighted(fieldName, focusFields) {
-    return (focusFields || []).some(function (field) {
-      const normalized = normalizeText(field);
-      const target = normalizeText(fieldName);
-      return normalized === target || normalized.indexOf(target) >= 0 || target.indexOf(normalized) >= 0;
-    });
+  function methodExplainKey(method) {
+    const normalized = normalizeText(method);
+    if (normalized === "post") {
+      return "post";
+    }
+    if (normalized === "get") {
+      return "get";
+    }
+    return "method";
   }
 
-  function flowCaption(request, response, proxy) {
-    if (state.requestDirty) {
-      return "You changed the request draft. Press Send Request to update the server response.";
-    }
+  function visualExplanationForKey(key, scene) {
+    const request = scene.request || {};
+    const response = scene.response || null;
+    const cookieHeader = getHeaderValue(request.headers || [], "Cookie");
+    const contentType = getHeaderValue(request.headers || [], "Content-Type");
 
-    if (proxy.requestPaused) {
-      return "The request is paused at the proxy, so the server has not answered yet.";
+    switch (key) {
+      case "get":
+        return {
+          title: "GET",
+          copy: "GET means the browser is asking to fetch or read something from the server."
+        };
+      case "post":
+        return {
+          title: "POST",
+          copy: "POST means the browser is sending or submitting data to the server."
+        };
+      case "method":
+        return {
+          title: "HTTP method",
+          copy: "The method tells the server what kind of action the browser wants to perform."
+        };
+      case "path":
+        return {
+          title: "Path / resource",
+          copy: "This is the page, file, or data the browser wants, such as /profile or /feedback."
+        };
+      case "http-version":
+        return {
+          title: request.version || "HTTP/1.1",
+          copy: "This shows which HTTP message format the browser and server are speaking."
+        };
+      case "host":
+        return {
+          title: "Host",
+          copy: "Host tells the internet which site or server should answer this request."
+        };
+      case "user-agent":
+        return {
+          title: "User-Agent",
+          copy: "User-Agent identifies which browser or app made the request."
+        };
+      case "cookie":
+        return {
+          title: "Cookie",
+          copy: cookieHeader
+            ? "Cookies are saved browser values sent back to the server. They often carry session or login state."
+            : "Cookies are saved browser values sent back to the server. This example does not send one yet."
+        };
+      case "response-code":
+        return responseCodeExplanation(response);
+      case "content-type":
+        return {
+          title: "Content-Type",
+          copy: contentType
+            ? "Content-Type tells the other side how to read the body. Here it describes the format being sent."
+            : "Content-Type tells the other side how to read the body. This example does not need one."
+        };
+      case "body":
+        return {
+          title: "Request body",
+          copy: String(request.body || "").trim()
+            ? "The request body holds the data being sent, such as form fields or other submitted values."
+            : "There is no request body here. GET requests often look like this."
+        };
+      default:
+        return {
+          title: "HTTP message",
+          copy: "HTTP messages are made of a start line, headers, and sometimes a body."
+        };
     }
+  }
 
+  function responseCodeExplanation(response) {
     if (!response) {
-      return "The browser is ready, but the current step has not sent a request yet.";
+      return {
+        title: "Response code",
+        copy: "Once the server answers, the response code shows whether the request worked or failed."
+      };
     }
 
-    return "The browser sent " + request.method + " " + request.path + " and the server replied with " + response.statusCode + " " + response.statusText + ".";
+    const code = Number(response.statusCode);
+
+    if (code === 200) {
+      return {
+        title: "200 OK",
+        copy: "200 means the request worked and the server returned the requested content."
+      };
+    }
+
+    if (code === 201) {
+      return {
+        title: "201 Created",
+        copy: "201 means the request worked and created a new record or item on the server."
+      };
+    }
+
+    if (code === 302) {
+      return {
+        title: "302 Found",
+        copy: "302 means the server is redirecting the browser to a different location."
+      };
+    }
+
+    if (code === 403) {
+      return {
+        title: "403 Forbidden",
+        copy: "403 means the server understood the request, but will not allow access."
+      };
+    }
+
+    if (code === 404) {
+      return {
+        title: "404 Not Found",
+        copy: "404 means the server could not find the page or data that was requested."
+      };
+    }
+
+    if (code === 405) {
+      return {
+        title: "405 Method Not Allowed",
+        copy: "405 means the path exists, but the method such as GET or POST is wrong for that route."
+      };
+    }
+
+    return {
+      title: response.statusCode + " " + response.statusText,
+      copy: "The response code is the server's quick status answer for the request."
+    };
   }
 
-  function requestAnatomyCaption(request, requestLab, cookies) {
-    if (requestLab && Array.isArray(requestLab.focusFields) && requestLab.focusFields.length) {
-      return "This step mainly cares about " + requestLab.focusFields.slice(0, 3).join(", ") + ".";
-    }
+  function bindDiagramInteractions() {
+    // The visual coach is re-rendered often, so these controls are rebound after each diagram refresh.
+    els.flowDiagram.querySelectorAll("[data-http-flow-action]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const action = button.getAttribute("data-http-flow-action");
 
-    if (cookies.length) {
-      return "Cookies ride inside the Cookie header, so the browser can carry state between requests.";
-    }
+        if (action === "next") {
+          state.visualFlowStep = clampVisualFlowStep(state.visualFlowStep + 1);
+        } else if (action === "replay") {
+          state.visualFlowStep = 0;
+        } else if (action === "reset") {
+          state.visualMode = normalizeVisualMode("", currentStep());
+          state.visualFlowStep = 0;
+          state.visualExplainKey = defaultVisualExplainKey(state.visualMode);
+        }
 
-    return "Read the method first, then the path, then the headers that give the server more context.";
+        renderDiagrams();
+      });
+    });
+
+    els.flowDiagram.querySelectorAll("[data-http-example]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.visualMode = normalizeVisualMode(button.getAttribute("data-http-example"), currentStep());
+        state.visualFlowStep = 0;
+        state.visualExplainKey = defaultVisualExplainKey(state.visualMode);
+        renderDiagrams();
+      });
+    });
+
+    els.requestDiagram.querySelectorAll("[data-http-explainer]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.visualExplainKey = button.getAttribute("data-http-explainer") || defaultVisualExplainKey(state.visualMode);
+        renderDiagrams();
+      });
+    });
   }
 
   function renderWorkspace() {

@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260421reward1">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260422flow1">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260422visual1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260421reward1" defer></script>
   <script src="./web-http-lab-data.js" defer></script>
-  <script src="./web-http-lab.js?v=20260422flow1" defer></script>
+  <script src="./web-http-lab.js?v=20260422visual1" defer></script>
 </head>
 <body class="http-page">
   <div class="rack-room">
@@ -110,7 +110,7 @@
               <div class="http-panel-head">
                 <div>
                   <h2>Traffic Flow</h2>
-                  <p class="http-panel-copy">See the request move through the lab one hop at a time.</p>
+                  <p class="http-panel-copy">Step the request through Browser, Proxy, Server, and back again.</p>
                 </div>
               </div>
               <div id="flowDiagram" class="http-flow-diagram"></div>
@@ -120,7 +120,7 @@
               <div class="http-panel-head">
                 <div>
                   <h2>Request Anatomy</h2>
-                  <p class="http-panel-copy">Highlight the method, path, headers, and cookies that matter in this step.</p>
+                  <p class="http-panel-copy">Click the request parts to see what they mean in plain English.</p>
                 </div>
               </div>
               <div id="requestDiagram" class="http-request-diagram"></div>
