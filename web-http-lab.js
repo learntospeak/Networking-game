@@ -1733,7 +1733,7 @@
 
   function currentRequestLab() {
     const step = currentStep();
-    if (!step || isVisualBasicsLesson()) {
+    if (!step || isFocusedLesson()) {
       return null;
     }
 
@@ -1933,7 +1933,7 @@
   }
 
   function syncFocusLessonMode() {
-    const focusMode = isFocusedBasicsLesson();
+    const focusMode = isFocusedLesson();
     document.body.classList.toggle("http-focus-mode", focusMode);
     if (els.focusLessonStage) {
       els.focusLessonStage.hidden = !focusMode;
@@ -2041,7 +2041,7 @@
   }
 
   function renderFocusLessonStage() {
-    if (!isFocusedBasicsLesson() || !els.focusLessonStage) {
+    if (!isFocusedLesson() || !els.focusLessonStage) {
       return;
     }
 
@@ -2192,6 +2192,10 @@
       return buildFocusFlowVisualAscii(focusVisual);
     }
 
+    if (focusVisual.type === "terms") {
+      return buildFocusTermsVisual(focusVisual, selectedKey);
+    }
+
     if (focusVisual.type === "response") {
       return buildFocusResponseVisual(step.workspace && step.workspace.response, selectedKey, focusVisual);
     }
@@ -2225,7 +2229,9 @@
   }
 
   function buildFocusFlowVisualAscii(focusVisual) {
-    const labels = ["Browser", "Request", "Server", "Response"];
+    const labels = Array.isArray(focusVisual.labels) && focusVisual.labels.length
+      ? focusVisual.labels
+      : ["Browser", "Request", "Server", "Response"];
     const activeIndex = Math.max(0, Math.min(Number(focusVisual.stageIndex) || 0, labels.length - 1));
     const parts = ["<div class=\"http-focus-flow\">"];
 
@@ -2245,12 +2251,37 @@
     return parts.join("");
   }
 
+  function buildFocusTermsVisual(focusVisual, selectedKey) {
+    const items = Array.isArray(focusVisual.items) ? focusVisual.items : [];
+    const interactiveParts = new Set(Array.isArray(focusVisual.interactiveParts)
+      ? focusVisual.interactiveParts
+      : items.map(function (item) { return item.key; }));
+    const parts = ["<div class=\"http-focus-request-line\">"];
+
+    if (items.length) {
+      parts.push("<div class=\"http-focus-line-row\">");
+      items.forEach(function (item) {
+        parts.push(buildFocusToken(
+          item.label || "",
+          item.key || "",
+          selectedKey,
+          interactiveParts.has(item.key),
+          item.variant === "header" ? "header" : "term"
+        ));
+      });
+      parts.push("</div>");
+    }
+
+    parts.push("</div>");
+    return parts.join("");
+  }
+
   function buildFocusRequestVisual(request, selectedKey, focusVisual) {
     if (!request) {
       return "<div class=\"http-empty-state\">No request loaded.</div>";
     }
 
-    const lineParts = Array.isArray(focusVisual.lineParts) && focusVisual.lineParts.length
+    const lineParts = Array.isArray(focusVisual.lineParts)
       ? focusVisual.lineParts
       : ["method", "path"];
     const headerParts = Array.isArray(focusVisual.headerParts)
@@ -2286,27 +2317,42 @@
       return "<div class=\"http-empty-state\">No response loaded.</div>";
     }
 
-    const lineParts = Array.isArray(focusVisual.lineParts) && focusVisual.lineParts.length
+    const lineParts = Array.isArray(focusVisual.lineParts)
       ? focusVisual.lineParts
       : ["status"];
+    const headerParts = Array.isArray(focusVisual.headerParts)
+      ? focusVisual.headerParts
+      : [];
     const interactiveParts = new Set(Array.isArray(focusVisual.interactiveParts)
       ? focusVisual.interactiveParts
-      : lineParts);
-    const tokens = [];
+      : lineParts.concat(headerParts));
+    const parts = ["<div class=\"http-focus-request-line\">"];
 
-    lineParts.forEach(function (partName) {
-      if (partName === "status") {
-        tokens.push(buildFocusToken((String(response.statusCode || "") + " " + String(response.statusText || "OK")).trim(), "response-code", selectedKey, interactiveParts.has(partName), "term"));
+    if (lineParts.length) {
+      const tokens = [];
+      lineParts.forEach(function (partName) {
+        if (partName === "status") {
+          tokens.push(buildFocusToken((String(response.statusCode || "") + " " + String(response.statusText || "OK")).trim(), "response-code", selectedKey, interactiveParts.has(partName), "term"));
+        }
+      });
+
+      if (tokens.length) {
+        parts.push("<div class=\"http-focus-line-row\">");
+        parts.push(tokens.join(""));
+        parts.push("</div>");
       }
-    });
+    }
 
-    return [
-      "<div class=\"http-focus-request-line\">",
-      "<div class=\"http-focus-line-row\">",
-      tokens.join(""),
-      "</div>",
-      "</div>"
-    ].join("");
+    if (headerParts.length) {
+      parts.push("<div class=\"http-focus-header-list\">");
+      headerParts.forEach(function (partName) {
+        parts.push(buildFocusResponseHeaderPart(response, partName, selectedKey, interactiveParts.has(partName)));
+      });
+      parts.push("</div>");
+    }
+
+    parts.push("</div>");
+    return parts.join("");
   }
 
   function buildFocusCompareVisual() {
@@ -2369,6 +2415,19 @@
     }
   }
 
+  function buildFocusResponseHeaderPart(response, partName, selectedKey, interactive) {
+    switch (partName) {
+      case "content-type":
+        return buildFocusToken("Content-Type: " + (getHeaderValue(response.headers || [], "Content-Type") || "text/html"), "content-type", selectedKey, interactive, "header");
+      case "set-cookie":
+        return buildFocusToken("Set-Cookie: " + (getHeaderValue(response.headers || [], "Set-Cookie") || "session=demo"), "set-cookie", selectedKey, interactive, "header");
+      case "cache-control":
+        return buildFocusToken("Cache-Control: " + (getHeaderValue(response.headers || [], "Cache-Control") || "private, max-age=60"), "cache-control", selectedKey, interactive, "header");
+      default:
+        return "";
+    }
+  }
+
   function buildFocusToken(label, key, selectedKey, interactive, variant) {
     const baseClass = variant === "header" ? "http-focus-header" : "http-focus-term";
     const activeClass = selectedKey === key ? " is-active" : "";
@@ -2382,11 +2441,16 @@
 
   function focusExplanationText(step, selectedKey) {
     const focusVisual = step.focusVisual || {};
+    const stepMap = step && step.focusExplain ? step.focusExplain : null;
 
     if (focusVisual.type === "compare") {
       return normalizeVisualMode(state.visualMode, currentStep()) === "post"
         ? "POST = send data."
         : "GET = ask for data.";
+    }
+
+    if (stepMap && stepMap[selectedKey]) {
+      return stepMap[selectedKey];
     }
 
     return focusExplanationForKey(selectedKey);
@@ -2404,6 +2468,12 @@
 
     if (focusVisual.type === "response") {
       return "response-code";
+    }
+
+    if (focusVisual.type === "terms") {
+      return Array.isArray(focusVisual.items) && focusVisual.items.length
+        ? String(focusVisual.items[0].key || "get")
+        : "get";
     }
 
     return "get";
@@ -2428,11 +2498,33 @@
     }
 
     if (focusVisual.type === "response") {
-      return ["response-code"];
+      (focusVisual.lineParts || ["status"]).forEach(function (partName) {
+        if (partName === "status") {
+          keys.push("response-code");
+        }
+      });
+
+      (focusVisual.headerParts || []).forEach(function (partName) {
+        if (partName === "content-type") {
+          keys.push("content-type");
+        } else if (partName === "set-cookie") {
+          keys.push("set-cookie");
+        } else if (partName === "cache-control") {
+          keys.push("cache-control");
+        }
+      });
+
+      return Array.from(new Set(keys));
     }
 
     if (focusVisual.type === "compare") {
       return ["get", "post"];
+    }
+
+    if (focusVisual.type === "terms") {
+      return Array.isArray(focusVisual.items)
+        ? focusVisual.items.map(function (item) { return item.key; }).filter(Boolean)
+        : [];
     }
 
     (focusVisual.lineParts || ["method", "path"]).forEach(function (partName) {
@@ -2477,7 +2569,11 @@
       case "cookie":
         return "Cookie = saved login info.";
       case "content-type":
-        return "Content-Type = body format.";
+        return "Content-Type = what kind of content.";
+      case "set-cookie":
+        return "Set-Cookie = save a new cookie.";
+      case "cache-control":
+        return "Cache-Control = reuse rules.";
       case "response-code":
         return "200 = it worked.";
       case "flow":
@@ -2620,8 +2716,9 @@
     return Boolean(lesson && lesson.id === "http-request-basics");
   }
 
-  function isFocusedBasicsLesson() {
-    return isVisualBasicsLesson();
+  function isFocusedLesson() {
+    const lesson = currentLesson();
+    return Boolean(lesson);
   }
 
   function buildBasicsVisualScene(requestLab) {
