@@ -2351,6 +2351,10 @@
   function buildFocusVisual(step, selectedKey) {
     const focusVisual = step.focusVisual || {};
 
+    if (focusVisual.type === "packet-journey") {
+      return buildPacketJourneyVisual(step, selectedKey);
+    }
+
     if (focusVisual.type === "flow") {
       return buildFocusFlowVisualAscii(focusVisual);
     }
@@ -2582,6 +2586,337 @@
     ].join("");
   }
 
+  function buildPacketJourneyVisual(step, selectedKey) {
+    const focusVisual = step && step.focusVisual ? step.focusVisual : {};
+    const request = step && step.workspace ? step.workspace.request : null;
+    const response = step && step.workspace ? step.workspace.response : null;
+    const stage = String(focusVisual.stage || "url");
+    const url = focusVisual.url || (step && step.workspace && step.workspace.browser ? step.workspace.browser.url : "") || composeLabUrl(request || {
+      headers: [],
+      path: "/"
+    }, "https://example.com/");
+    const nodes = Array.isArray(focusVisual.nodes) && focusVisual.nodes.length
+      ? focusVisual.nodes
+      : ["Browser", "Router", "Internet", "Server"];
+    const requestLines = Array.isArray(focusVisual.requestLines) && focusVisual.requestLines.length
+      ? focusVisual.requestLines
+      : packetJourneyRequestLines(request);
+    const responseLines = Array.isArray(focusVisual.responseLines) && focusVisual.responseLines.length
+      ? focusVisual.responseLines
+      : packetJourneyResponseLines(response);
+    const urlKey = focusVisual.urlKey || "url";
+    const requestCardKey = focusVisual.requestCardKey || "request-card";
+    const requestPacketKey = focusVisual.requestPacketKey || "request-packet";
+    const responsePacketKey = focusVisual.responsePacketKey || "response-packet";
+
+    if (Array.isArray(focusVisual.comparePackets) && focusVisual.comparePackets.length) {
+      return buildPacketJourneyCompareVisual(focusVisual, selectedKey, nodes, url, requestLines);
+    }
+
+    const showRequestCard = stage !== "url";
+    const showPacketChip = stage !== "url";
+    const showResponseState = stage === "server" || stage === "return";
+    const packetTone = showResponseState ? "response" : "request";
+    const packetKey = showResponseState ? responsePacketKey : requestPacketKey;
+    const packetLabel = showResponseState
+      ? (focusVisual.responseLabel || "HTTP Response")
+      : (focusVisual.packetLabel || "HTTP Request");
+    const packetLines = showResponseState ? responseLines : requestLines;
+    const packetSecure = Boolean(!showResponseState && focusVisual.secure);
+    const packetFromHop = clampJourneyHop(
+      Object.prototype.hasOwnProperty.call(focusVisual, "packetFromHop")
+        ? focusVisual.packetFromHop
+        : (stage === "return" ? nodes.length - 1 : 0),
+      nodes.length
+    );
+    const packetToHop = clampJourneyHop(
+      Object.prototype.hasOwnProperty.call(focusVisual, "packetToHop")
+        ? focusVisual.packetToHop
+        : (stage === "journey" || stage === "server" ? nodes.length - 1 : stage === "return" ? 0 : packetFromHop),
+      nodes.length
+    );
+
+    return [
+      "<div class=\"http-packet-journey is-stage-" + escapeHtml(stage) + "\">",
+      buildPacketJourneyBrowserBar(url, focusVisual.addressSecure !== false, selectedKey, urlKey),
+      showRequestCard
+        ? buildPacketJourneyPayloadCard({
+          label: showResponseState ? (focusVisual.responseFrameLabel || "200 OK") : (focusVisual.requestFrameLabel || "HTTP Request"),
+          key: showResponseState ? responsePacketKey : requestCardKey,
+          lines: packetLines,
+          selectedKey: selectedKey,
+          tone: packetTone,
+          secure: packetSecure,
+          stateClass: showResponseState ? "is-response" : "is-request"
+        })
+        : "",
+      buildPacketJourneyTrack({
+        nodes: nodes,
+        label: packetLabel,
+        key: packetKey,
+        selectedKey: selectedKey,
+        tone: packetTone,
+        secure: packetSecure,
+        showPacket: showPacketChip,
+        fromHop: packetFromHop,
+        toHop: packetToHop,
+        activeHop: packetToHop
+      }),
+      "<div class=\"http-packet-journey-status-grid\">",
+      buildPacketJourneyStatusCard(
+        "Browser",
+        stage === "return" ? (focusVisual.loadedTitle || "Page Loaded") : (focusVisual.browserStatus || "Ready"),
+        stage === "return" ? "Render page" : "Open tab",
+        stage === "return" ? "success" : "browser",
+        stage === "url" || stage === "return"
+      ),
+      buildPacketJourneyStatusCard(
+        "Server",
+        showResponseState ? (focusVisual.serverStatus || "200 OK") : (focusVisual.serverStatus || "Waiting"),
+        stage === "server" ? "Process request" : "Receive traffic",
+        showResponseState ? "success" : "server",
+        stage === "server" || stage === "journey"
+      ),
+      "</div>",
+      buildPacketJourneyPagePreview({
+        active: stage === "return",
+        title: focusVisual.loadedTitle || extractHtmlHeading(response && response.body) || "Profile",
+        copy: focusVisual.loadedCopy || "Page ready"
+      }),
+      "</div>"
+    ].join("");
+  }
+
+  function buildPacketJourneyCompareVisual(focusVisual, selectedKey, nodes, url, requestLines) {
+    const variants = focusVisual.comparePackets || [];
+
+    return [
+      "<div class=\"http-packet-journey is-stage-compare\">",
+      "<div class=\"http-packet-journey-compare-grid\">",
+      variants.map(function (variant) {
+        const key = variant.key || "packet";
+        const isSecure = Boolean(variant.secure);
+        const isSelected = selectedKey === key;
+        return [
+          "<button type=\"button\" class=\"http-packet-journey-compare-card" + (isSelected ? " is-selected" : "") + "\" data-focus-explainer=\"" + escapeHtml(key) + "\">",
+          buildPacketJourneyBrowserBar(variant.url || url, variant.addressSecure !== false, selectedKey, key, true, true),
+          buildPacketJourneyPayloadCard({
+            label: variant.label || variant.title || "Packet",
+            key: key,
+            lines: Array.isArray(variant.lines) && variant.lines.length ? variant.lines : requestLines,
+            selectedKey: selectedKey,
+            tone: isSecure ? "secure" : "request",
+            secure: isSecure,
+            stateClass: isSecure ? "is-secure" : "is-request",
+            nested: true,
+            passive: true
+          }),
+          buildPacketJourneyTrack({
+            nodes: Array.isArray(variant.nodes) && variant.nodes.length ? variant.nodes : nodes,
+            label: variant.packetLabel || (variant.title || "Packet"),
+            key: key,
+            selectedKey: selectedKey,
+            tone: isSecure ? "secure" : "request",
+            secure: isSecure,
+            showPacket: true,
+            fromHop: 0,
+            toHop: (Array.isArray(variant.nodes) && variant.nodes.length ? variant.nodes.length : nodes.length) - 1,
+            activeHop: (Array.isArray(variant.nodes) && variant.nodes.length ? variant.nodes.length : nodes.length) - 1,
+            compact: true,
+            passive: true
+          }),
+          "</button>"
+        ].join("");
+      }).join(""),
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildPacketJourneyBrowserBar(url, secure, selectedKey, key, nested, passive) {
+    const activeClass = selectedKey === key ? " is-selected" : "";
+    const nestedClass = nested ? " is-compact" : "";
+    const tagName = passive ? "div" : "button";
+    const attributes = passive
+      ? ""
+      : " type=\"button\" data-focus-explainer=\"" + escapeHtml(key) + "\"";
+
+    return [
+      "<" + tagName + " class=\"http-journey-browser-bar" + activeClass + nestedClass + "\"" + attributes + ">",
+      "<span class=\"http-journey-browser-dot\"></span>",
+      "<span class=\"http-journey-browser-dot\"></span>",
+      "<span class=\"http-journey-browser-dot\"></span>",
+      "<span class=\"http-journey-address-pill" + (secure ? " is-secure" : "") + "\">",
+      secure ? "<span class=\"http-journey-lock\" aria-hidden=\"true\"></span>" : "",
+      "<span class=\"http-journey-address-text\">" + escapeHtml(url) + "</span>",
+      "<span class=\"http-journey-caret\" aria-hidden=\"true\"></span>",
+      "</span>",
+      "</" + tagName + ">"
+    ].join("");
+  }
+
+  function buildPacketJourneyPayloadCard(options) {
+    const key = options.key || "packet";
+    const selectedKey = options.selectedKey || "";
+    const tone = options.tone || "request";
+    const activeClass = selectedKey === key ? " is-selected" : "";
+    const nestedClass = options.nested ? " is-nested" : "";
+    const stateClass = options.stateClass ? " " + options.stateClass : "";
+    const secureClass = options.secure ? " is-secure" : "";
+    const lines = Array.isArray(options.lines) ? options.lines : [];
+    const tagName = options.passive ? "div" : "button";
+    const attributes = options.passive
+      ? ""
+      : " type=\"button\" data-focus-explainer=\"" + escapeHtml(key) + "\"";
+
+    return [
+      "<" + tagName + " class=\"http-journey-payload-card" + activeClass + nestedClass + stateClass + secureClass + "\"" + attributes + ">",
+      "<div class=\"http-journey-payload-head\">",
+      "<span class=\"http-journey-payload-label\">" + escapeHtml(options.label || "Packet") + "</span>",
+      options.secure ? "<span class=\"http-journey-payload-badge\">Encrypted</span>" : "<span class=\"http-journey-payload-badge\">" + escapeHtml(tone === "response" ? "Return" : "Readable") + "</span>",
+      "</div>",
+      "<div class=\"http-journey-payload-body\">",
+      lines.map(function (line) {
+        return "<span class=\"http-journey-payload-line\">" + escapeHtml(line) + "</span>";
+      }).join(""),
+      "</div>",
+      "</" + tagName + ">"
+    ].join("");
+  }
+
+  function buildPacketJourneyTrack(options) {
+    const nodes = Array.isArray(options.nodes) && options.nodes.length ? options.nodes : ["Browser", "Router", "Internet", "Server"];
+    const fromHop = clampJourneyHop(options.fromHop, nodes.length);
+    const toHop = clampJourneyHop(options.toHop, nodes.length);
+    const activeHop = clampJourneyHop(options.activeHop, nodes.length);
+    const route = packetJourneyRoute(fromHop, toHop);
+    const startPercent = packetJourneyProgress(fromHop, nodes.length);
+    const endPercent = packetJourneyProgress(toHop, nodes.length);
+    const compactClass = options.compact ? " is-compact" : "";
+    const toneClass = options.tone ? " is-" + escapeHtml(options.tone) : " is-request";
+    const secureClass = options.secure ? " is-secure" : "";
+    const selectedClass = options.selectedKey === options.key ? " is-selected" : "";
+    const tagName = options.passive ? "div" : "button";
+    const attributes = options.passive
+      ? ""
+      : " type=\"button\" data-focus-explainer=\"" + escapeHtml(options.key || "packet") + "\"";
+
+    return [
+      "<div class=\"http-journey-track-shell" + compactClass + "\" style=\"--packet-start:" + escapeHtml(String(startPercent)) + "%; --packet-end:" + escapeHtml(String(endPercent)) + "%;\">",
+      "<div class=\"http-journey-track\" style=\"grid-template-columns:repeat(" + escapeHtml(String(nodes.length)) + ", minmax(0, 1fr));\">",
+      nodes.map(function (label, index) {
+        const stateClass = index === activeHop
+          ? " is-active"
+          : route.indexOf(index) >= 0
+            ? " is-travel"
+            : "";
+        return "<div class=\"http-journey-node" + stateClass + "\" style=\"--journey-delay:" + escapeHtml(String(Math.abs(index - fromHop) * 120)) + "ms;\">" + escapeHtml(label) + "</div>";
+      }).join(""),
+      options.showPacket
+        ? "<" + tagName + " class=\"http-journey-packet-chip" + toneClass + secureClass + selectedClass + "\"" + attributes + ">" +
+          (options.secure ? "<span class=\"http-journey-lock\" aria-hidden=\"true\"></span>" : "") +
+          "<span>" + escapeHtml(options.label || "Packet") + "</span>" +
+          "</" + tagName + ">"
+        : "",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildPacketJourneyStatusCard(title, status, copy, tone, active) {
+    return [
+      "<div class=\"http-journey-status-card is-" + escapeHtml(tone || "browser") + (active ? " is-active" : "") + "\">",
+      "<span class=\"http-journey-status-title\">" + escapeHtml(title) + "</span>",
+      "<span class=\"http-journey-status-main\">" + escapeHtml(status) + "</span>",
+      "<span class=\"http-journey-status-copy\">" + escapeHtml(copy) + "</span>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildPacketJourneyPagePreview(options) {
+    return [
+      "<div class=\"http-journey-page-preview" + (options.active ? " is-active" : "") + "\">",
+      "<div class=\"http-journey-page-head\"></div>",
+      "<div class=\"http-journey-page-body\">",
+      "<span class=\"http-journey-page-title\">" + escapeHtml(options.title || "Page") + "</span>",
+      "<span class=\"http-journey-page-copy\">" + escapeHtml(options.copy || "Loaded") + "</span>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function packetJourneyRequestLines(request) {
+    if (!request) {
+      return ["GET / HTTP/1.1"];
+    }
+
+    const lines = [
+      (String(request.method || "GET") + " " + String(request.path || "/") + " " + String(request.version || "HTTP/1.1")).trim()
+    ];
+
+    ["Host", "Cookie", "User-Agent", "Content-Type"].forEach(function (headerName) {
+      const value = getHeaderValue(request.headers || [], headerName);
+      if (value) {
+        lines.push(headerName + ": " + value);
+      }
+    });
+
+    return lines;
+  }
+
+  function packetJourneyResponseLines(response) {
+    if (!response) {
+      return ["HTTP/1.1 200 OK"];
+    }
+
+    const lines = [
+      ("HTTP/1.1 " + String(response.statusCode || 200) + " " + String(response.statusText || "OK")).trim()
+    ];
+
+    ["Content-Type", "Set-Cookie", "Cache-Control"].forEach(function (headerName) {
+      const value = getHeaderValue(response.headers || [], headerName);
+      if (value) {
+        lines.push(headerName + ": " + value);
+      }
+    });
+
+    return lines;
+  }
+
+  function clampJourneyHop(value, count) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.min(Math.floor(numeric), Math.max(0, count - 1)));
+  }
+
+  function packetJourneyProgress(index, count) {
+    if (count <= 1) {
+      return 0;
+    }
+
+    return (index / (count - 1)) * 100;
+  }
+
+  function packetJourneyRoute(fromHop, toHop) {
+    const direction = fromHop <= toHop ? 1 : -1;
+    const route = [];
+
+    for (let index = fromHop; direction > 0 ? index <= toHop : index >= toHop; index += direction) {
+      route.push(index);
+    }
+
+    return route;
+  }
+
+  function extractHtmlHeading(body) {
+    const source = String(body || "");
+    const match = source.match(/<h1>([^<]+)<\/h1>/i);
+    return match ? match[1].trim() : "";
+  }
+
   function resolveFocusRequestLineParts(request, focusVisual) {
     const parts = Array.isArray(focusVisual.lineParts)
       ? focusVisual.lineParts.slice()
@@ -2729,6 +3064,11 @@
       return "flow";
     }
 
+    if (focusVisual.type === "packet-journey") {
+      const packetKeys = focusKeysForStep(step);
+      return packetKeys.length ? packetKeys[0] : "url";
+    }
+
     if (focusVisual.type === "response") {
       return "response-code";
     }
@@ -2758,6 +3098,18 @@
 
     if (focusVisual.type === "flow") {
       return ["flow"];
+    }
+
+    if (focusVisual.type === "packet-journey") {
+      if (Array.isArray(focusVisual.comparePackets) && focusVisual.comparePackets.length) {
+        return focusVisual.comparePackets.map(function (packet) { return packet.key; }).filter(Boolean);
+      }
+
+      if (Array.isArray(focusVisual.interactiveParts) && focusVisual.interactiveParts.length) {
+        return focusVisual.interactiveParts.slice();
+      }
+
+      return ["url", "request-card", "request-packet", "response-packet"];
     }
 
     if (focusVisual.type === "response") {
@@ -2841,6 +3193,18 @@
         return "Cache-Control = reuse rules.";
       case "response-code":
         return "200 = it worked.";
+      case "url":
+        return "The browser starts with a web address.";
+      case "request-card":
+        return "The browser turns the URL into a request.";
+      case "request-packet":
+        return "That request travels as a packet.";
+      case "response-packet":
+        return "The server sends back a response packet.";
+      case "https-packet":
+        return "HTTPS hides the request while it travels.";
+      case "http-packet":
+        return "HTTP leaves the request readable on the path.";
       case "flow":
       default:
         return "Your browser asks a server for a page.";
@@ -2870,6 +3234,10 @@
         return "Close - that would let the request pass straight through.";
       case "view-compact":
         return "Close - that keeps the smaller view.";
+      case "http-packet":
+        return "Close - that packet stays readable on the path.";
+      case "url":
+        return "Close - that is where the trip starts.";
       default:
         return "Close - that part does something different.";
     }

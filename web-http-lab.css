@@ -430,6 +430,406 @@
   line-height: 1.55;
 }
 
+.http-packet-journey {
+  display: grid;
+  gap: 16px;
+}
+
+.http-journey-browser-bar {
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background: linear-gradient(180deg, rgba(11, 18, 28, 0.98) 0%, rgba(5, 10, 17, 0.98) 100%);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.http-journey-browser-bar.is-selected,
+.http-packet-journey-compare-card.is-selected {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.14),
+    0 14px 28px rgba(14, 165, 233, 0.12);
+}
+
+.http-journey-browser-bar.is-compact {
+  min-height: 48px;
+}
+
+.http-journey-browser-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.56);
+}
+
+.http-journey-address-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  width: 100%;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(2, 6, 12, 0.92);
+  border: 1px solid rgba(51, 65, 85, 0.82);
+  box-sizing: border-box;
+}
+
+.http-journey-address-pill.is-secure {
+  border-color: rgba(34, 197, 94, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.08);
+}
+
+.http-journey-address-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dbeafe;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 14px;
+}
+
+.http-journey-caret {
+  width: 2px;
+  height: 16px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.88);
+  animation: httpCaretBlink 900ms steps(1) infinite;
+}
+
+.http-journey-lock {
+  position: relative;
+  width: 12px;
+  height: 10px;
+  border-radius: 3px;
+  border: 2px solid rgba(34, 197, 94, 0.88);
+  box-sizing: border-box;
+}
+
+.http-journey-lock::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 8px;
+  height: 7px;
+  border: 2px solid rgba(34, 197, 94, 0.88);
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+}
+
+.http-journey-payload-card,
+.http-packet-journey-compare-card {
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(71, 85, 105, 0.78);
+  background: linear-gradient(180deg, rgba(10, 16, 25, 0.98) 0%, rgba(4, 9, 16, 0.98) 100%);
+  box-sizing: border-box;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.http-journey-payload-card.is-selected {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.14),
+    0 14px 28px rgba(14, 165, 233, 0.12);
+}
+
+.http-journey-payload-card.is-response {
+  border-color: rgba(34, 197, 94, 0.46);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1);
+}
+
+.http-journey-payload-card.is-secure {
+  border-color: rgba(34, 197, 94, 0.38);
+  background: linear-gradient(180deg, rgba(8, 16, 22, 0.98) 0%, rgba(4, 9, 14, 0.98) 100%);
+}
+
+.http-journey-payload-card.is-nested {
+  padding: 14px;
+}
+
+.http-journey-payload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.http-journey-payload-label {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.http-journey-payload-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.http-journey-payload-card.is-response .http-journey-payload-badge {
+  color: #86efac;
+}
+
+.http-journey-payload-card.is-secure .http-journey-payload-badge {
+  color: #bbf7d0;
+}
+
+.http-journey-payload-body {
+  display: grid;
+  gap: 8px;
+}
+
+.http-journey-payload-line {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(2, 7, 12, 0.88);
+  color: #dbeafe;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.http-journey-payload-card.is-secure .http-journey-payload-line {
+  color: rgba(203, 213, 225, 0.9);
+  filter: blur(3px);
+  opacity: 0.72;
+}
+
+.http-journey-track-shell {
+  position: relative;
+  padding-top: 56px;
+}
+
+.http-journey-track-shell.is-compact {
+  padding-top: 48px;
+}
+
+.http-journey-track {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  align-items: end;
+}
+
+.http-journey-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 24px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.22) 0%, rgba(148, 163, 184, 0.18) 100%);
+}
+
+.http-journey-node {
+  position: relative;
+  min-height: 62px;
+  padding: 16px 10px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background: rgba(3, 8, 14, 0.78);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+
+.http-journey-node.is-travel {
+  border-color: rgba(56, 189, 248, 0.36);
+  animation: httpJourneyHop 560ms ease;
+  animation-delay: var(--journey-delay);
+}
+
+.http-journey-node.is-active {
+  border-color: rgba(56, 189, 248, 0.72);
+  color: #e0f2fe;
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.14),
+    0 0 18px rgba(56, 189, 248, 0.16);
+}
+
+.http-journey-packet-chip {
+  position: absolute;
+  top: 0;
+  left: var(--packet-end);
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.62);
+  background: linear-gradient(180deg, rgba(18, 94, 160, 0.98) 0%, rgba(12, 63, 118, 0.98) 100%);
+  color: #eff6ff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow:
+    0 10px 18px rgba(2, 132, 199, 0.18),
+    0 0 0 1px rgba(56, 189, 248, 0.14);
+  white-space: nowrap;
+  animation: httpPacketMove 720ms ease;
+}
+
+.http-journey-packet-chip.is-response {
+  border-color: rgba(34, 197, 94, 0.62);
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.98) 0%, rgba(21, 128, 61, 0.98) 100%);
+  box-shadow:
+    0 10px 18px rgba(34, 197, 94, 0.18),
+    0 0 0 1px rgba(34, 197, 94, 0.12);
+}
+
+.http-journey-packet-chip.is-secure {
+  border-color: rgba(34, 197, 94, 0.58);
+  background: linear-gradient(180deg, rgba(22, 101, 52, 0.98) 0%, rgba(20, 83, 45, 0.98) 100%);
+}
+
+.http-journey-packet-chip.is-selected {
+  box-shadow:
+    0 0 0 1px rgba(248, 250, 252, 0.2),
+    0 12px 22px rgba(14, 165, 233, 0.22);
+}
+
+.http-packet-journey-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.http-journey-status-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.76);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.http-journey-status-card.is-active {
+  transform: translateY(-1px);
+}
+
+.http-journey-status-card.is-browser.is-active {
+  border-color: rgba(59, 130, 246, 0.58);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.12);
+}
+
+.http-journey-status-card.is-server.is-active {
+  border-color: rgba(56, 189, 248, 0.58);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.12);
+  animation: httpServerPulse 700ms ease;
+}
+
+.http-journey-status-card.is-success {
+  border-color: rgba(34, 197, 94, 0.52);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1);
+}
+
+.http-journey-status-title {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.http-journey-status-main {
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.http-journey-status-copy {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.http-journey-page-preview {
+  display: grid;
+  gap: 0;
+  min-height: 110px;
+  border-radius: 20px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: linear-gradient(180deg, rgba(9, 15, 23, 0.98) 0%, rgba(5, 9, 15, 0.98) 100%);
+  opacity: 0.56;
+  transition: opacity 220ms ease, transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.http-journey-page-preview.is-active {
+  opacity: 1;
+  transform: translateY(-1px);
+  border-color: rgba(34, 197, 94, 0.52);
+  box-shadow:
+    0 0 0 1px rgba(34, 197, 94, 0.12),
+    0 16px 26px rgba(34, 197, 94, 0.08);
+}
+
+.http-journey-page-head {
+  min-height: 18px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.68);
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.18) 0%, rgba(56, 189, 248, 0.08) 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+.http-journey-page-body {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.http-journey-page-title {
+  color: #f8fafc;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.http-journey-page-copy {
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.http-packet-journey-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.http-packet-journey-compare-card {
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+
 .http-flow-head {
   display: flex;
   align-items: flex-start;
@@ -884,6 +1284,52 @@
 
   100% {
     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
+  }
+}
+
+@keyframes httpCaretBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes httpPacketMove {
+  0% {
+    left: var(--packet-start);
+    opacity: 0.68;
+  }
+
+  100% {
+    left: var(--packet-end);
+    opacity: 1;
+  }
+}
+
+@keyframes httpJourneyHop {
+  0% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.16);
+  }
+
+  100% {
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.08);
+  }
+}
+
+@keyframes httpServerPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.12);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 248, 0.12),
+      0 0 18px rgba(56, 189, 248, 0.12);
   }
 }
 
@@ -1769,7 +2215,11 @@
   .http-flow-stage.is-active,
   .http-flow-stage-arrow.is-active,
   .http-focus-flow-node.is-active,
-  .http-focus-flow-arrow.is-active {
+  .http-focus-flow-arrow.is-active,
+  .http-journey-caret,
+  .http-journey-node.is-travel,
+  .http-journey-status-card.is-server.is-active,
+  .http-journey-packet-chip {
     animation: none !important;
   }
 
@@ -1792,7 +2242,12 @@
   .http-raw-block,
   .http-response-summary,
   .http-feedback-badge,
-  .http-completion-pill {
+  .http-completion-pill,
+  .http-journey-browser-bar,
+  .http-journey-payload-card,
+  .http-journey-node,
+  .http-journey-status-card,
+  .http-journey-page-preview {
     transition: none !important;
   }
 }
@@ -1865,6 +2320,30 @@
 
   .http-focus-compare-grid {
     grid-template-columns: 1fr;
+  }
+
+  .http-packet-journey-compare-grid,
+  .http-packet-journey-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .http-journey-browser-bar {
+    grid-template-columns: auto auto auto minmax(0, 1fr);
+  }
+
+  .http-journey-payload-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .http-journey-track-shell {
+    padding-top: 52px;
+  }
+
+  .http-journey-node {
+    min-height: 56px;
+    padding: 14px 8px 8px;
+    font-size: 12px;
   }
 
   .http-panel-head,
@@ -1951,6 +2430,32 @@
 
   .http-lesson-path {
     grid-template-columns: 1fr;
+  }
+
+  .http-journey-browser-bar,
+  .http-journey-payload-card,
+  .http-packet-journey-compare-card {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .http-journey-address-text,
+  .http-journey-payload-line {
+    font-size: 12px;
+  }
+
+  .http-journey-track {
+    gap: 8px;
+  }
+
+  .http-journey-packet-chip {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .http-journey-status-main {
+    font-size: 16px;
   }
 
   .http-request-line-diagram {

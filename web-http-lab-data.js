@@ -2,43 +2,43 @@
   const lessons = [
     {
       id: "http-request-basics",
-      title: "HTTP Request Basics",
+      title: "HTTP and HTTPS Journey",
       category: "HTTP Fundamentals",
       difficulty: "Beginner",
       learningObjectives: [
-        "See one browser request from start to finish.",
-        "Learn GET, path, Host, 200, and POST one at a time.",
-        "Tap one part, then move to the next step."
+        "See one request turn into a packet.",
+        "Watch the packet move across the network.",
+        "See how HTTPS hides the request on the path."
       ],
       scenarioIntro:
-        "One small web request. One idea per step.",
+        "One packet journey. One visual step at a time.",
       explanation:
-        "Watch the flow. Tap the part. Move on.",
+        "Watch the packet. Tap the key part. Move on.",
       recommendedNextLesson: "inspecting-headers-responses",
       interactiveSteps: [
         {
-          id: "http-basics-flow",
-          title: "Browser to Server",
-          prompt: "Watch the page load.",
+          id: "http-basics-url",
+          title: "URL",
+          prompt: "Watch the address bar.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Follow the arrows."],
-          successCondition: "See the browser send one request and receive one response.",
-          feedback: "Good. The browser asked, and the server answered.",
-          explanation: "Your browser asks a server for a page.",
+          hints: ["Start with the URL."],
+          successCondition: "See the browser start with a web address.",
+          feedback: "Good. The trip starts with a URL.",
+          explanation: "The browser starts with a URL.",
           workspace: {
             browser: {
-              title: "Sprout Profile",
-              url: "https://profile.sprout.lab/profile",
-              note: "Simple page load"
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Starting point"
             },
             request: {
               method: "GET",
               path: "/profile",
               version: "HTTP/1.1",
               headers: [
-                { name: "Host", value: "profile.sprout.lab" },
-                { name: "User-Agent", value: "Chrome" }
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
               ],
               body: ""
             },
@@ -51,11 +51,13 @@
               body:
                 "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
             },
-            cookies: [],
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
             session: {
-              state: "Guest",
-              id: "No active session",
-              note: "This example only shows the basic request flow."
+              state: "Signed in",
+              id: "abc123",
+              note: "The session already exists."
             },
             cache: {
               status: "Not shown",
@@ -63,7 +65,7 @@
             },
             proxy: {
               status: "Pass-through",
-              note: "The proxy forwards the request."
+              note: "The path is clear."
             },
             discoverability: {
               summary: "Not used in this step.",
@@ -71,9 +73,16 @@
             }
           },
           focusVisual: {
-            type: "flow",
-            stageIndex: 1,
-            mode: "get"
+            type: "packet-journey",
+            stage: "url",
+            defaultExplainKey: "url",
+            interactiveParts: ["url"],
+            url: "https://example.com/profile",
+            addressSecure: true,
+            loadedTitle: "Profile"
+          },
+          focusExplain: {
+            "url": "The browser starts with a URL."
           },
           interaction: {
             type: "focus-continue",
@@ -81,28 +90,28 @@
           }
         },
         {
-          id: "http-basics-get",
-          title: "GET",
-          prompt: "Pick the request that fetches the page.",
+          id: "http-basics-request",
+          title: "Request",
+          prompt: "Tap the request.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Pick the request that fetches the page."],
-          successCondition: "Pick the request that will fetch the page.",
-          feedback: "Nice - that request will work.",
-          explanation: "GET = ask for data.",
+          hints: ["Tap the request."],
+          successCondition: "Tap the expanded request.",
+          feedback: "Nice - the URL became a request.",
+          explanation: "The browser turns the URL into a request.",
           workspace: {
             browser: {
-              title: "Sprout Profile",
-              url: "https://profile.sprout.lab/profile",
-              note: "Simple page load"
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Request built"
             },
             request: {
               method: "GET",
               path: "/profile",
               version: "HTTP/1.1",
               headers: [
-                { name: "Host", value: "profile.sprout.lab" },
-                { name: "User-Agent", value: "Chrome" }
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
               ],
               body: ""
             },
@@ -114,11 +123,13 @@
               ],
               body: "<html>\n  <h1>Profile</h1>\n</html>"
             },
-            cookies: [],
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
             session: {
-              state: "Guest",
-              id: "No active session",
-              note: "No login needed here."
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
             },
             cache: {
               status: "Not shown",
@@ -126,7 +137,7 @@
             },
             proxy: {
               status: "Pass-through",
-              note: "The proxy forwards the request."
+              note: "The path is clear."
             },
             discoverability: {
               summary: "Not used in this step.",
@@ -134,307 +145,425 @@
             }
           },
           focusVisual: {
-            type: "compare",
-            defaultExplainKey: "post",
-            options: [
+            type: "packet-journey",
+            stage: "request",
+            defaultExplainKey: "request-card",
+            interactiveParts: ["request-card"],
+            url: "https://example.com/profile",
+            addressSecure: true,
+            loadedTitle: "Profile"
+          },
+          focusExplain: {
+            "request-card": "The browser turns the URL into a request."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "request-card"
+          }
+        },
+        {
+          id: "http-basics-packet",
+          title: "Packet",
+          prompt: "Tap the packet.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap the packet."],
+          successCondition: "Tap the request packet.",
+          feedback: "Good. The request is wrapped into a packet.",
+          explanation: "The request is wrapped into a packet.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Packet ready"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "packet-journey",
+            stage: "packet",
+            defaultExplainKey: "request-packet",
+            interactiveParts: ["request-packet"],
+            url: "https://example.com/profile",
+            addressSecure: true,
+            secure: true,
+            packetFromHop: 0,
+            packetToHop: 0,
+            loadedTitle: "Profile"
+          },
+          focusExplain: {
+            "request-packet": "The request is wrapped into a packet."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "request-packet"
+          }
+        },
+        {
+          id: "http-basics-journey",
+          title: "Journey",
+          prompt: "Watch the packet travel.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Follow the packet."],
+          successCondition: "See the packet move from browser to server.",
+          feedback: "Nice. The packet crossed the network.",
+          explanation: "The packet moves hop by hop to the server.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Packet in transit"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "packet-journey",
+            stage: "journey",
+            defaultExplainKey: "request-packet",
+            interactiveParts: ["request-packet"],
+            url: "https://example.com/profile",
+            addressSecure: true,
+            secure: true,
+            packetFromHop: 0,
+            packetToHop: 3,
+            loadedTitle: "Profile",
+            serverStatus: "Request arrived"
+          },
+          focusExplain: {
+            "request-packet": "The packet moves hop by hop to the server."
+          },
+          interaction: {
+            type: "focus-continue",
+            buttonLabel: "Next",
+            targetKey: "request-packet"
+          }
+        },
+        {
+          id: "http-basics-response",
+          title: "200 OK",
+          prompt: "Tap the response.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap the response."],
+          successCondition: "Tap the response packet.",
+          feedback: "Good. The server turned it into a response.",
+          explanation: "The server turns the request into a response.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Server answered"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "packet-journey",
+            stage: "server",
+            defaultExplainKey: "response-packet",
+            interactiveParts: ["response-packet"],
+            url: "https://example.com/profile",
+            addressSecure: true,
+            packetFromHop: 3,
+            packetToHop: 3,
+            responseLabel: "HTTP Response",
+            responseFrameLabel: "200 OK",
+            loadedTitle: "Profile",
+            serverStatus: "200 OK"
+          },
+          focusExplain: {
+            "response-packet": "The server turns the request into a response."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "response-packet"
+          }
+        },
+        {
+          id: "http-basics-load",
+          title: "Page Load",
+          prompt: "Watch the page load.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Follow the response back."],
+          successCondition: "See the response return to the browser.",
+          feedback: "Nice. The browser can load the page.",
+          explanation: "The response comes back and the page loads.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Page loading"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "packet-journey",
+            stage: "return",
+            defaultExplainKey: "response-packet",
+            interactiveParts: ["response-packet"],
+            url: "https://example.com/profile",
+            addressSecure: true,
+            packetFromHop: 3,
+            packetToHop: 0,
+            responseLabel: "HTTP Response",
+            responseFrameLabel: "200 OK",
+            loadedTitle: "Profile",
+            loadedCopy: "Welcome back",
+            serverStatus: "200 OK",
+            browserStatus: "Loading"
+          },
+          focusExplain: {
+            "response-packet": "The response comes back and the page loads."
+          },
+          interaction: {
+            type: "focus-continue",
+            buttonLabel: "Next",
+            targetKey: "response-packet"
+          }
+        },
+        {
+          id: "http-basics-https",
+          title: "HTTPS",
+          prompt: "Tap HTTPS.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap the locked packet."],
+          successCondition: "Tap the locked HTTPS packet.",
+          feedback: "Right. HTTPS hides the request on the path.",
+          explanation: "HTTPS locks the packet on the path.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "HTTP vs HTTPS"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "packet-journey",
+            stage: "compare",
+            defaultExplainKey: "http-packet",
+            comparePackets: [
               {
-                key: "get",
-                label: "GET /profile",
-                title: "GET",
-                copy: "Ask for data.",
-                resultStatus: "200 OK",
-                resultCopy: "Nice - that request will work.",
-                resultTone: "success"
+                key: "http-packet",
+                title: "HTTP",
+                label: "HTTP Packet",
+                packetLabel: "HTTP Request",
+                url: "http://example.com/profile",
+                addressSecure: false,
+                secure: false
               },
               {
-                key: "post",
-                label: "POST /profile",
-                title: "POST",
-                copy: "Send data.",
-                resultStatus: "405 Method Not Allowed",
-                resultCopy: "Close - that would send data, not fetch it.",
-                resultTone: "warning"
+                key: "https-packet",
+                title: "HTTPS",
+                label: "HTTPS Packet",
+                packetLabel: "HTTPS Request",
+                url: "https://example.com/profile",
+                addressSecure: true,
+                secure: true
               }
             ]
           },
           focusExplain: {
-            "get": "GET = ask for data.",
-            "post": "POST = send data."
+            "http-packet": "HTTP leaves the request readable on the path.",
+            "https-packet": "HTTPS locks the request on the path."
           },
           focusWrong: {
-            "post": "Close - that would send data, not fetch it."
+            "http-packet": "Close - that packet stays readable on the path."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "get"
-          }
-        },
-        {
-          id: "http-basics-path",
-          title: "Path",
-          prompt: "Tap /profile.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Tap /profile."],
-          successCondition: "Tap the page name in the request.",
-          feedback: "Right. /profile is the page name.",
-          explanation: "/profile = the page you want.",
-          workspace: {
-            browser: {
-              title: "Sprout Profile",
-              url: "https://profile.sprout.lab/profile",
-              note: "Simple page load"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "profile.sprout.lab" },
-                { name: "User-Agent", value: "Chrome" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [],
-            session: {
-              state: "Guest",
-              id: "No active session",
-              note: "No login needed here."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The proxy forwards the request."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            type: "request",
-            mode: "get",
-            defaultExplainKey: "path",
-            lineParts: ["method", "path"],
-            headerParts: [],
-            interactiveParts: ["path"]
-          },
-          interaction: {
-            type: "focus-discover",
-            buttonLabel: "Next",
-            targetKey: "path"
-          }
-        },
-        {
-          id: "http-basics-host",
-          title: "Host",
-          prompt: "Tap Host.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Tap Host."],
-          successCondition: "Tap the website name in the request.",
-          feedback: "Good. Host means which website.",
-          explanation: "Host = which website.",
-          workspace: {
-            browser: {
-              title: "Sprout Profile",
-              url: "https://profile.sprout.lab/profile",
-              note: "Simple page load"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "profile.sprout.lab" },
-                { name: "User-Agent", value: "Chrome" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [],
-            session: {
-              state: "Guest",
-              id: "No active session",
-              note: "No login needed here."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The proxy forwards the request."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            type: "request",
-            mode: "get",
-            defaultExplainKey: "host",
-            lineParts: [],
-            headerParts: ["host"],
-            interactiveParts: ["host"]
-          },
-          interaction: {
-            type: "focus-discover",
-            buttonLabel: "Next",
-            targetKey: "host"
-          }
-        },
-        {
-          id: "http-basics-200",
-          title: "200 OK",
-          prompt: "Tap 200 OK.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Tap 200 OK."],
-          successCondition: "Tap the response status.",
-          feedback: "Yes. 200 means it worked.",
-          explanation: "200 = it worked.",
-          workspace: {
-            browser: {
-              title: "Sprout Profile",
-              url: "https://profile.sprout.lab/profile",
-              note: "Simple page load"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "profile.sprout.lab" },
-                { name: "User-Agent", value: "Chrome" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [],
-            session: {
-              state: "Guest",
-              id: "No active session",
-              note: "No login needed here."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The proxy forwards the request."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            type: "response",
-            mode: "get",
-            defaultExplainKey: "response-code",
-            lineParts: ["status"],
-            interactiveParts: ["status"]
-          },
-          interaction: {
-            type: "focus-discover",
-            buttonLabel: "Next",
-            targetKey: "response-code"
-          }
-        },
-        {
-          id: "http-basics-post",
-          title: "POST",
-          prompt: "Tap POST.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Tap POST."],
-          successCondition: "Tap POST to see what it means.",
-          feedback: "Correct. POST sends data.",
-          explanation: "POST = send data.",
-          workspace: {
-            browser: {
-              title: "Sprout Sign In",
-              url: "https://profile.sprout.lab/login",
-              note: "Simple form submit"
-            },
-            request: {
-              method: "POST",
-              path: "/login",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "profile.sprout.lab" },
-                { name: "Content-Type", value: "application/x-www-form-urlencoded" }
-              ],
-              body: "email=maya%40sprout.lab&password=example"
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Set-Cookie", value: "session=ab12" }
-              ],
-              body: "<html>\n  <h1>Signed in</h1>\n</html>"
-            },
-            cookies: [],
-            session: {
-              state: "Guest",
-              id: "No active session",
-              note: "This example only compares GET and POST."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The proxy forwards the request."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            type: "request",
-            mode: "post",
-            defaultExplainKey: "post",
-            lineParts: ["method", "path"],
-            headerParts: [],
-            interactiveParts: ["method"]
-          },
-          interaction: {
-            type: "focus-discover",
-            buttonLabel: "Next",
-            targetKey: "post"
+            targetKey: "https-packet"
           }
         }
       ]
