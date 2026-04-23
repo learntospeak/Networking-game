@@ -83,12 +83,12 @@
         {
           id: "http-basics-get",
           title: "GET",
-          prompt: "Tap GET.",
+          prompt: "Pick the request that fetches the page.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap GET."],
-          successCondition: "Tap GET to see what it means.",
-          feedback: "Good. GET asks for data.",
+          hints: ["Pick the request that fetches the page."],
+          successCondition: "Pick the request that will fetch the page.",
+          feedback: "Nice - that request will work.",
           explanation: "GET = ask for data.",
           workspace: {
             browser: {
@@ -134,12 +134,35 @@
             }
           },
           focusVisual: {
-            type: "request",
-            mode: "get",
-            defaultExplainKey: "get",
-            lineParts: ["method", "path"],
-            headerParts: [],
-            interactiveParts: ["method"]
+            type: "compare",
+            defaultExplainKey: "post",
+            options: [
+              {
+                key: "get",
+                label: "GET /profile",
+                title: "GET",
+                copy: "Ask for data.",
+                resultStatus: "200 OK",
+                resultCopy: "Nice - that request will work.",
+                resultTone: "success"
+              },
+              {
+                key: "post",
+                label: "POST /profile",
+                title: "POST",
+                copy: "Send data.",
+                resultStatus: "405 Method Not Allowed",
+                resultCopy: "Close - that would send data, not fetch it.",
+                resultTone: "warning"
+              }
+            ]
+          },
+          focusExplain: {
+            "get": "GET = ask for data.",
+            "post": "POST = send data."
+          },
+          focusWrong: {
+            "post": "Close - that would send data, not fetch it."
           },
           interaction: {
             type: "focus-discover",
@@ -1596,12 +1619,12 @@
         {
           id: "proxy-intercept-on",
           title: "Intercept ON",
-          prompt: "Tap Intercept ON.",
+          prompt: "Pick the setting that stops the next request.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap Intercept ON."],
-          successCondition: "Tap the intercept switch.",
-          feedback: "Good. The next request will stop there.",
+          hints: ["Pick the setting that stops the next request."],
+          successCondition: "Pick the setting that pauses the next request.",
+          feedback: "Nice - the next request will stop here.",
           explanation: "ON = next request stops here.",
           workspace: {
             browser: {
@@ -1651,15 +1674,35 @@
             }
           },
           focusVisual: {
-            type: "terms",
-            items: [
-              { label: "Intercept ON", key: "intercept-on", variant: "term" }
-            ],
-            interactiveParts: ["intercept-on"],
-            defaultExplainKey: "intercept-on"
+            type: "compare",
+            defaultExplainKey: "intercept-off",
+            options: [
+              {
+                key: "intercept-off",
+                label: "Intercept OFF",
+                title: "Intercept OFF",
+                copy: "Let requests pass through.",
+                resultStatus: "Pass-through",
+                resultCopy: "Close - the request would go straight to the server.",
+                resultTone: "warning"
+              },
+              {
+                key: "intercept-on",
+                label: "Intercept ON",
+                title: "Intercept ON",
+                copy: "Pause the next request.",
+                resultStatus: "Request paused",
+                resultCopy: "Nice - the next request will stop here.",
+                resultTone: "success"
+              }
+            ]
           },
           focusExplain: {
+            "intercept-off": "OFF = requests keep moving.",
             "intercept-on": "ON = next request stops here."
+          },
+          focusWrong: {
+            "intercept-off": "Close - the request would go straight to the server."
           },
           interaction: {
             type: "focus-discover",
@@ -1968,12 +2011,12 @@
         {
           id: "request-view-full",
           title: "view=full",
-          prompt: "Tap view=full.",
+          prompt: "Pick the view that shows more detail.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap view=full."],
-          successCondition: "Tap the full view choice.",
-          feedback: "Right. full means a bigger view.",
+          hints: ["Pick the view that shows more detail."],
+          successCondition: "Pick the full view choice.",
+          feedback: "Nice - that shows the bigger page.",
           explanation: "full = bigger view.",
           workspace: {
             browser: {
@@ -2022,15 +2065,35 @@
             }
           },
           focusVisual: {
-            type: "terms",
-            items: [
-              { label: "view=full", key: "view-full", variant: "term" }
-            ],
-            interactiveParts: ["view-full"],
-            defaultExplainKey: "view-full"
+            type: "compare",
+            defaultExplainKey: "view-compact",
+            options: [
+              {
+                key: "view-compact",
+                label: "view=compact",
+                title: "view=compact",
+                copy: "Smaller view.",
+                resultStatus: "Compact view",
+                resultCopy: "Close - that keeps the smaller view.",
+                resultTone: "warning"
+              },
+              {
+                key: "view-full",
+                label: "view=full",
+                title: "view=full",
+                copy: "More detail.",
+                resultStatus: "Full view",
+                resultCopy: "Nice - that shows the bigger page.",
+                resultTone: "success"
+              }
+            ]
           },
           focusExplain: {
+            "view-compact": "compact = smaller view.",
             "view-full": "full = bigger view."
+          },
+          focusWrong: {
+            "view-compact": "Close - that keeps the smaller view."
           },
           interaction: {
             type: "focus-discover",

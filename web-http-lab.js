@@ -1527,6 +1527,14 @@
 
   const els = {};
   let savedProgressRecord = null;
+  const uiState = {
+    focusStepId: "",
+    focusExplainKey: "",
+    taskFeedbackKey: "",
+    diagramExplainKey: "",
+    flowStep: -1
+  };
+  let labAudioContext = null;
 
   document.addEventListener("DOMContentLoaded", function () {
     init().catch(function (error) {
@@ -1588,6 +1596,7 @@
     els.focusVisual = document.getElementById("focusVisual");
     els.focusStepCopy = document.getElementById("focusStepCopy");
     els.focusInteractive = document.getElementById("focusInteractive");
+    els.focusRestartBtn = document.getElementById("focusRestartBtn");
 
     els.browserUrl = document.getElementById("browserUrl");
     els.browserTitle = document.getElementById("browserTitle");
@@ -1642,6 +1651,9 @@
     els.nextBtn.addEventListener("click", advanceProgress);
     els.sendRequestBtn.addEventListener("click", sendCurrentRequest);
     els.resetRequestBtn.addEventListener("click", resetCurrentRequestDraft);
+    if (els.focusRestartBtn) {
+      els.focusRestartBtn.addEventListener("click", restartCurrentLesson);
+    }
 
     window.addEventListener("netlab:authchange", function () {
       savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
@@ -1658,6 +1670,125 @@
     window.addEventListener("netlab:profilemetachange", function () {
       renderSectionShell();
     });
+  }
+
+  function animateElements(targets, className) {
+    targets.forEach(function (element) {
+      if (!element) {
+        return;
+      }
+
+      element.classList.remove(className);
+      void element.offsetWidth;
+      element.classList.add(className);
+
+      if (element._netlabMotionTimer) {
+        window.clearTimeout(element._netlabMotionTimer);
+      }
+
+      element._netlabMotionTimer = window.setTimeout(function () {
+        element.classList.remove(className);
+        element._netlabMotionTimer = 0;
+      }, 520);
+    });
+  }
+
+  function runFocusStepEnterMotion() {
+    animateElements([
+      els.focusVisual,
+      els.focusStepCopy,
+      els.focusInteractive
+    ], "http-motion-enter");
+  }
+
+  function runFocusSelectionMotion(tone) {
+    animateElements([
+      els.focusVisual,
+      els.focusStepCopy,
+      els.focusInteractive
+    ], "http-motion-swap");
+
+    animateElements([
+      els.focusStageStatus
+    ], tone === "warning" ? "http-motion-warning" : "http-motion-success");
+  }
+
+  function runTaskFeedbackMotion(tone) {
+    animateElements([
+      els.taskState,
+      els.feedbackText,
+      els.stepExplanation
+    ], tone === "warning" ? "http-motion-warning" : "http-motion-success");
+  }
+
+  function runDiagramMotion() {
+    animateElements([
+      els.flowDiagram && els.flowDiagram.querySelector(".http-flow-track"),
+      els.flowDiagram && els.flowDiagram.querySelector(".http-flow-stage-copy"),
+      els.requestDiagram && els.requestDiagram.querySelector(".http-explainer-card")
+    ], "http-motion-swap");
+  }
+
+  function runWorkspaceResultMotion(tone) {
+    animateElements([
+      els.requestBadge,
+      els.requestRaw,
+      els.responseBadge,
+      els.responseSummary,
+      els.responseRaw
+    ], tone === "warning" ? "http-motion-warning" : "http-motion-success");
+  }
+
+  function successAudioContext() {
+    if (!window.AudioContext && !window.webkitAudioContext) {
+      return null;
+    }
+
+    if (!labAudioContext) {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      labAudioContext = new AudioCtor();
+    }
+
+    return labAudioContext;
+  }
+
+  function playStepSuccessSound() {
+    if (!NetlabApp?.isSoundEnabled || !NetlabApp.isSoundEnabled()) {
+      return;
+    }
+
+    const context = successAudioContext();
+    if (!context) {
+      return;
+    }
+
+    if (context.state === "suspended" && typeof context.resume === "function") {
+      context.resume().catch(function () {
+        return null;
+      });
+    }
+
+    const now = context.currentTime;
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.connect(context.destination);
+
+    const notes = [
+      { frequency: 659.25, start: 0, duration: 0.05 },
+      { frequency: 783.99, start: 0.06, duration: 0.07 }
+    ];
+
+    notes.forEach(function (note) {
+      const oscillator = context.createOscillator();
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(note.frequency, now + note.start);
+      oscillator.connect(gain);
+      oscillator.start(now + note.start);
+      oscillator.stop(now + note.start + note.duration);
+    });
+
+    gain.gain.exponentialRampToValueAtTime(0.05, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
   }
 
   function hydrateProgress() {
@@ -2050,14 +2181,16 @@
     const selectedKey = validFocusExplainKey(step, state.visualExplainKey)
       ? state.visualExplainKey
       : defaultFocusExplainKey(step);
+    const stepChanged = uiState.focusStepId !== step.id;
+    const explainChanged = uiState.focusExplainKey !== selectedKey;
 
     state.visualExplainKey = selectedKey;
     els.focusStepCount.textContent = "Step " + (state.stepIndex + 1) + " of " + currentLesson().interactiveSteps.length;
     els.focusStepTitle.textContent = step.title;
     els.focusStageStatus.textContent = state.stepSolved
-      ? "Step complete"
+      ? (state.stepIndex === currentLesson().interactiveSteps.length - 1 ? "Nice - lesson complete" : "Nice - step complete")
       : state.feedbackTone === "warning"
-        ? "Try again"
+        ? "Close - try again"
         : interaction.type === "focus-discover"
           ? step.prompt
           : "Current step";
@@ -2066,14 +2199,28 @@
     els.focusStepCopy.textContent = focusExplanationText(step, selectedKey);
     renderFocusInteraction(step, interaction);
     bindFocusLessonInteractions(step, interaction);
+
+    if (stepChanged) {
+      runFocusStepEnterMotion();
+    } else if (explainChanged) {
+      runFocusSelectionMotion(state.feedbackTone === "warning" ? "warning" : "success");
+    }
+
+    uiState.focusStepId = step.id;
+    uiState.focusExplainKey = selectedKey;
   }
 
   function renderFocusInteraction(step, interaction) {
     els.focusInteractive.innerHTML = "";
+    const feedbackClass = state.feedbackTone === "warning" ? " is-warning" : " is-success";
+    const feedbackMarkup = state.feedbackText
+      ? "<p class=\"http-focus-feedback" + feedbackClass + "\" role=\"status\" aria-live=\"polite\">" + escapeHtml(truncateText(state.feedbackText, 76)) + "</p>"
+      : "";
 
     if (state.stepSolved) {
       els.focusInteractive.innerHTML =
-        "<button id=\"focusAdvanceBtn\" type=\"button\" class=\"http-focus-next\">" + escapeHtml(nextButtonLabel()) + "</button>";
+        "<button id=\"focusAdvanceBtn\" type=\"button\" class=\"http-focus-next\">" + escapeHtml(nextButtonLabel()) + "</button>" +
+        feedbackMarkup;
       return;
     }
 
@@ -2085,7 +2232,8 @@
 
     if (interaction.type === "focus-discover") {
       els.focusInteractive.innerHTML =
-        "<button type=\"button\" class=\"http-focus-next\" disabled>" + escapeHtml(interaction.buttonLabel || "Next") + "</button>";
+        "<button type=\"button\" class=\"http-focus-next\" disabled>" + escapeHtml(interaction.buttonLabel || "Next") + "</button>" +
+        (state.feedbackTone === "warning" ? feedbackMarkup : "");
       return;
     }
 
@@ -2098,9 +2246,7 @@
 
       els.focusInteractive.innerHTML =
         "<div class=\"http-focus-choice-grid\">" + choiceMarkup + "</div>" +
-        (state.feedbackTone === "warning"
-          ? "<p class=\"http-mini-copy\">" + escapeHtml(truncateText(state.feedbackText, 70)) + "</p>"
-          : "");
+        ((state.feedbackTone === "warning" || state.stepSolved) ? feedbackMarkup : "");
     }
   }
 
@@ -2112,6 +2258,17 @@
 
         if (interaction.type === "focus-discover" && normalizeText(interaction.targetKey) === normalizeText(selectedKey)) {
           markSuccess(step, step.feedback);
+          return;
+        }
+
+        if (interaction.type === "focus-discover") {
+          state.feedbackTone = "warning";
+          state.feedbackText = focusMissFeedback(step, selectedKey);
+          persistProgress();
+          renderFocusLessonStage();
+          renderTask();
+          runFocusSelectionMotion("warning");
+          runTaskFeedbackMotion("warning");
           return;
         }
 
@@ -2129,7 +2286,13 @@
           return;
         }
 
+        state.feedbackTone = "warning";
+        state.feedbackText = focusMissFeedback(step, state.visualExplainKey);
+        persistProgress();
         renderFocusLessonStage();
+        renderTask();
+        runFocusSelectionMotion("warning");
+        runTaskFeedbackMotion("warning");
       });
     });
 
@@ -2201,7 +2364,7 @@
     }
 
     if (focusVisual.type === "compare") {
-      return buildFocusCompareVisual();
+      return buildFocusCompareVisual(step, selectedKey);
     }
 
     return buildFocusRequestVisual(step.workspace && step.workspace.request, selectedKey, focusVisual);
@@ -2237,13 +2400,23 @@
 
     labels.forEach(function (label, index) {
       if (index > 0) {
+        const arrowClass = index < activeIndex
+          ? " is-complete"
+          : index === activeIndex
+            ? " is-active"
+            : "";
         parts.push(
-          "<div class=\"http-focus-flow-arrow" + (index === activeIndex ? " is-active" : "") + "\">&rarr;</div>"
+          "<div class=\"http-focus-flow-arrow" + arrowClass + "\">&rarr;</div>"
         );
       }
 
+      const nodeClass = index < activeIndex
+        ? " is-complete"
+        : index === activeIndex
+          ? " is-active"
+          : "";
       parts.push(
-        "<div class=\"http-focus-flow-node" + (index === activeIndex ? " is-active" : "") + "\">" + escapeHtml(label) + "</div>"
+        "<div class=\"http-focus-flow-node" + nodeClass + "\">" + escapeHtml(label) + "</div>"
       );
     });
 
@@ -2281,15 +2454,14 @@
       return "<div class=\"http-empty-state\">No request loaded.</div>";
     }
 
-    const lineParts = Array.isArray(focusVisual.lineParts)
-      ? focusVisual.lineParts
-      : ["method", "path"];
-    const headerParts = Array.isArray(focusVisual.headerParts)
-      ? focusVisual.headerParts
-      : ["host"];
+    const lineParts = resolveFocusRequestLineParts(request, focusVisual);
+    const headerParts = resolveFocusRequestHeaderParts(request, focusVisual);
     const interactiveParts = new Set(Array.isArray(focusVisual.interactiveParts)
       ? focusVisual.interactiveParts
-      : lineParts.concat(headerParts));
+      : []);
+    lineParts.concat(headerParts).forEach(function (partName) {
+      interactiveParts.add(partName);
+    });
     const parts = ["<div class=\"http-focus-request-line\">"];
 
     if (lineParts.length) {
@@ -2320,12 +2492,13 @@
     const lineParts = Array.isArray(focusVisual.lineParts)
       ? focusVisual.lineParts
       : ["status"];
-    const headerParts = Array.isArray(focusVisual.headerParts)
-      ? focusVisual.headerParts
-      : [];
+    const headerParts = resolveFocusResponseHeaderParts(response, focusVisual);
     const interactiveParts = new Set(Array.isArray(focusVisual.interactiveParts)
       ? focusVisual.interactiveParts
-      : lineParts.concat(headerParts));
+      : []);
+    lineParts.concat(headerParts).forEach(function (partName) {
+      interactiveParts.add(partName);
+    });
     const parts = ["<div class=\"http-focus-request-line\">"];
 
     if (lineParts.length) {
@@ -2355,26 +2528,110 @@
     return parts.join("");
   }
 
-  function buildFocusCompareVisual() {
-    const mode = normalizeVisualMode(state.visualMode, currentStep());
+  function buildFocusCompareVisual(step, selectedKey) {
+    const focusVisual = step && step.focusVisual ? step.focusVisual : {};
+    const options = Array.isArray(focusVisual.options) && focusVisual.options.length
+      ? focusVisual.options
+      : [
+        {
+          key: "get",
+          label: "GET /profile",
+          title: "GET",
+          copy: "Ask for a page or data.",
+          resultStatus: "200 OK",
+          resultCopy: "Nice - that request will work.",
+          resultTone: "success"
+        },
+        {
+          key: "post",
+          label: "POST /login",
+          title: "POST",
+          copy: "Send or submit data.",
+          resultStatus: "405 Method Not Allowed",
+          resultCopy: "Close - that would send data, not fetch it.",
+          resultTone: "warning"
+        }
+      ];
+    const activeKey = selectedKey || focusVisual.defaultExplainKey || String(options[0].key || "get");
+    const activeOption = options.find(function (option) {
+      return normalizeText(option.key) === normalizeText(activeKey);
+    }) || options[0];
+
     return [
       "<div class=\"http-focus-compare\">",
       "<div class=\"http-focus-line-row\">",
-      "<button type=\"button\" class=\"http-focus-term" + (mode === "get" ? " is-active" : "") + "\" data-focus-mode=\"get\">GET /profile</button>",
-      "<button type=\"button\" class=\"http-focus-term" + (mode === "post" ? " is-active" : "") + "\" data-focus-mode=\"post\">POST /login</button>",
+      options.map(function (option) {
+        const isActive = normalizeText(activeOption.key) === normalizeText(option.key);
+        return "<button type=\"button\" class=\"http-focus-term" + (isActive ? " is-active" : "") + "\" data-focus-explainer=\"" + escapeHtml(option.key) + "\">" + escapeHtml(option.label || option.title || option.key) + "</button>";
+      }).join(""),
       "</div>",
       "<div class=\"http-focus-compare-grid\">",
-      "<div class=\"http-focus-compare-card" + (mode === "get" ? " is-active" : "") + "\">" +
-      "<p class=\"http-focus-compare-title\">GET</p>" +
-      "<p class=\"http-focus-compare-copy\">Ask for a page or data.</p>" +
+      options.map(function (option) {
+        const isActive = normalizeText(activeOption.key) === normalizeText(option.key);
+        return "<div class=\"http-focus-compare-card" + (isActive ? " is-active" : "") + "\">" +
+          "<p class=\"http-focus-compare-title\">" + escapeHtml(option.title || option.key) + "</p>" +
+          "<p class=\"http-focus-compare-copy\">" + escapeHtml(option.copy || "") + "</p>" +
+          "</div>";
+      }).join(""),
       "</div>",
-      "<div class=\"http-focus-compare-card" + (mode === "post" ? " is-active" : "") + "\">" +
-      "<p class=\"http-focus-compare-title\">POST</p>" +
-      "<p class=\"http-focus-compare-copy\">Send or submit data.</p>" +
-      "</div>",
+      "<div class=\"http-focus-result is-" + escapeHtml(activeOption.resultTone || "success") + "\" role=\"status\" aria-live=\"polite\">" +
+      "<span class=\"http-focus-result-status\">" + escapeHtml(activeOption.resultStatus || "") + "</span>" +
+      "<span class=\"http-focus-result-copy\">" + escapeHtml(activeOption.resultCopy || activeOption.copy || "") + "</span>" +
       "</div>",
       "</div>"
     ].join("");
+  }
+
+  function resolveFocusRequestLineParts(request, focusVisual) {
+    const parts = Array.isArray(focusVisual.lineParts)
+      ? focusVisual.lineParts.slice()
+      : ["method", "path"];
+
+    if (!request) {
+      return parts;
+    }
+
+    if (parts.indexOf("method") >= 0 && parts.indexOf("path") < 0 && request.path) {
+      parts.push("path");
+    }
+
+    if (parts.indexOf("path") >= 0 && parts.indexOf("method") < 0 && request.method) {
+      parts.unshift("method");
+    }
+
+    return Array.from(new Set(parts));
+  }
+
+  function resolveFocusRequestHeaderParts(request, focusVisual) {
+    const parts = Array.isArray(focusVisual.headerParts)
+      ? focusVisual.headerParts.slice()
+      : ["host"];
+
+    if (!request) {
+      return parts;
+    }
+
+    if (!parts.length && getHeaderValue(request.headers || [], "Host")) {
+      parts.push("host");
+    }
+
+    return Array.from(new Set(parts));
+  }
+
+  function resolveFocusResponseHeaderParts(response, focusVisual) {
+    const parts = Array.isArray(focusVisual.headerParts)
+      ? focusVisual.headerParts.slice()
+      : [];
+
+    if (!response) {
+      return parts;
+    }
+
+    if (!parts.length && getHeaderValue(response.headers || [], "Content-Type")) {
+      parts.push("content-type");
+    }
+
+    return Array.from(new Set(parts));
   }
 
   function buildFocusTerm(label, key, selectedKey) {
@@ -2444,9 +2701,15 @@
     const stepMap = step && step.focusExplain ? step.focusExplain : null;
 
     if (focusVisual.type === "compare") {
-      return normalizeVisualMode(state.visualMode, currentStep()) === "post"
-        ? "POST = send data."
-        : "GET = ask for data.";
+      if (stepMap && stepMap[selectedKey]) {
+        return stepMap[selectedKey];
+      }
+
+      const option = Array.isArray(focusVisual.options)
+        ? focusVisual.options.find(function (item) { return item.key === selectedKey; })
+        : null;
+
+      return option && option.copy ? option.copy : "Choose the option that matches this step.";
     }
 
     if (stepMap && stepMap[selectedKey]) {
@@ -2518,7 +2781,9 @@
     }
 
     if (focusVisual.type === "compare") {
-      return ["get", "post"];
+      return Array.isArray(focusVisual.options) && focusVisual.options.length
+        ? focusVisual.options.map(function (option) { return option.key; }).filter(Boolean)
+        : ["get", "post"];
     }
 
     if (focusVisual.type === "terms") {
@@ -2579,6 +2844,34 @@
       case "flow":
       default:
         return "Your browser asks a server for a page.";
+    }
+  }
+
+  function focusMissFeedback(step, selectedKey) {
+    const customMap = step && step.focusWrong ? step.focusWrong : null;
+    if (customMap && customMap[selectedKey]) {
+      return customMap[selectedKey];
+    }
+
+    switch (normalizeText(selectedKey)) {
+      case "post":
+        return "Close - that would send data, not fetch it.";
+      case "path":
+        return "Close - that is the page name, not the action.";
+      case "host":
+        return "Close - that tells the request where to go.";
+      case "cookie":
+        return "Close - that is saved browser state.";
+      case "content-type":
+        return "Close - that describes the content format.";
+      case "response-code":
+        return "Close - that is the server result, not the request part.";
+      case "off":
+        return "Close - that would let the request pass straight through.";
+      case "view-compact":
+        return "Close - that keeps the smaller view.";
+      default:
+        return "Close - that part does something different.";
     }
   }
 
@@ -2679,9 +2972,18 @@
     }
 
     const scene = currentDiagramScene();
+    const diagramChanged = uiState.diagramExplainKey !== (state.visualExplainKey || defaultVisualExplainKey(state.visualMode))
+      || uiState.flowStep !== state.visualFlowStep;
     els.flowDiagram.innerHTML = buildFlowDiagram(scene);
     els.requestDiagram.innerHTML = buildRequestDiagram(scene);
     bindDiagramInteractions();
+
+    if (diagramChanged) {
+      runDiagramMotion();
+    }
+
+    uiState.diagramExplainKey = state.visualExplainKey || defaultVisualExplainKey(state.visualMode);
+    uiState.flowStep = state.visualFlowStep;
   }
 
   function currentDiagramScene() {
@@ -3378,6 +3680,7 @@
     els.feedbackText.textContent = truncateText(state.feedbackText, 150);
     els.stepExplanation.textContent = truncateText(state.liveExplanation || (state.stepSolved ? step.explanation : lesson.explanation), 150);
     els.hintText.textContent = state.hintText;
+    const feedbackKey = [state.feedbackTone, state.feedbackText, state.stepSolved ? "done" : "open"].join("|");
 
     let badgeText = "Waiting for action";
     let badgeClass = "idle";
@@ -3403,6 +3706,11 @@
     } else {
       els.nextBtn.hidden = true;
       els.nextBtn.textContent = "Next Step";
+    }
+
+    if (uiState.taskFeedbackKey !== feedbackKey) {
+      runTaskFeedbackMotion(state.feedbackTone === "warning" ? "warning" : "success");
+      uiState.taskFeedbackKey = feedbackKey;
     }
   }
 
@@ -3770,6 +4078,7 @@
     }
 
     render();
+    runWorkspaceResultMotion(result.success ? "success" : "warning");
   }
 
   function resetCurrentRequestDraft() {
@@ -3859,7 +4168,13 @@
     state.feedbackTone = "warning";
     state.feedbackText = message;
     persistProgress();
-    renderTask();
+    render();
+
+    if (isFocusedLesson()) {
+      runFocusSelectionMotion("warning");
+    } else {
+      runTaskFeedbackMotion("warning");
+    }
   }
 
   function markSuccess(step, message) {
@@ -3868,18 +4183,37 @@
     state.feedbackText = message;
     state.hintText = completedHint(step, currentRequestLab());
     state.liveExplanation = "";
+    const lesson = currentLesson();
+    const isFinalStep = state.stepIndex === lesson.interactiveSteps.length - 1;
+    const alreadyCompleted = Boolean(state.completedLessons[lesson.id]);
+    const rewardWillPlaySound = isFinalStep && !alreadyCompleted && Boolean(NetlabApp?.awardCoins);
 
     if (step.workspaceAfterSuccess) {
       state.currentWorkspace = cloneData(step.workspaceAfterSuccess);
     }
 
-    const lesson = currentLesson();
-    if (state.stepIndex === lesson.interactiveSteps.length - 1) {
-      const alreadyCompleted = Boolean(state.completedLessons[lesson.id]);
+    if (isFinalStep) {
       state.completedLessons[lesson.id] = true;
       awardLessonCompletionIfNeeded(lesson, alreadyCompleted);
     }
 
+    persistProgress();
+    render();
+
+    if (!rewardWillPlaySound) {
+      playStepSuccessSound();
+    }
+
+    if (isFocusedLesson()) {
+      runFocusSelectionMotion("success");
+    } else {
+      runTaskFeedbackMotion("success");
+    }
+  }
+
+  function restartCurrentLesson() {
+    state.stepIndex = 0;
+    resetStepRuntime();
     persistProgress();
     render();
   }

@@ -102,11 +102,40 @@
   gap: 18px;
 }
 
+.http-motion-enter {
+  animation: httpFadeLift 320ms ease;
+}
+
+.http-motion-swap {
+  animation: httpSwapGlow 280ms ease;
+}
+
+.http-motion-success {
+  animation: httpSuccessPulse 420ms ease;
+}
+
+.http-motion-warning {
+  animation: httpWarningPulse 420ms ease;
+}
+
 .http-focus-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+}
+
+.http-focus-head-right {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.http-focus-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .http-focus-visual {
@@ -116,6 +145,8 @@
   border-radius: 18px;
   border: 1px solid rgba(51, 65, 85, 0.72);
   background: rgba(3, 8, 14, 0.76);
+  overflow: hidden;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
 }
 
 .http-focus-copy {
@@ -123,11 +154,13 @@
   color: #f8fafc;
   font-size: clamp(18px, 2vw, 22px);
   line-height: 1.5;
+  transition: opacity 180ms ease, transform 180ms ease, color 180ms ease;
 }
 
 .http-focus-interactive {
   display: grid;
   gap: 12px;
+  transition: opacity 180ms ease, transform 180ms ease;
 }
 
 .http-focus-flow {
@@ -143,6 +176,7 @@
   border-radius: 18px;
   border: 1px solid rgba(71, 85, 105, 0.72);
   background: rgba(2, 7, 12, 0.84);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease;
 }
 
 .http-focus-flow-node {
@@ -172,6 +206,21 @@
     0 0 18px rgba(56, 189, 248, 0.16);
 }
 
+.http-focus-flow-node.is-active {
+  animation: httpNodePulse 900ms ease;
+}
+
+.http-focus-flow-arrow.is-active {
+  animation: httpArrowFlash 850ms ease;
+}
+
+.http-focus-flow-node.is-complete,
+.http-focus-flow-arrow.is-complete {
+  border-color: rgba(34, 197, 94, 0.52);
+  color: #dbeafe;
+  background: rgba(5, 16, 12, 0.78);
+}
+
 .http-focus-request-line,
 .http-focus-header-list,
 .http-focus-choice-grid {
@@ -188,8 +237,10 @@
 .http-focus-term,
 .http-focus-header,
 .http-focus-next,
-.http-focus-choice {
+.http-focus-choice,
+.http-focus-action {
   width: auto;
+  box-sizing: border-box;
   min-height: 52px;
   margin: 0;
   padding: 12px 16px;
@@ -202,12 +253,14 @@
   line-height: 1.4;
   text-align: left;
   box-shadow: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .http-focus-term::before,
 .http-focus-header::before,
 .http-focus-next::before,
-.http-focus-choice::before {
+.http-focus-choice::before,
+.http-focus-action::before {
   content: none;
 }
 
@@ -225,6 +278,42 @@
 .http-focus-choice.is-selected {
   border-color: rgba(56, 189, 248, 0.72);
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.14);
+  background: linear-gradient(180deg, rgba(12, 24, 34, 0.98) 0%, rgba(6, 14, 22, 0.98) 100%);
+}
+
+.http-focus-term:hover,
+.http-focus-header:hover,
+.http-focus-next:not(:disabled):hover,
+.http-focus-choice:hover,
+.http-focus-action:hover {
+  transform: translateY(-1px);
+}
+
+.http-focus-term:focus-visible,
+.http-focus-header:focus-visible,
+.http-focus-next:focus-visible,
+.http-focus-choice:focus-visible,
+.http-focus-action:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.42);
+  outline-offset: 2px;
+}
+
+.http-focus-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.http-focus-action-muted {
+  border-color: rgba(71, 85, 105, 0.7);
+  color: #cbd5e1;
+  background: rgba(6, 12, 18, 0.9);
 }
 
 .http-focus-static {
@@ -243,6 +332,27 @@
   cursor: not-allowed;
 }
 
+.http-focus-feedback {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.78);
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.http-focus-feedback.is-success {
+  border-color: rgba(34, 197, 94, 0.52);
+  background: rgba(6, 18, 12, 0.82);
+}
+
+.http-focus-feedback.is-warning {
+  border-color: rgba(245, 158, 11, 0.52);
+  background: rgba(24, 13, 5, 0.84);
+}
+
 .http-focus-compare {
   display: grid;
   gap: 14px;
@@ -259,11 +369,15 @@
   border-radius: 18px;
   border: 1px solid rgba(71, 85, 105, 0.78);
   background: rgba(2, 7, 12, 0.84);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .http-focus-compare-card.is-active {
   border-color: rgba(56, 189, 248, 0.72);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.14);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.14),
+    0 10px 22px rgba(14, 165, 233, 0.12);
+  background: linear-gradient(180deg, rgba(10, 21, 31, 0.98) 0%, rgba(6, 14, 22, 0.98) 100%);
 }
 
 .http-focus-compare-title {
@@ -278,6 +392,42 @@
   color: #cbd5e1;
   font-size: 16px;
   line-height: 1.5;
+}
+
+.http-focus-result {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.78);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.http-focus-result.is-success {
+  border-color: rgba(34, 197, 94, 0.52);
+  background: rgba(6, 18, 12, 0.82);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.12);
+}
+
+.http-focus-result.is-warning {
+  border-color: rgba(245, 158, 11, 0.52);
+  background: rgba(24, 13, 5, 0.84);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
+}
+
+.http-focus-result-status {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.http-focus-result-copy {
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .http-flow-head {
@@ -613,6 +763,7 @@
   border-radius: 16px;
   border: 1px solid rgba(51, 65, 85, 0.72);
   background: rgba(3, 8, 14, 0.72);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
 
 .http-click-note {
@@ -639,6 +790,7 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
   text-align: center;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .http-request-term.is-selected,
@@ -652,6 +804,7 @@
   margin: 0;
   padding-left: 12px;
   text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .http-compare-grid {
@@ -688,6 +841,50 @@
   margin: 0 0 8px;
   color: #f8fafc;
   font-size: 18px;
+}
+
+@keyframes httpFadeLift {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes httpSwapGlow {
+  0% {
+    opacity: 0.72;
+    transform: translateY(4px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes httpSuccessPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.2);
+  }
+
+  100% {
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.12);
+  }
+}
+
+@keyframes httpWarningPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.18);
+  }
+
+  100% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
+  }
 }
 
 @keyframes httpNodePulse {
@@ -884,6 +1081,7 @@
   font-size: 13px;
   font-weight: 700;
   position: relative;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease;
 }
 
 .http-status::before,
@@ -1270,12 +1468,14 @@
   box-shadow:
     inset 0 4px 12px rgba(0, 0, 0, 0.4),
     0 0 20px rgba(8, 145, 178, 0.05);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .http-response-summary {
   margin: 0 0 10px;
   color: #94a3b8;
   line-height: 1.6;
+  transition: color 180ms ease, transform 180ms ease, opacity 180ms ease;
 }
 
 .http-state-stack {
@@ -1561,6 +1761,42 @@
   gap: 12px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .http-motion-enter,
+  .http-motion-swap,
+  .http-motion-success,
+  .http-motion-warning,
+  .http-flow-stage.is-active,
+  .http-flow-stage-arrow.is-active,
+  .http-focus-flow-node.is-active,
+  .http-focus-flow-arrow.is-active {
+    animation: none !important;
+  }
+
+  .http-focus-visual,
+  .http-focus-copy,
+  .http-focus-interactive,
+  .http-focus-term,
+  .http-focus-header,
+  .http-focus-next,
+  .http-focus-choice,
+  .http-focus-action,
+  .http-focus-compare-card,
+  .http-focus-result,
+  .http-flow-stage,
+  .http-flow-stage-arrow,
+  .http-flow-stage-copy,
+  .http-explainer-card,
+  .http-request-term,
+  .http-request-detail-btn,
+  .http-raw-block,
+  .http-response-summary,
+  .http-feedback-badge,
+  .http-completion-pill {
+    transition: none !important;
+  }
+}
+
 @media (max-width: 1180px) {
   .http-overview-quick-grid,
   .http-diagram-grid,
@@ -1611,6 +1847,16 @@
   .http-focus-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .http-focus-head-right {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .http-focus-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .http-focus-flow {
