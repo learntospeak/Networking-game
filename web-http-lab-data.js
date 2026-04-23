@@ -6,146 +6,39 @@
       category: "HTTP Fundamentals",
       difficulty: "Beginner",
       learningObjectives: [
-        "Read the request line and response line in a basic web exchange.",
-        "Tell the difference between GET and POST at a beginner level.",
-        "Identify the method, path, status code, and a core destination header."
+        "See one browser request from start to finish.",
+        "Learn GET, path, Host, 200, and POST one at a time.",
+        "Tap one part, then move to the next step."
       ],
       scenarioIntro:
-        "You are reviewing simple traffic from the fictional Orbit catalog lab. The goal is to learn how a browser asks for a page, how a server answers, and what changes when the browser sends form data.",
+        "One small web request. One idea per step.",
       explanation:
-        "HTTP traffic begins with a request line from the client and a response line from the server. Once learners can read those two lines, later topics like cookies, sessions, and interception become much easier to understand.",
+        "Watch the flow. Tap the part. Move on.",
       recommendedNextLesson: "inspecting-headers-responses",
       interactiveSteps: [
         {
-          id: "http-basics-get",
-          title: "Read a Simple GET Request",
-          prompt:
-            "Inspect the request and response. Identify the HTTP method, request path, status code, and the header that tells the server which site was requested.",
-          acceptedAnswers: ["GET", "/products?featured=1", "200", "Host"],
+          id: "http-basics-flow",
+          title: "Browser to Server",
+          prompt: "Watch the page load.",
+          acceptedAnswers: [],
           acceptedActions: [],
-          hints: [
-            "Start with the first line of the request.",
-            "The site name is carried in a header rather than in the status line.",
-            "Look for GET /products?featured=1 and HTTP/1.1 200 OK."
-          ],
-          successCondition:
-            "Correctly identify the request method, path, response status, and the site-targeting header.",
-          feedback:
-            "Correct. The request line shows what the browser wants, and the response line shows how the server answered.",
-          explanation:
-            "A GET request asks for data without sending a form body. The Host header matters because one server can answer for many sites, so the browser needs to say which host it wants.",
+          hints: ["Follow the arrows."],
+          successCondition: "See the browser send one request and receive one response.",
+          feedback: "Good. The browser asked, and the server answered.",
+          explanation: "Your browser asks a server for a page.",
           workspace: {
             browser: {
-              title: "Orbit Catalog",
-              url: "https://catalog.orbit.lab/products?featured=1",
-              note: "Anonymous browsing session"
+              title: "Sprout Profile",
+              url: "https://profile.sprout.lab/profile",
+              note: "Simple page load"
             },
             request: {
               method: "GET",
-              path: "/products?featured=1",
+              path: "/profile",
               version: "HTTP/1.1",
               headers: [
-                { name: "Host", value: "catalog.orbit.lab" },
-                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" },
-                { name: "Accept", value: "text/html" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" },
-                { name: "Cache-Control", value: "max-age=120" },
-                { name: "Server", value: "OrbitLab/2.4" }
-              ],
-              body:
-                "<html>\n  <h1>Featured Products</h1>\n  <p>Orbit mug, field notebook, blue cable wrap.</p>\n</html>"
-            },
-            cookies: [],
-            session: {
-              state: "Guest",
-              id: "No active session",
-              note: "This page does not require a login."
-            },
-            cache: {
-              status: "Fresh copy allowed",
-              note: "Cache-Control: max-age=120 allows the browser to reuse this page briefly."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "Browser traffic is flowing directly to the server."
-            },
-            discoverability: {
-              summary: "No crawl tree is involved in this lesson.",
-              tree: []
-            }
-          },
-          interaction: {
-            type: "field-check",
-            buttonLabel: "Check Answers",
-            feedbackIncorrect:
-              "Review the request line for the method and path, then check the response line and the Host header.",
-            fields: [
-              {
-                id: "method",
-                label: "HTTP method",
-                placeholder: "GET",
-                answers: ["GET"]
-              },
-              {
-                id: "path",
-                label: "Request path",
-                placeholder: "/products?featured=1",
-                answers: ["/products?featured=1"]
-              },
-              {
-                id: "status",
-                label: "Status code",
-                placeholder: "200",
-                answers: ["200"]
-              },
-              {
-                id: "header",
-                label: "Header that tells the server which site was requested",
-                placeholder: "Host",
-                answers: ["Host"]
-              }
-            ]
-          }
-        },
-        {
-          id: "http-basics-post-choice",
-          title: "Choose GET or POST",
-          prompt:
-            "A learner opens the feedback form and wants to submit a rating and a short comment. Which method fits when the browser needs to send form data to the server?",
-          acceptedAnswers: ["POST"],
-          acceptedActions: [],
-          hints: [
-            "The browser is not just reading a page here.",
-            "Think about which method commonly carries form fields in the body.",
-            "GET usually reads data. POST commonly sends data."
-          ],
-          successCondition:
-            "Pick the method normally used when the browser sends form data in the request body.",
-          feedback:
-            "Correct. POST is the usual choice when the browser sends form fields to the server.",
-          explanation:
-            "GET is commonly used to request data, while POST is commonly used when the client sends a message body such as feedback, login fields, or other submitted content.",
-          workspace: {
-            browser: {
-              title: "Orbit Feedback Form",
-              url: "https://catalog.orbit.lab/feedback/form",
-              note: "Form page loaded and ready for submission"
-            },
-            request: {
-              method: "GET",
-              path: "/feedback/form",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "catalog.orbit.lab" },
-                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" },
-                { name: "Accept", value: "text/html" }
+                { name: "Host", value: "profile.sprout.lab" },
+                { name: "User-Agent", value: "Chrome" }
               ],
               body: ""
             },
@@ -156,152 +49,369 @@
                 { name: "Content-Type", value: "text/html; charset=utf-8" }
               ],
               body:
-                "<html>\n  <form action=\"/feedback\" method=\"post\">\n    <input name=\"rating\">\n    <textarea name=\"comment\"></textarea>\n  </form>\n</html>"
+                "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
             },
             cookies: [],
             session: {
               state: "Guest",
               id: "No active session",
-              note: "Submitting feedback does not require a signed-in user in this lab."
+              note: "This example only shows the basic request flow."
             },
             cache: {
-              status: "Normal form page",
-              note: "The browser is simply loading a page that contains a form."
+              status: "Not shown",
+              note: "Cache is not the focus here."
             },
             proxy: {
               status: "Pass-through",
-              note: "No interception is active in this lesson."
+              note: "The proxy forwards the request."
             },
             discoverability: {
-              summary: "No crawl tree is involved in this step.",
+              summary: "Not used in this step.",
               tree: []
             }
           },
+          focusVisual: {
+            type: "flow",
+            stageIndex: 1,
+            mode: "get"
+          },
           interaction: {
-            type: "single-choice",
-            buttonLabel: "Submit Choice",
-            feedbackIncorrect:
-              "Choose the method that normally carries submitted form data in the body.",
-            options: [
-              {
-                id: "get",
-                label: "GET",
-                correct: false,
-                explanation:
-                  "GET is usually used to retrieve data, not to send a form body with comment text."
-              },
-              {
-                id: "post",
-                label: "POST",
-                correct: true,
-                explanation:
-                  "POST commonly carries submitted form data such as ratings, comments, or login fields."
-              },
-              {
-                id: "head",
-                label: "HEAD",
-                correct: false,
-                explanation:
-                  "HEAD requests ask for headers only. They do not fit a normal form submission."
-              }
-            ]
+            type: "focus-continue",
+            buttonLabel: "Next"
           }
         },
         {
-          id: "http-basics-post-read",
-          title: "Read a Simple POST Exchange",
-          prompt:
-            "Now inspect the actual form submission. Identify the method, path, response status code, and the Content-Type used for the submitted form body.",
-          acceptedAnswers: ["POST", "/feedback", "201", "application/x-www-form-urlencoded"],
+          id: "http-basics-get",
+          title: "GET",
+          prompt: "Tap GET.",
+          acceptedAnswers: [],
           acceptedActions: [],
-          hints: [
-            "The method changed because the browser is sending data now.",
-            "Look at the request line to find the path.",
-            "Traditional HTML form posts often use application/x-www-form-urlencoded."
-          ],
-          successCondition:
-            "Correctly identify the POST method, submission path, success status, and body type.",
-          feedback:
-            "Correct. This exchange shows the browser sending form fields and the server creating a new feedback item.",
-          explanation:
-            "The Content-Type header tells the server how to parse the request body. The 201 Created response tells the learner that the submission produced a new record on the server side.",
+          hints: ["Tap GET."],
+          successCondition: "Tap GET to see what it means.",
+          feedback: "Good. GET asks for data.",
+          explanation: "GET = ask for data.",
           workspace: {
             browser: {
-              title: "Orbit Feedback Submit",
-              url: "https://catalog.orbit.lab/feedback",
-              note: "Feedback form submitted"
+              title: "Sprout Profile",
+              url: "https://profile.sprout.lab/profile",
+              note: "Simple page load"
             },
             request: {
-              method: "POST",
-              path: "/feedback",
+              method: "GET",
+              path: "/profile",
               version: "HTTP/1.1",
               headers: [
-                { name: "Host", value: "catalog.orbit.lab" },
-                { name: "Content-Type", value: "application/x-www-form-urlencoded" },
-                { name: "Content-Length", value: "36" }
+                { name: "Host", value: "profile.sprout.lab" },
+                { name: "User-Agent", value: "Chrome" }
               ],
-              body: "rating=5&comment=clear+and+helpful"
+              body: ""
             },
             response: {
-              statusCode: 201,
-              statusText: "Created",
+              statusCode: 200,
+              statusText: "OK",
               headers: [
-                { name: "Location", value: "/feedback/418" },
-                { name: "Content-Type", value: "application/json" }
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
               ],
-              body:
-                "{\n  \"message\": \"Feedback saved\",\n  \"id\": 418,\n  \"status\": \"queued\"\n}"
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
             },
             cookies: [],
             session: {
               state: "Guest",
               id: "No active session",
-              note: "The submission is tied to the page flow, not to a login."
+              note: "No login needed here."
             },
             cache: {
-              status: "Do not reuse the POST body",
-              note: "Browsers treat a form submission differently from a cached page view."
+              status: "Not shown",
+              note: "Cache is not the focus here."
             },
             proxy: {
               status: "Pass-through",
-              note: "Traffic is still going directly to the server."
+              note: "The proxy forwards the request."
             },
             discoverability: {
-              summary: "No crawl tree is involved in this lesson.",
+              summary: "Not used in this step.",
               tree: []
             }
           },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "get",
+            lineParts: ["method", "path"],
+            headerParts: [],
+            interactiveParts: ["method"]
+          },
           interaction: {
-            type: "field-check",
-            buttonLabel: "Check Answers",
-            feedbackIncorrect:
-              "Review the request line, then inspect the response line and the Content-Type header for the submitted body.",
-            fields: [
-              {
-                id: "method",
-                label: "HTTP method",
-                placeholder: "POST",
-                answers: ["POST"]
-              },
-              {
-                id: "path",
-                label: "Request path",
-                placeholder: "/feedback",
-                answers: ["/feedback"]
-              },
-              {
-                id: "status",
-                label: "Status code",
-                placeholder: "201",
-                answers: ["201"]
-              },
-              {
-                id: "contentType",
-                label: "Request Content-Type",
-                placeholder: "application/x-www-form-urlencoded",
-                answers: ["application/x-www-form-urlencoded"]
-              }
-            ]
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "get"
+          }
+        },
+        {
+          id: "http-basics-path",
+          title: "Path",
+          prompt: "Tap /profile.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap /profile."],
+          successCondition: "Tap the page name in the request.",
+          feedback: "Right. /profile is the page name.",
+          explanation: "/profile = the page you want.",
+          workspace: {
+            browser: {
+              title: "Sprout Profile",
+              url: "https://profile.sprout.lab/profile",
+              note: "Simple page load"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "profile.sprout.lab" },
+                { name: "User-Agent", value: "Chrome" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [],
+            session: {
+              state: "Guest",
+              id: "No active session",
+              note: "No login needed here."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The proxy forwards the request."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "path",
+            lineParts: ["method", "path"],
+            headerParts: [],
+            interactiveParts: ["path"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "path"
+          }
+        },
+        {
+          id: "http-basics-host",
+          title: "Host",
+          prompt: "Tap Host.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Host."],
+          successCondition: "Tap the website name in the request.",
+          feedback: "Good. Host means which website.",
+          explanation: "Host = which website.",
+          workspace: {
+            browser: {
+              title: "Sprout Profile",
+              url: "https://profile.sprout.lab/profile",
+              note: "Simple page load"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "profile.sprout.lab" },
+                { name: "User-Agent", value: "Chrome" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [],
+            session: {
+              state: "Guest",
+              id: "No active session",
+              note: "No login needed here."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The proxy forwards the request."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "host",
+            lineParts: [],
+            headerParts: ["host"],
+            interactiveParts: ["host"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "host"
+          }
+        },
+        {
+          id: "http-basics-200",
+          title: "200 OK",
+          prompt: "Tap 200 OK.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap 200 OK."],
+          successCondition: "Tap the response status.",
+          feedback: "Yes. 200 means it worked.",
+          explanation: "200 = it worked.",
+          workspace: {
+            browser: {
+              title: "Sprout Profile",
+              url: "https://profile.sprout.lab/profile",
+              note: "Simple page load"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "profile.sprout.lab" },
+                { name: "User-Agent", value: "Chrome" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [],
+            session: {
+              state: "Guest",
+              id: "No active session",
+              note: "No login needed here."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The proxy forwards the request."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            mode: "get",
+            defaultExplainKey: "response-code",
+            lineParts: ["status"],
+            interactiveParts: ["status"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "response-code"
+          }
+        },
+        {
+          id: "http-basics-post",
+          title: "POST",
+          prompt: "Tap POST.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap POST."],
+          successCondition: "Tap POST to see what it means.",
+          feedback: "Correct. POST sends data.",
+          explanation: "POST = send data.",
+          workspace: {
+            browser: {
+              title: "Sprout Sign In",
+              url: "https://profile.sprout.lab/login",
+              note: "Simple form submit"
+            },
+            request: {
+              method: "POST",
+              path: "/login",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "profile.sprout.lab" },
+                { name: "Content-Type", value: "application/x-www-form-urlencoded" }
+              ],
+              body: "email=maya%40sprout.lab&password=example"
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Set-Cookie", value: "session=ab12" }
+              ],
+              body: "<html>\n  <h1>Signed in</h1>\n</html>"
+            },
+            cookies: [],
+            session: {
+              state: "Guest",
+              id: "No active session",
+              note: "This example only compares GET and POST."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The proxy forwards the request."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "post",
+            defaultExplainKey: "post",
+            lineParts: ["method", "path"],
+            headerParts: [],
+            interactiveParts: ["method"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "post"
           }
         }
       ]

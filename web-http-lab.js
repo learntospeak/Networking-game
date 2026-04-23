@@ -1581,6 +1581,13 @@
     els.objectiveList = document.getElementById("objectiveList");
     els.recommendedNextLesson = document.getElementById("recommendedNextLesson");
     els.lessonExplanation = document.getElementById("lessonExplanation");
+    els.focusLessonStage = document.getElementById("focusLessonStage");
+    els.focusStepCount = document.getElementById("focusStepCount");
+    els.focusStepTitle = document.getElementById("focusStepTitle");
+    els.focusStageStatus = document.getElementById("focusStageStatus");
+    els.focusVisual = document.getElementById("focusVisual");
+    els.focusStepCopy = document.getElementById("focusStepCopy");
+    els.focusInteractive = document.getElementById("focusInteractive");
 
     els.browserUrl = document.getElementById("browserUrl");
     els.browserTitle = document.getElementById("browserTitle");
@@ -1765,7 +1772,7 @@
     state.liveExplanation = "";
     state.visualMode = normalizeVisualMode("", step);
     state.visualFlowStep = 0;
-    state.visualExplainKey = defaultVisualExplainKey(state.visualMode);
+    state.visualExplainKey = step ? defaultFocusExplainKey(step) : defaultVisualExplainKey(state.visualMode);
 
     if (!step) {
       return;
@@ -1814,7 +1821,7 @@
     state.liveExplanation = savedState.liveExplanation || "";
     state.visualFlowStep = clampVisualFlowStep(savedState.visualFlowStep);
     state.visualMode = normalizeVisualMode(savedState.visualMode, currentStep());
-    state.visualExplainKey = savedState.visualExplainKey || defaultVisualExplainKey(state.visualMode);
+    state.visualExplainKey = savedState.visualExplainKey || defaultFocusExplainKey(currentStep());
     state.resumePromptVisible = false;
 
     if (!state.currentWorkspace) {
@@ -1843,8 +1850,10 @@
 
   function render() {
     renderSectionShell();
+    syncFocusLessonMode();
     renderLessonList();
     renderOverview();
+    renderFocusLessonStage();
     renderWorkspace();
     renderDiagrams();
     renderTask();
@@ -1920,6 +1929,14 @@
         NetlabApp.clearActiveProfileProgress();
         window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
       });
+    }
+  }
+
+  function syncFocusLessonMode() {
+    const focusMode = isFocusedBasicsLesson();
+    document.body.classList.toggle("http-focus-mode", focusMode);
+    if (els.focusLessonStage) {
+      els.focusLessonStage.hidden = !focusMode;
     }
   }
 
@@ -2021,6 +2038,452 @@
       item.textContent = objective;
       els.objectiveList.appendChild(item);
     });
+  }
+
+  function renderFocusLessonStage() {
+    if (!isFocusedBasicsLesson() || !els.focusLessonStage) {
+      return;
+    }
+
+    const step = currentStep();
+    const interaction = step && step.interaction ? step.interaction : {};
+    const selectedKey = validFocusExplainKey(step, state.visualExplainKey)
+      ? state.visualExplainKey
+      : defaultFocusExplainKey(step);
+
+    state.visualExplainKey = selectedKey;
+    els.focusStepCount.textContent = "Step " + (state.stepIndex + 1) + " of " + currentLesson().interactiveSteps.length;
+    els.focusStepTitle.textContent = step.title;
+    els.focusStageStatus.textContent = state.stepSolved
+      ? "Step complete"
+      : state.feedbackTone === "warning"
+        ? "Try again"
+        : interaction.type === "focus-discover"
+          ? step.prompt
+          : "Current step";
+    els.focusStageStatus.className = "http-completion-pill " + (state.stepSolved ? "complete" : "pending");
+    els.focusVisual.innerHTML = buildFocusVisual(step, selectedKey);
+    els.focusStepCopy.textContent = focusExplanationText(step, selectedKey);
+    renderFocusInteraction(step, interaction);
+    bindFocusLessonInteractions(step, interaction);
+  }
+
+  function renderFocusInteraction(step, interaction) {
+    els.focusInteractive.innerHTML = "";
+
+    if (state.stepSolved) {
+      els.focusInteractive.innerHTML =
+        "<button id=\"focusAdvanceBtn\" type=\"button\" class=\"http-focus-next\">" + escapeHtml(nextButtonLabel()) + "</button>";
+      return;
+    }
+
+    if (interaction.type === "focus-continue") {
+      els.focusInteractive.innerHTML =
+        "<button id=\"focusContinueBtn\" type=\"button\" class=\"http-focus-next\">" + escapeHtml(interaction.buttonLabel || "Next") + "</button>";
+      return;
+    }
+
+    if (interaction.type === "focus-discover") {
+      els.focusInteractive.innerHTML =
+        "<button type=\"button\" class=\"http-focus-next\" disabled>" + escapeHtml(interaction.buttonLabel || "Next") + "</button>";
+      return;
+    }
+
+    if (interaction.type === "single-choice") {
+      const selectedId = state.selectedOptionId || "";
+      const choiceMarkup = (interaction.options || []).map(function (option) {
+        const selectedClass = selectedId === option.id ? " is-selected" : "";
+        return "<button type=\"button\" class=\"http-focus-choice" + selectedClass + "\" data-focus-choice=\"" + escapeHtml(option.id) + "\">" + escapeHtml(option.label) + "</button>";
+      }).join("");
+
+      els.focusInteractive.innerHTML =
+        "<div class=\"http-focus-choice-grid\">" + choiceMarkup + "</div>" +
+        (state.feedbackTone === "warning"
+          ? "<p class=\"http-mini-copy\">" + escapeHtml(truncateText(state.feedbackText, 70)) + "</p>"
+          : "");
+    }
+  }
+
+  function bindFocusLessonInteractions(step, interaction) {
+    els.focusVisual.querySelectorAll("[data-focus-explainer]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const selectedKey = button.getAttribute("data-focus-explainer") || defaultFocusExplainKey(step);
+        state.visualExplainKey = selectedKey;
+
+        if (interaction.type === "focus-discover" && normalizeText(interaction.targetKey) === normalizeText(selectedKey)) {
+          markSuccess(step, step.feedback);
+          return;
+        }
+
+        renderFocusLessonStage();
+      });
+    });
+
+    els.focusVisual.querySelectorAll("[data-focus-mode]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.visualMode = normalizeVisualMode(button.getAttribute("data-focus-mode"), currentStep());
+        state.visualExplainKey = defaultFocusExplainKey(step);
+
+        if (interaction.type === "focus-discover" && normalizeText(interaction.targetKey) === normalizeText(state.visualExplainKey)) {
+          markSuccess(step, step.feedback);
+          return;
+        }
+
+        renderFocusLessonStage();
+      });
+    });
+
+    const continueBtn = document.getElementById("focusContinueBtn");
+    if (continueBtn) {
+      continueBtn.addEventListener("click", function () {
+        advanceFocusLessonStep();
+      });
+    }
+
+    const advanceBtn = document.getElementById("focusAdvanceBtn");
+    if (advanceBtn) {
+      advanceBtn.addEventListener("click", function () {
+        advanceProgress();
+      });
+    }
+
+    els.focusInteractive.querySelectorAll("[data-focus-choice]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const optionId = button.getAttribute("data-focus-choice");
+        const option = (interaction.options || []).find(function (item) {
+          return item.id === optionId;
+        });
+
+        if (!option) {
+          return;
+        }
+
+        state.selectedOptionId = optionId;
+
+        if (!option.correct) {
+          markIncorrect(option.explanation || interaction.feedbackIncorrect || "Try again.");
+          renderFocusLessonStage();
+          return;
+        }
+
+        markSuccess(step, step.feedback);
+      });
+    });
+  }
+
+  function advanceFocusLessonStep() {
+    if (state.stepIndex < currentLesson().interactiveSteps.length - 1) {
+      state.stepIndex += 1;
+      resetStepRuntime();
+      persistProgress();
+      render();
+      return;
+    }
+
+    state.stepSolved = true;
+    persistProgress();
+    render();
+  }
+
+  function buildFocusVisual(step, selectedKey) {
+    const focusVisual = step.focusVisual || {};
+
+    if (focusVisual.type === "flow") {
+      return buildFocusFlowVisualAscii(focusVisual);
+    }
+
+    if (focusVisual.type === "response") {
+      return buildFocusResponseVisual(step.workspace && step.workspace.response, selectedKey, focusVisual);
+    }
+
+    if (focusVisual.type === "compare") {
+      return buildFocusCompareVisual();
+    }
+
+    return buildFocusRequestVisual(step.workspace && step.workspace.request, selectedKey, focusVisual);
+  }
+
+  function buildFocusFlowVisual(focusVisual) {
+    const labels = ["Browser", "Request", "Server", "Response"];
+    const activeIndex = Math.max(0, Math.min(Number(focusVisual.stageIndex) || 0, labels.length - 1));
+    const parts = ["<div class=\"http-focus-flow\">"];
+
+    labels.forEach(function (label, index) {
+      if (index > 0) {
+        parts.push(
+          "<div class=\"http-focus-flow-arrow" + (index === activeIndex ? " is-active" : "") + "\">→</div>"
+        );
+      }
+
+      parts.push(
+        "<div class=\"http-focus-flow-node" + (index === activeIndex ? " is-active" : "") + "\">" + escapeHtml(label) + "</div>"
+      );
+    });
+
+    parts.push("</div>");
+    return parts.join("");
+  }
+
+  function buildFocusFlowVisualAscii(focusVisual) {
+    const labels = ["Browser", "Request", "Server", "Response"];
+    const activeIndex = Math.max(0, Math.min(Number(focusVisual.stageIndex) || 0, labels.length - 1));
+    const parts = ["<div class=\"http-focus-flow\">"];
+
+    labels.forEach(function (label, index) {
+      if (index > 0) {
+        parts.push(
+          "<div class=\"http-focus-flow-arrow" + (index === activeIndex ? " is-active" : "") + "\">&rarr;</div>"
+        );
+      }
+
+      parts.push(
+        "<div class=\"http-focus-flow-node" + (index === activeIndex ? " is-active" : "") + "\">" + escapeHtml(label) + "</div>"
+      );
+    });
+
+    parts.push("</div>");
+    return parts.join("");
+  }
+
+  function buildFocusRequestVisual(request, selectedKey, focusVisual) {
+    if (!request) {
+      return "<div class=\"http-empty-state\">No request loaded.</div>";
+    }
+
+    const lineParts = Array.isArray(focusVisual.lineParts) && focusVisual.lineParts.length
+      ? focusVisual.lineParts
+      : ["method", "path"];
+    const headerParts = Array.isArray(focusVisual.headerParts)
+      ? focusVisual.headerParts
+      : ["host"];
+    const interactiveParts = new Set(Array.isArray(focusVisual.interactiveParts)
+      ? focusVisual.interactiveParts
+      : lineParts.concat(headerParts));
+    const parts = ["<div class=\"http-focus-request-line\">"];
+
+    if (lineParts.length) {
+      parts.push("<div class=\"http-focus-line-row\">");
+      lineParts.forEach(function (partName) {
+        parts.push(buildFocusRequestPart(request, partName, selectedKey, interactiveParts.has(partName)));
+      });
+      parts.push("</div>");
+    }
+
+    if (headerParts.length) {
+      parts.push("<div class=\"http-focus-header-list\">");
+      headerParts.forEach(function (partName) {
+        parts.push(buildFocusHeaderPart(request, partName, selectedKey, interactiveParts.has(partName)));
+      });
+      parts.push("</div>");
+    }
+
+    parts.push("</div>");
+    return parts.join("");
+  }
+
+  function buildFocusResponseVisual(response, selectedKey, focusVisual) {
+    if (!response) {
+      return "<div class=\"http-empty-state\">No response loaded.</div>";
+    }
+
+    const lineParts = Array.isArray(focusVisual.lineParts) && focusVisual.lineParts.length
+      ? focusVisual.lineParts
+      : ["status"];
+    const interactiveParts = new Set(Array.isArray(focusVisual.interactiveParts)
+      ? focusVisual.interactiveParts
+      : lineParts);
+    const tokens = [];
+
+    lineParts.forEach(function (partName) {
+      if (partName === "status") {
+        tokens.push(buildFocusToken((String(response.statusCode || "") + " " + String(response.statusText || "OK")).trim(), "response-code", selectedKey, interactiveParts.has(partName), "term"));
+      }
+    });
+
+    return [
+      "<div class=\"http-focus-request-line\">",
+      "<div class=\"http-focus-line-row\">",
+      tokens.join(""),
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildFocusCompareVisual() {
+    const mode = normalizeVisualMode(state.visualMode, currentStep());
+    return [
+      "<div class=\"http-focus-compare\">",
+      "<div class=\"http-focus-line-row\">",
+      "<button type=\"button\" class=\"http-focus-term" + (mode === "get" ? " is-active" : "") + "\" data-focus-mode=\"get\">GET /profile</button>",
+      "<button type=\"button\" class=\"http-focus-term" + (mode === "post" ? " is-active" : "") + "\" data-focus-mode=\"post\">POST /login</button>",
+      "</div>",
+      "<div class=\"http-focus-compare-grid\">",
+      "<div class=\"http-focus-compare-card" + (mode === "get" ? " is-active" : "") + "\">" +
+      "<p class=\"http-focus-compare-title\">GET</p>" +
+      "<p class=\"http-focus-compare-copy\">Ask for a page or data.</p>" +
+      "</div>",
+      "<div class=\"http-focus-compare-card" + (mode === "post" ? " is-active" : "") + "\">" +
+      "<p class=\"http-focus-compare-title\">POST</p>" +
+      "<p class=\"http-focus-compare-copy\">Send or submit data.</p>" +
+      "</div>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildFocusTerm(label, key, selectedKey) {
+    return buildFocusToken(label, key, selectedKey, true, "term");
+  }
+
+  function buildFocusHeader(name, value, key, selectedKey) {
+    return buildFocusToken(name + ": " + value, key, selectedKey, true, "header");
+  }
+
+  function buildFocusRequestPart(request, partName, selectedKey, interactive) {
+    const pathParts = splitPath(request.path || "/");
+
+    switch (partName) {
+      case "method":
+        return buildFocusToken(request.method || "GET", methodExplainKey(request.method), selectedKey, interactive, "term");
+      case "path":
+        return buildFocusToken(pathParts.pathname || "/", "path", selectedKey, interactive, "term");
+      case "http-version":
+        return buildFocusToken(request.version || "HTTP/1.1", "http-version", selectedKey, interactive, "term");
+      default:
+        return "";
+    }
+  }
+
+  function buildFocusHeaderPart(request, partName, selectedKey, interactive) {
+    switch (partName) {
+      case "host":
+        return buildFocusToken("Host: " + (getHeaderValue(request.headers || [], "Host") || "example.com"), "host", selectedKey, interactive, "header");
+      case "user-agent":
+        return buildFocusToken("User-Agent: " + (getHeaderValue(request.headers || [], "User-Agent") || "Chrome"), "user-agent", selectedKey, interactive, "header");
+      case "cookie":
+        return buildFocusToken("Cookie: " + (getHeaderValue(request.headers || [], "Cookie") || "session=demo"), "cookie", selectedKey, interactive, "header");
+      case "content-type":
+        return buildFocusToken("Content-Type: " + (getHeaderValue(request.headers || [], "Content-Type") || "text/html"), "content-type", selectedKey, interactive, "header");
+      default:
+        return "";
+    }
+  }
+
+  function buildFocusToken(label, key, selectedKey, interactive, variant) {
+    const baseClass = variant === "header" ? "http-focus-header" : "http-focus-term";
+    const activeClass = selectedKey === key ? " is-active" : "";
+
+    if (interactive) {
+      return "<button type=\"button\" class=\"" + baseClass + activeClass + "\" data-focus-explainer=\"" + escapeHtml(key) + "\">" + escapeHtml(label) + "</button>";
+    }
+
+    return "<div class=\"" + baseClass + " http-focus-static" + activeClass + "\">" + escapeHtml(label) + "</div>";
+  }
+
+  function focusExplanationText(step, selectedKey) {
+    const focusVisual = step.focusVisual || {};
+
+    if (focusVisual.type === "compare") {
+      return normalizeVisualMode(state.visualMode, currentStep()) === "post"
+        ? "POST = send data."
+        : "GET = ask for data.";
+    }
+
+    return focusExplanationForKey(selectedKey);
+  }
+
+  function defaultFocusExplainKey(step) {
+    const focusVisual = step.focusVisual || {};
+    if (focusVisual.defaultExplainKey) {
+      return focusVisual.defaultExplainKey;
+    }
+
+    if (focusVisual.type === "flow") {
+      return "flow";
+    }
+
+    if (focusVisual.type === "response") {
+      return "response-code";
+    }
+
+    return "get";
+  }
+
+  function validFocusExplainKey(step, key) {
+    const focusVisual = step.focusVisual || {};
+    const allowed = focusKeysForStep(step);
+    if (!focusVisual.type) {
+      return false;
+    }
+
+    return allowed.indexOf(key) >= 0;
+  }
+
+  function focusKeysForStep(step) {
+    const focusVisual = step.focusVisual || {};
+    const keys = [];
+
+    if (focusVisual.type === "flow") {
+      return ["flow"];
+    }
+
+    if (focusVisual.type === "response") {
+      return ["response-code"];
+    }
+
+    if (focusVisual.type === "compare") {
+      return ["get", "post"];
+    }
+
+    (focusVisual.lineParts || ["method", "path"]).forEach(function (partName) {
+      if (partName === "method") {
+        keys.push(defaultFocusExplainKey(step));
+      } else if (partName === "path") {
+        keys.push("path");
+      } else if (partName === "http-version") {
+        keys.push("http-version");
+      }
+    });
+
+    (focusVisual.headerParts || ["host"]).forEach(function (partName) {
+      if (partName === "host") {
+        keys.push("host");
+      } else if (partName === "user-agent") {
+        keys.push("user-agent");
+      } else if (partName === "cookie") {
+        keys.push("cookie");
+      } else if (partName === "content-type") {
+        keys.push("content-type");
+      }
+    });
+
+    return Array.from(new Set(keys));
+  }
+
+  function focusExplanationForKey(key) {
+    switch (key) {
+      case "get":
+        return "GET = ask for data.";
+      case "post":
+        return "POST = send data.";
+      case "path":
+        return "This is the page you want.";
+      case "http-version":
+        return "This is the HTTP version.";
+      case "host":
+        return "Host = which website.";
+      case "user-agent":
+        return "User-Agent = which browser.";
+      case "cookie":
+        return "Cookie = saved login info.";
+      case "content-type":
+        return "Content-Type = body format.";
+      case "response-code":
+        return "200 = it worked.";
+      case "flow":
+      default:
+        return "Your browser asks a server for a page.";
+    }
   }
 
   function shortScenario(text) {
@@ -2157,11 +2620,15 @@
     return Boolean(lesson && lesson.id === "http-request-basics");
   }
 
+  function isFocusedBasicsLesson() {
+    return isVisualBasicsLesson();
+  }
+
   function buildBasicsVisualScene(requestLab) {
     const lesson = state.lessons.find(function (item) {
       return item.id === "http-request-basics";
     });
-    const stepId = state.visualMode === "post" ? "http-basics-post-read" : "http-basics-get";
+    const stepId = state.visualMode === "post" ? "http-basics-post" : "http-basics-get";
     const step = lesson && Array.isArray(lesson.interactiveSteps)
       ? lesson.interactiveSteps.find(function (item) { return item.id === stepId; }) || lesson.interactiveSteps[0]
       : currentStep();

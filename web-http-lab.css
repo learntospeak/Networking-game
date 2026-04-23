@@ -97,6 +97,189 @@
   gap: 20px;
 }
 
+.http-focus-stage {
+  display: grid;
+  gap: 18px;
+}
+
+.http-focus-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.http-focus-visual {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  background: rgba(3, 8, 14, 0.76);
+}
+
+.http-focus-copy {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.5;
+}
+
+.http-focus-interactive {
+  display: grid;
+  gap: 12px;
+}
+
+.http-focus-flow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+}
+
+.http-focus-flow-node,
+.http-focus-flow-arrow {
+  min-height: 70px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background: rgba(2, 7, 12, 0.84);
+}
+
+.http-focus-flow-node {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+  color: #dbeafe;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.http-focus-flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.http-focus-flow-node.is-active,
+.http-focus-flow-arrow.is-active {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.16),
+    0 0 18px rgba(56, 189, 248, 0.16);
+}
+
+.http-focus-request-line,
+.http-focus-header-list,
+.http-focus-choice-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.http-focus-line-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.http-focus-term,
+.http-focus-header,
+.http-focus-next,
+.http-focus-choice {
+  width: auto;
+  min-height: 52px;
+  margin: 0;
+  padding: 12px 16px;
+  padding-left: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.78);
+  background: rgba(2, 7, 12, 0.88);
+  color: #e2e8f0;
+  font-size: 18px;
+  line-height: 1.4;
+  text-align: left;
+  box-shadow: none;
+}
+
+.http-focus-term::before,
+.http-focus-header::before,
+.http-focus-next::before,
+.http-focus-choice::before {
+  content: none;
+}
+
+.http-focus-term {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.http-focus-header {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 17px;
+}
+
+.http-focus-term.is-active,
+.http-focus-header.is-active,
+.http-focus-choice.is-selected {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.14);
+}
+
+.http-focus-static {
+  opacity: 0.82;
+}
+
+.http-focus-next {
+  justify-self: start;
+  min-width: 180px;
+  border-color: rgba(34, 197, 94, 0.52);
+  font-weight: 800;
+}
+
+.http-focus-next:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.http-focus-compare {
+  display: grid;
+  gap: 14px;
+}
+
+.http-focus-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.http-focus-compare-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.78);
+  background: rgba(2, 7, 12, 0.84);
+}
+
+.http-focus-compare-card.is-active {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.14);
+}
+
+.http-focus-compare-title {
+  margin: 0 0 6px;
+  color: #f8fafc;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.http-focus-compare-copy {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
 .http-flow-head {
   display: flex;
   align-items: flex-start;
@@ -223,6 +406,46 @@
 .http-request-diagram {
   display: grid;
   gap: 14px;
+}
+
+.http-page.http-focus-mode .router-top,
+.http-page.http-focus-mode .http-header,
+.http-page.http-focus-mode .http-section-shell,
+.http-page.http-focus-mode .http-flow-panel,
+.http-page.http-focus-mode .router-ports,
+.http-page.http-focus-mode .http-overview-panel,
+.http-page.http-focus-mode .http-diagram-grid,
+.http-page.http-focus-mode .http-browser-panel,
+.http-page.http-focus-mode .http-workspace-grid,
+.http-page.http-focus-mode .http-guidance-grid {
+  display: none;
+}
+
+.http-page.http-focus-mode .http-lesson-path,
+.http-page.http-focus-mode .http-overview-footer-tight,
+.http-page.http-focus-mode .http-progress-row {
+  display: none;
+}
+
+.http-page.http-focus-mode #lessonIntro,
+.http-page.http-focus-mode #lessonCategory,
+.http-page.http-focus-mode #lessonDifficulty,
+.http-page.http-focus-mode #labStatus,
+.http-page.http-focus-mode #lessonCompletion {
+  display: none;
+}
+
+.http-page.http-focus-mode .http-intro {
+  max-width: 540px;
+}
+
+.http-page.http-focus-mode .http-main {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.http-page.http-focus-mode .http-focus-stage {
+  gap: 20px;
 }
 
 .http-visual-toolbar {
@@ -1385,6 +1608,19 @@
     border-radius: 18px;
   }
 
+  .http-focus-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .http-focus-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .http-focus-compare-grid {
+    grid-template-columns: 1fr;
+  }
+
   .http-panel-head,
   .http-overview-head {
     flex-direction: column;
@@ -1474,6 +1710,10 @@
   .http-request-line-diagram {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .http-focus-line-row {
+    flex-direction: column;
   }
 
   .http-flow-node,

@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260421reward1">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260422visual1">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260423focus2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260421reward1" defer></script>
-  <script src="./web-http-lab-data.js" defer></script>
-  <script src="./web-http-lab.js?v=20260422visual1" defer></script>
+  <script src="./web-http-lab-data.js?v=20260423focus2" defer></script>
+  <script src="./web-http-lab.js?v=20260423focus2" defer></script>
 </head>
 <body class="http-page">
   <div class="rack-room">
@@ -82,6 +82,20 @@
             </div>
 
             <div id="lessonList" class="http-lesson-path"></div>
+          </section>
+
+          <section id="focusLessonStage" class="http-panel http-focus-stage" hidden>
+            <div class="http-focus-head">
+              <div>
+                <p id="focusStepCount" class="http-mini-label">Step 1 of 4</p>
+                <h2 id="focusStepTitle">Browser to Server</h2>
+              </div>
+              <div id="focusStageStatus" class="http-completion-pill pending">Current step</div>
+            </div>
+
+            <div id="focusVisual" class="http-focus-visual"></div>
+            <p id="focusStepCopy" class="http-focus-copy">Your browser asks a server for a page.</p>
+            <div id="focusInteractive" class="http-focus-interactive"></div>
           </section>
 
           <section class="http-panel http-overview-panel http-overview-panel-compact">
