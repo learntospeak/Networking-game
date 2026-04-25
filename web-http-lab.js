@@ -1530,6 +1530,7 @@
   const uiState = {
     focusStepId: "",
     focusExplainKey: "",
+    supportStepId: "",
     taskFeedbackKey: "",
     diagramExplainKey: "",
     flowStep: -1
@@ -1592,11 +1593,28 @@
     els.focusLessonStage = document.getElementById("focusLessonStage");
     els.focusStepCount = document.getElementById("focusStepCount");
     els.focusStepTitle = document.getElementById("focusStepTitle");
+    els.focusStepGuide = document.getElementById("focusStepGuide");
     els.focusStageStatus = document.getElementById("focusStageStatus");
+    els.focusPhaseBadge = document.getElementById("focusPhaseBadge");
+    els.focusPhaseCopy = document.getElementById("focusPhaseCopy");
     els.focusVisual = document.getElementById("focusVisual");
     els.focusStepCopy = document.getElementById("focusStepCopy");
     els.focusInteractive = document.getElementById("focusInteractive");
     els.focusRestartBtn = document.getElementById("focusRestartBtn");
+    els.focusSupportShell = document.getElementById("focusSupportShell");
+    els.httpDetailsSection = document.getElementById("httpDetailsSection");
+    els.httpToolsSection = document.getElementById("httpToolsSection");
+    els.conceptPanel = document.getElementById("conceptPanel");
+    els.browserPanel = document.getElementById("browserPanel");
+    els.taskPanel = document.getElementById("taskPanel");
+    els.discoverabilityPanel = document.getElementById("discoverabilityPanel");
+    els.trafficFlowPanel = document.getElementById("trafficFlowPanel");
+    els.requestAnatomyPanel = document.getElementById("requestAnatomyPanel");
+    els.requestPanel = document.getElementById("requestPanel");
+    els.responsePanel = document.getElementById("responsePanel");
+    els.cookiesSessionPanel = document.getElementById("cookiesSessionPanel");
+    els.cacheProxyPanel = document.getElementById("cacheProxyPanel");
+    els.answerPanel = document.getElementById("answerPanel");
 
     els.browserUrl = document.getElementById("browserUrl");
     els.browserTitle = document.getElementById("browserTitle");
@@ -1989,6 +2007,7 @@
     renderDiagrams();
     renderTask();
     renderInteraction();
+    syncSupportPanels();
   }
 
   function renderSectionShell() {
@@ -2074,6 +2093,9 @@
     if (els.focusLessonStage) {
       els.focusLessonStage.hidden = !focusMode;
     }
+    if (els.focusSupportShell && !focusMode) {
+      els.focusSupportShell.hidden = true;
+    }
   }
 
   function renderMissingData() {
@@ -2086,6 +2108,9 @@
     }
     if (els.requestDiagram) {
       els.requestDiagram.innerHTML = "<div class=\"http-empty-state\">The request anatomy diagram will appear once a lesson is available.</div>";
+    }
+    if (els.focusSupportShell) {
+      els.focusSupportShell.hidden = true;
     }
   }
 
@@ -2176,6 +2201,203 @@
     });
   }
 
+  function focusPhaseMeta() {
+    const step = currentStep();
+    const lesson = currentLesson();
+
+    if (!step || !lesson) {
+      return {
+        label: "Intro",
+        copy: "One visual. One short action."
+      };
+    }
+
+    if (step.phase || step.phaseCopy) {
+      return {
+        label: step.phase || "Step",
+        copy: step.phaseCopy || "One visual. One short action."
+      };
+    }
+
+    if (step.interaction && step.interaction.type === "single-choice") {
+      return {
+        label: "Quick Check",
+        copy: "Confirm the idea in one short check."
+      };
+    }
+
+    const total = Math.max(lesson.interactiveSteps.length, 1);
+    const index = state.stepIndex;
+
+    if (index === 0) {
+      return {
+        label: "Intro",
+        copy: "Start with the main visual."
+      };
+    }
+
+    if (index === total - 1) {
+      return {
+        label: "Quick Check",
+        copy: "Confirm the idea in one short check."
+      };
+    }
+
+    const progress = total > 1 ? index / (total - 1) : 0;
+
+    if (progress <= 0.34) {
+      return {
+        label: "Concept",
+        copy: "See the key part for this step."
+      };
+    }
+
+    if (progress <= 0.68) {
+      return {
+        label: "Action",
+        copy: "Use one click to move forward."
+      };
+    }
+
+    return {
+      label: "Result",
+      copy: "See what changes after the request."
+    };
+  }
+
+  function supportVisibilityForStep() {
+    const lesson = currentLesson();
+    const step = currentStep();
+    const workspace = state.currentWorkspace || {};
+    const focusVisual = step && step.focusVisual ? step.focusVisual : {};
+    const focusType = String(focusVisual.type || "request");
+    const focusStage = normalizeText(focusVisual.stage || "");
+    const focusKeys = focusKeysForStep(step).map(function (key) {
+      return normalizeText(key);
+    });
+    const lessonKey = normalizeText((lesson && lesson.id ? lesson.id : "") + " " + (lesson && lesson.title ? lesson.title : ""));
+    const stepKey = normalizeText((step && step.id ? step.id : "") + " " + (step && step.title ? step.title : ""));
+    const browser = workspace.browser || {};
+    const request = workspace.request || null;
+    const response = workspace.response || null;
+    const discoveryTree = workspace.discoverability && Array.isArray(workspace.discoverability.tree)
+      ? workspace.discoverability.tree
+      : [];
+    const hasDiscovery = discoveryTree.length > 0;
+    const usesCookies = lessonKey.indexOf("cookie") >= 0
+      || lessonKey.indexOf("session") >= 0
+      || focusKeys.indexOf("cookie") >= 0
+      || focusKeys.indexOf("set-cookie") >= 0
+      || stepKey.indexOf("phpsessid") >= 0
+      || stepKey.indexOf("theme") >= 0;
+    const usesCacheProxy = lessonKey.indexOf("proxy") >= 0
+      || focusKeys.indexOf("cache-control") >= 0
+      || stepKey.indexOf("proxy") >= 0
+      || stepKey.indexOf("intercept") >= 0;
+    const visibility = {
+      concept: true,
+      browser: Boolean(browser.url || browser.title) && !hasDiscovery,
+      task: false,
+      discoverability: hasDiscovery,
+      flow: false,
+      anatomy: false,
+      request: false,
+      response: false,
+      cookiesSession: usesCookies,
+      cacheProxy: usesCacheProxy,
+      answer: false
+    };
+
+    if (focusType === "packet-journey") {
+      visibility.browser = focusStage !== "server" && !hasDiscovery;
+      visibility.anatomy = focusStage === "request";
+      visibility.request = focusStage === "request" || focusStage === "journey";
+      visibility.response = focusStage === "server" || focusStage === "return";
+      return visibility;
+    }
+
+    if (focusType === "flow") {
+      visibility.flow = true;
+      return visibility;
+    }
+
+    if (focusType === "response") {
+      visibility.response = Boolean(response);
+      return visibility;
+    }
+
+    if (focusType === "compare") {
+      visibility.request = Boolean(request) && stepKey.indexOf("view=") >= 0;
+      visibility.response = Boolean(response) && stepKey.indexOf("200") >= 0;
+      return visibility;
+    }
+
+    if (focusType === "terms") {
+      return visibility;
+    }
+
+    visibility.anatomy = Boolean(request);
+    visibility.request = Boolean(request);
+    visibility.response = focusKeys.indexOf("response-code") >= 0 && Boolean(response);
+    return visibility;
+  }
+
+  function setSupportPanelVisibility(element, visible) {
+    if (!element) {
+      return;
+    }
+
+    element.hidden = !visible;
+  }
+
+  function syncSupportPanels() {
+    if (!els.focusSupportShell) {
+      return;
+    }
+
+    if (!isFocusedLesson()) {
+      els.focusSupportShell.hidden = true;
+      return;
+    }
+
+    const visibility = supportVisibilityForStep();
+    const step = currentStep();
+    const stepId = step ? step.id : "";
+    const stepChanged = uiState.supportStepId !== stepId;
+
+    setSupportPanelVisibility(els.conceptPanel, visibility.concept);
+    setSupportPanelVisibility(els.browserPanel, visibility.browser);
+    setSupportPanelVisibility(els.taskPanel, visibility.task);
+    setSupportPanelVisibility(els.discoverabilityPanel, visibility.discoverability);
+    setSupportPanelVisibility(els.trafficFlowPanel, visibility.flow);
+    setSupportPanelVisibility(els.requestAnatomyPanel, visibility.anatomy);
+    setSupportPanelVisibility(els.requestPanel, visibility.request);
+    setSupportPanelVisibility(els.responsePanel, visibility.response);
+    setSupportPanelVisibility(els.cookiesSessionPanel, visibility.cookiesSession);
+    setSupportPanelVisibility(els.cacheProxyPanel, visibility.cacheProxy);
+    setSupportPanelVisibility(els.answerPanel, visibility.answer);
+
+    const detailsVisible = visibility.concept || visibility.browser || visibility.task || visibility.discoverability;
+    const toolsVisible = visibility.flow || visibility.anatomy || visibility.request || visibility.response || visibility.cookiesSession || visibility.cacheProxy || visibility.answer;
+
+    if (els.httpDetailsSection) {
+      els.httpDetailsSection.hidden = !detailsVisible;
+      if (stepChanged) {
+        els.httpDetailsSection.open = false;
+      }
+    }
+
+    if (els.httpToolsSection) {
+      els.httpToolsSection.hidden = !toolsVisible;
+      if (stepChanged) {
+        els.httpToolsSection.open = false;
+      }
+    }
+
+    els.focusSupportShell.hidden = !detailsVisible && !toolsVisible;
+    uiState.supportStepId = stepId;
+  }
+
   function renderFocusLessonStage() {
     if (!isFocusedLesson() || !els.focusLessonStage) {
       return;
@@ -2188,10 +2410,20 @@
       : defaultFocusExplainKey(step);
     const stepChanged = uiState.focusStepId !== step.id;
     const explainChanged = uiState.focusExplainKey !== selectedKey;
+    const phase = focusPhaseMeta();
 
     state.visualExplainKey = selectedKey;
     els.focusStepCount.textContent = "Step " + (state.stepIndex + 1) + " of " + currentLesson().interactiveSteps.length;
     els.focusStepTitle.textContent = step.title;
+    if (els.focusStepGuide) {
+      els.focusStepGuide.textContent = "What am I doing? " + compactTaskPrompt(step.prompt);
+    }
+    if (els.focusPhaseBadge) {
+      els.focusPhaseBadge.textContent = phase.label;
+    }
+    if (els.focusPhaseCopy) {
+      els.focusPhaseCopy.textContent = phase.copy;
+    }
     els.focusStageStatus.textContent = state.stepSolved
       ? (state.stepIndex === currentLesson().interactiveSteps.length - 1 ? "Nice - lesson complete" : "Nice - step complete")
       : state.feedbackTone === "warning"

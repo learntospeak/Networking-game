@@ -1,4 +1,53 @@
 (function () {
+  const httpBasicsWorkspace = {
+    browser: {
+      title: "Example Profile",
+      url: "https://example.com/profile",
+      note: "Page request ready"
+    },
+    request: {
+      method: "GET",
+      path: "/profile",
+      version: "HTTP/1.1",
+      headers: [
+        { name: "Host", value: "example.com" },
+        { name: "Cookie", value: "session=abc123" }
+      ],
+      body: ""
+    },
+    response: {
+      statusCode: 200,
+      statusText: "OK",
+      headers: [
+        { name: "Content-Type", value: "text/html; charset=utf-8" }
+      ],
+      body:
+        "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
+    },
+    cookies: [
+      { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+    ],
+    session: {
+      state: "Signed in",
+      id: "abc123",
+      note: "The session is already active."
+    },
+    cache: {
+      status: "Not shown",
+      note: "Cache is not part of this lesson."
+    },
+    proxy: {
+      status: "Pass-through",
+      note: "The path is clear."
+    },
+    discoverability: {
+      summary: "Not used in this step.",
+      tree: []
+    }
+  };
+
+  const httpBasicsJourneyNodes = ["Browser", "Router", "Internet", "Server"];
+
   const lessons = [
     {
       id: "http-request-basics",
@@ -6,80 +55,37 @@
       category: "HTTP Fundamentals",
       difficulty: "Beginner",
       learningObjectives: [
-        "See a browser ask for a page.",
-        "Read one request part at a time.",
-        "Read the server result."
+        "See the browser start a request.",
+        "Watch the request travel.",
+        "Compare HTTP and HTTPS."
       ],
       scenarioIntro:
-        "One request. One part at a time.",
+        "One request. One trip. One quick check.",
       explanation:
-        "Watch the visual. Tap the right part.",
+        "Watch the packet journey and tap the active part.",
       recommendedNextLesson: "inspecting-headers-responses",
       interactiveSteps: [
         {
-          id: "http-basics-flow",
+          id: "http-basics-url",
           title: "Browser to Server",
-          prompt: "Watch the flow.",
+          phase: "Intro",
+          phaseCopy: "Start with the browser and the page address.",
+          prompt: "Watch the browser start the trip.",
           acceptedAnswers: [],
           acceptedActions: [],
           hints: ["Start with the browser."],
-          successCondition: "See the basic browser to server path.",
-          feedback: "Good. The browser starts the request.",
-          explanation: "Your browser asks a server for a page.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "Starting point"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body:
-                "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "The session already exists."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
+          successCondition: "See where the request starts.",
+          feedback: "Good - the request starts in the browser.",
+          explanation: "The browser starts with a web address.",
+          workspace: httpBasicsWorkspace,
           focusVisual: {
-            type: "flow",
-            labels: ["Browser", "Request", "Server", "Response"],
-            stageIndex: 0,
-            defaultExplainKey: "flow"
+            type: "packet-journey",
+            stage: "url",
+            nodes: httpBasicsJourneyNodes,
+            defaultExplainKey: "url"
           },
           focusExplain: {
-            "flow": "Your browser asks a server for a page."
+            "url": "The browser starts with a web address."
           },
           interaction: {
             type: "focus-continue",
@@ -87,290 +93,208 @@
           }
         },
         {
-          id: "http-basics-get",
-          title: "GET",
-          prompt: "Tap GET.",
+          id: "http-basics-request",
+          title: "URL Becomes Request",
+          phase: "Concept",
+          phaseCopy: "See the address become a real request.",
+          prompt: "Tap the request card.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap GET."],
-          successCondition: "Tap GET in the request line.",
-          feedback: "Nice - GET asks for data.",
-          explanation: "GET = ask for data.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "Request built"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "Saved session."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
+          hints: ["Tap the request card."],
+          successCondition: "Tap the request the browser created.",
+          feedback: "Nice - the URL became a request.",
+          explanation: "The browser turns the URL into a request.",
+          workspace: httpBasicsWorkspace,
           focusVisual: {
-            lineParts: ["method", "path"],
-            headerParts: [],
-            defaultExplainKey: "get"
+            type: "packet-journey",
+            stage: "request",
+            nodes: httpBasicsJourneyNodes,
+            interactiveParts: ["request-card"],
+            defaultExplainKey: "request-card"
           },
           focusExplain: {
-            "get": "GET = ask for data."
+            "request-card": "The URL becomes a real HTTP request."
           },
           focusWrong: {
-            "path": "Close - /profile is the page name."
+            "url": "Close - the address is only the start.",
+            "request-packet": "Close - the packet moves after the request is built."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "get"
+            targetKey: "request-card"
           }
         },
         {
-          id: "http-basics-path",
-          title: "/profile",
-          prompt: "Tap /profile.",
+          id: "http-basics-packet",
+          title: "Send Request Packet",
+          phase: "Action",
+          phaseCopy: "See the request move through the network.",
+          prompt: "Tap the request packet.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap /profile."],
-          successCondition: "Tap the page path in the request line.",
-          feedback: "Nice - /profile is the page.",
-          explanation: "This is the page you want.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "Packet ready"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "Saved session."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
+          hints: ["Tap the packet on the path."],
+          successCondition: "Tap the packet traveling to the server.",
+          feedback: "Nice - the request is moving to the server.",
+          explanation: "The request travels as a packet.",
+          workspace: httpBasicsWorkspace,
           focusVisual: {
-            lineParts: ["method", "path"],
-            headerParts: [],
-            defaultExplainKey: "path"
+            type: "packet-journey",
+            stage: "journey",
+            nodes: httpBasicsJourneyNodes,
+            interactiveParts: ["request-packet"],
+            defaultExplainKey: "request-packet"
           },
           focusExplain: {
-            "path": "This is the page you want."
+            "request-packet": "The request travels as a packet."
           },
           focusWrong: {
-            "get": "Close - GET is the action word."
+            "request-card": "Close - that shows the request before it moves.",
+            "response-packet": "Close - the response has not come back yet."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "path"
-          }
-        },
-        {
-          id: "http-basics-host",
-          title: "Host",
-          prompt: "Tap Host.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Tap Host."],
-          successCondition: "Tap the Host header.",
-          feedback: "Nice - Host points to the site.",
-          explanation: "Host = which website.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "Packet in transit"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "Saved session."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            lineParts: ["method", "path"],
-            headerParts: ["host"],
-            defaultExplainKey: "host"
-          },
-          focusExplain: {
-            "host": "Host = which website."
-          },
-          focusWrong: {
-            "get": "Close - GET is the action word.",
-            "path": "Close - /profile is the page name."
-          },
-          interaction: {
-            type: "focus-discover",
-            buttonLabel: "Next",
-            targetKey: "host"
+            targetKey: "request-packet"
           }
         },
         {
           id: "http-basics-response",
-          title: "200 OK",
-          prompt: "Tap 200 OK.",
+          title: "Server Responds",
+          phase: "Result",
+          phaseCopy: "See the request turn into a response.",
+          prompt: "Tap the response packet.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap 200 OK."],
-          successCondition: "Tap the response status.",
-          feedback: "Nice - 200 means it worked.",
-          explanation: "200 = it worked.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "Server answered"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "Saved session."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
+          hints: ["Tap the packet coming back."],
+          successCondition: "Tap the response coming back from the server.",
+          feedback: "Nice - the server sent back 200 OK.",
+          explanation: "The server turns the request into a response.",
+          workspace: httpBasicsWorkspace,
           focusVisual: {
-            type: "response",
-            lineParts: ["status"],
-            headerParts: [],
-            defaultExplainKey: "response-code"
+            type: "packet-journey",
+            stage: "server",
+            nodes: httpBasicsJourneyNodes,
+            interactiveParts: ["response-packet"],
+            defaultExplainKey: "response-packet",
+            responseLabel: "200 OK",
+            responseFrameLabel: "200 OK"
           },
           focusExplain: {
-            "response-code": "200 = it worked."
+            "response-packet": "The server sends back 200 OK."
+          },
+          focusWrong: {
+            "request-packet": "Close - that is still going to the server.",
+            "request-card": "Close - that was the original request."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "response-code"
+            targetKey: "response-packet"
+          }
+        },
+        {
+          id: "http-basics-compare",
+          title: "HTTP vs HTTPS",
+          phase: "Concept",
+          phaseCopy: "Compare readable traffic and locked traffic.",
+          prompt: "Tap the locked packet.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Look for the lock."],
+          successCondition: "Pick the packet that hides the request.",
+          feedback: "Nice - HTTPS locks the request in transit.",
+          explanation: "HTTPS hides the request on the path.",
+          workspace: httpBasicsWorkspace,
+          focusVisual: {
+            type: "packet-journey",
+            stage: "compare",
+            nodes: httpBasicsJourneyNodes,
+            defaultExplainKey: "https-packet",
+            comparePackets: [
+              {
+                key: "http-packet",
+                title: "HTTP",
+                label: "HTTP Request",
+                packetLabel: "HTTP Packet",
+                secure: false
+              },
+              {
+                key: "https-packet",
+                title: "HTTPS",
+                label: "HTTPS Request",
+                packetLabel: "HTTPS Packet",
+                secure: true
+              }
+            ]
+          },
+          focusExplain: {
+            "http-packet": "HTTP leaves the request readable on the path.",
+            "https-packet": "HTTPS hides the request on the path."
+          },
+          focusWrong: {
+            "http-packet": "Close - that packet stays readable on the path."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "https-packet"
+          }
+        },
+        {
+          id: "http-basics-check",
+          title: "Quick Check",
+          phase: "Quick Check",
+          phaseCopy: "Confirm which transport hides the request.",
+          prompt: "Which one hides the request while it travels?",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Pick HTTPS."],
+          successCondition: "Choose HTTPS.",
+          feedback: "Nice - HTTPS hides the request on the path.",
+          explanation: "HTTPS keeps the request hidden in transit.",
+          workspace: httpBasicsWorkspace,
+          focusVisual: {
+            type: "packet-journey",
+            stage: "compare",
+            nodes: httpBasicsJourneyNodes,
+            defaultExplainKey: "https-packet",
+            comparePackets: [
+              {
+                key: "http-packet",
+                title: "HTTP",
+                label: "HTTP Request",
+                packetLabel: "HTTP Packet",
+                secure: false
+              },
+              {
+                key: "https-packet",
+                title: "HTTPS",
+                label: "HTTPS Request",
+                packetLabel: "HTTPS Packet",
+                secure: true
+              }
+            ]
+          },
+          focusExplain: {
+            "http-packet": "HTTP leaves the request readable on the path.",
+            "https-packet": "HTTPS hides the request on the path."
+          },
+          interaction: {
+            type: "single-choice",
+            options: [
+              {
+                id: "https",
+                label: "HTTPS",
+                correct: true
+              },
+              {
+                id: "http",
+                label: "HTTP",
+                correct: false,
+                explanation: "Close - HTTP is readable on the path."
+              }
+            ]
           }
         }
       ]

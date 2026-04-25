@@ -138,6 +138,24 @@
   gap: 10px;
 }
 
+.http-focus-guide {
+  margin: 8px 0 0;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.http-focus-phase-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 211, 238, 0.14);
+  background: rgba(4, 10, 16, 0.74);
+}
+
 .http-focus-visual {
   display: grid;
   gap: 16px;
@@ -161,6 +179,93 @@
   display: grid;
   gap: 12px;
   transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.http-support-shell {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-color: rgba(30, 41, 59, 0.92);
+  background: linear-gradient(180deg, rgba(4, 10, 16, 0.9) 0%, rgba(2, 7, 12, 0.96) 100%);
+}
+
+.http-support-head {
+  margin-bottom: 0;
+}
+
+.http-disclosure {
+  border-radius: 18px;
+  border: 1px solid rgba(51, 65, 85, 0.74);
+  background: rgba(2, 7, 12, 0.62);
+  overflow: hidden;
+}
+
+.http-disclosure[hidden] {
+  display: none;
+}
+
+.http-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  color: #dbeafe;
+  font-weight: 700;
+}
+
+.http-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.http-disclosure-summary::after {
+  content: "+";
+  color: #38bdf8;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+.http-disclosure[open] .http-disclosure-summary::after {
+  transform: rotate(45deg);
+  color: #67e8f9;
+}
+
+.http-disclosure[open] .http-disclosure-summary {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.68);
+  background: rgba(8, 15, 24, 0.84);
+}
+
+.http-disclosure-title {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.http-disclosure-copy {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.http-support-grid {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.http-support-grid-details,
+.http-support-grid-tools {
+  grid-template-columns: 1fr;
+}
+
+.http-support-panel {
+  margin: 0;
 }
 
 .http-focus-flow {
@@ -998,6 +1103,24 @@
   gap: 20px;
 }
 
+.http-page.http-focus-mode #focusSupportShell {
+  display: grid;
+}
+
+.http-page.http-focus-mode #focusSupportShell[hidden] {
+  display: none !important;
+}
+
+.http-page.http-focus-mode #focusSupportShell .http-overview-panel:not([hidden]),
+.http-page.http-focus-mode #focusSupportShell .http-browser-panel:not([hidden]),
+.http-page.http-focus-mode #focusSupportShell .http-support-panel:not([hidden]) {
+  display: block;
+}
+
+.http-page.http-focus-mode #focusSupportShell .http-support-panel[hidden] {
+  display: none !important;
+}
+
 .http-visual-toolbar {
   display: flex;
   align-items: center;
@@ -1818,6 +1941,12 @@
   font-weight: 700;
 }
 
+.http-chip-accent {
+  border-color: rgba(34, 211, 238, 0.34);
+  background: rgba(14, 116, 144, 0.18);
+  color: #a5f3fc;
+}
+
 .http-workspace-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2314,6 +2443,20 @@
     justify-content: flex-start;
   }
 
+  .http-focus-phase-row,
+  .http-disclosure-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .http-disclosure-copy {
+    margin-left: 0;
+  }
+
+  .http-support-grid {
+    padding: 12px;
+  }
+
   .http-focus-flow {
     grid-template-columns: 1fr;
   }
@@ -2456,6 +2599,14 @@
 
   .http-journey-status-main {
     font-size: 16px;
+  }
+
+  .http-support-shell {
+    padding: 14px;
+  }
+
+  .http-disclosure-summary {
+    padding: 13px 14px;
   }
 
   .http-request-line-diagram {

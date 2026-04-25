@@ -768,6 +768,441 @@ button::before {
   margin-top: 0;
 }
 
+.subnet-dashboard-page .rack-room {
+  max-width: 1180px;
+}
+
+.subnet-dashboard-shell {
+  gap: 18px;
+}
+
+.subnet-dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+}
+
+.subnet-dashboard-head-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.subnet-dashboard-kicker,
+.subnet-panel-kicker {
+  margin: 0;
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.subnet-dashboard-header h1 {
+  margin: 0;
+}
+
+.subnet-dashboard-subtitle {
+  margin: 0;
+  max-width: 62ch;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.subnet-dashboard-panel {
+  margin-top: 0;
+}
+
+.subnet-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.subnet-panel-head h2,
+.subnet-panel-head h3,
+.subnet-panel-head p {
+  margin: 0;
+}
+
+#topButtons[hidden] {
+  display: none !important;
+}
+
+.subnet-mode-card-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.subnet-mode-card {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-height: 92px;
+  padding: 18px 20px 18px 46px;
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background:
+    radial-gradient(circle at right, rgba(56, 189, 248, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(7, 12, 18, 0.96) 0%, rgba(11, 18, 28, 0.98) 100%);
+  text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 24px rgba(2, 6, 23, 0.22);
+}
+
+.subnet-mode-card:hover,
+.subnet-mode-card.is-active {
+  border-color: rgba(56, 189, 248, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(56, 189, 248, 0.12),
+    0 14px 28px rgba(2, 6, 23, 0.24);
+}
+
+.subnet-mode-card::before {
+  top: 22px;
+  transform: none;
+  background: #38bdf8;
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.12),
+    0 0 14px rgba(56, 189, 248, 0.48);
+}
+
+.subnet-mode-card-exam::before {
+  background: #84cc16;
+  box-shadow:
+    0 0 0 2px rgba(132, 204, 22, 0.14),
+    0 0 14px rgba(132, 204, 22, 0.46);
+}
+
+.subnet-mode-card-title {
+  display: block;
+  color: #f8fafc;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.subnet-mode-card-copy {
+  display: block;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.subnet-session-panel {
+  padding-top: 16px;
+}
+
+.subnet-session-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid rgba(71, 85, 105, 0.32);
+  border-bottom: 1px solid rgba(71, 85, 105, 0.32);
+}
+
+.subnet-session-stat {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  background: rgba(4, 8, 15, 0.48);
+}
+
+.subnet-session-stat + .subnet-session-stat {
+  border-left: 1px solid rgba(71, 85, 105, 0.32);
+}
+
+.subnet-session-label {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subnet-session-value {
+  color: #f8fafc;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.subnet-practice-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.subnet-practice-head {
+  margin-bottom: 0;
+}
+
+.subnet-mode-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.subnet-mode-group {
+  display: grid;
+  gap: 10px;
+}
+
+.subnet-group-label {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.subnet-mode-button-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subnet-mode-button-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.subnet-mode-inline-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subnet-inline-action {
+  width: 100%;
+}
+
+.subnet-question-panel {
+  margin-top: 0;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.subnet-question-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subnet-question-head #question {
+  margin-bottom: 0;
+}
+
+.subnet-feedback-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.subnet-reference-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.subnet-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subnet-reference-card {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-height: 84px;
+  padding: 16px 16px 16px 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0.94) 0%, rgba(10, 15, 24, 0.98) 100%);
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.subnet-reference-card:hover {
+  border-color: rgba(56, 189, 248, 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(56, 189, 248, 0.1);
+}
+
+.subnet-reference-card::before {
+  left: 14px;
+  top: 18px;
+  transform: none;
+  width: 10px;
+  height: 10px;
+  background: #67e8f9;
+  box-shadow:
+    0 0 0 2px rgba(103, 232, 249, 0.12),
+    0 0 12px rgba(103, 232, 249, 0.42);
+}
+
+.subnet-reference-card-title {
+  display: block;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.subnet-reference-card-copy {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.subnet-reference-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.subnet-reference-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.subnet-reference-modal-shell {
+  position: relative;
+  z-index: 1;
+  width: min(760px, calc(100vw - 24px));
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(71, 85, 105, 0.76);
+  background: linear-gradient(180deg, rgba(8, 13, 20, 0.98) 0%, rgba(5, 10, 16, 1) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 48px rgba(2, 6, 23, 0.42);
+}
+
+.subnet-reference-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.subnet-reference-close {
+  width: auto;
+  min-width: 120px;
+  min-height: 42px;
+  padding-left: 38px;
+}
+
+.subnet-reference-modal-body {
+  display: grid;
+  gap: 14px;
+}
+
+.subnet-reference-topic {
+  display: grid;
+  gap: 10px;
+}
+
+.subnet-reference-topic h3 {
+  margin: 0;
+}
+
+.subnet-reference-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #dbeafe;
+  line-height: 1.7;
+}
+
+.subnet-dashboard-note {
+  margin: 14px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.subnet-reference-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .subnet-dashboard-header {
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+  }
+
+  .subnet-mode-card {
+    min-height: 84px;
+    padding: 16px 16px 16px 42px;
+  }
+
+  .subnet-mode-card-title {
+    font-size: 18px;
+  }
+
+  .subnet-session-value {
+    font-size: 24px;
+  }
+
+  .subnet-mode-button-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .subnet-reference-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .subnet-question-panel {
+    padding: 16px;
+  }
+
+  .subnet-reference-modal {
+    padding: 10px;
+  }
+
+  .subnet-reference-modal-shell {
+    width: min(760px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .subnet-dashboard-header,
+  .subnet-question-head,
+  .subnet-reference-modal-head {
+    flex-direction: column;
+  }
+
+  .subnet-session-row,
+  .subnet-mode-inline-actions,
+  .subnet-reference-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subnet-session-stat + .subnet-session-stat {
+    border-left: 0;
+    border-top: 1px solid rgba(71, 85, 105, 0.32);
+  }
+}
+
 .section-subhead {
   margin: 0 0 12px;
   text-align: center;

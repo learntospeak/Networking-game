@@ -708,6 +708,14 @@ const els = {
   cheatSheetToggle: document.getElementById("cheatSheetToggle"),
   practiceSection: document.getElementById("practiceSection"),
   cheatSheetSection: document.getElementById("cheatSheetSection"),
+  dashboardPracticeCard: document.getElementById("dashboardPracticeCard"),
+  dashboardWalkthroughCard: document.getElementById("dashboardWalkthroughCard"),
+  dashboardExamCard: document.getElementById("dashboardExamCard"),
+  referencePanel: document.getElementById("referencePanel"),
+  referenceModal: document.getElementById("referenceModal"),
+  referenceModalTitle: document.getElementById("referenceModalTitle"),
+  referenceModalBody: document.getElementById("referenceModalBody"),
+  referenceModalCloseBtn: document.getElementById("referenceModalCloseBtn"),
   examModeBtn: document.getElementById("examModeBtn"),
   examStatus: document.getElementById("examStatus"),
   question: document.getElementById("question"),
@@ -730,6 +738,8 @@ const SECTION_ID = "subnetting-lab";
 let savedProgressRecord = null;
 
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
+const referenceCards = Array.from(document.querySelectorAll("[data-reference-card]"));
+const referenceCloseControls = Array.from(document.querySelectorAll("[data-reference-close]"));
 const subnetExamModes = [
   "cidrToHosts",
   "hostsToCidr",
@@ -766,6 +776,46 @@ const state = {
   completedModes: new Set(),
   resumePromptVisible: false
 };
+
+function syncDashboardModeCards(activeCard = "practice") {
+  if (els.dashboardPracticeCard) {
+    els.dashboardPracticeCard.classList.toggle("is-active", activeCard === "practice");
+  }
+  if (els.dashboardWalkthroughCard) {
+    els.dashboardWalkthroughCard.classList.toggle("is-active", activeCard === "walkthrough");
+  }
+  if (els.dashboardExamCard) {
+    els.dashboardExamCard.classList.toggle("is-active", activeCard === "exam");
+  }
+}
+
+function openReferenceTopic(topicId) {
+  if (!els.referenceModal || !els.referenceModalTitle || !els.referenceModalBody) {
+    return;
+  }
+
+  const source = document.getElementById(`referenceTopic-${topicId}`);
+  if (!source) {
+    return;
+  }
+
+  const title = source.querySelector("h3");
+  els.referenceModalTitle.textContent = title ? title.textContent : "Reference";
+  els.referenceModalBody.innerHTML = source.innerHTML;
+  els.referenceModal.hidden = false;
+  document.body.classList.add("subnet-reference-modal-open");
+  syncDashboardModeCards("walkthrough");
+}
+
+function closeReferenceModal() {
+  if (!els.referenceModal) {
+    return;
+  }
+
+  els.referenceModal.hidden = true;
+  document.body.classList.remove("subnet-reference-modal-open");
+  syncDashboardModeCards(state.examModeActive ? "exam" : "practice");
+}
 
 function formatModeLabel(mode) {
   const button = modeButtons.find((item) => item.dataset.mode === mode);
@@ -850,7 +900,7 @@ function persistSectionProgress() {
     ? `Exam Mode - Question ${Math.min(state.examIndex + 1, state.examQuestionCount)}`
     : state.currentMode
       ? formatModeLabel(state.currentMode)
-      : (els.cheatSheetSection.hidden ? "Practice Lobby" : "Cheat Sheet");
+      : "Practice Lobby";
 
   savedProgressRecord = NetlabApp.saveSectionProgress(SECTION_ID, {
     sectionLabel: "Subnetting Lab",
@@ -894,15 +944,16 @@ function restoreSavedProgress(savedState) {
   state.completedModes = new Set(Array.isArray(savedState.completedModes) ? savedState.completedModes : []);
 
   const ui = savedState.ui || {};
-  els.practiceSection.hidden = Boolean(ui.practiceHidden);
-  els.cheatSheetSection.hidden = Boolean(ui.cheatSheetHidden);
+  els.practiceSection.hidden = false;
+  els.cheatSheetSection.hidden = true;
   els.scoreboard.hidden = Boolean(ui.scoreboardHidden);
-  els.practiceToggle.classList.toggle("active", !els.practiceSection.hidden);
-  els.cheatSheetToggle.classList.toggle("active", !els.cheatSheetSection.hidden);
+  els.practiceToggle.classList.add("active");
+  els.cheatSheetToggle.classList.remove("active");
 
   updateScoreboard();
   updateActiveMode(state.examModeActive ? "" : state.currentMode);
   setExamControlsDisabled(state.examModeActive && !state.examFinished);
+  syncDashboardModeCards(state.examModeActive ? "exam" : "practice");
   setQuestion(ui.questionText || "Select a mode to begin", Boolean(ui.questionPlaceholder));
   els.diagram.innerHTML = ui.diagramHtml || "";
   restoreAnswerButtons(ui.answers);
@@ -1060,6 +1111,8 @@ function showPractice(force = false) {
   els.cheatSheetSection.hidden = true;
   els.practiceToggle.classList.add("active");
   els.cheatSheetToggle.classList.remove("active");
+  closeReferenceModal();
+  syncDashboardModeCards("practice");
 
   if (!state.examModeActive) {
     els.scoreboard.hidden = false;
@@ -1078,10 +1131,17 @@ function showPractice(force = false) {
 function showCheatSheet() {
   if (state.examModeActive) return;
 
-  els.practiceSection.hidden = true;
-  els.cheatSheetSection.hidden = false;
+  els.practiceSection.hidden = false;
+  els.cheatSheetSection.hidden = true;
   els.practiceToggle.classList.remove("active");
   els.cheatSheetToggle.classList.add("active");
+  syncDashboardModeCards("walkthrough");
+
+  if (els.referencePanel) {
+    els.referencePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  openReferenceTopic("quickRules");
   renderSectionShell();
   if (!state.resumePromptVisible) {
     persistSectionProgress();
@@ -1190,6 +1250,15 @@ function setExamControlsDisabled(disabled) {
   els.practiceToggle.disabled = disabled;
   els.cheatSheetToggle.disabled = disabled;
   els.examModeBtn.disabled = disabled;
+  if (els.dashboardPracticeCard) {
+    els.dashboardPracticeCard.disabled = disabled;
+  }
+  if (els.dashboardWalkthroughCard) {
+    els.dashboardWalkthroughCard.disabled = disabled;
+  }
+  if (els.dashboardExamCard) {
+    els.dashboardExamCard.disabled = disabled;
+  }
 
   modeButtons.forEach((button) => {
     button.disabled = disabled;
@@ -1263,6 +1332,7 @@ function startExamMode() {
   updateActiveMode("");
   setExamControlsDisabled(true);
   els.scoreboard.hidden = true;
+  syncDashboardModeCards("exam");
 
   generateExamQuestion();
   syncExamExitButton();
@@ -1732,6 +1802,34 @@ function setMode(mode) {
 function bindEvents() {
   els.practiceToggle.addEventListener("click", () => showPractice());
   els.cheatSheetToggle.addEventListener("click", showCheatSheet);
+  if (els.dashboardPracticeCard) {
+    els.dashboardPracticeCard.addEventListener("click", () => {
+      showPractice();
+      els.practiceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+  if (els.dashboardWalkthroughCard) {
+    els.dashboardWalkthroughCard.addEventListener("click", showCheatSheet);
+  }
+  if (els.dashboardExamCard) {
+    els.dashboardExamCard.addEventListener("click", startExamMode);
+  }
+  referenceCards.forEach((button) => {
+    button.addEventListener("click", () => {
+      openReferenceTopic(button.getAttribute("data-reference-card"));
+    });
+  });
+  referenceCloseControls.forEach((element) => {
+    element.addEventListener("click", closeReferenceModal);
+  });
+  if (els.referenceModalCloseBtn) {
+    els.referenceModalCloseBtn.addEventListener("click", closeReferenceModal);
+  }
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && els.referenceModal && !els.referenceModal.hidden) {
+      closeReferenceModal();
+    }
+  });
   els.hintBtn.addEventListener("click", showHint);
 
   els.nextBtn.addEventListener("click", () => {
