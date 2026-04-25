@@ -102,6 +102,11 @@
   gap: 18px;
 }
 
+.http-focus-stage[hidden],
+.http-support-shell[hidden] {
+  display: none !important;
+}
+
 .http-motion-enter {
   animation: httpFadeLift 320ms ease;
 }

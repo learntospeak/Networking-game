@@ -1071,6 +1071,10 @@ button::before {
   padding: 18px;
 }
 
+.subnet-reference-modal[hidden] {
+  display: none !important;
+}
+
 .subnet-reference-modal-backdrop {
   position: absolute;
   inset: 0;
