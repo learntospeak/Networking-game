@@ -1450,6 +1450,8 @@
   }
 
   .terminal-page.terminal-mobile-active .terminal-mobile-dock {
+    display: flex;
+    flex-direction: column;
     order: 2;
     position: relative;
     left: auto;
@@ -1458,12 +1460,35 @@
     width: auto;
     max-height: clamp(180px, calc(var(--terminal-mobile-viewport-height) * 0.36), 300px);
     overflow-y: auto;
+    overflow-x: hidden;
+    scroll-padding-bottom: calc(74px + env(safe-area-inset-bottom));
     transform: none;
     border: 0;
     border-top: 1px solid rgba(71, 85, 105, 0.62);
     border-radius: 0;
     box-shadow: none;
     backdrop-filter: none;
+  }
+
+  .terminal-page.terminal-mobile-active .terminal-dock-input-mount {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: auto;
+    padding-top: 10px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(3, 7, 12, 0.2) 0%, rgba(3, 7, 12, 0.96) 24%, rgba(3, 7, 12, 0.99) 100%);
+    box-shadow: 0 -8px 18px rgba(0, 0, 0, 0.22);
+  }
+
+  .terminal-page.terminal-mobile-active .terminal-dock-input-mount::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: rgba(71, 85, 105, 0.48);
   }
 
   .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-context {
