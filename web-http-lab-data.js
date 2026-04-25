@@ -2,30 +2,30 @@
   const lessons = [
     {
       id: "http-request-basics",
-      title: "HTTP and HTTPS Journey",
+      title: "HTTP Request Basics",
       category: "HTTP Fundamentals",
       difficulty: "Beginner",
       learningObjectives: [
-        "See one request turn into a packet.",
-        "Watch the packet move across the network.",
-        "See how HTTPS hides the request on the path."
+        "See a browser ask for a page.",
+        "Read one request part at a time.",
+        "Read the server result."
       ],
       scenarioIntro:
-        "One packet journey. One visual step at a time.",
+        "One request. One part at a time.",
       explanation:
-        "Watch the packet. Tap the key part. Move on.",
+        "Watch the visual. Tap the right part.",
       recommendedNextLesson: "inspecting-headers-responses",
       interactiveSteps: [
         {
-          id: "http-basics-url",
-          title: "URL",
-          prompt: "Watch the address bar.",
+          id: "http-basics-flow",
+          title: "Browser to Server",
+          prompt: "Watch the flow.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Start with the URL."],
-          successCondition: "See the browser start with a web address.",
-          feedback: "Good. The trip starts with a URL.",
-          explanation: "The browser starts with a URL.",
+          hints: ["Start with the browser."],
+          successCondition: "See the basic browser to server path.",
+          feedback: "Good. The browser starts the request.",
+          explanation: "Your browser asks a server for a page.",
           workspace: {
             browser: {
               title: "Example Profile",
@@ -73,16 +73,13 @@
             }
           },
           focusVisual: {
-            type: "packet-journey",
-            stage: "url",
-            defaultExplainKey: "url",
-            interactiveParts: ["url"],
-            url: "https://example.com/profile",
-            addressSecure: true,
-            loadedTitle: "Profile"
+            type: "flow",
+            labels: ["Browser", "Request", "Server", "Response"],
+            stageIndex: 0,
+            defaultExplainKey: "flow"
           },
           focusExplain: {
-            "url": "The browser starts with a URL."
+            "flow": "Your browser asks a server for a page."
           },
           interaction: {
             type: "focus-continue",
@@ -90,15 +87,15 @@
           }
         },
         {
-          id: "http-basics-request",
-          title: "Request",
-          prompt: "Tap the request.",
+          id: "http-basics-get",
+          title: "GET",
+          prompt: "Tap GET.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap the request."],
-          successCondition: "Tap the expanded request.",
-          feedback: "Nice - the URL became a request.",
-          explanation: "The browser turns the URL into a request.",
+          hints: ["Tap GET."],
+          successCondition: "Tap GET in the request line.",
+          feedback: "Nice - GET asks for data.",
+          explanation: "GET = ask for data.",
           workspace: {
             browser: {
               title: "Example Profile",
@@ -145,33 +142,32 @@
             }
           },
           focusVisual: {
-            type: "packet-journey",
-            stage: "request",
-            defaultExplainKey: "request-card",
-            interactiveParts: ["request-card"],
-            url: "https://example.com/profile",
-            addressSecure: true,
-            loadedTitle: "Profile"
+            lineParts: ["method", "path"],
+            headerParts: [],
+            defaultExplainKey: "get"
           },
           focusExplain: {
-            "request-card": "The browser turns the URL into a request."
+            "get": "GET = ask for data."
+          },
+          focusWrong: {
+            "path": "Close - /profile is the page name."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "request-card"
+            targetKey: "get"
           }
         },
         {
-          id: "http-basics-packet",
-          title: "Packet",
-          prompt: "Tap the packet.",
+          id: "http-basics-path",
+          title: "/profile",
+          prompt: "Tap /profile.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap the packet."],
-          successCondition: "Tap the request packet.",
-          feedback: "Good. The request is wrapped into a packet.",
-          explanation: "The request is wrapped into a packet.",
+          hints: ["Tap /profile."],
+          successCondition: "Tap the page path in the request line.",
+          feedback: "Nice - /profile is the page.",
+          explanation: "This is the page you want.",
           workspace: {
             browser: {
               title: "Example Profile",
@@ -218,36 +214,32 @@
             }
           },
           focusVisual: {
-            type: "packet-journey",
-            stage: "packet",
-            defaultExplainKey: "request-packet",
-            interactiveParts: ["request-packet"],
-            url: "https://example.com/profile",
-            addressSecure: true,
-            secure: true,
-            packetFromHop: 0,
-            packetToHop: 0,
-            loadedTitle: "Profile"
+            lineParts: ["method", "path"],
+            headerParts: [],
+            defaultExplainKey: "path"
           },
           focusExplain: {
-            "request-packet": "The request is wrapped into a packet."
+            "path": "This is the page you want."
+          },
+          focusWrong: {
+            "get": "Close - GET is the action word."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "request-packet"
+            targetKey: "path"
           }
         },
         {
-          id: "http-basics-journey",
-          title: "Journey",
-          prompt: "Watch the packet travel.",
+          id: "http-basics-host",
+          title: "Host",
+          prompt: "Tap Host.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Follow the packet."],
-          successCondition: "See the packet move from browser to server.",
-          feedback: "Nice. The packet crossed the network.",
-          explanation: "The packet moves hop by hop to the server.",
+          hints: ["Tap Host."],
+          successCondition: "Tap the Host header.",
+          feedback: "Nice - Host points to the site.",
+          explanation: "Host = which website.",
           workspace: {
             browser: {
               title: "Example Profile",
@@ -294,37 +286,33 @@
             }
           },
           focusVisual: {
-            type: "packet-journey",
-            stage: "journey",
-            defaultExplainKey: "request-packet",
-            interactiveParts: ["request-packet"],
-            url: "https://example.com/profile",
-            addressSecure: true,
-            secure: true,
-            packetFromHop: 0,
-            packetToHop: 3,
-            loadedTitle: "Profile",
-            serverStatus: "Request arrived"
+            lineParts: ["method", "path"],
+            headerParts: ["host"],
+            defaultExplainKey: "host"
           },
           focusExplain: {
-            "request-packet": "The packet moves hop by hop to the server."
+            "host": "Host = which website."
+          },
+          focusWrong: {
+            "get": "Close - GET is the action word.",
+            "path": "Close - /profile is the page name."
           },
           interaction: {
-            type: "focus-continue",
+            type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "request-packet"
+            targetKey: "host"
           }
         },
         {
           id: "http-basics-response",
           title: "200 OK",
-          prompt: "Tap the response.",
+          prompt: "Tap 200 OK.",
           acceptedAnswers: [],
           acceptedActions: [],
-          hints: ["Tap the response."],
-          successCondition: "Tap the response packet.",
-          feedback: "Good. The server turned it into a response.",
-          explanation: "The server turns the request into a response.",
+          hints: ["Tap 200 OK."],
+          successCondition: "Tap the response status.",
+          feedback: "Nice - 200 means it worked.",
+          explanation: "200 = it worked.",
           workspace: {
             browser: {
               title: "Example Profile",
@@ -371,199 +359,18 @@
             }
           },
           focusVisual: {
-            type: "packet-journey",
-            stage: "server",
-            defaultExplainKey: "response-packet",
-            interactiveParts: ["response-packet"],
-            url: "https://example.com/profile",
-            addressSecure: true,
-            packetFromHop: 3,
-            packetToHop: 3,
-            responseLabel: "HTTP Response",
-            responseFrameLabel: "200 OK",
-            loadedTitle: "Profile",
-            serverStatus: "200 OK"
+            type: "response",
+            lineParts: ["status"],
+            headerParts: [],
+            defaultExplainKey: "response-code"
           },
           focusExplain: {
-            "response-packet": "The server turns the request into a response."
+            "response-code": "200 = it worked."
           },
           interaction: {
             type: "focus-discover",
             buttonLabel: "Next",
-            targetKey: "response-packet"
-          }
-        },
-        {
-          id: "http-basics-load",
-          title: "Page Load",
-          prompt: "Watch the page load.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Follow the response back."],
-          successCondition: "See the response return to the browser.",
-          feedback: "Nice. The browser can load the page.",
-          explanation: "The response comes back and the page loads.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "Page loading"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "Saved session."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            type: "packet-journey",
-            stage: "return",
-            defaultExplainKey: "response-packet",
-            interactiveParts: ["response-packet"],
-            url: "https://example.com/profile",
-            addressSecure: true,
-            packetFromHop: 3,
-            packetToHop: 0,
-            responseLabel: "HTTP Response",
-            responseFrameLabel: "200 OK",
-            loadedTitle: "Profile",
-            loadedCopy: "Welcome back",
-            serverStatus: "200 OK",
-            browserStatus: "Loading"
-          },
-          focusExplain: {
-            "response-packet": "The response comes back and the page loads."
-          },
-          interaction: {
-            type: "focus-continue",
-            buttonLabel: "Next",
-            targetKey: "response-packet"
-          }
-        },
-        {
-          id: "http-basics-https",
-          title: "HTTPS",
-          prompt: "Tap HTTPS.",
-          acceptedAnswers: [],
-          acceptedActions: [],
-          hints: ["Tap the locked packet."],
-          successCondition: "Tap the locked HTTPS packet.",
-          feedback: "Right. HTTPS hides the request on the path.",
-          explanation: "HTTPS locks the packet on the path.",
-          workspace: {
-            browser: {
-              title: "Example Profile",
-              url: "https://example.com/profile",
-              note: "HTTP vs HTTPS"
-            },
-            request: {
-              method: "GET",
-              path: "/profile",
-              version: "HTTP/1.1",
-              headers: [
-                { name: "Host", value: "example.com" },
-                { name: "Cookie", value: "session=abc123" }
-              ],
-              body: ""
-            },
-            response: {
-              statusCode: 200,
-              statusText: "OK",
-              headers: [
-                { name: "Content-Type", value: "text/html; charset=utf-8" }
-              ],
-              body: "<html>\n  <h1>Profile</h1>\n</html>"
-            },
-            cookies: [
-              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
-            ],
-            session: {
-              state: "Signed in",
-              id: "abc123",
-              note: "Saved session."
-            },
-            cache: {
-              status: "Not shown",
-              note: "Cache is not the focus here."
-            },
-            proxy: {
-              status: "Pass-through",
-              note: "The path is clear."
-            },
-            discoverability: {
-              summary: "Not used in this step.",
-              tree: []
-            }
-          },
-          focusVisual: {
-            type: "packet-journey",
-            stage: "compare",
-            defaultExplainKey: "http-packet",
-            comparePackets: [
-              {
-                key: "http-packet",
-                title: "HTTP",
-                label: "HTTP Packet",
-                packetLabel: "HTTP Request",
-                url: "http://example.com/profile",
-                addressSecure: false,
-                secure: false
-              },
-              {
-                key: "https-packet",
-                title: "HTTPS",
-                label: "HTTPS Packet",
-                packetLabel: "HTTPS Request",
-                url: "https://example.com/profile",
-                addressSecure: true,
-                secure: true
-              }
-            ]
-          },
-          focusExplain: {
-            "http-packet": "HTTP leaves the request readable on the path.",
-            "https-packet": "HTTPS locks the request on the path."
-          },
-          focusWrong: {
-            "http-packet": "Close - that packet stays readable on the path."
-          },
-          interaction: {
-            type: "focus-discover",
-            buttonLabel: "Next",
-            targetKey: "https-packet"
+            targetKey: "response-code"
           }
         }
       ]

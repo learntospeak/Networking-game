@@ -3100,6 +3100,7 @@
   function focusKeysForStep(step) {
     const focusVisual = step.focusVisual || {};
     const keys = [];
+    const request = step && step.workspace ? step.workspace.request : null;
 
     if (focusVisual.type === "flow") {
       return ["flow"];
@@ -3151,7 +3152,7 @@
 
     (focusVisual.lineParts || ["method", "path"]).forEach(function (partName) {
       if (partName === "method") {
-        keys.push(defaultFocusExplainKey(step));
+        keys.push(methodExplainKey(request && request.method));
       } else if (partName === "path") {
         keys.push("path");
       } else if (partName === "http-version") {
@@ -3223,6 +3224,8 @@
     }
 
     switch (normalizeText(selectedKey)) {
+      case "get":
+        return "Close - GET is the action word.";
       case "post":
         return "Close - that would send data, not fetch it.";
       case "path":
@@ -3362,12 +3365,6 @@
   function currentDiagramScene() {
     const workspace = state.currentWorkspace || {};
     const requestLab = currentRequestLab();
-
-    // Lesson one stays visual-first by swapping in a teaching scene instead of the heavier request editor flow.
-    if (isVisualBasicsLesson()) {
-      return buildBasicsVisualScene(requestLab);
-    }
-
     const request = requestLab && state.requestDraft
       ? requestFromDraft(state.requestDraft)
       : (workspace.request || null);
@@ -3386,43 +3383,9 @@
     };
   }
 
-  function isVisualBasicsLesson() {
-    const lesson = currentLesson();
-    return Boolean(lesson && lesson.id === "http-request-basics");
-  }
-
   function isFocusedLesson() {
     const lesson = currentLesson();
     return Boolean(lesson);
-  }
-
-  function buildBasicsVisualScene(requestLab) {
-    const lesson = state.lessons.find(function (item) {
-      return item.id === "http-request-basics";
-    });
-    const stepId = state.visualMode === "post" ? "http-basics-post" : "http-basics-get";
-    const step = lesson && Array.isArray(lesson.interactiveSteps)
-      ? lesson.interactiveSteps.find(function (item) { return item.id === stepId; }) || lesson.interactiveSteps[0]
-      : currentStep();
-    const workspace = cloneData(step && step.workspace ? step.workspace : {});
-    const request = cloneData(workspace.request || null);
-
-    if (request && !getHeaderValue(request.headers, "User-Agent")) {
-      setHeaderValue(request.headers, "User-Agent", "LabBrowser/5.1 (Student Edition)");
-    }
-
-    return {
-      request: request,
-      response: cloneData(workspace.response || null),
-      browser: cloneData(workspace.browser || {}),
-      proxy: normalizeProxyState(workspace.proxy || {}),
-      cookies: Array.isArray(workspace.cookies) ? cloneData(workspace.cookies) : [],
-      requestLab: requestLab,
-      lesson: currentLesson(),
-      step: currentStep(),
-      isVisualBasics: true,
-      visualMode: state.visualMode
-    };
   }
 
   function normalizeProxyState(proxy) {
