@@ -78,6 +78,7 @@
     mobileRevealRaf: 0,
     mobileRevealTimer: 0,
     mobileBlurTimer: 0,
+    mobileStableViewportHeight: 0,
     mobileContextCollapsed: false,
     terminalEntries: [],
     resumePromptVisible: false,
@@ -188,6 +189,7 @@
       document.body.style.removeProperty("--terminal-mobile-viewport-height");
       document.body.style.removeProperty("--terminal-visual-keyboard-offset");
       document.body.style.removeProperty("--terminal-mobile-dock-space");
+      session.mobileStableViewportHeight = 0;
       return;
     }
 
@@ -196,10 +198,25 @@
       // visualViewport gives the keyboard-safe visible area on Android/iOS so the fixed dock can stay above the IME.
       const { visibleHeight, keyboardOffset } = mobileViewportMetrics();
       const inputActive = document.activeElement === els.terminalInput;
+      // Mobile browser chrome also changes the visual viewport while scrolling.
+      // Treat only a larger viewport loss as a real keyboard-open state so the terminal does not keep shrinking and expanding.
+      const keyboardOpen = inputActive && keyboardOffset > 120;
 
-      document.body.style.setProperty("--terminal-mobile-viewport-height", `${visibleHeight}px`);
-      document.body.style.setProperty("--terminal-visual-keyboard-offset", `${keyboardOffset}px`);
-      document.body.classList.toggle("terminal-mobile-keyboard-open", inputActive && keyboardOffset > 0);
+      if (
+        !session.mobileStableViewportHeight
+        || visibleHeight > session.mobileStableViewportHeight
+        || visibleHeight < session.mobileStableViewportHeight * 0.75
+      ) {
+        session.mobileStableViewportHeight = visibleHeight;
+      }
+
+      const stableViewportHeight = keyboardOpen
+        ? visibleHeight
+        : (session.mobileStableViewportHeight || visibleHeight);
+
+      document.body.style.setProperty("--terminal-mobile-viewport-height", `${stableViewportHeight}px`);
+      document.body.style.setProperty("--terminal-visual-keyboard-offset", `${keyboardOpen ? keyboardOffset : 0}px`);
+      document.body.classList.toggle("terminal-mobile-keyboard-open", keyboardOpen);
       measureTerminalDockSpace();
     });
   }
@@ -3857,9 +3874,11 @@
     };
 
     const handleViewportScroll = () => {
-      // visualViewport scroll also fires during manual page drags on mobile; only refresh the measurements here so the browser
-      // does not keep forcing the viewport back to the prompt while the user is trying to inspect recent terminal output.
-      syncMobileViewportMetrics();
+      // Ignore passive viewport drags while the learner is reviewing terminal history.
+      // We only need live viewport-sync here when the prompt is focused and the keyboard is actually involved.
+      if (document.activeElement === els.terminalInput) {
+        syncMobileViewportMetrics();
+      }
     };
 
     window.addEventListener("resize", handleViewportResize);
