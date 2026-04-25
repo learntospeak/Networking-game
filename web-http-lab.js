@@ -2000,6 +2000,10 @@
     const completion = Object.keys(state.completedLessons).length + " / " + state.lessons.length;
     const lastSaved = savedProgressRecord || NetlabApp.getSectionProgress(SECTION_ID);
     const showResume = Boolean(lastSaved && state.resumePromptVisible);
+    const accountHref = typeof NetlabApp.buildHubUrl === "function"
+      ? (profile.isGuest ? NetlabApp.buildHubUrl({ auth: "login" }) : NetlabApp.buildHubUrl())
+      : "./index.html#hubAccountPanel";
+    const accountLabel = profile.isGuest ? "Sign In to Sync" : "Manage Account";
 
     els.appSectionShell.innerHTML = [
       "<div class=\"app-shell-head\">",
@@ -2019,6 +2023,7 @@
       "</div>",
       "<div class=\"app-shell-actions\">",
       (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
+      "  <a class=\"app-action-link\" href=\"" + escapeHtml(accountHref) + "\">" + escapeHtml(accountLabel) + "</a>",
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",

@@ -11,12 +11,25 @@
     return state.platform === "cisco";
   }
 
-  function getRootPath(state) {
-    return isWindowsState(state) ? "C:/" : "/";
-  }
-
   function normalizeInputPath(input) {
     return (input || "").replace(/\\/g, "/").trim();
+  }
+
+  function normalizeWindowsDriveValue(value) {
+    const normalized = String(value || "C:").trim();
+    if (!normalized) {
+      return "C:";
+    }
+
+    return normalized.replace(/^([A-Za-z]):?(?=$)/, (_, letter) => `${letter.toUpperCase()}:`);
+  }
+
+  function normalizeWindowsDrivePath(path) {
+    return String(path || "").replace(/^([A-Za-z]):(?=\/|$)/, (_, letter) => `${letter.toUpperCase()}:`);
+  }
+
+  function getRootPath(state) {
+    return isWindowsState(state) ? `${normalizeWindowsDriveValue(state.drive)}/` : "/";
   }
 
   function splitPath(path) {
@@ -33,8 +46,12 @@
 
   function normalizePath(state, inputPath, basePath) {
     const windows = isWindowsState(state);
-    const base = normalizeInputPath(basePath || state.cwd || getRootPath(state));
-    const raw = normalizeInputPath(inputPath || "");
+    const base = windows
+      ? normalizeWindowsDrivePath(normalizeInputPath(basePath || state.cwd || getRootPath(state)))
+      : normalizeInputPath(basePath || state.cwd || getRootPath(state));
+    const raw = windows
+      ? normalizeWindowsDrivePath(normalizeInputPath(inputPath || ""))
+      : normalizeInputPath(inputPath || "");
 
     if (!raw || raw === ".") return base;
 
@@ -54,7 +71,7 @@
       } else if (/^[A-Za-z]:$/.test(raw)) {
         working = `${raw}/`;
       } else if (raw.startsWith("/")) {
-        working = `${state.drive}${raw}`;
+        working = `${normalizeWindowsDriveValue(state.drive)}${raw}`;
       } else {
         working = joinPath(base, raw, true);
       }
@@ -87,7 +104,7 @@
 
   function displayPath(state, path, forPrompt = false) {
     if (isWindowsState(state)) {
-      return path.replace(/\//g, "\\");
+      return normalizeWindowsDrivePath(path).replace(/\//g, "\\");
     }
 
     if (forPrompt && path.startsWith(state.home)) {
@@ -205,6 +222,9 @@
     }
 
     state.cwd = normalized;
+    if (isWindowsState(state)) {
+      state.drive = normalizeWindowsDriveValue(normalized.slice(0, 2));
+    }
     return { ok: true, path: normalized };
   }
 
@@ -416,7 +436,7 @@
       shell: base.platform || "linux",
       user: base.user || (base.platform === "cmd" ? "student" : ciscoPlatform ? "" : "student"),
       host: base.host || (ciscoPlatform ? defaultCiscoHostname : "lab"),
-      drive: base.drive || "C:",
+      drive: normalizeWindowsDriveValue(base.drive || "C:"),
       cwd: base.cwd || (base.platform === "cmd" ? "C:/Users/student" : ciscoPlatform ? "/" : "/home/student"),
       home: base.home || (base.platform === "cmd" ? "C:/Users/student" : ciscoPlatform ? "/" : "/home/student"),
       fs: {},
@@ -473,6 +493,9 @@
     if (ciscoPlatform) {
       state.host = state.router.hostname || defaultCiscoHostname;
     }
+
+    state.home = normalizePath(state, state.home, getRootPath(state));
+    state.cwd = normalizePath(state, state.cwd, state.home);
 
     ensureDirectory(state, getRootPath(state));
     ensureDirectory(state, state.home);

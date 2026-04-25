@@ -17,6 +17,31 @@
 
   document.addEventListener("DOMContentLoaded", init);
 
+  function getRequestedAuthMode() {
+    const params = new URLSearchParams(window.location.search);
+    const requested = String(params.get("auth") || "").toLowerCase();
+    return requested === "login" || requested === "signup" ? requested : "";
+  }
+
+  function clearRequestedAuthMode() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("auth");
+    window.history.replaceState({}, "", url.href);
+  }
+
+  function focusRequestedAuth(mode) {
+    window.requestAnimationFrame(function () {
+      if (els.accountPanel) {
+        els.accountPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+
+      const firstField = document.getElementById(mode === "signup" ? "signUpUsername" : "logInEmail");
+      if (firstField && typeof firstField.focus === "function") {
+        firstField.focus({ preventScroll: true });
+      }
+    });
+  }
+
   async function init() {
     els.accountPanel = document.getElementById("hubAccountPanel");
     els.resumePanel = document.getElementById("hubResumePanel");
@@ -26,7 +51,15 @@
     renderLoadingState();
     bindGlobalEvents();
     await NetlabApp.whenReady();
+    const requestedAuthMode = getRequestedAuthMode();
+    if (requestedAuthMode && NetlabApp.getActiveProfile().isGuest) {
+      view.authMode = requestedAuthMode;
+    }
+    clearRequestedAuthMode();
     renderAll();
+    if (requestedAuthMode && NetlabApp.getActiveProfile().isGuest) {
+      focusRequestedAuth(requestedAuthMode);
+    }
   }
 
   function bindGlobalEvents() {
@@ -95,6 +128,7 @@
 
     const profile = NetlabApp.getActiveProfile();
     const isGuest = profile.isGuest;
+    const showAuthForms = isGuest;
 
     els.accountPanel.innerHTML = [
       "<div class=\"hub-account-head\">",
@@ -114,8 +148,8 @@
       view.notice ? "<div class=\"app-shell-banner app-shell-banner-" + escapeHtml(view.noticeTone || "info") + "\">" + escapeHtml(view.notice) + "</div>" : "",
       view.error ? "<div class=\"app-shell-banner app-shell-banner-error\">" + escapeHtml(view.error) + "</div>" : "",
       renderAuthActions(profile),
-      view.authMode === "signup" ? renderSignUpForm() : "",
-      view.authMode === "login" ? renderLogInForm() : "",
+      showAuthForms && view.authMode === "signup" ? renderSignUpForm() : "",
+      showAuthForms && view.authMode === "login" ? renderLogInForm() : "",
       ""
     ].join("");
 

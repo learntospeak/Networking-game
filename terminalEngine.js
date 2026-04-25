@@ -46,6 +46,8 @@
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
     mobileContextToggleBtn: document.getElementById("mobileContextToggleBtn"),
     terminalOutput: document.getElementById("terminalOutput"),
+    terminalJumpTopBtn: document.getElementById("terminalJumpTopBtn"),
+    terminalJumpLatestBtn: document.getElementById("terminalJumpLatestBtn"),
     terminalInlineInputSlot: document.getElementById("terminalInlineInputSlot"),
     terminalDockInputMount: document.getElementById("terminalDockInputMount"),
     terminalForm: document.getElementById("terminalForm"),
@@ -78,7 +80,8 @@
     mobileBlurTimer: 0,
     mobileContextCollapsed: false,
     terminalEntries: [],
-    resumePromptVisible: false
+    resumePromptVisible: false,
+    outputPinnedToLatest: true
   };
   let savedProgressRecord = null;
 
@@ -211,8 +214,10 @@
     const inlineMobileInput = usesInlineMobileInput();
     if (!panel) return;
 
-    // Keep the terminal feed on its own scroller so mobile layout changes do not hide the newest output.
-    scrollTerminal();
+    // Keep the terminal feed stable while the learner reviews history, but still follow the latest output when they are already at the end.
+    if (session.outputPinnedToLatest) {
+      scrollTerminal(true);
+    }
     syncMobileViewportMetrics();
 
     const { visibleHeight, offsetTop } = mobileViewportMetrics();
@@ -547,9 +552,67 @@
     return reference;
   }
 
-  function scrollTerminal() {
+  function terminalDistanceFromLatest() {
+    if (!els.terminalOutput) {
+      return 0;
+    }
+
+    return Math.max(0, els.terminalOutput.scrollHeight - els.terminalOutput.clientHeight - els.terminalOutput.scrollTop);
+  }
+
+  function syncTerminalHistoryState(forcePinned = null) {
+    if (!els.terminalOutput) {
+      return;
+    }
+
+    if (forcePinned === true) {
+      session.outputPinnedToLatest = true;
+    } else if (forcePinned === false) {
+      session.outputPinnedToLatest = false;
+    } else {
+      session.outputPinnedToLatest = terminalDistanceFromLatest() <= 56;
+    }
+
+    if (els.terminalJumpTopBtn) {
+      els.terminalJumpTopBtn.disabled = els.terminalOutput.scrollTop <= 6;
+    }
+
+    if (els.terminalJumpLatestBtn) {
+      els.terminalJumpLatestBtn.disabled = session.outputPinnedToLatest;
+    }
+  }
+
+  function scrollTerminal(force = false) {
     if (!els.terminalOutput) return;
+
+    if (!force && !session.outputPinnedToLatest) {
+      syncTerminalHistoryState();
+      return;
+    }
+
     els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
+    syncTerminalHistoryState(true);
+  }
+
+  function jumpTerminalHistoryTop() {
+    if (!els.terminalOutput) {
+      return;
+    }
+
+    syncTerminalHistoryState(false);
+    els.terminalOutput.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function jumpTerminalHistoryLatest() {
+    if (!els.terminalOutput) {
+      return;
+    }
+
+    syncTerminalHistoryState(true);
+    els.terminalOutput.scrollTo({ top: els.terminalOutput.scrollHeight, behavior: "smooth" });
+    if (document.activeElement === els.terminalInput) {
+      scheduleMobileTerminalReveal(0);
+    }
   }
 
   function appendTerminalNode(node) {
@@ -567,6 +630,7 @@
   function focusTerminalInputAtEnd() {
     if (!els.terminalInput) return;
     const valueLength = els.terminalInput.value.length;
+    scrollTerminal(true);
     syncMobileInputState(true);
     els.terminalInput.focus({ preventScroll: true });
     if (typeof els.terminalInput.setSelectionRange === "function") {
@@ -601,6 +665,7 @@
     if (resetEntries) {
       session.terminalEntries = [];
     }
+    syncTerminalHistoryState(true);
   }
 
   function restoreTerminalEntries(entries) {
@@ -622,7 +687,7 @@
       appendTerminalNode(line);
     });
 
-    scrollTerminal();
+    scrollTerminal(true);
   }
 
   function getLayerLabel(layer = session.currentLayer) {
@@ -902,6 +967,10 @@
       ? `${record.completedCount}/${record.totalCount || totalScenarios()}`
       : `${session.completedScenarioIds.size}/${totalScenarios()}`;
     const lastItem = record?.currentItemLabel || (scenarioUsesChallengePresentation(activeScenario) ? activeScenario.title : `${activeScenario.title} - ${activeStep.objective}`);
+    const accountHref = typeof NetlabApp.buildHubUrl === "function"
+      ? (profile.isGuest ? NetlabApp.buildHubUrl({ auth: "login" }) : NetlabApp.buildHubUrl())
+      : "./index.html#hubAccountPanel";
+    const accountLabel = profile.isGuest ? "Sign In to Sync" : "Manage Account";
 
     els.appSectionShell.innerHTML = [
       "<div class=\"app-shell-head\">",
@@ -921,6 +990,7 @@
       "</div>",
       "<div class=\"app-shell-actions\">",
       (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
+      "  <a class=\"app-action-link\" href=\"" + escapeHtml(accountHref) + "\">" + escapeHtml(accountLabel) + "</a>",
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
@@ -3626,6 +3696,7 @@
       return;
     }
 
+    syncTerminalHistoryState(true);
     printLine(`${getPromptLabel()} ${rawInput}`, "command");
     pushHistory(rawInput);
     els.terminalInput.value = "";
@@ -3758,12 +3829,24 @@
     }
 
     if (els.terminalOutput) {
+      els.terminalOutput.addEventListener("scroll", () => {
+        syncTerminalHistoryState();
+      }, { passive: true });
+
       els.terminalOutput.addEventListener("click", (event) => {
         if (!usesInlineMobileInput() || shouldIgnoreTerminalTap(event.target)) {
           return;
         }
         focusTerminalInputAtEnd();
       });
+    }
+
+    if (els.terminalJumpTopBtn) {
+      els.terminalJumpTopBtn.addEventListener("click", jumpTerminalHistoryTop);
+    }
+
+    if (els.terminalJumpLatestBtn) {
+      els.terminalJumpLatestBtn.addEventListener("click", jumpTerminalHistoryLatest);
     }
 
     const handleViewportResize = () => {
@@ -3837,6 +3920,7 @@
     syncTerminalInputPlacement();
     setMobileContextCollapsed(false);
     syncMobileViewportMetrics();
+    syncTerminalHistoryState(true);
 
     if (NetlabApp?.whenReady) {
       await NetlabApp.whenReady();

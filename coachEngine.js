@@ -40,6 +40,20 @@
     return required.some((item) => comparableValues.includes(item));
   }
 
+  function pathsMatch(state, left, right) {
+    const manager = window.StateManager;
+
+    if (manager && typeof manager.normalizePath === "function") {
+      return manager.normalizePath(state, left) === manager.normalizePath(state, right);
+    }
+
+    if (String(state?.platform || "").toLowerCase() === "cmd") {
+      return String(left || "").toLowerCase() === String(right || "").toLowerCase();
+    }
+
+    return String(left || "") === String(right || "");
+  }
+
   function matchRule(rule, execution, state) {
     if (!rule) return false;
 
@@ -67,7 +81,7 @@
     if (rule.argsIncludes && !includesAll(parsed.args || [], rule.argsIncludes)) return false;
     if (rule.argsAny && !includesAny(parsed.args || [], rule.argsAny)) return false;
     if (rule.pipelineCommands && !includesAll((execution.pipelineCommands || []), rule.pipelineCommands)) return false;
-    if (rule.finalCwd && state.cwd !== rule.finalCwd) return false;
+    if (rule.finalCwd && !pathsMatch(state, state.cwd, rule.finalCwd)) return false;
     if (rule.fileExists && !window.StateManager.getNode(state, rule.fileExists)) return false;
     if (rule.fileMissing && window.StateManager.getNode(state, rule.fileMissing)) return false;
     if (rule.connectionType && (!state.activeConnection || state.activeConnection.type !== rule.connectionType)) return false;

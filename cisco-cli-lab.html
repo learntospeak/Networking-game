@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cisco CLI Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260423mobile1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260421a">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260425scroll1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
-  <script src="./app-data.js?v=20260421reward1" defer></script>
+  <script src="./app-data.js?v=20260425sync1" defer></script>
   <script src="./commandsData.js?v=20260419d" defer></script>
-  <script src="./stateManager.js?v=20260419d" defer></script>
-  <script src="./coachEngine.js?v=20260416c" defer></script>
-  <script src="./scenarioEngine.js?v=20260419d" defer></script>
+  <script src="./stateManager.js?v=20260425cmd1" defer></script>
+  <script src="./coachEngine.js?v=20260425cmd1" defer></script>
+  <script src="./scenarioEngine.js?v=20260425cmd1" defer></script>
   <script>
     window.TerminalCoachConfig = {
       mode: "lesson",
@@ -27,7 +27,7 @@
       scenarioFilter: (scenario) => scenario.mode !== "challenge" && scenario.environmentCategory === "cisco"
     };
   </script>
-  <script src="./terminalEngine.js?v=20260421reward1" defer></script>
+  <script src="./terminalEngine.js?v=20260425scroll1" defer></script>
   <script src="./commandSheet.js?v=20260416c" defer></script>
 </head>
 <body class="terminal-page">
@@ -143,6 +143,11 @@
               <p id="mobileStepObjective" class="terminal-mobile-objective">Enter privileged EXEC mode from the `>` prompt.</p>
               <p id="mobileMachineContext" class="terminal-mobile-machine">Training Router | Cisco IOS CLI | BranchRTR</p>
               <p id="mobileCoachSignal" class="terminal-mobile-signal">Read the prompt first. On Cisco gear, the prompt symbol is part of the evidence.</p>
+            </div>
+
+            <div class="terminal-history-nav" aria-label="Terminal history shortcuts">
+              <button id="terminalJumpTopBtn" class="terminal-history-btn terminal-history-btn-top" type="button">Top</button>
+              <button id="terminalJumpLatestBtn" class="terminal-history-btn terminal-history-btn-latest" type="button">Latest</button>
             </div>
 
             <div class="trainer-controls terminal-controls">

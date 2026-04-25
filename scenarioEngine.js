@@ -538,7 +538,15 @@
     return {
       command: "cd",
       finalCwd: target,
-      postCheck: (_, state) => state.cwd === target,
+      postCheck: (_, state) => {
+        if (window.StateManager && typeof window.StateManager.normalizePath === "function") {
+          return window.StateManager.normalizePath(state, state.cwd) === window.StateManager.normalizePath(state, target);
+        }
+        if (String(state?.platform || "").toLowerCase() === "cmd") {
+          return String(state.cwd || "").toLowerCase() === String(target || "").toLowerCase();
+        }
+        return state.cwd === target;
+      },
       ...extras
     };
   }

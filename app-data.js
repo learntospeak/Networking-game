@@ -972,6 +972,19 @@
     return url.href;
   }
 
+  function buildHubUrl(options) {
+    const url = new URL("./index.html", window.location.href);
+    const authMode = String(options?.auth || "").toLowerCase();
+
+    url.searchParams.delete("auth");
+    if (authMode === "login" || authMode === "signup") {
+      url.searchParams.set("auth", authMode);
+    }
+
+    url.hash = "hubAccountPanel";
+    return url.href;
+  }
+
   function getLaunchAction() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("resume") === "1") {
@@ -1028,6 +1041,7 @@
     clearActiveProfileProgress: clearActiveProfileProgress,
     getSectionDefinition: getSectionDefinition,
     buildSectionUrl: buildSectionUrl,
+    buildHubUrl: buildHubUrl,
     getLaunchAction: getLaunchAction,
     clearLaunchAction: clearLaunchAction,
     clone: clone
