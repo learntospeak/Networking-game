@@ -1537,7 +1537,7 @@
 
   .terminal-page.terminal-mobile-keyboard-open .router-top,
   .terminal-page.terminal-mobile-keyboard-open .terminal-header {
-    display: flex;
+    display: none;
   }
 
   .terminal-page.terminal-mobile-keyboard-open .terminal-panel {
@@ -1551,25 +1551,36 @@
   }
 
   .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-dock {
-    max-height: clamp(148px, calc(var(--terminal-mobile-viewport-height) * 0.3), 220px);
+    gap: 0;
+    max-height: none;
+    overflow: visible;
+    padding-top: 0;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
   }
 
   .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-context {
-    gap: 3px;
-    padding: 8px 10px;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-objective {
     display: none;
   }
 
+  .terminal-page.terminal-mobile-keyboard-open .terminal-history-nav,
+  .terminal-page.terminal-mobile-keyboard-open .terminal-controls,
+  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-objective,
   .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-signal {
     display: none;
   }
 
-  .terminal-page.terminal-mobile-keyboard-open .terminal-controls {
-    gap: 6px;
-    margin-top: 8px;
+  .terminal-page.terminal-mobile-keyboard-open .terminal-dock-input-mount {
+    position: sticky;
+    bottom: 0;
+    margin-top: 0;
+    padding-top: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 18px rgba(0, 0, 0, 0.26);
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open .terminal-output {
+    padding-bottom: 12px;
+    scroll-padding-bottom: calc(58px + env(safe-area-inset-bottom));
   }
 
   .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .layer-transition-banner,

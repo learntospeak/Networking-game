@@ -205,23 +205,20 @@
 
     session.mobileViewportRaf = window.requestAnimationFrame(() => {
       session.mobileViewportRaf = 0;
-      // visualViewport gives the keyboard-safe visible area on Android/iOS, but we keep the terminal in one stable layout
-      // once the learner starts using it so browser chrome changes do not keep reflowing the page.
+      // visualViewport gives the keyboard-safe visible area on Android/iOS.
+      // When the prompt is focused, always switch to typing mode so extra dock sections do not stay onscreen and block the terminal.
       const { visibleHeight, keyboardOffset } = mobileViewportMetrics();
       const activeInput = document.activeElement === els.terminalInput;
-      // Mobile browser chrome also changes the visual viewport while scrolling.
-      // Treat only a larger viewport loss as a real keyboard-open state so the terminal does not keep shrinking and expanding.
-      const keyboardOpen = activeInput && keyboardOffset > 120;
+      const baselineViewportHeight = session.mobileStableViewportHeight || visibleHeight;
+      const viewportLoss = Math.max(0, baselineViewportHeight - visibleHeight);
+      const keyboardOpen = Boolean(activeInput);
+      const keyboardViewportActive = keyboardOpen && (keyboardOffset > 48 || viewportLoss > 64 || visibleHeight < baselineViewportHeight - 48);
 
-      if (
-        !session.mobileStableViewportHeight
-        || visibleHeight > session.mobileStableViewportHeight
-        || visibleHeight < session.mobileStableViewportHeight * 0.75
-      ) {
+      if (!session.mobileStableViewportHeight || (!activeInput && visibleHeight >= session.mobileStableViewportHeight)) {
         session.mobileStableViewportHeight = visibleHeight;
       }
 
-      const stableViewportHeight = keyboardOpen
+      const stableViewportHeight = keyboardViewportActive
         ? visibleHeight
         : (session.mobileStableViewportHeight || visibleHeight);
 
