@@ -79,6 +79,7 @@
     mobileRevealTimer: 0,
     mobileBlurTimer: 0,
     mobileStableViewportHeight: 0,
+    mobileLayoutLocked: false,
     mobileContextCollapsed: false,
     terminalEntries: [],
     resumePromptVisible: false,
@@ -105,12 +106,7 @@
   }
 
   function usesInlineMobileInput() {
-    return Boolean(
-      isMobileTerminalLayout()
-      && els.terminalInlineInputSlot
-      && els.terminalDockInputMount
-      && els.terminalForm
-    );
+    return false;
   }
 
   function isCiscoState() {
@@ -153,11 +149,18 @@
   function syncMobileInputState(active) {
     if (!isMobileTerminalLayout()) {
       document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open", "terminal-mobile-context-collapsed", "terminal-mobile-inline-input");
+      session.mobileLayoutLocked = false;
       return;
     }
 
-    document.body.classList.toggle("terminal-mobile-active", Boolean(active));
-    document.body.classList.toggle("terminal-mobile-context-collapsed", session.mobileContextCollapsed);
+    if (active) {
+      session.mobileLayoutLocked = true;
+    }
+
+    const layoutActive = session.mobileLayoutLocked || Boolean(active);
+
+    document.body.classList.toggle("terminal-mobile-active", layoutActive);
+    document.body.classList.toggle("terminal-mobile-context-collapsed", layoutActive && session.mobileContextCollapsed);
     if (!active) {
       document.body.classList.remove("terminal-mobile-keyboard-open");
     }
@@ -167,6 +170,11 @@
     session.mobileDockRaf = cancelScheduledFrame(session.mobileDockRaf);
 
     if (!isMobileTerminalLayout() || !els.terminalMobileDock || usesInlineMobileInput()) {
+      document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
+      return;
+    }
+
+    if (document.body.classList.contains("terminal-mobile-active")) {
       document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
       return;
     }
@@ -183,6 +191,8 @@
   function syncMobileViewportMetrics() {
     session.mobileViewportRaf = cancelScheduledFrame(session.mobileViewportRaf);
     syncTerminalInputPlacement();
+    const inputActive = document.activeElement === els.terminalInput;
+    syncMobileInputState(inputActive);
 
     if (!isMobileTerminalLayout()) {
       document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open");
@@ -195,12 +205,13 @@
 
     session.mobileViewportRaf = window.requestAnimationFrame(() => {
       session.mobileViewportRaf = 0;
-      // visualViewport gives the keyboard-safe visible area on Android/iOS so the fixed dock can stay above the IME.
+      // visualViewport gives the keyboard-safe visible area on Android/iOS, but we keep the terminal in one stable layout
+      // once the learner starts using it so browser chrome changes do not keep reflowing the page.
       const { visibleHeight, keyboardOffset } = mobileViewportMetrics();
-      const inputActive = document.activeElement === els.terminalInput;
+      const activeInput = document.activeElement === els.terminalInput;
       // Mobile browser chrome also changes the visual viewport while scrolling.
       // Treat only a larger viewport loss as a real keyboard-open state so the terminal does not keep shrinking and expanding.
-      const keyboardOpen = inputActive && keyboardOffset > 120;
+      const keyboardOpen = activeInput && keyboardOffset > 120;
 
       if (
         !session.mobileStableViewportHeight
@@ -215,8 +226,9 @@
         : (session.mobileStableViewportHeight || visibleHeight);
 
       document.body.style.setProperty("--terminal-mobile-viewport-height", `${stableViewportHeight}px`);
-      document.body.style.setProperty("--terminal-visual-keyboard-offset", `${keyboardOpen ? keyboardOffset : 0}px`);
+      document.body.style.setProperty("--terminal-visual-keyboard-offset", "0px");
       document.body.classList.toggle("terminal-mobile-keyboard-open", keyboardOpen);
+      syncMobileInputState(activeInput);
       measureTerminalDockSpace();
     });
   }
@@ -226,10 +238,7 @@
       return;
     }
 
-    const panel = els.terminalPanel;
     const focusTarget = els.terminalForm || els.terminalInput;
-    const inlineMobileInput = usesInlineMobileInput();
-    if (!panel) return;
 
     // Keep the terminal feed stable while the learner reviews history, but still follow the latest output when they are already at the end.
     if (session.outputPinnedToLatest) {
@@ -237,33 +246,13 @@
     }
     syncMobileViewportMetrics();
 
-    const { visibleHeight, offsetTop } = mobileViewportMetrics();
-    const safeTop = offsetTop + 10;
-    const safeBottom = offsetTop + visibleHeight - 14;
-    const panelRect = panel.getBoundingClientRect();
-    const focusRect = focusTarget.getBoundingClientRect();
-
-    if (panelRect.top < safeTop || panelRect.bottom > safeBottom) {
-      // Use the nearest edge so the browser keeps the terminal stable instead of snapping the viewport back to the panel start.
-      panel.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    if (els.terminalMobileDock && document.body.classList.contains("terminal-mobile-active")) {
+      els.terminalMobileDock.scrollTop = els.terminalMobileDock.scrollHeight;
     }
 
-    if (focusRect.top < safeTop || focusRect.bottom > safeBottom) {
-      // Scroll the live input row itself into view so repeated taps keep the current prompt visible without large page jumps.
+    if (focusTarget && typeof focusTarget.scrollIntoView === "function") {
+      // Keep scrolling inside the terminal container instead of moving the page viewport.
       focusTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
-    }
-
-    if (inlineMobileInput) {
-      return;
-    }
-
-    const dockRect = (els.terminalMobileDock || focusTarget).getBoundingClientRect();
-    const promptRect = (els.terminalPrompt || focusTarget).getBoundingClientRect();
-
-    if (dockRect.bottom > safeBottom) {
-      window.scrollBy({ top: dockRect.bottom - safeBottom + 12, behavior: "auto" });
-    } else if (promptRect.top < safeTop) {
-      window.scrollBy({ top: promptRect.top - safeTop - 8, behavior: "auto" });
     }
   }
 
@@ -3876,7 +3865,7 @@
     const handleViewportScroll = () => {
       // Ignore passive viewport drags while the learner is reviewing terminal history.
       // We only need live viewport-sync here when the prompt is focused and the keyboard is actually involved.
-      if (document.activeElement === els.terminalInput) {
+      if (document.activeElement === els.terminalInput && document.body.classList.contains("terminal-mobile-keyboard-open")) {
         syncMobileViewportMetrics();
       }
     };
