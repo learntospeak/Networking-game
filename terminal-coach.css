@@ -500,6 +500,12 @@
     linear-gradient(180deg, rgba(6, 10, 14, 0.97) 0%, rgba(3, 7, 12, 0.98) 100%);
 }
 
+.terminal-mobile-appbar,
+.terminal-mobile-menu-overlay,
+.terminal-mobile-info-overlay {
+  display: none;
+}
+
 .terminal-mobile-context {
   display: grid;
   gap: 6px;
@@ -1134,185 +1140,158 @@
 
 @media (max-width: 768px) {
   .terminal-page {
-    --terminal-mobile-dock-space: calc(232px + env(safe-area-inset-bottom));
+    --terminal-mobile-dock-space: 0px;
+    height: var(--terminal-mobile-viewport-height);
     min-height: var(--terminal-mobile-viewport-height);
-    padding: 14px 10px 20px;
-    scroll-padding-bottom: calc(var(--terminal-mobile-dock-space) + 24px);
+    max-height: var(--terminal-mobile-viewport-height);
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    scroll-padding-bottom: 0;
+    touch-action: manipulation;
   }
 
   .terminal-page .rack-room {
     max-width: 100%;
     display: flex;
-    flex-direction: column;
-    min-height: calc(var(--terminal-mobile-viewport-height) - 34px);
+    height: 100%;
+    min-height: 0;
   }
 
   .terminal-shell {
     display: flex;
     flex-direction: column;
-    min-height: calc(var(--terminal-mobile-viewport-height) - 34px);
-    padding-bottom: calc(var(--terminal-mobile-dock-space) + 16px);
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    overflow: hidden;
   }
 
-  .terminal-header,
-  .terminal-meta-panel {
-    margin-bottom: 14px;
+  .terminal-shell::before {
+    inset: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .terminal-shell > .router-top,
+  .terminal-shell > .terminal-header,
+  .terminal-shell > .app-section-shell,
+  .terminal-shell > .terminal-meta-panel,
+  .terminal-shell > .challenge-selector-panel,
+  .terminal-layout > .scenario-panel,
+  .terminal-page .router-ports {
+    display: none;
+  }
+
+  .terminal-mobile-appbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex: 0 0 auto;
+    padding: calc(env(safe-area-inset-top) + 10px) 12px 10px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.54);
+    background: linear-gradient(180deg, rgba(8, 12, 18, 0.98) 0%, rgba(9, 15, 23, 0.96) 100%);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .terminal-mobile-appbar-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .terminal-mobile-appbar-title {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .terminal-mobile-menu-btn {
+    width: auto;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .terminal-mobile-menu-btn::before,
+  .terminal-mobile-overlay-close::before {
+    display: none;
   }
 
   .terminal-layout {
     display: flex;
-    flex-direction: column;
     flex: 1 1 auto;
-    gap: 12px;
+    gap: 0;
     min-height: 0;
     overflow: hidden;
-  }
-
-  .scenario-card,
-  .support-card {
-    padding: 12px;
-    border-radius: 14px;
-  }
-
-  .scenario-support-grid {
-    gap: 8px;
-  }
-
-  .scenario-objective,
-  .scenario-flex {
-    margin-bottom: 10px;
-  }
-
-  .scenario-flex {
-    padding: 10px 12px;
   }
 
   .terminal-panel {
     display: flex;
     flex-direction: column;
-    height: auto;
-    min-height: clamp(320px, calc(var(--terminal-mobile-viewport-height) - 236px), 720px);
     flex: 1 1 auto;
-    overflow: hidden;
-  }
-
-  .terminal-page.terminal-mobile-inline-input {
-    --terminal-mobile-dock-space: 0px;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-shell {
-    padding-bottom: 0;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-panel {
-    display: flex;
-    flex-direction: column;
     min-height: 0;
-    flex: 1 1 auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .terminal-output-shell {
-    flex: 1 1 auto;
-    min-height: clamp(220px, calc(var(--terminal-mobile-viewport-height) * 0.4), 420px);
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-output-shell {
-    order: 1;
     flex: 1 1 auto;
     min-height: 0;
   }
 
   .terminal-output {
+    height: 100%;
     padding: 14px;
-    padding-bottom: calc(var(--terminal-mobile-dock-space) + 20px);
+    padding-bottom: 16px;
     font-size: 12.5px;
-    max-height: none;
     min-height: 0;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-output {
-    padding-bottom: 12px;
-    scroll-padding-bottom: calc(56px + env(safe-area-inset-bottom));
-    cursor: text;
+    scroll-padding-bottom: 16px;
   }
 
   .layer-transition-banner {
-    margin: 0 12px;
+    margin: 10px 12px 0;
     padding: 9px 10px;
     font-size: 11px;
   }
 
   .terminal-mobile-dock {
-    gap: 10px;
-    padding: 12px;
-    position: fixed;
-    left: 50%;
-    bottom: calc(env(safe-area-inset-bottom) + 6px + var(--terminal-visual-keyboard-offset));
-    z-index: 40;
-    width: min(calc(100vw - 12px), 980px);
-    max-height: clamp(196px, calc(var(--terminal-mobile-viewport-height) * 0.38), 292px);
-    overflow-y: auto;
-    transform: translateX(-50%);
-    border: 1px solid rgba(71, 85, 105, 0.72);
-    border-radius: 16px;
-    box-shadow:
-      0 18px 40px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(56, 189, 248, 0.08);
-    backdrop-filter: blur(18px);
-    touch-action: pan-y;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-mobile-dock {
-    order: 0;
-    position: static;
-    left: auto;
-    bottom: auto;
-    z-index: auto;
-    width: auto;
-    max-height: none;
-    overflow: visible;
-    transform: none;
-    border: 0;
-    border-bottom: 1px solid rgba(71, 85, 105, 0.62);
-    border-radius: 0;
-    box-shadow: none;
-    backdrop-filter: none;
+    display: block;
+    flex: 0 0 auto;
+    gap: 0;
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(71, 85, 105, 0.58);
+    background: linear-gradient(180deg, rgba(6, 10, 14, 0.98) 0%, rgba(3, 7, 12, 1) 100%);
+    box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.2);
   }
 
   .terminal-mobile-context {
-    gap: 4px;
-    padding: 10px 12px;
-    border-radius: 12px;
+    display: none;
   }
 
   .terminal-history-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .terminal-mobile-context-head {
-    align-items: center;
-  }
-
-  .terminal-mobile-context-toggle {
-    display: inline-flex;
-    flex-shrink: 0;
-  }
-
-  .terminal-mobile-objective {
-    font-size: 14px;
-    line-height: 1.45;
-  }
-
-  .terminal-mobile-signal {
-    font-size: 12.5px;
+    display: none;
   }
 
   .terminal-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 10px;
+    display: none;
   }
 
   .terminal-input-shell {
@@ -1324,282 +1303,224 @@
   .terminal-prompt-label {
     grid-column: 1 / -1;
     font-size: 12px;
-  }
-
-  .terminal-input {
-    min-height: 46px;
-    padding: 10px 12px;
-  }
-
-  .terminal-controls button,
-  .terminal-history-btn,
-  .terminal-run-btn {
-    min-height: 38px;
-    padding: 8px 8px 8px 28px;
-    font-size: 12px;
-  }
-
-  .terminal-run-btn {
-    width: auto;
-    min-width: 88px;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot {
-    order: 2;
-    display: block;
-    flex: 0 0 auto;
-    padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(71, 85, 105, 0.4);
-    background: linear-gradient(180deg, rgba(1, 10, 16, 0.98) 0%, rgba(1, 10, 16, 1) 100%);
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input-shell {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 8px;
-    align-items: center;
-    scroll-margin-bottom: 0;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-prompt-label {
-    grid-column: auto;
-    font-size: 13px;
-    white-space: nowrap;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-input {
-    min-height: 32px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    color: #f8fafc;
-    caret-color: #f8fafc;
-  }
-
-  .terminal-page.terminal-mobile-inline-input .terminal-inline-input-slot .terminal-run-btn {
-    display: none;
-  }
-
-  /* While the mobile terminal is active, collapse duplicate context panels so the shell gets the usable viewport. */
-  .terminal-page.terminal-mobile-active .terminal-subbrand,
-  .terminal-page.terminal-mobile-active .terminal-intro,
-  .terminal-page.terminal-mobile-active .environment-route-nav,
-  .terminal-page.terminal-mobile-active .app-section-shell,
-  .terminal-page.terminal-mobile-active .terminal-meta-panel,
-  .terminal-page.terminal-mobile-active .scenario-panel,
-  .terminal-page.terminal-mobile-active .challenge-selector-panel {
-    display: none;
-  }
-
-  .terminal-page.terminal-mobile-active .router-top {
-    margin-bottom: 10px;
-    padding: 8px 10px;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-header {
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-nav-link {
-    min-height: 40px;
-    padding: 0 14px 0 34px;
-    font-size: 13px;
-  }
-
-  .terminal-page.terminal-mobile-active {
-    --terminal-mobile-dock-space: 0px;
-    height: var(--terminal-mobile-viewport-height);
-    min-height: var(--terminal-mobile-viewport-height);
-    max-height: var(--terminal-mobile-viewport-height);
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  .terminal-page.terminal-mobile-active .rack-room,
-  .terminal-page.terminal-mobile-active .terminal-shell,
-  .terminal-page.terminal-mobile-active .terminal-layout {
-    height: 100%;
-    min-height: 0;
-    max-height: 100%;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-shell {
-    padding-bottom: 0;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-panel {
-    min-height: 0;
-    height: auto;
-    flex: 1 1 auto;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-output-shell {
-    min-height: 0;
-    flex: 1 1 auto;
-  }
-
-  .terminal-page.terminal-mobile-inline-input.terminal-mobile-active .terminal-output-shell {
-    min-height: 0;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-output {
-    padding-bottom: 18px;
-    scroll-padding-bottom: 24px;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-mobile-dock {
-    display: flex;
-    flex-direction: column;
-    order: 2;
-    position: relative;
-    left: auto;
-    bottom: auto;
-    z-index: auto;
-    width: auto;
-    max-height: clamp(180px, calc(var(--terminal-mobile-viewport-height) * 0.36), 300px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scroll-padding-bottom: calc(74px + env(safe-area-inset-bottom));
-    transform: none;
-    border: 0;
-    border-top: 1px solid rgba(71, 85, 105, 0.62);
-    border-radius: 0;
-    box-shadow: none;
-    backdrop-filter: none;
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-dock-input-mount {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    margin-top: auto;
-    padding-top: 10px;
-    padding-bottom: calc(4px + env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, rgba(3, 7, 12, 0.2) 0%, rgba(3, 7, 12, 0.96) 24%, rgba(3, 7, 12, 0.99) 100%);
-    box-shadow: 0 -8px 18px rgba(0, 0, 0, 0.22);
-  }
-
-  .terminal-page.terminal-mobile-active .terminal-dock-input-mount::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 1px;
-    background: rgba(71, 85, 105, 0.48);
-  }
-
-  .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-context {
-    gap: 3px;
-    padding: 8px 10px;
-  }
-
-  .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-objective,
-  .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-signal {
-    display: none;
-  }
-
-  .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-machine,
-  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-machine {
-    font-size: 11.5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-scenario {
-    font-size: 11px;
-    letter-spacing: 0.08em;
+  .terminal-input {
+    min-height: 44px;
+    padding: 10px 12px;
   }
 
-  .terminal-page.terminal-mobile-context-collapsed .terminal-mobile-dock {
-    max-height: clamp(146px, calc(var(--terminal-mobile-viewport-height) * 0.3), 212px);
+  .terminal-run-btn {
+    min-height: 44px;
+    min-width: 84px;
+    padding: 8px 8px 8px 28px;
+    font-size: 12px;
   }
 
-  .terminal-page.terminal-mobile-context-collapsed .terminal-output-shell {
-    min-height: 0;
+  .terminal-inline-input-slot {
+    display: none !important;
   }
 
-  /* Keyboard-open state trims the dock further so the prompt and newest output stay visible above the IME. */
-  .terminal-page.terminal-mobile-keyboard-open {
-    height: var(--terminal-mobile-viewport-height);
+  .terminal-mobile-menu-overlay,
+  .terminal-mobile-info-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    align-items: flex-end;
+  }
+
+  .terminal-mobile-info-overlay {
+    z-index: 82;
+  }
+
+  .terminal-page.terminal-mobile-menu-open .terminal-mobile-menu-overlay,
+  .terminal-page.terminal-mobile-info-open .terminal-mobile-info-overlay {
+    display: flex;
+  }
+
+  .terminal-mobile-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 12, 0.68);
+    backdrop-filter: blur(6px);
+  }
+
+  .terminal-mobile-menu-panel,
+  .terminal-mobile-info-panel {
+    position: relative;
+    width: 100%;
+    max-height: var(--terminal-mobile-viewport-height);
+    border-top: 1px solid rgba(71, 85, 105, 0.82);
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(180deg, rgba(8, 12, 18, 0.99) 0%, rgba(3, 7, 12, 1) 100%);
+    box-shadow:
+      0 -18px 48px rgba(0, 0, 0, 0.46),
+      0 0 0 1px rgba(56, 189, 248, 0.08);
     overflow: hidden;
+  }
+
+  .terminal-mobile-info-panel {
+    display: flex;
+    flex-direction: column;
+    height: var(--terminal-mobile-viewport-height);
+    max-height: var(--terminal-mobile-viewport-height);
+    border-radius: 0;
+  }
+
+  .terminal-mobile-overlay-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.54);
+    background: rgba(6, 10, 14, 0.96);
+  }
+
+  .terminal-mobile-overlay-head h2 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .terminal-mobile-overlay-close {
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .terminal-mobile-menu-body,
+  .terminal-mobile-info-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .terminal-mobile-menu-body {
+    display: grid;
+    gap: 12px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    max-height: calc(var(--terminal-mobile-viewport-height) - 68px);
+  }
+
+  .terminal-mobile-menu-actions,
+  .terminal-mobile-switch-links {
+    display: grid;
+    gap: 8px;
+  }
+
+  .terminal-mobile-menu-action {
+    min-height: 42px;
+    margin: 0;
+    padding: 8px 12px 8px 30px;
+    font-size: 13px;
+  }
+
+  .terminal-mobile-switch-section {
+    display: grid;
+    gap: 8px;
+  }
+
+  .terminal-mobile-switch-label {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .terminal-mobile-switch-links .environment-route-link,
+  .terminal-mobile-menu-link {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    margin: 0;
+    justify-content: flex-start;
+    padding: 0 12px 0 30px;
+    font-size: 11px;
+  }
+
+  .terminal-mobile-menu-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #5b6470;
+    background: linear-gradient(180deg, #424b57 0%, #1f2630 48%, #11161c 100%);
+    color: #e5e7eb;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.45),
+      0 8px 18px rgba(0, 0, 0, 0.24);
+  }
+
+  .terminal-mobile-menu-link::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #ef4444;
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.12),
+      0 0 10px rgba(239, 68, 68, 0.48);
+  }
+
+  .terminal-mobile-info-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    display: grid;
+    gap: 12px;
+  }
+
+  .terminal-mobile-info-scroll > .lab-panel {
+    margin: 0;
+  }
+
+  .terminal-mobile-info-scroll > .app-section-shell:empty {
+    display: none;
+  }
+
+  .terminal-mobile-info-scroll .scenario-card,
+  .terminal-mobile-info-scroll .support-card,
+  .terminal-mobile-info-scroll .challenge-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .terminal-mobile-info-scroll .scenario-support-grid,
+  .terminal-mobile-info-scroll .challenge-card-grid {
+    gap: 10px;
+  }
+
+  .terminal-mobile-info-scroll .scenario-objective,
+  .terminal-mobile-info-scroll .scenario-flex {
+    margin-bottom: 10px;
+  }
+
+  .terminal-mobile-info-scroll .scenario-flex {
+    padding: 10px 12px;
+  }
+
+  .terminal-page.terminal-mobile-keyboard-open {
     overscroll-behavior-y: none;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .rack-room,
-  .terminal-page.terminal-mobile-keyboard-open .terminal-shell {
-    min-height: 0;
-    max-height: 100%;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .router-top,
-  .terminal-page.terminal-mobile-keyboard-open .terminal-header {
-    display: none;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-panel {
-    min-height: 0;
-    height: auto;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-output-shell {
-    min-height: 0;
-    flex: 1 1 auto;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-dock {
-    gap: 0;
-    max-height: none;
-    overflow: visible;
-    padding-top: 0;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom));
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-context {
-    display: none;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-history-nav,
-  .terminal-page.terminal-mobile-keyboard-open .terminal-controls,
-  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-objective,
-  .terminal-page.terminal-mobile-keyboard-open .terminal-mobile-signal {
-    display: none;
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-dock-input-mount {
-    position: sticky;
-    bottom: 0;
-    margin-top: 0;
-    padding-top: 8px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
-    box-shadow: 0 -10px 18px rgba(0, 0, 0, 0.26);
-  }
-
-  .terminal-page.terminal-mobile-keyboard-open .terminal-output {
-    padding-bottom: 12px;
-    scroll-padding-bottom: calc(58px + env(safe-area-inset-bottom));
-  }
-
-  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .layer-transition-banner,
-  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-mobile-dock {
-    display: none;
-  }
-
-  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-panel {
-    min-height: 0;
-    height: calc(var(--terminal-mobile-viewport-height) - 8px);
-  }
-
-  .terminal-page.terminal-mobile-inline-input.terminal-mobile-keyboard-open .terminal-output-shell {
-    min-height: 0;
-    flex: 1 1 auto;
-  }
-
-  .terminal-page .router-ports {
-    display: none;
   }
 
   .command-sheet {
@@ -1663,20 +1584,28 @@
 }
 
 @media (max-width: 520px) {
-  .terminal-mobile-dock {
-    max-height: clamp(180px, calc(var(--terminal-mobile-viewport-height) * 0.4), 284px);
+  .terminal-mobile-appbar {
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
-  .terminal-mobile-context {
-    padding: 10px 12px;
+  .terminal-mobile-menu-body,
+  .terminal-mobile-info-scroll,
+  .command-sheet-toolbar,
+  .command-sheet-results {
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
-  .terminal-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .terminal-mobile-menu-action,
+  .terminal-mobile-switch-links .environment-route-link,
+  .terminal-mobile-menu-link {
+    min-height: 38px;
+    font-size: 11px;
   }
 
-  .terminal-history-nav {
-    grid-template-columns: 1fr 1fr;
+  .terminal-run-btn {
+    min-width: 76px;
   }
 
   .command-sheet-tabs {

@@ -11,6 +11,7 @@
     terminalShell: document.querySelector(".terminal-shell"),
     terminalLayout: document.querySelector(".terminal-layout"),
     terminalPanel: document.querySelector(".terminal-panel"),
+    terminalHeader: document.querySelector(".terminal-header"),
     terminalMobileDock: document.querySelector(".terminal-mobile-dock"),
     pageKicker: document.getElementById("terminalPageKicker"),
     pageTitle: document.getElementById("terminalPageTitle"),
@@ -20,6 +21,10 @@
     windowsTrackLink: document.getElementById("windowsTrackLink"),
     ciscoTrackLink: document.getElementById("ciscoTrackLink"),
     challengeTrackLink: document.getElementById("challengeTrackLink"),
+    terminalNavLink: document.querySelector(".terminal-nav-link"),
+    challengeSelectorPanel: document.querySelector(".challenge-selector-panel"),
+    terminalMetaPanel: document.querySelector(".terminal-meta-panel"),
+    scenarioPanel: document.querySelector(".scenario-panel"),
     scenarioCountBadge: document.getElementById("scenarioCountBadge"),
     stepCountBadge: document.getElementById("stepCountBadge"),
     environmentBadge: document.getElementById("environmentBadge"),
@@ -86,6 +91,7 @@
     outputPinnedToLatest: true
   };
   let savedProgressRecord = null;
+  const mobilePanelRegistry = [];
 
   function cancelScheduledFrame(id) {
     if (id) {
@@ -111,6 +117,375 @@
 
   function isCiscoState() {
     return typeof StateManager.isCiscoState === "function" && StateManager.isCiscoState(session.state);
+  }
+
+  function ensureMobilePanelRegistry() {
+    if (mobilePanelRegistry.length) {
+      return;
+    }
+
+    [
+      els.appSectionShell,
+      els.challengeSelectorPanel,
+      els.terminalMetaPanel,
+      els.scenarioPanel
+    ].filter(Boolean).forEach((element, index) => {
+      if (!element.parentNode) {
+        return;
+      }
+
+      const placeholder = document.createElement("div");
+      placeholder.hidden = true;
+      placeholder.className = "terminal-mobile-panel-placeholder";
+      placeholder.dataset.mobilePanelKey = String(index);
+      element.parentNode.insertBefore(placeholder, element);
+      mobilePanelRegistry.push({ element, placeholder });
+    });
+  }
+
+  function restoreDesktopPanels() {
+    mobilePanelRegistry.forEach(({ element, placeholder }) => {
+      const parent = placeholder.parentNode;
+      if (!parent || element.parentNode === parent) {
+        return;
+      }
+
+      parent.insertBefore(element, placeholder.nextSibling);
+    });
+  }
+
+  function syncMobileSwitchLinks() {
+    if (!els.mobileSwitchLinks) {
+      return;
+    }
+
+    els.mobileSwitchLinks.replaceChildren();
+
+    [
+      els.linuxTrackLink,
+      els.windowsTrackLink,
+      els.ciscoTrackLink,
+      els.challengeTrackLink
+    ].filter(Boolean).forEach((sourceLink) => {
+      const clone = sourceLink.cloneNode(true);
+      clone.removeAttribute("id");
+      clone.classList.add("terminal-mobile-switch-link");
+      els.mobileSwitchLinks.appendChild(clone);
+    });
+
+    if (els.mobileExitLink && els.terminalNavLink) {
+      els.mobileExitLink.href = els.terminalNavLink.href;
+      els.mobileExitLink.textContent = "Exit";
+    }
+  }
+
+  function syncMobileAppBarTitle() {
+    if (!els.mobileAppBarTitle) {
+      return;
+    }
+
+    els.mobileAppBarTitle.textContent = (
+      els.pageTitle?.textContent
+      || pageConfig.pageTitle
+      || document.title
+      || "Terminal Lab"
+    ).trim();
+  }
+
+  function closeMobileMenu(options = {}) {
+    const { restoreFocus = false } = options;
+
+    if (!els.mobileMenuOverlay) {
+      return;
+    }
+
+    document.body.classList.remove("terminal-mobile-menu-open");
+    els.mobileMenuOverlay.hidden = true;
+
+    if (els.mobileMenuBtn) {
+      els.mobileMenuBtn.setAttribute("aria-expanded", "false");
+      if (restoreFocus && isMobileTerminalLayout() && typeof els.mobileMenuBtn.focus === "function") {
+        els.mobileMenuBtn.focus();
+      }
+    }
+  }
+
+  function closeMobileInfo(options = {}) {
+    const { restoreFocus = false } = options;
+
+    if (!els.mobileInfoOverlay) {
+      return;
+    }
+
+    document.body.classList.remove("terminal-mobile-info-open");
+    els.mobileInfoOverlay.hidden = true;
+
+    if (els.mobileMenuBtn && restoreFocus && isMobileTerminalLayout() && typeof els.mobileMenuBtn.focus === "function") {
+      els.mobileMenuBtn.focus();
+    }
+  }
+
+  function blurTerminalInput() {
+    if (!els.terminalInput || document.activeElement !== els.terminalInput) {
+      return;
+    }
+
+    session.mobileBlurTimer = cancelScheduledTimeout(session.mobileBlurTimer);
+    els.terminalInput.blur();
+    syncMobileInputState(false);
+  }
+
+  function syncMobilePanelPlacement() {
+    ensureMobilePanelRegistry();
+
+    if (!els.mobileInfoScroll) {
+      return;
+    }
+
+    if (!isMobileTerminalLayout()) {
+      restoreDesktopPanels();
+      closeMobileMenu();
+      closeMobileInfo();
+      return;
+    }
+
+    mobilePanelRegistry.forEach(({ element }) => {
+      if (element.parentNode !== els.mobileInfoScroll) {
+        els.mobileInfoScroll.appendChild(element);
+      }
+    });
+  }
+
+  function openMobileMenu() {
+    if (!isMobileTerminalLayout()) {
+      return;
+    }
+
+    ensureMobileShellChrome();
+    blurTerminalInput();
+    closeMobileInfo();
+    syncMobileViewportMetrics();
+    document.body.classList.add("terminal-mobile-menu-open");
+    els.mobileMenuOverlay.hidden = false;
+    els.mobileMenuBtn?.setAttribute("aria-expanded", "true");
+
+    window.requestAnimationFrame(() => {
+      if (els.mobileMenuCommandsBtn && typeof els.mobileMenuCommandsBtn.focus === "function") {
+        els.mobileMenuCommandsBtn.focus();
+      }
+    });
+  }
+
+  function openMobileInfo() {
+    if (!isMobileTerminalLayout()) {
+      return;
+    }
+
+    ensureMobileShellChrome();
+    syncMobilePanelPlacement();
+    blurTerminalInput();
+    closeMobileMenu();
+    syncMobileViewportMetrics();
+    document.body.classList.add("terminal-mobile-info-open");
+    els.mobileInfoOverlay.hidden = false;
+
+    if (els.mobileInfoScroll) {
+      els.mobileInfoScroll.scrollTop = 0;
+    }
+
+    window.requestAnimationFrame(() => {
+      if (els.mobileInfoCloseBtn && typeof els.mobileInfoCloseBtn.focus === "function") {
+        els.mobileInfoCloseBtn.focus();
+      }
+    });
+  }
+
+  function ensureMobileShellChrome() {
+    if (!els.terminalShell) {
+      return;
+    }
+
+    if (!els.mobileAppBar) {
+      const appBar = document.createElement("div");
+      appBar.className = "terminal-mobile-appbar";
+
+      const titleWrap = document.createElement("div");
+      titleWrap.className = "terminal-mobile-appbar-copy";
+
+      const title = document.createElement("p");
+      title.className = "terminal-mobile-appbar-title";
+      titleWrap.appendChild(title);
+
+      const menuBtn = document.createElement("button");
+      menuBtn.type = "button";
+      menuBtn.className = "terminal-mobile-menu-btn";
+      menuBtn.setAttribute("aria-label", "Open terminal menu");
+      menuBtn.setAttribute("aria-expanded", "false");
+      menuBtn.textContent = "\u2630";
+
+      appBar.append(titleWrap, menuBtn);
+
+      if (els.terminalHeader?.parentNode === els.terminalShell) {
+        els.terminalHeader.insertAdjacentElement("afterend", appBar);
+      } else {
+        els.terminalShell.insertBefore(appBar, els.terminalShell.firstChild);
+      }
+
+      els.mobileAppBar = appBar;
+      els.mobileAppBarTitle = title;
+      els.mobileMenuBtn = menuBtn;
+
+      menuBtn.addEventListener("click", () => {
+        if (document.body.classList.contains("terminal-mobile-menu-open")) {
+          closeMobileMenu({ restoreFocus: false });
+          return;
+        }
+
+        openMobileMenu();
+      });
+    }
+
+    if (!els.mobileMenuOverlay) {
+      const overlay = document.createElement("div");
+      overlay.className = "terminal-mobile-menu-overlay";
+      overlay.hidden = true;
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "terminal-mobile-overlay-backdrop";
+
+      const panel = document.createElement("section");
+      panel.className = "terminal-mobile-menu-panel";
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-modal", "true");
+      panel.setAttribute("aria-labelledby", "terminalMobileMenuTitle");
+
+      const head = document.createElement("div");
+      head.className = "terminal-mobile-overlay-head";
+
+      const heading = document.createElement("h2");
+      heading.id = "terminalMobileMenuTitle";
+      heading.textContent = "Menu";
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "terminal-mobile-overlay-close";
+      closeBtn.textContent = "Close";
+
+      head.append(heading, closeBtn);
+
+      const body = document.createElement("div");
+      body.className = "terminal-mobile-menu-body";
+
+      const actions = document.createElement("div");
+      actions.className = "terminal-mobile-menu-actions";
+
+      const commandsBtn = document.createElement("button");
+      commandsBtn.type = "button";
+      commandsBtn.className = "terminal-mobile-menu-action";
+      commandsBtn.textContent = "Commands";
+
+      const infoBtn = document.createElement("button");
+      infoBtn.type = "button";
+      infoBtn.className = "terminal-mobile-menu-action";
+      infoBtn.textContent = "Instructions";
+
+      const resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.className = "terminal-mobile-menu-action";
+      resetBtn.textContent = "Reset";
+
+      actions.append(commandsBtn, infoBtn, resetBtn);
+
+      const switchSection = document.createElement("div");
+      switchSection.className = "terminal-mobile-switch-section";
+
+      const switchLabel = document.createElement("p");
+      switchLabel.className = "terminal-mobile-switch-label";
+      switchLabel.textContent = "Switch Lab";
+
+      const switchLinks = document.createElement("div");
+      switchLinks.className = "terminal-mobile-switch-links";
+
+      switchSection.append(switchLabel, switchLinks);
+
+      const exitLink = document.createElement("a");
+      exitLink.className = "terminal-mobile-menu-link";
+      exitLink.href = "./index.html";
+      exitLink.textContent = "Exit";
+
+      body.append(actions, switchSection, exitLink);
+      panel.append(head, body);
+      overlay.append(backdrop, panel);
+      document.body.appendChild(overlay);
+
+      els.mobileMenuOverlay = overlay;
+      els.mobileMenuCommandsBtn = commandsBtn;
+      els.mobileMenuInfoBtn = infoBtn;
+      els.mobileMenuResetBtn = resetBtn;
+      els.mobileMenuCloseBtn = closeBtn;
+      els.mobileSwitchLinks = switchLinks;
+      els.mobileExitLink = exitLink;
+
+      backdrop.addEventListener("click", () => closeMobileMenu({ restoreFocus: true }));
+      closeBtn.addEventListener("click", () => closeMobileMenu({ restoreFocus: true }));
+      commandsBtn.addEventListener("click", () => {
+        closeMobileMenu();
+        blurTerminalInput();
+        syncMobileViewportMetrics();
+        document.querySelector("[data-open-command-sheet]")?.click();
+      });
+      infoBtn.addEventListener("click", () => openMobileInfo());
+      resetBtn.addEventListener("click", () => {
+        closeMobileMenu();
+        els.resetScenarioBtn?.click();
+      });
+    }
+
+    if (!els.mobileInfoOverlay) {
+      const overlay = document.createElement("div");
+      overlay.className = "terminal-mobile-info-overlay";
+      overlay.hidden = true;
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "terminal-mobile-overlay-backdrop";
+
+      const panel = document.createElement("section");
+      panel.className = "terminal-mobile-info-panel";
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-modal", "true");
+      panel.setAttribute("aria-labelledby", "terminalMobileInfoTitle");
+
+      const head = document.createElement("div");
+      head.className = "terminal-mobile-overlay-head";
+
+      const heading = document.createElement("h2");
+      heading.id = "terminalMobileInfoTitle";
+      heading.textContent = "Instructions";
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "terminal-mobile-overlay-close";
+      closeBtn.textContent = "Close";
+
+      const scroll = document.createElement("div");
+      scroll.className = "terminal-mobile-info-scroll";
+
+      head.append(heading, closeBtn);
+      panel.append(head, scroll);
+      overlay.append(backdrop, panel);
+      document.body.appendChild(overlay);
+
+      els.mobileInfoOverlay = overlay;
+      els.mobileInfoCloseBtn = closeBtn;
+      els.mobileInfoScroll = scroll;
+
+      backdrop.addEventListener("click", () => closeMobileInfo({ restoreFocus: true }));
+      closeBtn.addEventListener("click", () => closeMobileInfo({ restoreFocus: true }));
+    }
+
+    syncMobileAppBarTitle();
+    syncMobileSwitchLinks();
+    syncMobilePanelPlacement();
   }
 
   function syncTerminalInputPlacement() {
@@ -148,49 +523,33 @@
 
   function syncMobileInputState(active) {
     if (!isMobileTerminalLayout()) {
-      document.body.classList.remove("terminal-mobile-active", "terminal-mobile-keyboard-open", "terminal-mobile-context-collapsed", "terminal-mobile-inline-input");
+      document.body.classList.remove(
+        "terminal-mobile-active",
+        "terminal-mobile-keyboard-open",
+        "terminal-mobile-context-collapsed",
+        "terminal-mobile-inline-input",
+        "terminal-mobile-menu-open",
+        "terminal-mobile-info-open"
+      );
       session.mobileLayoutLocked = false;
       return;
     }
 
-    if (active) {
-      session.mobileLayoutLocked = true;
-    }
-
-    const layoutActive = session.mobileLayoutLocked || Boolean(active);
-
-    document.body.classList.toggle("terminal-mobile-active", layoutActive);
-    document.body.classList.toggle("terminal-mobile-context-collapsed", layoutActive && session.mobileContextCollapsed);
-    if (!active) {
-      document.body.classList.remove("terminal-mobile-keyboard-open");
-    }
+    document.body.classList.add("terminal-mobile-active");
+    document.body.classList.toggle("terminal-mobile-context-collapsed", session.mobileContextCollapsed);
+    document.body.classList.toggle("terminal-mobile-keyboard-open", Boolean(active));
   }
 
   function measureTerminalDockSpace() {
     session.mobileDockRaf = cancelScheduledFrame(session.mobileDockRaf);
-
-    if (!isMobileTerminalLayout() || !els.terminalMobileDock || usesInlineMobileInput()) {
-      document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
-      return;
-    }
-
-    if (document.body.classList.contains("terminal-mobile-active")) {
-      document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
-      return;
-    }
-
-    session.mobileDockRaf = window.requestAnimationFrame(() => {
-      session.mobileDockRaf = 0;
-      const dockHeight = Math.ceil(els.terminalMobileDock.getBoundingClientRect().height || 0);
-      const { keyboardOffset } = mobileViewportMetrics();
-      const reservedSpace = Math.max(0, dockHeight + keyboardOffset + 18);
-      document.body.style.setProperty("--terminal-mobile-dock-space", `${reservedSpace}px`);
-    });
+    document.body.style.setProperty("--terminal-mobile-dock-space", "0px");
   }
 
   function syncMobileViewportMetrics() {
     session.mobileViewportRaf = cancelScheduledFrame(session.mobileViewportRaf);
+    ensureMobileShellChrome();
     syncTerminalInputPlacement();
+    syncMobilePanelPlacement();
     const inputActive = document.activeElement === els.terminalInput;
     syncMobileInputState(inputActive);
 
@@ -205,8 +564,6 @@
 
     session.mobileViewportRaf = window.requestAnimationFrame(() => {
       session.mobileViewportRaf = 0;
-      // visualViewport gives the keyboard-safe visible area on Android/iOS.
-      // When the prompt is focused, always switch to typing mode so extra dock sections do not stay onscreen and block the terminal.
       const { visibleHeight, keyboardOffset } = mobileViewportMetrics();
       const activeInput = document.activeElement === els.terminalInput;
       const baselineViewportHeight = session.mobileStableViewportHeight || visibleHeight;
@@ -224,9 +581,12 @@
 
       document.body.style.setProperty("--terminal-mobile-viewport-height", `${stableViewportHeight}px`);
       document.body.style.setProperty("--terminal-visual-keyboard-offset", "0px");
-      document.body.classList.toggle("terminal-mobile-keyboard-open", keyboardOpen);
       syncMobileInputState(activeInput);
       measureTerminalDockSpace();
+
+      if (typeof window.scrollTo === "function") {
+        window.scrollTo(0, 0);
+      }
     });
   }
 
@@ -235,22 +595,11 @@
       return;
     }
 
-    const focusTarget = els.terminalForm || els.terminalInput;
-
     // Keep the terminal feed stable while the learner reviews history, but still follow the latest output when they are already at the end.
     if (session.outputPinnedToLatest) {
       scrollTerminal(true);
     }
     syncMobileViewportMetrics();
-
-    if (els.terminalMobileDock && document.body.classList.contains("terminal-mobile-active")) {
-      els.terminalMobileDock.scrollTop = els.terminalMobileDock.scrollHeight;
-    }
-
-    if (focusTarget && typeof focusTarget.scrollIntoView === "function") {
-      // Keep scrolling inside the terminal container instead of moving the page viewport.
-      focusTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
-    }
   }
 
   function setMobileContextCollapsed(collapsed) {
@@ -3867,6 +4216,21 @@
       }
     };
 
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      if (document.body.classList.contains("terminal-mobile-info-open")) {
+        closeMobileInfo({ restoreFocus: true });
+        return;
+      }
+
+      if (document.body.classList.contains("terminal-mobile-menu-open")) {
+        closeMobileMenu({ restoreFocus: true });
+      }
+    });
+
     window.addEventListener("resize", handleViewportResize);
     window.addEventListener("orientationchange", handleViewportResize);
 
@@ -3921,6 +4285,7 @@
   };
 
   async function bootTerminalEngine() {
+    ensureMobileShellChrome();
     bindEvents();
     syncTerminalInputPlacement();
     setMobileContextCollapsed(false);
