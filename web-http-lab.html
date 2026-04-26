@@ -4,21 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Web &amp; HTTP Lab</title>
-  <link rel="stylesheet" href="./style.css?v=20260426fix1">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260426fix1">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="./supabase-config.js?v=20260421sup1" defer></script>
-  <script src="./app-data.js?v=20260425sync1" defer></script>
-  <script src="./web-http-lab-data.js?v=20260426fix1" defer></script>
-  <script src="./web-http-lab.js?v=20260426fix1" defer></script>
+  <link rel="stylesheet" href="./style.css?v=20260423mobile1">
+  <link rel="stylesheet" href="./protocol-flow.css?v=20260426httpflow2">
+  <link rel="stylesheet" href="./protocol-merge.css?v=20260426httpflow2">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260426httpflow2">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  >
+  <script src="./web-http-lab-data.js?v=20260426httpflow2" defer></script>
+  <script src="./web-http-lab.js?v=20260426httpflow2" defer></script>
 </head>
-<body class="http-page http-focus-mode">
+<body class="flow-page merge-page http-flow-page">
   <div class="rack-room">
-    <div class="router-shell http-shell">
+    <div class="router-shell flow-shell merge-shell http-flow-shell">
       <div class="router-top">
         <div>
-          <div class="router-brand">NET-LAB WEB PANEL</div>
-          <div class="http-subbrand">Browser traffic, cookies, sessions, and proxy learning</div>
+          <div class="router-brand">NET-LAB WEB REQUEST PANEL</div>
+          <div class="flow-subbrand">HTTP and HTTPS request flow trainer</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -28,333 +31,220 @@
         </div>
       </div>
 
-      <header class="http-header">
+      <header class="flow-header">
         <div>
-          <p class="http-kicker">Guided Web Traffic Trainer</p>
+          <p class="flow-kicker">HTTP/HTTPS Request Trainer</p>
           <h1>Web &amp; HTTP Lab</h1>
-          <p class="http-intro">
-            Learn how browser requests, responses, headers, cookies, sessions, proxy interception,
-            and discoverability fit together without dropping everything into a terminal-only workflow.
+          <p class="flow-intro">
+            Follow a web request as a visible network flow: the browser asks for a page,
+            the request crosses the path, the server answers, and the browser loads the result.
           </p>
         </div>
-        <a class="http-nav-link" href="./index.html">Back to Main App</a>
+        <a class="flow-nav-link" href="./index.html">Back to Main App</a>
       </header>
 
-      <section id="appSectionShell" class="http-panel app-shell-panel http-section-shell"></section>
+      <section class="flow-panel scenario-panel">
+        <div class="flow-panel-head">
+          <h2>Scenarios</h2>
+          <div id="scenarioStatus" class="flow-status idle">Ready</div>
+        </div>
+        <div id="scenarioTabs" class="scenario-tabs"></div>
+      </section>
 
-      <div class="http-layout">
-        <main class="http-main">
-          <section class="http-panel http-flow-panel">
-            <div class="http-flow-head">
-              <div>
-                <p class="http-mini-label">Step-By-Step Curriculum</p>
-                <h2 id="lessonTitle">Web &amp; HTTP Lab</h2>
-                <p id="lessonIntro" class="http-overview-copy">
-                  Load a lesson to inspect requests, responses, cookies, sessions, and proxy state in the lab workspace.
-                </p>
-              </div>
-              <div class="http-flow-status">
-                <div id="labStatus" class="http-status idle">Ready</div>
-                <div id="lessonCompletion" class="http-completion-pill">Lesson ready</div>
-              </div>
-            </div>
-
-            <div class="http-badge-row">
-              <span id="lessonCategory" class="http-badge">HTTP Fundamentals</span>
-              <span id="lessonDifficulty" class="http-badge http-badge-muted">Beginner</span>
-              <span id="lessonStepBadge" class="http-badge http-badge-accent">Step 1 of 3</span>
-            </div>
-
-            <div class="http-progress-row">
-              <span class="http-progress-label">Curriculum</span>
-              <span id="completedCount" class="http-progress-value">0 / 0 complete</span>
-            </div>
-
-            <div class="http-overview-footer http-overview-footer-tight">
-              <div>
-                <p class="http-mini-label">Current Position</p>
-                <p id="curriculumMeta" class="http-mini-copy">Lesson 1 of 1 | Step 1 of 1</p>
-              </div>
-              <div>
-                <p class="http-mini-label">Next Unlock</p>
-                <p id="recommendedNextLesson" class="http-mini-copy">Finish this lesson to unlock the next one.</p>
-              </div>
-            </div>
-
-            <div id="lessonList" class="http-lesson-path"></div>
-          </section>
-
-          <section id="focusLessonStage" class="http-panel http-focus-stage" hidden>
-            <div class="http-focus-head">
-              <div>
-                <p id="focusStepCount" class="http-mini-label">Step 1 of 4</p>
-                <h2 id="focusStepTitle">Browser to Server</h2>
-                <p id="focusStepGuide" class="http-focus-guide">What am I doing? Watch the flow.</p>
-              </div>
-              <div class="http-focus-head-right">
-                <div id="focusStageStatus" class="http-completion-pill pending">Current step</div>
-                <div class="http-focus-actions">
-                  <button id="focusRestartBtn" type="button" class="http-focus-action http-focus-action-muted">Restart Lesson</button>
-                  <a id="focusExitBtn" href="./index.html" class="http-focus-action">Main App</a>
+      <div class="flow-layout">
+        <section class="flow-panel diagram-panel">
+          <div class="display-panel flow-display">
+            <div class="flow-visual-panel">
+              <div class="flow-display-head">
+                <div>
+                  <p id="scenarioLabel" class="scenario-label">HTTP Flow</p>
+                  <h2 id="scenarioName" class="scenario-name">HTTP Page Request</h2>
+                </div>
+                <div class="flow-badge-stack">
+                  <div id="stepBadge" class="step-badge">Step 1 of 6</div>
+                  <div id="flowIndicator" class="flow-indicator idle" hidden>Flow: Open URL</div>
                 </div>
               </div>
-            </div>
 
-            <div class="http-focus-phase-row">
-              <span id="focusPhaseBadge" class="http-chip http-chip-accent">Intro</span>
-              <p id="focusPhaseCopy" class="http-mini-copy">One visual. One short action.</p>
-            </div>
-            <div id="focusVisual" class="http-focus-visual"></div>
-            <p id="focusStepCopy" class="http-focus-copy">Your browser asks a server for a page.</p>
-            <div id="focusInteractive" class="http-focus-interactive"></div>
-          </section>
+              <p id="scenarioSubtitle" class="scenario-subtitle">
+                Ask the server for `/profile` with a plain HTTP request.
+              </p>
 
-          <section id="focusSupportShell" class="http-panel http-support-shell" hidden>
-            <div class="http-panel-head http-support-head">
-              <div>
-                <h2>Step Support</h2>
-                <p class="http-panel-copy">Secondary details stay collapsed until you need them.</p>
-              </div>
-            </div>
+              <div class="flow-diagram-scroll">
+                <div class="diagram-shell">
+                  <div id="diagramStage" class="diagram-stage">
+                    <div id="messageLayer" class="message-layer" aria-hidden="true"></div>
+                    <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
+                    <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
+                    <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
+                    <div id="cableSwitchServerStart" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-start"></div>
+                    <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
+                    <div id="cableSwitchServerEnd" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-end"></div>
 
-            <details id="httpDetailsSection" class="http-disclosure">
-              <summary class="http-disclosure-summary">
-                <span class="http-disclosure-title">Details</span>
-                <span class="http-disclosure-copy">Context, browser state, and step notes.</span>
-              </summary>
-
-              <div class="http-support-grid http-support-grid-details">
-                <section id="conceptPanel" class="http-panel http-overview-panel http-overview-panel-compact http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Current Concept</h2>
-                      <p class="http-panel-copy">Each step focuses on one concept, one action, and one result.</p>
-                    </div>
-                  </div>
-
-                  <div class="http-overview-quick-grid">
-                    <section class="http-state-card">
-                      <p class="http-mini-label">In Plain Language</p>
-                      <p id="lessonExplanation" class="http-mini-copy">This panel will summarise the current lesson.</p>
-                    </section>
-
-                    <section class="http-state-card">
-                      <p class="http-mini-label">Focus Areas</p>
-                      <div id="objectiveList" class="http-summary-chips"></div>
-                    </section>
-                  </div>
-                </section>
-
-                <section id="browserPanel" class="http-panel http-browser-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Browser Context</h2>
-                      <p class="http-panel-copy">A lightweight lab browser view so learners can connect the URL bar to the traffic below.</p>
-                    </div>
-                  </div>
-
-                  <div class="http-browser-shell">
-                    <div class="http-browser-bar">
-                      <span class="http-browser-dot"></span>
-                      <span class="http-browser-dot"></span>
-                      <span class="http-browser-dot"></span>
-                      <div id="browserUrl" class="http-url-bar">https://example.lab/</div>
-                    </div>
-                    <div class="http-browser-body">
-                      <h3 id="browserTitle">Waiting for lesson</h3>
-                      <p id="browserNote" class="http-browser-note">Load a lesson to inspect a fictional browser workflow.</p>
-                      <div id="browserChipRow" class="http-summary-chips"></div>
-                    </div>
-                  </div>
-                </section>
-
-                <section id="taskPanel" class="http-panel http-task-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2 id="stepTitle">Current Task</h2>
-                      <p id="stepMeta" class="http-panel-copy">Choose a lesson to begin the guided workflow.</p>
-                    </div>
-                    <div id="taskState" class="http-feedback-badge idle">Waiting for action</div>
-                  </div>
-
-                  <p id="stepPrompt" class="http-task-prompt">Inspect the workspace, use the answer panel, and step through each lesson in order.</p>
-                  <div class="http-callout">
-                    <p class="http-mini-label">Success Condition</p>
-                    <p id="successCondition" class="http-mini-copy">Each lesson explains what correct observation or action should achieve.</p>
-                  </div>
-
-                  <div class="http-callout">
-                    <p class="http-mini-label">Feedback</p>
-                    <p id="feedbackText" class="http-mini-copy">Pick a lesson to start.</p>
-                  </div>
-
-                  <div class="http-callout">
-                    <p class="http-mini-label">Why It Matters</p>
-                    <p id="stepExplanation" class="http-mini-copy">This panel will explain each step after you work through it.</p>
-                  </div>
-
-                  <div class="http-callout">
-                    <p class="http-mini-label">Hint</p>
-                    <p id="hintText" class="http-mini-copy">Hints will appear here when needed.</p>
-                  </div>
-
-                  <div class="http-action-row">
-                    <button id="hintBtn" type="button">Show Hint</button>
-                    <button id="nextBtn" type="button" hidden>Next Step</button>
-                  </div>
-                </section>
-
-                <article id="discoverabilityPanel" class="http-panel http-state-panel http-discovery-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Discoverability View</h2>
-                      <p class="http-panel-copy">Use this area for crawl-tree style lessons without turning the lab into a scanner clone.</p>
-                    </div>
-                  </div>
-
-                  <p id="discoverabilitySummary" class="http-state-note"></p>
-                  <div id="discoverabilityTree" class="http-tree"></div>
-                </article>
-              </div>
-            </details>
-
-            <details id="httpToolsSection" class="http-disclosure">
-              <summary class="http-disclosure-summary">
-                <span class="http-disclosure-title">Tools</span>
-                <span class="http-disclosure-copy">Raw traffic, state, and supporting controls.</span>
-              </summary>
-
-              <div class="http-support-grid http-support-grid-tools">
-                <article id="trafficFlowPanel" class="http-panel http-diagram-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Traffic Flow</h2>
-                      <p class="http-panel-copy">Step the request through Browser, Proxy, Server, and back again.</p>
-                    </div>
-                  </div>
-                  <div id="flowDiagram" class="http-flow-diagram"></div>
-                </article>
-
-                <article id="requestAnatomyPanel" class="http-panel http-diagram-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Request Anatomy</h2>
-                      <p class="http-panel-copy">Click the request parts to see what they mean in plain English.</p>
-                    </div>
-                  </div>
-                  <div id="requestDiagram" class="http-request-diagram"></div>
-                </article>
-
-                <article id="requestPanel" class="http-panel http-traffic-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Request Panel</h2>
-                      <p class="http-panel-copy">Edit the request, send it, and compare the raw preview to the response that comes back.</p>
-                    </div>
-                    <div id="requestBadge" class="http-surface-pill">Request ready</div>
-                  </div>
-                  <div id="requestWorkbench" class="http-request-workbench" hidden>
-                    <div class="http-request-workbench-head">
-                      <div>
-                        <p class="http-mini-label">Interactive Request Editor</p>
-                        <p id="requestWorkbenchNote" class="http-mini-copy">Change the important parts of the request, then send it to the simulated server.</p>
+                    <div id="devicePc" class="device-node" data-device="pc">
+                      <div class="device-icon-wrap">
+                        <i id="devicePcIcon" class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
                       </div>
-                      <div id="requestFocusFields" class="http-summary-chips"></div>
+                      <p id="devicePcTitle" class="device-title">Browser</p>
+                      <p id="devicePcMeta" class="device-meta">User opens `/profile`</p>
                     </div>
-                    <div id="requestEditorFields" class="http-request-editor-grid"></div>
-                    <div class="http-submit-row">
-                      <button id="sendRequestBtn" type="button">Send Request</button>
-                      <button id="resetRequestBtn" type="button">Reset Request</button>
-                    </div>
-                  </div>
-                  <div class="http-raw-head">
-                    <p class="http-mini-label">Raw Request Preview</p>
-                    <p id="requestPreviewNote" class="http-mini-copy">The raw request preview updates as you edit the workbench.</p>
-                  </div>
-                  <pre id="requestRaw" class="http-raw-block"></pre>
-                </article>
 
-                <article id="responsePanel" class="http-panel http-traffic-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Response Panel</h2>
-                      <p class="http-panel-copy">See how the server answered, or why there is no response yet when interception pauses a request.</p>
+                    <div id="deviceSwitch" class="device-node" data-device="switch">
+                      <div class="device-icon-wrap">
+                        <i id="deviceSwitchIcon" class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p id="deviceSwitchTitle" class="device-title">Switch</p>
+                      <p id="deviceSwitchMeta" class="device-meta">Local forwarding path</p>
                     </div>
-                    <div id="responseBadge" class="http-surface-pill">Waiting</div>
-                  </div>
-                  <p id="responseSummary" class="http-response-summary">Send a request to generate a response.</p>
-                  <pre id="responseRaw" class="http-raw-block"></pre>
-                </article>
 
-                <article id="cookiesSessionPanel" class="http-panel http-state-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Cookies &amp; Session</h2>
-                      <p class="http-panel-copy">Track what the browser is carrying between requests.</p>
+                    <div id="deviceRouter" class="device-node" data-device="router">
+                      <div class="device-icon-wrap">
+                        <i id="deviceRouterIcon" class="fa-solid fa-route device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p id="deviceRouterTitle" class="device-title">Router</p>
+                      <p id="deviceRouterMeta" class="device-meta">Path to the web server</p>
+                    </div>
+
+                    <div id="deviceServer" class="device-node" data-device="server">
+                      <div class="device-icon-wrap">
+                        <i id="deviceServerIcon" class="fa-solid fa-server device-icon" aria-hidden="true"></i>
+                      </div>
+                      <p id="deviceServerTitle" class="device-title">Web Server</p>
+                      <p id="deviceServerMeta" class="device-meta">Returns the page response</p>
                     </div>
                   </div>
-
-                  <div class="http-state-stack">
-                    <section class="http-state-card">
-                      <p class="http-mini-label">Cookies</p>
-                      <div id="cookiesList" class="http-cookie-list"></div>
-                    </section>
-
-                    <section class="http-state-card">
-                      <p class="http-mini-label">Session</p>
-                      <p id="sessionState" class="http-state-copy"></p>
-                      <p id="sessionId" class="http-state-copy http-state-copy-accent"></p>
-                      <p id="sessionNote" class="http-state-note"></p>
-                    </section>
-                  </div>
-                </article>
-
-                <article id="cacheProxyPanel" class="http-panel http-state-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2>Cache &amp; Proxy</h2>
-                      <p class="http-panel-copy">Connect browser state to interception and caching behavior.</p>
-                    </div>
-                  </div>
-
-                  <div class="http-state-stack">
-                    <section class="http-state-card">
-                      <p class="http-mini-label">Cache</p>
-                      <p id="cacheStatus" class="http-state-copy"></p>
-                      <p id="cacheNote" class="http-state-note"></p>
-                    </section>
-
-                    <section class="http-state-card">
-                      <p class="http-mini-label">Proxy</p>
-                      <p id="proxyStatus" class="http-state-copy"></p>
-                      <p id="proxyNote" class="http-state-note"></p>
-                    </section>
-                  </div>
-                </article>
-
-                <section id="answerPanel" class="http-panel http-answer-panel http-support-panel">
-                  <div class="http-panel-head">
-                    <div>
-                      <h2 id="answerTitle">Answer Panel</h2>
-                      <p id="answerSubtitle" class="http-panel-copy">Interaction controls will appear here for the active step.</p>
-                    </div>
-                  </div>
-
-                  <div id="interactionBody" class="http-interaction-body"></div>
-                </section>
+                </div>
               </div>
-            </details>
-          </section>
-        </main>
+
+              <div class="legend-row">
+                <span class="legend-pill legend-broadcast">Visible HTTP</span>
+                <span class="legend-pill legend-unicast">Request Path</span>
+                <span class="legend-pill legend-secure">Locked HTTPS</span>
+                <span class="legend-pill legend-warning">Insecure on Path</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="flow-panel interaction-panel">
+          <div class="interaction-summary">
+            <div>
+              <p id="mobileScenarioName" class="interaction-scenario-title">HTTP Page Request</p>
+              <p id="mobileStepBadge" class="interaction-step-badge">Step 1 of 6</p>
+            </div>
+            <div id="mobileFeedbackState" class="interaction-feedback-state idle">Waiting for action</div>
+          </div>
+          <h2>Choose the Next Action</h2>
+          <p id="stepPrompt" class="step-prompt">
+            A user opens `http://learn.lab/profile`. What happens first?
+          </p>
+          <p id="mobileFeedbackText" class="mobile-feedback-text">
+            Pick the next web request move. Feedback will stay pinned here on mobile.
+          </p>
+
+          <div id="actionButtons" class="action-buttons"></div>
+
+          <div class="flow-controls">
+            <button id="nextStepBtn" type="button" hidden>Next Step</button>
+            <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+          </div>
+        </section>
+
+        <aside class="flow-panel explanation-panel merge-explanation-panel">
+          <h2>Explanation</h2>
+          <div id="trafficMode" class="traffic-mode idle">No traffic active</div>
+          <p id="explanationText" class="explanation-text">
+            Select an action to light the correct request path and show what happens next.
+          </p>
+
+          <div class="why-card">
+            <h3>Why This Matters</h3>
+            <p id="whyText">
+              Each answer keeps the web request tied to the visible path so HTTP feels like a real network exchange.
+            </p>
+          </div>
+
+          <div class="scenario-summary">
+            <h3>Scenario Focus</h3>
+            <p id="scenarioSummary">
+              HTTP works like another network request: ask for the page, move the request across the path, receive `200 OK`, and load the page.
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <div class="merge-sections">
+        <section class="flow-panel usecase-panel">
+          <div class="merge-panel-head">
+            <div>
+              <h2>Quick Checks</h2>
+              <p class="merge-panel-copy">Use the same choose-and-check pattern for the key HTTP/HTTPS ideas.</p>
+            </div>
+          </div>
+          <div id="useCaseGrid" class="usecase-grid"></div>
+        </section>
+
+        <section class="flow-panel compare-panel">
+          <div class="merge-panel-head">
+            <div>
+              <h2>Request Compare</h2>
+              <p class="merge-panel-copy">Keep the request flow simple: ask, travel, respond, load.</p>
+            </div>
+          </div>
+
+          <div class="compare-grid">
+            <article class="compare-card">
+              <h3>HTTP Request</h3>
+              <div class="compare-row">
+                <div>
+                  <p class="compare-label">Ask</p>
+                  <p>The browser creates `GET /profile` to ask the server for the page.</p>
+                </div>
+                <div>
+                  <p class="compare-label">Travel</p>
+                  <p>The request crosses the network path until the web server receives it.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="compare-card">
+              <h3>HTTP vs HTTPS</h3>
+              <div class="compare-row">
+                <div>
+                  <p class="compare-label">HTTP</p>
+                  <p>The request stays readable while it travels, so `GET /profile` is visible on the path.</p>
+                </div>
+                <div>
+                  <p class="compare-label">HTTPS</p>
+                  <p>The same request is carried inside encrypted traffic, so the path only sees a locked packet.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="compare-card">
+              <h3>Server Response</h3>
+              <div class="compare-row">
+                <div>
+                  <p class="compare-label">200 OK</p>
+                  <p>If the page exists, the server sends back `200 OK` with the page content.</p>
+                </div>
+                <div>
+                  <p class="compare-label">Load</p>
+                  <p>The browser uses the response to render the page for the user.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
       </div>
 
       <div class="router-ports" aria-hidden="true">
         <div class="port connected"><span class="cable"></span></div>
+        <div class="port active"></div>
         <div class="port connected"><span class="cable cable-green"></span></div>
-        <div class="port active"></div>
         <div class="port"></div>
-        <div class="port connected"><span class="cable cable-yellow"></span></div>
         <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
         <div class="port"></div>
         <div class="port"></div>
       </div>
