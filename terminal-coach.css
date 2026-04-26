@@ -1294,7 +1294,7 @@
     display: block;
     flex: 0 0 auto;
     gap: 0;
-    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+    padding: 20px 12px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(71, 85, 105, 0.58);
     background: linear-gradient(180deg, rgba(6, 10, 14, 0.98) 0%, rgba(3, 7, 12, 1) 100%);
     box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.2);
