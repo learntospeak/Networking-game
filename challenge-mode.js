@@ -127,6 +127,10 @@ window.TerminalCoachConfig = {
           updateDetailPanels(scenario);
           updateSelectorStatus(scenario, false);
           engine.previewScenarioById(selectedId);
+
+          if (window.matchMedia("(max-width: 768px)").matches && document.body.classList.contains("terminal-mobile-info-open")) {
+            document.querySelector(".terminal-mobile-info-overlay .terminal-mobile-overlay-close")?.click();
+          }
         });
 
         els.grid.appendChild(card);

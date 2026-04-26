@@ -184,12 +184,64 @@
       return;
     }
 
+    const activeScenario = session.scenarios?.[session.scenarioIndex];
+    const scenarioTitle = typeof activeScenario?.title === "string" ? activeScenario.title.trim() : "";
+
     els.mobileAppBarTitle.textContent = (
-      els.pageTitle?.textContent
+      scenarioTitle
+      || els.pageTitle?.textContent
       || pageConfig.pageTitle
       || document.title
       || "Terminal Lab"
     ).trim();
+  }
+
+  function shouldPreviewMobileSelection() {
+    return Boolean(pageConfig.autoStart === false && !session.scenarioStarted);
+  }
+
+  function navigateScenarioBy(delta) {
+    if (!Number.isFinite(delta) || !delta || !session.scenarios.length) {
+      return;
+    }
+
+    if (shouldPreviewMobileSelection()) {
+      previewScenario(session.scenarioIndex + delta);
+      return;
+    }
+
+    loadScenario(session.scenarioIndex + delta);
+  }
+
+  function startOrRestartScenario() {
+    if (!session.scenarios.length) {
+      return;
+    }
+
+    loadScenario(session.scenarioIndex);
+  }
+
+  function syncMobileAppBarActions() {
+    if (!els.mobilePrevBtn || !els.mobileNextBtn || !els.mobileHomeBtn || !els.mobileMenuBtn) {
+      return;
+    }
+
+    const challengeSelectionMode = shouldPreviewMobileSelection();
+    const showStartBtn = Boolean(pageConfig.autoStart === false);
+
+    els.mobilePrevBtn.setAttribute("aria-label", challengeSelectionMode ? "Previous challenge" : "Previous lesson");
+    els.mobileNextBtn.setAttribute("aria-label", challengeSelectionMode ? "Next challenge" : "Next lesson");
+    els.mobileHomeBtn.setAttribute("aria-label", "Home");
+
+    if (els.mobileStartBtn) {
+      els.mobileStartBtn.hidden = !showStartBtn;
+      els.mobileStartBtn.textContent = challengeSelectionMode ? "\u25b6" : "\u21bb";
+      els.mobileStartBtn.setAttribute(
+        "aria-label",
+        challengeSelectionMode ? "Start selected challenge" : "Restart current challenge"
+      );
+      els.mobileStartBtn.title = challengeSelectionMode ? "Start selected challenge" : "Restart current challenge";
+    }
   }
 
   function closeMobileMenu(options = {}) {
@@ -316,6 +368,34 @@
       title.className = "terminal-mobile-appbar-title";
       titleWrap.appendChild(title);
 
+      const actions = document.createElement("div");
+      actions.className = "terminal-mobile-appbar-actions";
+
+      const prevBtn = document.createElement("button");
+      prevBtn.type = "button";
+      prevBtn.className = "terminal-mobile-appbar-btn";
+      prevBtn.setAttribute("aria-label", "Previous lesson");
+      prevBtn.textContent = "\u2039";
+
+      const nextBtn = document.createElement("button");
+      nextBtn.type = "button";
+      nextBtn.className = "terminal-mobile-appbar-btn";
+      nextBtn.setAttribute("aria-label", "Next lesson");
+      nextBtn.textContent = "\u203a";
+
+      const startBtn = document.createElement("button");
+      startBtn.type = "button";
+      startBtn.className = "terminal-mobile-appbar-btn";
+      startBtn.setAttribute("aria-label", "Start selected challenge");
+      startBtn.textContent = "\u25b6";
+      startBtn.hidden = true;
+
+      const homeBtn = document.createElement("button");
+      homeBtn.type = "button";
+      homeBtn.className = "terminal-mobile-appbar-btn";
+      homeBtn.setAttribute("aria-label", "Home");
+      homeBtn.textContent = "\u2302";
+
       const menuBtn = document.createElement("button");
       menuBtn.type = "button";
       menuBtn.className = "terminal-mobile-menu-btn";
@@ -323,7 +403,8 @@
       menuBtn.setAttribute("aria-expanded", "false");
       menuBtn.textContent = "\u2630";
 
-      appBar.append(titleWrap, menuBtn);
+      actions.append(prevBtn, nextBtn, startBtn, homeBtn, menuBtn);
+      appBar.append(titleWrap, actions);
 
       if (els.terminalHeader?.parentNode === els.terminalShell) {
         els.terminalHeader.insertAdjacentElement("afterend", appBar);
@@ -333,7 +414,34 @@
 
       els.mobileAppBar = appBar;
       els.mobileAppBarTitle = title;
+      els.mobilePrevBtn = prevBtn;
+      els.mobileNextBtn = nextBtn;
+      els.mobileStartBtn = startBtn;
+      els.mobileHomeBtn = homeBtn;
       els.mobileMenuBtn = menuBtn;
+
+      prevBtn.addEventListener("click", () => {
+        closeMobileMenu();
+        closeMobileInfo();
+        navigateScenarioBy(-1);
+      });
+
+      nextBtn.addEventListener("click", () => {
+        closeMobileMenu();
+        closeMobileInfo();
+        navigateScenarioBy(1);
+      });
+
+      startBtn.addEventListener("click", () => {
+        closeMobileMenu();
+        closeMobileInfo();
+        startOrRestartScenario();
+      });
+
+      homeBtn.addEventListener("click", () => {
+        const targetHref = els.terminalNavLink?.href || "./index.html";
+        window.location.href = targetHref;
+      });
 
       menuBtn.addEventListener("click", () => {
         if (document.body.classList.contains("terminal-mobile-menu-open")) {
@@ -484,6 +592,7 @@
     }
 
     syncMobileAppBarTitle();
+    syncMobileAppBarActions();
     syncMobileSwitchLinks();
     syncMobilePanelPlacement();
   }
@@ -1137,6 +1246,9 @@
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const environmentLabel = scenarioEnvironmentLabel(scenario);
 
+    syncMobileAppBarTitle();
+    syncMobileAppBarActions();
+
     els.scenarioCountBadge.textContent = challengePresentation
       ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
       : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
@@ -1457,7 +1569,11 @@
     if (announce) {
       announceScenario();
     } else if (pageConfig.initialMessage) {
-      printLine(pageConfig.initialMessage, "coach");
+      if (scenarioUsesChallengePresentation(currentScenario()) && isMobileTerminalLayout()) {
+        printLine("Use the header arrows to choose a challenge, then press start to begin.", "coach");
+      } else {
+        printLine(pageConfig.initialMessage, "coach");
+      }
     }
     renderPanel();
     document.dispatchEvent(new CustomEvent("terminalcoach:scenariochange", {

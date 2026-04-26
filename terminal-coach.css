@@ -1205,6 +1205,13 @@
     flex: 1 1 auto;
   }
 
+  .terminal-mobile-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
   .terminal-mobile-appbar-title {
     margin: 0;
     color: #e2e8f0;
@@ -1217,17 +1224,28 @@
     text-overflow: ellipsis;
   }
 
+  .terminal-mobile-appbar-btn,
   .terminal-mobile-menu-btn {
     width: auto;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 38px;
+    min-height: 38px;
     margin: 0;
-    padding: 0 14px;
-    border-radius: 12px;
-    font-size: 24px;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 20px;
     line-height: 1;
   }
 
+  .terminal-mobile-appbar-btn,
+  .terminal-mobile-menu-btn {
+    flex-shrink: 0;
+  }
+
+  .terminal-mobile-appbar-btn[hidden] {
+    display: none;
+  }
+
+  .terminal-mobile-appbar-btn::before,
   .terminal-mobile-menu-btn::before,
   .terminal-mobile-overlay-close::before {
     display: none;
@@ -1260,10 +1278,10 @@
   .terminal-output {
     height: 100%;
     padding: 14px;
-    padding-bottom: 16px;
+    padding-bottom: 34px;
     font-size: 12.5px;
     min-height: 0;
-    scroll-padding-bottom: 16px;
+    scroll-padding-bottom: 34px;
   }
 
   .layer-transition-banner {
@@ -1587,6 +1605,18 @@
   .terminal-mobile-appbar {
     padding-left: 10px;
     padding-right: 10px;
+  }
+
+  .terminal-mobile-appbar-actions {
+    gap: 4px;
+  }
+
+  .terminal-mobile-appbar-btn,
+  .terminal-mobile-menu-btn {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 18px;
   }
 
   .terminal-mobile-menu-body,
