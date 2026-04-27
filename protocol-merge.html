@@ -41,15 +41,15 @@
       </header>
 
       <div class="merge-workspace">
-        <section class="flow-panel scenario-panel merge-action-panel">
-          <div class="flow-panel-head">
-            <h2>Scenarios</h2>
-            <div id="scenarioStatus" class="flow-status idle">Ready</div>
-          </div>
-          <div id="scenarioTabs" class="scenario-tabs"></div>
-        </section>
-
         <div class="merge-main-column">
+          <section class="flow-panel scenario-panel merge-scenario-panel">
+            <div class="flow-panel-head">
+              <h2>Scenarios</h2>
+              <div id="scenarioStatus" class="flow-status idle">Ready</div>
+            </div>
+            <div id="scenarioTabs" class="scenario-tabs"></div>
+          </section>
+
           <div class="flow-layout">
             <section class="flow-panel diagram-panel">
               <div class="display-panel flow-display">
@@ -151,11 +151,11 @@
           </div>
         </div>
 
-        <details id="protocolReferenceDisclosure" class="merge-reference-disclosure" open>
+        <details id="protocolReferenceDisclosure" class="merge-reference-disclosure">
           <summary class="merge-reference-summary">
             <span class="flow-kicker">Reference</span>
-            <span class="merge-reference-summary-title">Reference & Compare</span>
-            <span class="merge-reference-summary-copy">Open the explanation, quick checks, and protocol compare when needed.</span>
+            <span class="merge-reference-summary-title">Open Reference</span>
+            <span class="merge-reference-summary-copy">Explanation, use cases, and compare views stay hidden until opened.</span>
           </summary>
 
           <div class="merge-reference-stack">
@@ -181,68 +181,74 @@
               </div>
             </aside>
 
-            <section class="flow-panel usecase-panel">
-              <div class="merge-panel-head">
-                <div>
-                  <h2>Protocol Use Cases</h2>
-                  <p class="merge-panel-copy">Pick the protocol that best matches the practical task.</p>
+            <details class="merge-secondary-disclosure">
+              <summary class="merge-secondary-summary">Protocol Use Cases</summary>
+              <section class="flow-panel usecase-panel">
+                <div class="merge-panel-head">
+                  <div>
+                    <h2>Protocol Use Cases</h2>
+                    <p class="merge-panel-copy">Pick the protocol that best matches the practical task.</p>
+                  </div>
                 </div>
-              </div>
-              <div id="useCaseGrid" class="usecase-grid"></div>
-            </section>
+                <div id="useCaseGrid" class="usecase-grid"></div>
+              </section>
+            </details>
 
-            <section class="flow-panel compare-panel">
-              <div class="merge-panel-head">
-                <div>
-                  <h2>Protocol Compare</h2>
-                  <p class="merge-panel-copy">Keep the common protocol pairings straight.</p>
+            <details class="merge-secondary-disclosure">
+              <summary class="merge-secondary-summary">Protocol Compare</summary>
+              <section class="flow-panel compare-panel">
+                <div class="merge-panel-head">
+                  <div>
+                    <h2>Protocol Compare</h2>
+                    <p class="merge-panel-copy">Keep the common protocol pairings straight.</p>
+                  </div>
                 </div>
-              </div>
 
-              <div class="compare-grid">
-                <article class="compare-card">
-                  <h3>TCP vs UDP</h3>
-                  <div class="compare-row">
-                    <div>
-                      <p class="compare-label">TCP</p>
-                      <p>Reliable, ordered, acknowledgment-based. Good for web sessions, file transfer, and anything that must arrive intact.</p>
+                <div class="compare-grid">
+                  <article class="compare-card">
+                    <h3>TCP vs UDP</h3>
+                    <div class="compare-row">
+                      <div>
+                        <p class="compare-label">TCP</p>
+                        <p>Reliable, ordered, acknowledgment-based. Good for web sessions, file transfer, and anything that must arrive intact.</p>
+                      </div>
+                      <div>
+                        <p class="compare-label">UDP</p>
+                        <p>Faster and lighter. Good for streaming, voice, and traffic where speed matters more than guaranteed delivery.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p class="compare-label">UDP</p>
-                      <p>Faster and lighter. Good for streaming, voice, and traffic where speed matters more than guaranteed delivery.</p>
-                    </div>
-                  </div>
-                </article>
+                  </article>
 
-                <article class="compare-card">
-                  <h3>HTTP vs HTTPS</h3>
-                  <div class="compare-row">
-                    <div>
-                      <p class="compare-label">HTTP</p>
-                      <p>Web traffic without encryption. Fine for basic concepts, but not for protecting passwords or sensitive data.</p>
+                  <article class="compare-card">
+                    <h3>HTTP vs HTTPS</h3>
+                    <div class="compare-row">
+                      <div>
+                        <p class="compare-label">HTTP</p>
+                        <p>Web traffic without encryption. Fine for basic concepts, but not for protecting passwords or sensitive data.</p>
+                      </div>
+                      <div>
+                        <p class="compare-label">HTTPS</p>
+                        <p>Encrypted web traffic. Use it when browsing securely, logging in, or sending data you do not want exposed.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p class="compare-label">HTTPS</p>
-                      <p>Encrypted web traffic. Use it when browsing securely, logging in, or sending data you do not want exposed.</p>
-                    </div>
-                  </div>
-                </article>
+                  </article>
 
-                <article class="compare-card">
-                  <h3>SSH vs Telnet</h3>
-                  <div class="compare-row">
-                    <div>
-                      <p class="compare-label">SSH</p>
-                      <p>Secure remote administration. Encrypts both credentials and the remote session.</p>
+                  <article class="compare-card">
+                    <h3>SSH vs Telnet</h3>
+                    <div class="compare-row">
+                      <div>
+                        <p class="compare-label">SSH</p>
+                        <p>Secure remote administration. Encrypts both credentials and the remote session.</p>
+                      </div>
+                      <div>
+                        <p class="compare-label">Telnet</p>
+                        <p>Legacy remote administration without encryption. Credentials can be exposed on the network.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p class="compare-label">Telnet</p>
-                      <p>Legacy remote administration without encryption. Credentials can be exposed on the network.</p>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            </section>
+                  </article>
+                </div>
+              </section>
+            </details>
           </div>
         </details>
       </div>

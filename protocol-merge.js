@@ -510,7 +510,7 @@ const MESSAGE_TIME_SCALE = 1.96;
 function syncProtocolReferenceDisclosure() {
   if (!protocolReferenceDisclosure) return;
 
-  protocolReferenceDisclosure.open = !window.matchMedia("(max-width: 768px)").matches;
+  protocolReferenceDisclosure.open = false;
 }
 
 function getScenario() {

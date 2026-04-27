@@ -41,7 +41,7 @@
             <button id="cheatSheetToggle" class="section-btn" type="button">Cheat Sheet</button>
           </div>
 
-          <section class="hub-section-panel subnet-dashboard-panel subnet-mode-panel">
+          <section class="hub-section-panel subnet-dashboard-panel subnet-mode-panel" hidden>
             <div class="subnet-panel-head">
               <div>
                 <p class="subnet-panel-kicker">Actions</p>
@@ -90,6 +90,54 @@
               </article>
             </div>
           </section>
+
+          <details id="referencePanelDisclosure" class="subnet-reference-disclosure">
+            <summary class="subnet-reference-summary">
+              <span class="subnet-panel-kicker">Reference</span>
+              <span class="subnet-reference-summary-title">Open Reference</span>
+              <span class="subnet-reference-summary-copy">Masks, host counts, quick rules, commands, and security notes.</span>
+            </summary>
+
+            <section id="referencePanel" class="hub-section-panel subnet-dashboard-panel subnet-reference-panel">
+              <div class="subnet-panel-head">
+                <div>
+                  <p class="subnet-panel-kicker">Reference</p>
+                  <h2>Reference</h2>
+                </div>
+              </div>
+
+              <div class="subnet-reference-grid">
+                <button class="subnet-reference-card" type="button" data-reference-card="cidrMasks">
+                  <span class="subnet-reference-card-title">CIDR / Masks</span>
+                  <span class="subnet-reference-card-copy">Prefix and mask pairs.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="hostCounts">
+                  <span class="subnet-reference-card-title">Host Counts</span>
+                  <span class="subnet-reference-card-copy">Usable hosts by prefix.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="blockSizes">
+                  <span class="subnet-reference-card-title">Block Sizes</span>
+                  <span class="subnet-reference-card-copy">Subnet increments by prefix.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="quickRules">
+                  <span class="subnet-reference-card-title">Quick Rules</span>
+                  <span class="subnet-reference-card-copy">Network, broadcast, and usable ranges.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="commands">
+                  <span class="subnet-reference-card-title">Commands</span>
+                  <span class="subnet-reference-card-copy">Core Cisco review commands.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="switchMgmt">
+                  <span class="subnet-reference-card-title">Switch Mgmt</span>
+                  <span class="subnet-reference-card-copy">Management IP and gateway rules.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="security">
+                  <span class="subnet-reference-card-title">Security</span>
+                  <span class="subnet-reference-card-copy">Remote access security reminders.</span>
+                </button>
+              </div>
+            </section>
+          </details>
         </aside>
 
         <main class="subnet-dashboard-main">
@@ -138,7 +186,7 @@
                 </div>
               </div>
 
-              <div class="display-panel subnet-question-panel">
+              <div id="subnetQuestionPanel" class="display-panel subnet-question-panel">
                 <div class="subnet-question-head">
                   <div>
                     <p class="subnet-panel-kicker">Active Prompt</p>
@@ -244,54 +292,6 @@
           </ul>
         </section>
       </div>
-
-      <details id="referencePanelDisclosure" class="subnet-reference-disclosure" open>
-        <summary class="subnet-reference-summary">
-          <span class="subnet-panel-kicker">Reference</span>
-          <span class="subnet-reference-summary-title">Reference & Rules</span>
-          <span class="subnet-reference-summary-copy">Open only when you need a mask, host, or command reminder.</span>
-        </summary>
-
-        <section id="referencePanel" class="hub-section-panel subnet-dashboard-panel subnet-reference-panel">
-          <div class="subnet-panel-head">
-            <div>
-              <p class="subnet-panel-kicker">Reference</p>
-              <h2>Reference</h2>
-            </div>
-          </div>
-
-          <div class="subnet-reference-grid">
-            <button class="subnet-reference-card" type="button" data-reference-card="cidrMasks">
-              <span class="subnet-reference-card-title">CIDR / Masks</span>
-              <span class="subnet-reference-card-copy">Prefix and mask pairs.</span>
-            </button>
-            <button class="subnet-reference-card" type="button" data-reference-card="hostCounts">
-              <span class="subnet-reference-card-title">Host Counts</span>
-              <span class="subnet-reference-card-copy">Usable hosts by prefix.</span>
-            </button>
-            <button class="subnet-reference-card" type="button" data-reference-card="blockSizes">
-              <span class="subnet-reference-card-title">Block Sizes</span>
-              <span class="subnet-reference-card-copy">Subnet increments by prefix.</span>
-            </button>
-            <button class="subnet-reference-card" type="button" data-reference-card="quickRules">
-              <span class="subnet-reference-card-title">Quick Rules</span>
-              <span class="subnet-reference-card-copy">Network, broadcast, and usable ranges.</span>
-            </button>
-            <button class="subnet-reference-card" type="button" data-reference-card="commands">
-              <span class="subnet-reference-card-title">Commands</span>
-              <span class="subnet-reference-card-copy">Core Cisco review commands.</span>
-            </button>
-            <button class="subnet-reference-card" type="button" data-reference-card="switchMgmt">
-              <span class="subnet-reference-card-title">Switch Mgmt</span>
-              <span class="subnet-reference-card-copy">Management IP and gateway rules.</span>
-            </button>
-            <button class="subnet-reference-card" type="button" data-reference-card="security">
-              <span class="subnet-reference-card-title">Security</span>
-              <span class="subnet-reference-card-copy">Remote access security reminders.</span>
-            </button>
-          </div>
-        </section>
-      </details>
 
       <div id="referenceModal" class="subnet-reference-modal" hidden>
         <div class="subnet-reference-modal-backdrop" data-reference-close></div>

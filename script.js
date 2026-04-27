@@ -719,6 +719,7 @@ const els = {
   referenceModalCloseBtn: document.getElementById("referenceModalCloseBtn"),
   examModeBtn: document.getElementById("examModeBtn"),
   examStatus: document.getElementById("examStatus"),
+  questionPanel: document.getElementById("subnetQuestionPanel"),
   question: document.getElementById("question"),
   diagram: document.getElementById("diagram"),
   answers: document.getElementById("answers"),
@@ -795,13 +796,22 @@ function syncReferenceDisclosureDefault() {
     return;
   }
 
-  els.referenceDisclosure.open = !window.matchMedia("(max-width: 768px)").matches;
+  els.referenceDisclosure.open = false;
 }
 
 function openReferenceDisclosure() {
   if (els.referenceDisclosure) {
     els.referenceDisclosure.open = true;
   }
+}
+
+function syncQuestionPanelVisibility(forceShow = false) {
+  if (!els.questionPanel) {
+    return;
+  }
+
+  const shouldShow = forceShow || state.examModeActive || state.examFinished || Boolean(state.currentMode);
+  els.questionPanel.hidden = !shouldShow;
 }
 
 function openReferenceTopic(topicId) {
@@ -984,6 +994,7 @@ function restoreSavedProgress(savedState) {
   els.examStatus.textContent = ui.examStatusText || "";
   els.restartExamBtn.hidden = Boolean(ui.restartExamBtnHidden);
   els.exitExamBtn.hidden = Boolean(ui.exitExamBtnHidden);
+  syncQuestionPanelVisibility(!ui.questionPlaceholder || Boolean(ui.diagramHtml) || (ui.answers || []).length > 0);
   syncExamExitButton();
   state.resumePromptVisible = false;
 
@@ -1139,6 +1150,8 @@ function showPractice(force = false) {
     resetIntroState();
   }
 
+  syncQuestionPanelVisibility();
+
   renderSectionShell();
   if (NetlabApp && !state.resumePromptVisible) {
     persistSectionProgress();
@@ -1180,6 +1193,7 @@ function resetIntroState() {
   els.examStatus.hidden = true;
   els.restartExamBtn.hidden = true;
   els.exitExamBtn.hidden = true;
+  syncQuestionPanelVisibility(false);
 }
 
 function resetQuestionUi({ showHint = true } = {}) {
@@ -1196,6 +1210,7 @@ function resetQuestionUi({ showHint = true } = {}) {
   els.exitExamBtn.hidden = true;
   state.currentHintText = "";
   state.currentBits = [];
+  syncQuestionPanelVisibility(true);
 }
 
 function renderAnswerOptions(options) {
@@ -1216,6 +1231,7 @@ function renderQuestionObject(question, mode) {
   state.currentHintText = question.hint;
   setQuestion(question.question);
   renderAnswerOptions(shuffle(question.options));
+  syncQuestionPanelVisibility(true);
 }
 
 function renderCurrentModeQuestion(mode) {

@@ -2461,11 +2461,130 @@ h3 {
     width: 100%;
   }
 
-  .reward-toast {
+.reward-toast {
     left: 12px;
     right: 12px;
     bottom: 12px;
     min-width: 0;
     max-width: none;
+  }
+}
+
+body.subnet-dashboard-page,
+body.merge-page:not(.http-flow-page) {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subnet-dashboard-page .rack-room {
+  max-width: 1360px;
+}
+
+.subnet-dashboard-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  gap: 22px;
+}
+
+.subnet-dashboard-main {
+  order: 1;
+}
+
+.subnet-dashboard-actions {
+  order: 2;
+  gap: 14px;
+}
+
+.subnet-dashboard-page .subnet-mode-panel[hidden] {
+  display: none !important;
+}
+
+.subnet-dashboard-page .subnet-session-panel {
+  padding: 12px 14px;
+}
+
+.subnet-dashboard-page .subnet-session-row {
+  grid-template-columns: 1fr;
+}
+
+.subnet-dashboard-page .subnet-session-stat + .subnet-session-stat {
+  border-left: 0;
+  border-top: 1px solid rgba(71, 85, 105, 0.32);
+}
+
+.subnet-dashboard-page .subnet-practice-panel {
+  gap: 16px;
+}
+
+.subnet-dashboard-page .subnet-mode-groups {
+  gap: 14px;
+}
+
+.subnet-dashboard-page #subnetQuestionPanel[hidden] {
+  display: none !important;
+}
+
+.subnet-reference-disclosure {
+  width: 100%;
+}
+
+.subnet-reference-summary {
+  display: block;
+  list-style: none;
+  cursor: pointer;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background:
+    radial-gradient(circle at right, rgba(168, 85, 247, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(7, 12, 18, 0.96) 0%, rgba(10, 15, 24, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 24px rgba(2, 6, 23, 0.22);
+}
+
+.subnet-reference-summary::after {
+  content: "Open";
+  display: inline-flex;
+  margin-top: 12px;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  color: #86efac;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subnet-reference-disclosure[open] .subnet-reference-summary::after {
+  content: "Hide";
+}
+
+.subnet-dashboard-page .subnet-reference-panel {
+  margin-top: 10px;
+}
+
+.subnet-dashboard-page .subnet-reference-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 960px) {
+  .subnet-dashboard-workspace {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .subnet-dashboard-actions {
+    order: 2;
+  }
+
+  .subnet-dashboard-page .app-shell-actions,
+  .subnet-dashboard-page #actionButtons,
+  .subnet-dashboard-page .subnet-mode-button-grid,
+  .subnet-dashboard-page .subnet-mode-inline-actions {
+    grid-template-columns: 1fr;
   }
 }
