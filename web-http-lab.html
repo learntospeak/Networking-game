@@ -7,13 +7,13 @@
   <link rel="stylesheet" href="./style.css?v=20260427mobile5">
   <link rel="stylesheet" href="./protocol-flow.css?v=20260427mobile1">
   <link rel="stylesheet" href="./protocol-merge.css?v=20260427mobile2">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260427httpstage1">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260427httpstage2">
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
   >
   <script src="./web-http-lab-data.js?v=20260426httpflow2" defer></script>
-  <script src="./web-http-lab.js?v=20260427httpstage1" defer></script>
+  <script src="./web-http-lab.js?v=20260427httpstage2" defer></script>
 </head>
 <body class="flow-page merge-page http-flow-page">
   <div class="rack-room">
@@ -45,13 +45,23 @@
 
       <div class="merge-workspace">
         <div class="merge-main-column">
-          <section class="flow-panel scenario-panel merge-scenario-panel">
-            <div class="flow-panel-head">
-              <h2>Scenarios</h2>
-              <div id="scenarioStatus" class="flow-status idle">Ready</div>
-            </div>
-            <div id="scenarioTabs" class="scenario-tabs"></div>
-          </section>
+          <details id="httpStageDisclosure" class="http-stage-disclosure">
+            <summary class="http-stage-summary">
+              <div class="http-stage-summary-copy">
+                <span class="flow-kicker">Stages</span>
+                <span id="httpStageSummaryTitle" class="http-stage-summary-title">Stage 1: HTTP Page Request</span>
+                <span id="httpStageSummaryNote" class="http-stage-summary-note">Readable page request</span>
+              </div>
+              <div class="http-stage-summary-meta">
+                <span id="httpStageSummaryBadge" class="http-stage-summary-badge">Stage 1 of 3</span>
+                <div id="scenarioStatus" class="flow-status idle">Ready</div>
+              </div>
+            </summary>
+
+            <section class="flow-panel scenario-panel merge-scenario-panel http-stage-panel">
+              <div id="scenarioTabs" class="scenario-tabs"></div>
+            </section>
+          </details>
 
           <div class="flow-layout">
             <section class="flow-panel diagram-panel">

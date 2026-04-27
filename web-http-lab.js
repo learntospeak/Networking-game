@@ -1,6 +1,10 @@
 const { scenarios = [], useCases = [] } = window.WebHttpFlowData || {};
 
 const els = {
+  stageDisclosure: document.getElementById("httpStageDisclosure"),
+  stageSummaryTitle: document.getElementById("httpStageSummaryTitle"),
+  stageSummaryNote: document.getElementById("httpStageSummaryNote"),
+  stageSummaryBadge: document.getElementById("httpStageSummaryBadge"),
   scenarioTabs: document.getElementById("scenarioTabs"),
   scenarioStatus: document.getElementById("scenarioStatus"),
   scenarioLabel: document.getElementById("scenarioLabel"),
@@ -766,6 +770,29 @@ function unlockNextScenario(index) {
   );
 }
 
+function updateStageSummary() {
+  const scenario = getScenario();
+  if (!scenario) return;
+
+  if (els.stageSummaryTitle) {
+    els.stageSummaryTitle.textContent = `Stage ${state.scenarioIndex + 1}: ${scenario.name}`;
+  }
+
+  if (els.stageSummaryBadge) {
+    els.stageSummaryBadge.textContent = `Stage ${state.scenarioIndex + 1} of ${scenarios.length}`;
+  }
+
+  if (els.stageSummaryNote) {
+    if (isScenarioComplete(state.scenarioIndex) && state.scenarioIndex < scenarios.length - 1) {
+      els.stageSummaryNote.textContent = `Complete. Stage ${state.scenarioIndex + 2} is now unlocked.`;
+    } else if (isScenarioComplete(state.scenarioIndex)) {
+      els.stageSummaryNote.textContent = "Complete. All stages unlocked.";
+    } else {
+      els.stageSummaryNote.textContent = scenario.note;
+    }
+  }
+}
+
 function renderScenarioTabs() {
   els.scenarioTabs.innerHTML = "";
 
@@ -817,6 +844,8 @@ function updateScenarioTabs() {
             : "Available";
     }
   });
+
+  updateStageSummary();
 }
 
 function applyDeviceState(scenario) {
@@ -951,6 +980,7 @@ function renderStep() {
   els.scenarioSummary.textContent = scenario.summary;
   els.nextStepBtn.hidden = true;
   els.nextStepBtn.textContent = "Next Step";
+  updateStageSummary();
 
   els.actionButtons.innerHTML = "";
 
@@ -1016,6 +1046,9 @@ function loadScenario(index) {
 
   state.scenarioIndex = index;
   state.stepIndex = 0;
+  if (els.stageDisclosure) {
+    els.stageDisclosure.open = false;
+  }
   renderStep();
 }
 
