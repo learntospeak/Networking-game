@@ -2534,6 +2534,8 @@ body.merge-page:not(.http-flow-page) {
 .subnet-dashboard-page .subnet-mode-groups {
   gap: 12px;
   padding: 16px;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .subnet-dashboard-page .subnet-practice-head p:last-child {
@@ -2544,12 +2546,15 @@ body.merge-page:not(.http-flow-page) {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  min-width: 0;
 }
 
 .subnet-dashboard-page .mode-btn {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  box-sizing: border-box;
+  max-width: 100%;
   width: 100%;
   margin: 0;
   padding: 0 14px 0 44px;
@@ -2560,6 +2565,8 @@ body.merge-page:not(.http-flow-page) {
 .subnet-dashboard-page #modeButtons,
 .subnet-dashboard-page #extraButtons {
   display: grid !important;
+  width: 100%;
+  min-width: 0;
 }
 
 .subnet-dashboard-page #modeButtons {
@@ -2573,12 +2580,16 @@ body.merge-page:not(.http-flow-page) {
 .subnet-dashboard-page #modeButtons button,
 .subnet-dashboard-page #extraButtons button {
   flex: 0 0 auto;
+  box-sizing: border-box;
+  max-width: 100%;
   width: 100%;
   margin: 0;
 }
 
 .subnet-dashboard-page #examModeBtn,
 .subnet-dashboard-page #protocolMergeLink {
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 62px;
 }
 
@@ -2812,6 +2823,14 @@ body.merge-page:not(.http-flow-page) {
     gap: 8px;
   }
 
+  .subnet-dashboard-page .subnet-mode-group,
+  .subnet-dashboard-page .subnet-mode-inline-actions,
+  .subnet-dashboard-page #examModeRow,
+  .subnet-dashboard-page #protocolMergeRow {
+    min-width: 0;
+    width: 100%;
+  }
+
   .subnet-dashboard-page #modeButtons {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -2825,6 +2844,8 @@ body.merge-page:not(.http-flow-page) {
   .subnet-dashboard-page .app-action-link,
   .subnet-dashboard-page #answers button,
   .subnet-dashboard-page #actionButtons button {
+    box-sizing: border-box;
+    max-width: 100%;
     width: 100%;
     min-width: 0;
     min-height: 56px;
