@@ -169,6 +169,14 @@
 }
 
 @media (max-width: 768px) {
+  .http-flow-page {
+    --flow-mobile-dock-space: calc(228px + env(safe-area-inset-bottom));
+  }
+
+  .http-flow-page .flow-shell {
+    padding-bottom: calc(var(--flow-mobile-dock-space) + 16px);
+  }
+
   .http-stage-summary {
     align-items: stretch;
   }
@@ -188,5 +196,90 @@
 
   .http-stage-summary::after {
     align-self: flex-start;
+  }
+
+  .http-flow-page .flow-layout {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .http-flow-page .scenario-subtitle {
+    margin-bottom: 8px;
+  }
+
+  .http-flow-page .flow-display,
+  .http-flow-page .flow-visual-panel {
+    gap: 10px;
+  }
+
+  .http-flow-page .diagram-stage {
+    height: 592px;
+  }
+
+  .http-flow-page .interaction-panel {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 6px);
+    z-index: 45;
+    width: min(calc(100vw - 12px), 980px);
+    max-height: min(34dvh, 248px);
+    overflow-y: auto;
+    transform: translateX(-50%);
+    padding: 12px;
+    border: 1px solid rgba(71, 85, 105, 0.72);
+    border-radius: 16px;
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(56, 189, 248, 0.08);
+    backdrop-filter: blur(16px);
+    background: linear-gradient(180deg, rgba(10, 14, 20, 0.96) 0%, rgba(5, 8, 12, 0.98) 100%);
+  }
+
+  .http-flow-page .interaction-panel h2 {
+    display: none;
+  }
+
+  .http-flow-page .interaction-summary,
+  .http-flow-page .mobile-feedback-text {
+    display: block;
+  }
+
+  .http-flow-page .interaction-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .http-flow-page .step-prompt {
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .http-flow-page .action-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+
+  .http-flow-page .action-buttons button,
+  .http-flow-page .flow-controls button {
+    min-height: 44px;
+    padding: 10px 12px 10px 36px;
+    font-size: 14px;
+  }
+
+  .http-flow-page .flow-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .http-flow-page .action-buttons,
+  .http-flow-page .flow-controls {
+    grid-template-columns: 1fr !important;
   }
 }
