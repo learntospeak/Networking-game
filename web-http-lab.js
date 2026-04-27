@@ -61,7 +61,9 @@ const state = {
   scenarioIndex: 0,
   stepIndex: 0,
   stepResolved: false,
-  visualRunId: 0
+  visualRunId: 0,
+  unlockedScenarioCount: 1,
+  completedScenarios: new Set()
 };
 
 const MESSAGE_TIME_SCALE = 1.96;
@@ -744,6 +746,26 @@ function updateFlowIndicator(indicator) {
   els.flowIndicator.textContent = indicator.label;
 }
 
+function isScenarioUnlocked(index) {
+  return index < state.unlockedScenarioCount;
+}
+
+function isScenarioComplete(index) {
+  const scenario = scenarios[index];
+  return Boolean(scenario && state.completedScenarios.has(scenario.id));
+}
+
+function unlockNextScenario(index) {
+  const scenario = scenarios[index];
+  if (!scenario) return;
+
+  state.completedScenarios.add(scenario.id);
+  state.unlockedScenarioCount = Math.max(
+    state.unlockedScenarioCount,
+    Math.min(scenarios.length, index + 2)
+  );
+}
+
 function renderScenarioTabs() {
   els.scenarioTabs.innerHTML = "";
 
@@ -752,19 +774,48 @@ function renderScenarioTabs() {
     button.type = "button";
     button.className = "scenario-tab";
     button.innerHTML = `
+      <span class="scenario-tab-stage">Stage ${index + 1}</span>
       <span class="scenario-tab-title">${scenario.name}</span>
       <span class="scenario-tab-note">${scenario.note}</span>
+      <span class="scenario-tab-status"></span>
     `;
     button.addEventListener("click", () => loadScenario(index));
     els.scenarioTabs.appendChild(button);
   });
+
+  updateScenarioTabs();
 }
 
 function updateScenarioTabs() {
   const buttons = Array.from(els.scenarioTabs.querySelectorAll("button"));
 
   buttons.forEach((button, index) => {
-    button.classList.toggle("active", index === state.scenarioIndex);
+    const unlocked = isScenarioUnlocked(index);
+    const complete = isScenarioComplete(index);
+    const active = index === state.scenarioIndex;
+    const note = button.querySelector(".scenario-tab-note");
+    const status = button.querySelector(".scenario-tab-status");
+
+    button.disabled = !unlocked;
+    button.classList.toggle("active", active);
+    button.classList.toggle("is-locked", !unlocked);
+    button.classList.toggle("is-complete", complete);
+
+    if (note) {
+      note.textContent = unlocked
+        ? scenarios[index].note
+        : "Complete the previous stage to unlock this path.";
+    }
+
+    if (status) {
+      status.textContent = !unlocked
+        ? "Locked"
+        : complete
+          ? "Complete"
+          : active
+            ? "Current"
+            : "Available";
+    }
   });
 }
 
@@ -936,10 +987,17 @@ async function handleAnswer(index, button) {
       els.nextStepBtn.hidden = false;
       els.nextStepBtn.textContent = "Next Step";
     } else {
-      updateScenarioStatus("good", "Scenario complete");
+      unlockNextScenario(state.scenarioIndex);
+      updateScenarioTabs();
+      updateScenarioStatus("good", state.scenarioIndex < scenarios.length - 1 ? "Stage complete" : "Lab complete");
       els.nextStepBtn.hidden = false;
-      els.nextStepBtn.textContent = "Restart Scenario";
-      els.whyText.textContent = scenario.summary;
+      els.nextStepBtn.textContent = state.scenarioIndex < scenarios.length - 1 ? "Next Stage" : "Restart Stage";
+      els.whyText.textContent = state.scenarioIndex < scenarios.length - 1
+        ? `${scenario.summary} Continue to Stage ${state.scenarioIndex + 2} when you're ready.`
+        : scenario.summary;
+      els.mobileFeedbackText.textContent = state.scenarioIndex < scenarios.length - 1
+        ? `Stage complete. Continue to Stage ${state.scenarioIndex + 2}.`
+        : step.explanation;
     }
 
     return;
@@ -954,6 +1012,8 @@ async function handleAnswer(index, button) {
 }
 
 function loadScenario(index) {
+  if (!isScenarioUnlocked(index)) return;
+
   state.scenarioIndex = index;
   state.stepIndex = 0;
   renderStep();
@@ -967,6 +1027,11 @@ function goToNextStep() {
   if (state.stepIndex < scenario.steps.length - 1) {
     state.stepIndex += 1;
     renderStep();
+    return;
+  }
+
+  if (state.scenarioIndex < scenarios.length - 1 && isScenarioComplete(state.scenarioIndex)) {
+    loadScenario(state.scenarioIndex + 1);
     return;
   }
 
