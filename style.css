@@ -2496,6 +2496,10 @@ body.merge-page:not(.http-flow-page) {
   gap: 10px;
 }
 
+.subnet-dashboard-page #practiceSection {
+  height: 100%;
+}
+
 .subnet-dashboard-page .subnet-mode-panel[hidden] {
   display: none !important;
 }
@@ -2519,11 +2523,14 @@ body.merge-page:not(.http-flow-page) {
 
 .subnet-dashboard-page .subnet-practice-panel {
   gap: 12px;
+  min-height: 620px;
+  display: grid;
+  align-content: start;
 }
 
 .subnet-dashboard-page .subnet-mode-groups {
   gap: 12px;
-  padding: 14px;
+  padding: 16px;
 }
 
 .subnet-dashboard-page .subnet-practice-head p:last-child {
@@ -2533,6 +2540,16 @@ body.merge-page:not(.http-flow-page) {
 .subnet-dashboard-page .subnet-mode-button-grid {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
+}
+
+.subnet-dashboard-page .mode-btn {
+  min-height: 58px;
+  font-size: 16px;
+}
+
+.subnet-dashboard-page #examModeBtn,
+.subnet-dashboard-page #protocolMergeLink {
+  min-height: 58px;
 }
 
 .subnet-dashboard-page #subnetQuestionPanel[hidden] {
@@ -2554,6 +2571,10 @@ body.merge-page:not(.http-flow-page) {
 
 .subnet-dashboard-page #actionButtons {
   gap: 8px;
+}
+
+.subnet-dashboard-page .subnet-practice-panel:has(#subnetQuestionPanel[hidden]) {
+  min-height: clamp(640px, calc(100vh - 250px), 760px);
 }
 
 .subnet-reference-disclosure {
@@ -2621,7 +2642,18 @@ body.merge-page:not(.http-flow-page) {
     grid-template-columns: 1fr;
   }
 
+  .subnet-dashboard-page .subnet-practice-panel,
+  .subnet-dashboard-page .subnet-practice-panel:has(#subnetQuestionPanel[hidden]) {
+    min-height: 0;
+  }
+
   .subnet-dashboard-page .subnet-question-panel {
     padding: 16px;
+  }
+
+  .subnet-dashboard-page .mode-btn,
+  .subnet-dashboard-page #examModeBtn,
+  .subnet-dashboard-page #protocolMergeLink {
+    min-height: 54px;
   }
 }
