@@ -1100,6 +1100,9 @@ button::before {
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 40px;
   padding: 0 14px 0 28px;
   border-radius: 999px;
@@ -2847,7 +2850,6 @@ body.merge-page:not(.http-flow-page) {
   .subnet-dashboard-page .hub-section-jump,
   .subnet-dashboard-page .page-back-link {
     width: 100%;
-    justify-content: center;
   }
 
   .subnet-dashboard-page #question {
