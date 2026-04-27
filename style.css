@@ -2822,6 +2822,10 @@ body.merge-page:not(.http-flow-page) {
 }
 
 @media (max-width: 768px) {
+  .subnet-dashboard-page {
+    --subnet-mobile-dock-space: calc(304px + env(safe-area-inset-bottom));
+  }
+
   .subnet-dashboard-page .rack-room {
     max-width: none;
     padding: 10px;
@@ -2889,8 +2893,46 @@ body.merge-page:not(.http-flow-page) {
     gap: 12px;
   }
 
+  .subnet-dashboard-page .subnet-practice-panel:has(#subnetQuestionPanel:not([hidden])) {
+    padding-bottom: calc(var(--subnet-mobile-dock-space) + 20px);
+  }
+
+  .subnet-dashboard-page .subnet-question-panel:not([hidden]) {
+    order: 2;
+    padding-bottom: calc(var(--subnet-mobile-dock-space) + 12px);
+  }
+
   .subnet-dashboard-page .subnet-mode-groups {
+    order: 3;
     grid-template-columns: 1fr;
+  }
+
+  .subnet-dashboard-page .subnet-question-head {
+    gap: 8px;
+  }
+
+  .subnet-dashboard-page #diagram {
+    min-height: 0;
+    margin-bottom: 0;
+  }
+
+  .subnet-dashboard-page .subnet-mobile-action-dock {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 6px);
+    z-index: 45;
+    width: min(calc(100vw - 12px), 980px);
+    max-height: min(44dvh, 332px);
+    overflow-y: auto;
+    transform: translateX(-50%);
+    padding: 12px;
+    border: 1px solid rgba(71, 85, 105, 0.72);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(10, 14, 20, 0.96) 0%, rgba(5, 8, 12, 0.98) 100%);
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(56, 189, 248, 0.08);
+    backdrop-filter: blur(16px);
   }
 
   .subnet-dashboard-page .subnet-session-row {
@@ -2992,6 +3034,23 @@ body.merge-page:not(.http-flow-page) {
     gap: 8px;
   }
 
+  .subnet-dashboard-page .subnet-feedback-stack {
+    gap: 6px;
+  }
+
+  .subnet-dashboard-page .hint,
+  .subnet-dashboard-page #feedback {
+    min-height: 18px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .subnet-dashboard-page #actionButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+
   .subnet-dashboard-page .subnet-reference-summary-copy {
     font-size: 12px;
     line-height: 1.45;
@@ -3001,6 +3060,10 @@ body.merge-page:not(.http-flow-page) {
 @media (max-width: 560px) {
   .subnet-dashboard-page .app-shell-badges,
   .subnet-dashboard-page #modeButtons {
+    grid-template-columns: 1fr !important;
+  }
+
+  .subnet-dashboard-page #actionButtons {
     grid-template-columns: 1fr !important;
   }
 

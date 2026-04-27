@@ -72,6 +72,10 @@ const state = {
 
 const MESSAGE_TIME_SCALE = 1.96;
 
+function isMobileTrainerView() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
 function getScenario() {
   return scenarios[state.scenarioIndex];
 }
@@ -1013,6 +1017,18 @@ async function handleAnswer(index, button) {
     await runVisualAction(step.visualAction);
 
     if (state.stepIndex < scenario.steps.length - 1) {
+      if (isMobileTrainerView()) {
+        updateScenarioStatus("good", "Advancing");
+        els.mobileFeedbackText.textContent = "Correct. Moving to the next step.";
+        await delay(720);
+
+        if (!state.stepResolved) return;
+
+        state.stepIndex += 1;
+        renderStep();
+        return;
+      }
+
       updateScenarioStatus("good", "Correct path");
       els.nextStepBtn.hidden = false;
       els.nextStepBtn.textContent = "Next Step";
@@ -1020,14 +1036,21 @@ async function handleAnswer(index, button) {
       unlockNextScenario(state.scenarioIndex);
       updateScenarioTabs();
       updateScenarioStatus("good", state.scenarioIndex < scenarios.length - 1 ? "Stage complete" : "Lab complete");
-      els.nextStepBtn.hidden = false;
-      els.nextStepBtn.textContent = state.scenarioIndex < scenarios.length - 1 ? "Next Stage" : "Restart Stage";
       els.whyText.textContent = state.scenarioIndex < scenarios.length - 1
         ? `${scenario.summary} Continue to Stage ${state.scenarioIndex + 2} when you're ready.`
         : scenario.summary;
       els.mobileFeedbackText.textContent = state.scenarioIndex < scenarios.length - 1
         ? `Stage complete. Continue to Stage ${state.scenarioIndex + 2}.`
         : step.explanation;
+
+      if (isMobileTrainerView() && state.scenarioIndex < scenarios.length - 1) {
+        await delay(860);
+        loadScenario(state.scenarioIndex + 1);
+        return;
+      }
+
+      els.nextStepBtn.hidden = false;
+      els.nextStepBtn.textContent = state.scenarioIndex < scenarios.length - 1 ? "Next Stage" : "Restart Stage";
     }
 
     return;

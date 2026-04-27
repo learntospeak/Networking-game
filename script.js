@@ -1793,6 +1793,10 @@ function answerUsesPartialMatch() {
   return state.currentMode === "hostsToCidr" || state.currentMode === "hostRequirement";
 }
 
+function isSubnetMobileTrainerView() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
 function checkAnswer(answer) {
   if (state.examModeActive && !state.examFinished) {
     submitExamAnswer(answer);
@@ -1821,6 +1825,14 @@ function checkAnswer(answer) {
   els.nextBtn.hidden = false;
   els.hintBtn.hidden = true;
   persistSectionProgress();
+
+  if (isCorrect && isSubnetMobileTrainerView()) {
+    window.setTimeout(() => {
+      if (state.examModeActive || !state.currentMode) return;
+      if (els.nextBtn.hidden) return;
+      nextQuestion();
+    }, 720);
+  }
 }
 
 function setMode(mode) {
