@@ -912,3 +912,132 @@
     padding: 16px;
   }
 }
+
+@media (max-width: 768px) {
+  .merge-page .rack-room {
+    max-width: none;
+    padding: 10px;
+  }
+
+  .merge-page .flow-shell {
+    padding: 14px 14px 16px;
+  }
+
+  .merge-page .router-top,
+  .merge-page .flow-header,
+  .merge-page .flow-display-head,
+  .merge-page .flow-panel-head,
+  .merge-page .merge-panel-head,
+  .merge-page .interaction-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .merge-workspace {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .merge-main-column,
+  .merge-reference-disclosure,
+  .merge-reference-stack {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .merge-page .flow-panel,
+  .merge-reference-summary,
+  .merge-secondary-summary {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .merge-page .scenario-tabs,
+  .merge-page .action-buttons,
+  .merge-page .flow-controls,
+  .merge-page .usecase-grid,
+  .merge-page .compare-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .merge-page .scenario-tab,
+  .merge-page .action-buttons button,
+  .merge-page .flow-controls button {
+    min-height: 52px;
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .merge-page .legend-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .merge-page .legend-pill {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .merge-page .diagram-stage {
+    height: 620px;
+  }
+
+  .merge-page .device-node {
+    width: min(152px, calc(100% - 72px));
+    min-height: 100px;
+    padding: 12px 10px;
+  }
+
+  .merge-page .device-icon-wrap {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 8px;
+  }
+
+  .merge-page .device-icon {
+    font-size: 14px;
+  }
+
+  .merge-page .device-title {
+    font-size: 14px;
+  }
+
+  .merge-page .device-meta {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .merge-page #cablePcSwitch {
+    top: 112px;
+  }
+
+  .merge-page #cableSwitchRouter {
+    top: 264px;
+  }
+
+  .merge-page #cableRouterServer {
+    top: 416px;
+  }
+
+  .merge-page .flow-cable-bypass {
+    top: 218px;
+    height: 284px;
+  }
+}
+
+@media (max-width: 520px) {
+  .merge-page .legend-row {
+    grid-template-columns: 1fr;
+  }
+
+  .merge-page .diagram-stage {
+    height: 592px;
+  }
+
+  .merge-page .device-node {
+    width: min(140px, calc(100% - 44px));
+  }
+}
