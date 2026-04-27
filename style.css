@@ -7,6 +7,378 @@ body {
   padding: 12px;
 }
 
+.subnet-dashboard-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(260px, 320px);
+  gap: 20px;
+  align-items: start;
+}
+
+.subnet-dashboard-actions,
+.subnet-dashboard-main {
+  min-width: 0;
+}
+
+.subnet-dashboard-actions {
+  display: grid;
+  gap: 18px;
+  align-self: start;
+}
+
+.subnet-dashboard-main {
+  display: grid;
+  gap: 18px;
+}
+
+.subnet-dashboard-page .app-shell-panel,
+.subnet-dashboard-page .subnet-dashboard-panel,
+.subnet-dashboard-page .subnet-practice-panel,
+.subnet-dashboard-page .subnet-reference-panel {
+  margin-top: 0;
+}
+
+.subnet-dashboard-page .app-shell-panel {
+  padding: 16px 18px;
+}
+
+.subnet-dashboard-page .app-shell-copy,
+.subnet-dashboard-page .app-shell-note {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.subnet-dashboard-page .app-shell-badges {
+  margin-top: 12px;
+}
+
+.subnet-dashboard-page .app-shell-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subnet-dashboard-page .subnet-mode-card {
+  min-height: 74px;
+  padding: 16px 16px 16px 42px;
+}
+
+.subnet-dashboard-page .subnet-mode-card-title {
+  font-size: 18px;
+}
+
+.subnet-dashboard-page .subnet-mode-card-copy {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.subnet-dashboard-page .subnet-session-panel {
+  padding: 14px 16px;
+}
+
+.subnet-dashboard-page .subnet-session-row {
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(4, 8, 15, 0.42);
+}
+
+.subnet-dashboard-page .subnet-session-stat {
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.subnet-dashboard-page .subnet-session-value {
+  font-size: 24px;
+}
+
+.subnet-dashboard-page .subnet-practice-panel {
+  gap: 20px;
+  border-color: rgba(132, 204, 22, 0.2);
+}
+
+.subnet-dashboard-page .subnet-practice-head p:last-child {
+  max-width: 44ch;
+  color: #94a3b8;
+}
+
+.subnet-dashboard-page .subnet-mode-groups {
+  gap: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.44);
+  background:
+    radial-gradient(circle at top right, rgba(168, 85, 247, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(6, 10, 16, 0.88) 0%, rgba(9, 14, 22, 0.94) 100%);
+}
+
+.subnet-dashboard-page .subnet-mode-button-grid,
+.subnet-dashboard-page .subnet-mode-inline-actions {
+  gap: 12px;
+}
+
+.subnet-dashboard-page .mode-btn,
+.subnet-dashboard-page .section-btn {
+  border-radius: 14px;
+}
+
+.subnet-dashboard-page .mode-btn {
+  min-height: 52px;
+  font-size: 15px;
+}
+
+.subnet-dashboard-page .subnet-question-panel {
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(168, 85, 247, 0.26);
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(4, 8, 15, 0.98) 0%, rgba(7, 12, 19, 1) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 34px rgba(2, 6, 23, 0.28);
+}
+
+.subnet-dashboard-page #question {
+  margin: 0;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.58);
+  background: linear-gradient(180deg, rgba(10, 15, 23, 0.98) 0%, rgba(4, 8, 15, 1) 100%);
+  color: #f8fafc;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.35;
+  text-align: left;
+}
+
+.subnet-dashboard-page #question.question-placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.subnet-dashboard-page #diagram,
+.subnet-dashboard-page #answers,
+.subnet-dashboard-page #feedback,
+.subnet-dashboard-page .hint {
+  margin: 0;
+}
+
+.subnet-dashboard-page #answers {
+  display: grid;
+  gap: 10px;
+}
+
+.subnet-dashboard-page #answers button {
+  min-height: 52px;
+  border-radius: 14px;
+  padding-left: 42px;
+}
+
+.subnet-dashboard-page .subnet-feedback-stack {
+  gap: 8px;
+}
+
+.subnet-dashboard-page #feedback {
+  min-height: 22px;
+  font-size: 15px;
+}
+
+.subnet-dashboard-page .hint {
+  min-height: 22px;
+  font-style: normal;
+  line-height: 1.55;
+}
+
+.subnet-dashboard-page #actionButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subnet-dashboard-page #actionButtons button {
+  min-height: 50px;
+}
+
+.subnet-reference-disclosure {
+  min-width: 0;
+}
+
+.subnet-reference-summary {
+  display: none;
+}
+
+.subnet-reference-summary::-webkit-details-marker {
+  display: none;
+}
+
+.subnet-reference-summary-title,
+.subnet-reference-summary-copy {
+  display: block;
+}
+
+.subnet-reference-summary-title {
+  margin-top: 4px;
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.subnet-reference-summary-copy {
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.subnet-dashboard-page .subnet-reference-panel {
+  gap: 12px;
+}
+
+.subnet-dashboard-page .subnet-reference-grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.subnet-dashboard-page .subnet-reference-card {
+  min-height: 72px;
+  padding: 14px 14px 14px 38px;
+}
+
+.subnet-dashboard-page .subnet-reference-card-title {
+  font-size: 13px;
+}
+
+.subnet-dashboard-page .subnet-reference-card-copy {
+  line-height: 1.45;
+}
+
+.subnet-dashboard-page .subnet-dashboard-note {
+  margin-top: 10px;
+  text-align: left;
+}
+
+@media (max-width: 1180px) {
+  .subnet-dashboard-workspace {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  }
+
+  .subnet-reference-disclosure {
+    grid-column: 1 / -1;
+  }
+
+  .subnet-dashboard-page .subnet-reference-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .subnet-dashboard-workspace {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .subnet-dashboard-actions,
+  .subnet-dashboard-main,
+  .subnet-reference-disclosure {
+    order: initial;
+  }
+
+  .subnet-dashboard-page .app-shell-actions,
+  .subnet-dashboard-page #actionButtons {
+    grid-template-columns: 1fr;
+  }
+
+  .subnet-dashboard-page .subnet-mode-groups {
+    padding: 14px;
+  }
+
+  .subnet-dashboard-page .subnet-question-panel {
+    padding: 18px;
+  }
+
+  .subnet-dashboard-page .subnet-reference-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .subnet-reference-summary {
+    display: block;
+    list-style: none;
+    cursor: pointer;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(71, 85, 105, 0.72);
+    background:
+      radial-gradient(circle at right, rgba(168, 85, 247, 0.12), transparent 34%),
+      linear-gradient(180deg, rgba(7, 12, 18, 0.96) 0%, rgba(10, 15, 24, 0.98) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 12px 24px rgba(2, 6, 23, 0.22);
+  }
+
+  .subnet-reference-summary::after {
+    content: "Open";
+    display: inline-flex;
+    margin-top: 12px;
+    min-height: 34px;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 197, 94, 0.32);
+    color: #86efac;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .subnet-reference-disclosure[open] .subnet-reference-summary::after {
+    content: "Hide";
+  }
+
+  .subnet-dashboard-page .subnet-reference-panel {
+    margin-top: 10px;
+  }
+
+  .subnet-dashboard-page .subnet-reference-panel .subnet-panel-head {
+    display: none;
+  }
+
+  .subnet-dashboard-page .subnet-session-row,
+  .subnet-dashboard-page .subnet-mode-inline-actions,
+  .subnet-dashboard-page .subnet-reference-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subnet-dashboard-page .subnet-mode-button-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .subnet-dashboard-page .subnet-practice-head {
+    gap: 10px;
+  }
+
+  .subnet-dashboard-page .subnet-practice-head .hub-section-jump {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .subnet-dashboard-page #question {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .subnet-dashboard-page .subnet-mode-button-grid,
+  .subnet-dashboard-page .subnet-mode-inline-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .subnet-dashboard-page .subnet-question-head {
+    gap: 10px;
+  }
+}
+
 h1 {
   text-align: center;
   color: #38bdf8;

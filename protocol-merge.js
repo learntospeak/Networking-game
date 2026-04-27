@@ -496,6 +496,8 @@ const cableElements = {
   "switch-server-end": document.getElementById("cableSwitchServerEnd")
 };
 
+const protocolReferenceDisclosure = document.getElementById("protocolReferenceDisclosure");
+
 const state = {
   scenarioIndex: 0,
   stepIndex: 0,
@@ -504,6 +506,12 @@ const state = {
 };
 
 const MESSAGE_TIME_SCALE = 1.96;
+
+function syncProtocolReferenceDisclosure() {
+  if (!protocolReferenceDisclosure) return;
+
+  protocolReferenceDisclosure.open = !window.matchMedia("(max-width: 768px)").matches;
+}
 
 function getScenario() {
   return scenarios[state.scenarioIndex];
@@ -1492,6 +1500,7 @@ function bindEvents() {
   });
 }
 
+syncProtocolReferenceDisclosure();
 renderScenarioTabs();
 renderUseCases();
 bindEvents();

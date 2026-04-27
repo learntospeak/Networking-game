@@ -711,6 +711,7 @@ const els = {
   dashboardPracticeCard: document.getElementById("dashboardPracticeCard"),
   dashboardWalkthroughCard: document.getElementById("dashboardWalkthroughCard"),
   dashboardExamCard: document.getElementById("dashboardExamCard"),
+  referenceDisclosure: document.getElementById("referencePanelDisclosure"),
   referencePanel: document.getElementById("referencePanel"),
   referenceModal: document.getElementById("referenceModal"),
   referenceModalTitle: document.getElementById("referenceModalTitle"),
@@ -789,10 +790,26 @@ function syncDashboardModeCards(activeCard = "practice") {
   }
 }
 
+function syncReferenceDisclosureDefault() {
+  if (!els.referenceDisclosure) {
+    return;
+  }
+
+  els.referenceDisclosure.open = !window.matchMedia("(max-width: 768px)").matches;
+}
+
+function openReferenceDisclosure() {
+  if (els.referenceDisclosure) {
+    els.referenceDisclosure.open = true;
+  }
+}
+
 function openReferenceTopic(topicId) {
   if (!els.referenceModal || !els.referenceModalTitle || !els.referenceModalBody) {
     return;
   }
+
+  openReferenceDisclosure();
 
   const source = document.getElementById(`referenceTopic-${topicId}`);
   if (!source) {
@@ -1136,6 +1153,8 @@ function showCheatSheet() {
   els.practiceToggle.classList.remove("active");
   els.cheatSheetToggle.classList.add("active");
   syncDashboardModeCards("walkthrough");
+
+  openReferenceDisclosure();
 
   if (els.referencePanel) {
     els.referencePanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1881,6 +1900,7 @@ async function bootSubnettingLab() {
   savedProgressRecord = NetlabApp ? NetlabApp.getSectionProgress(SECTION_ID) : null;
   state.resumePromptVisible = Boolean(savedProgressRecord && NetlabApp?.getLaunchAction() !== "resume");
 
+  syncReferenceDisclosureDefault();
   bindEvents();
   updateScoreboard();
   if (NetlabApp?.getLaunchAction() === "resume" && savedProgressRecord && restoreSavedProgress(savedProgressRecord.state)) {

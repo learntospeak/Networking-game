@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Protocol Lab</title>
-  <link rel="stylesheet" href="./style.css?v=20260423mobile1">
-  <link rel="stylesheet" href="./protocol-flow.css">
-  <link rel="stylesheet" href="./protocol-merge.css">
+  <link rel="stylesheet" href="./style.css?v=20260427layout1">
+  <link rel="stylesheet" href="./protocol-flow.css?v=20260427layout1">
+  <link rel="stylesheet" href="./protocol-merge.css?v=20260427layout1">
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
   >
-  <script src="./protocol-merge.js" defer></script>
+  <script src="./protocol-merge.js?v=20260427layout1" defer></script>
 </head>
 <body class="flow-page merge-page">
   <div class="rack-room">
@@ -34,206 +34,217 @@
           <p class="flow-kicker">Unified Protocol Trainer</p>
           <h1>Protocol Lab</h1>
           <p class="flow-intro">
-            One place for the full protocol walkthrough: guided traffic paths, practical use cases,
-            and side-by-side comparisons without repeating the same lesson twice.
+            Trace the protocol path first, then open reference only when you need it.
           </p>
         </div>
         <a class="flow-nav-link" href="./index.html">Back to Main App</a>
       </header>
 
-      <section class="flow-panel scenario-panel">
-        <div class="flow-panel-head">
-          <h2>Scenarios</h2>
-          <div id="scenarioStatus" class="flow-status idle">Ready</div>
-        </div>
-        <div id="scenarioTabs" class="scenario-tabs"></div>
-      </section>
+      <div class="merge-workspace">
+        <section class="flow-panel scenario-panel merge-action-panel">
+          <div class="flow-panel-head">
+            <h2>Scenarios</h2>
+            <div id="scenarioStatus" class="flow-status idle">Ready</div>
+          </div>
+          <div id="scenarioTabs" class="scenario-tabs"></div>
+        </section>
 
-      <div class="flow-layout">
-        <section class="flow-panel diagram-panel">
-          <div class="display-panel flow-display">
-            <div class="flow-visual-panel">
-              <div class="flow-display-head">
-                <div>
-                  <p id="scenarioLabel" class="scenario-label">ARP Flow</p>
-                  <h2 id="scenarioName" class="scenario-name">ARP on Same Subnet</h2>
-                </div>
-                <div class="flow-badge-stack">
-                  <div id="stepBadge" class="step-badge">Step 1 of 3</div>
-                  <div id="flowIndicator" class="flow-indicator idle" hidden>Flow: DNS Query</div>
-                </div>
-              </div>
-
-              <p id="scenarioSubtitle" class="scenario-subtitle">
-                Resolve the destination MAC on the local network.
-              </p>
-
-              <div class="flow-diagram-scroll">
-                <div class="diagram-shell">
-                  <div id="diagramStage" class="diagram-stage">
-                    <div id="messageLayer" class="message-layer" aria-hidden="true"></div>
-                    <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
-                    <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
-                    <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
-                    <div id="cableSwitchServerStart" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-start"></div>
-                    <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
-                    <div id="cableSwitchServerEnd" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-end"></div>
-
-                    <div id="devicePc" class="device-node" data-device="pc">
-                      <div class="device-icon-wrap">
-                        <i id="devicePcIcon" class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
-                      </div>
-                      <p id="devicePcTitle" class="device-title">PC A</p>
-                      <p id="devicePcMeta" class="device-meta">Source host</p>
+        <div class="merge-main-column">
+          <div class="flow-layout">
+            <section class="flow-panel diagram-panel">
+              <div class="display-panel flow-display">
+                <div class="flow-visual-panel">
+                  <div class="flow-display-head">
+                    <div>
+                      <p id="scenarioLabel" class="scenario-label">ARP Flow</p>
+                      <h2 id="scenarioName" class="scenario-name">ARP on Same Subnet</h2>
                     </div>
-
-                    <div id="deviceSwitch" class="device-node" data-device="switch">
-                      <div class="device-icon-wrap">
-                        <i id="deviceSwitchIcon" class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
-                      </div>
-                      <p id="deviceSwitchTitle" class="device-title">Switch</p>
-                      <p id="deviceSwitchMeta" class="device-meta">Local forwarding</p>
+                    <div class="flow-badge-stack">
+                      <div id="stepBadge" class="step-badge">Step 1 of 3</div>
+                      <div id="flowIndicator" class="flow-indicator idle" hidden>Flow: DNS Query</div>
                     </div>
+                  </div>
 
-                    <div id="deviceRouter" class="device-node" data-device="router">
-                      <div class="device-icon-wrap">
-                        <i id="deviceRouterIcon" class="fa-solid fa-route device-icon" aria-hidden="true"></i>
-                      </div>
-                      <p id="deviceRouterTitle" class="device-title">Router</p>
-                      <p id="deviceRouterMeta" class="device-meta">Gateway</p>
-                    </div>
+                  <p id="scenarioSubtitle" class="scenario-subtitle">
+                    Resolve the destination MAC on the local network.
+                  </p>
 
-                    <div id="deviceServer" class="device-node" data-device="server">
-                      <div class="device-icon-wrap">
-                        <i id="deviceServerIcon" class="fa-solid fa-server device-icon" aria-hidden="true"></i>
+                  <div class="flow-diagram-scroll">
+                    <div class="diagram-shell">
+                      <div id="diagramStage" class="diagram-stage">
+                        <div id="messageLayer" class="message-layer" aria-hidden="true"></div>
+                        <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
+                        <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
+                        <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
+                        <div id="cableSwitchServerStart" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-start"></div>
+                        <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
+                        <div id="cableSwitchServerEnd" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-end"></div>
+
+                        <div id="devicePc" class="device-node" data-device="pc">
+                          <div class="device-icon-wrap">
+                            <i id="devicePcIcon" class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
+                          </div>
+                          <p id="devicePcTitle" class="device-title">PC A</p>
+                          <p id="devicePcMeta" class="device-meta">Source host</p>
+                        </div>
+
+                        <div id="deviceSwitch" class="device-node" data-device="switch">
+                          <div class="device-icon-wrap">
+                            <i id="deviceSwitchIcon" class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
+                          </div>
+                          <p id="deviceSwitchTitle" class="device-title">Switch</p>
+                          <p id="deviceSwitchMeta" class="device-meta">Local forwarding</p>
+                        </div>
+
+                        <div id="deviceRouter" class="device-node" data-device="router">
+                          <div class="device-icon-wrap">
+                            <i id="deviceRouterIcon" class="fa-solid fa-route device-icon" aria-hidden="true"></i>
+                          </div>
+                          <p id="deviceRouterTitle" class="device-title">Router</p>
+                          <p id="deviceRouterMeta" class="device-meta">Gateway</p>
+                        </div>
+
+                        <div id="deviceServer" class="device-node" data-device="server">
+                          <div class="device-icon-wrap">
+                            <i id="deviceServerIcon" class="fa-solid fa-server device-icon" aria-hidden="true"></i>
+                          </div>
+                          <p id="deviceServerTitle" class="device-title">Server</p>
+                          <p id="deviceServerMeta" class="device-meta">Destination service</p>
+                        </div>
                       </div>
-                      <p id="deviceServerTitle" class="device-title">Server</p>
-                      <p id="deviceServerMeta" class="device-meta">Destination service</p>
                     </div>
+                  </div>
+
+                  <div class="legend-row">
+                    <span class="legend-pill legend-broadcast">Broadcast</span>
+                    <span class="legend-pill legend-unicast">Unicast</span>
+                    <span class="legend-pill legend-secure">Secure</span>
+                    <span class="legend-pill legend-warning">Insecure</span>
                   </div>
                 </div>
               </div>
+            </section>
 
-              <div class="legend-row">
-                <span class="legend-pill legend-broadcast">Broadcast</span>
-                <span class="legend-pill legend-unicast">Unicast</span>
-                <span class="legend-pill legend-secure">Secure</span>
-                <span class="legend-pill legend-warning">Insecure</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="flow-panel interaction-panel">
-          <div class="interaction-summary">
-            <div>
-              <p id="mobileScenarioName" class="interaction-scenario-title">ARP on Same Subnet</p>
-              <p id="mobileStepBadge" class="interaction-step-badge">Step 1 of 3</p>
-            </div>
-            <div id="mobileFeedbackState" class="interaction-feedback-state idle">Waiting for action</div>
-          </div>
-          <h2>Choose the Next Action</h2>
-          <p id="stepPrompt" class="step-prompt">
-            PC 192.168.1.10 wants to reach 192.168.1.20. What happens first?
-          </p>
-          <p id="mobileFeedbackText" class="mobile-feedback-text">
-            Pick the next protocol move. Feedback will stay pinned here on mobile.
-          </p>
-
-          <div id="actionButtons" class="action-buttons"></div>
-
-          <div class="flow-controls">
-            <button id="nextStepBtn" type="button" hidden>Next Step</button>
-            <button id="resetScenarioBtn" type="button">Reset Scenario</button>
-          </div>
-        </section>
-
-        <aside class="flow-panel explanation-panel merge-explanation-panel">
-          <h2>Explanation</h2>
-          <div id="trafficMode" class="traffic-mode idle">No traffic active</div>
-          <p id="explanationText" class="explanation-text">
-            Select an action to highlight the correct path and see what the devices should do next.
-          </p>
-
-          <div class="why-card">
-            <h3>Why This Matters</h3>
-            <p id="whyText">
-              Each answer explains the protocol decision so you can connect the concept to the visible path.
-            </p>
-          </div>
-
-          <div class="scenario-summary">
-            <h3>Scenario Focus</h3>
-            <p id="scenarioSummary">
-              Same-subnet ARP is a local LAN process. The sender learns the destination MAC first, then sends the frame directly on the LAN.
-            </p>
-          </div>
-        </aside>
-      </div>
-
-      <div class="merge-sections">
-        <section class="flow-panel usecase-panel">
-          <div class="merge-panel-head">
-            <div>
-              <h2>Protocol Use Cases</h2>
-              <p class="merge-panel-copy">Pick the protocol that best matches the practical task.</p>
-            </div>
-          </div>
-          <div id="useCaseGrid" class="usecase-grid"></div>
-        </section>
-
-        <section class="flow-panel compare-panel">
-          <div class="merge-panel-head">
-            <div>
-              <h2>Protocol Compare</h2>
-              <p class="merge-panel-copy">Keep the common protocol pairings straight.</p>
-            </div>
-          </div>
-
-          <div class="compare-grid">
-            <article class="compare-card">
-              <h3>TCP vs UDP</h3>
-              <div class="compare-row">
+            <section class="flow-panel interaction-panel">
+              <div class="interaction-summary">
                 <div>
-                  <p class="compare-label">TCP</p>
-                  <p>Reliable, ordered, acknowledgment-based. Good for web sessions, file transfer, and anything that must arrive intact.</p>
+                  <p id="mobileScenarioName" class="interaction-scenario-title">ARP on Same Subnet</p>
+                  <p id="mobileStepBadge" class="interaction-step-badge">Step 1 of 3</p>
                 </div>
+                <div id="mobileFeedbackState" class="interaction-feedback-state idle">Waiting for action</div>
+              </div>
+              <h2>Choose the Next Action</h2>
+              <p id="stepPrompt" class="step-prompt">
+                PC 192.168.1.10 wants to reach 192.168.1.20. What happens first?
+              </p>
+              <p id="mobileFeedbackText" class="mobile-feedback-text">
+                Pick the next protocol move. Feedback will stay pinned here on mobile.
+              </p>
+
+              <div id="actionButtons" class="action-buttons"></div>
+
+              <div class="flow-controls">
+                <button id="nextStepBtn" type="button" hidden>Next Step</button>
+                <button id="resetScenarioBtn" type="button">Reset Scenario</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <details id="protocolReferenceDisclosure" class="merge-reference-disclosure" open>
+          <summary class="merge-reference-summary">
+            <span class="flow-kicker">Reference</span>
+            <span class="merge-reference-summary-title">Reference & Compare</span>
+            <span class="merge-reference-summary-copy">Open the explanation, quick checks, and protocol compare when needed.</span>
+          </summary>
+
+          <div class="merge-reference-stack">
+            <aside class="flow-panel explanation-panel merge-explanation-panel">
+              <h2>Explanation</h2>
+              <div id="trafficMode" class="traffic-mode idle">No traffic active</div>
+              <p id="explanationText" class="explanation-text">
+                Select an action to highlight the correct path and see what the devices should do next.
+              </p>
+
+              <div class="why-card">
+                <h3>Why This Matters</h3>
+                <p id="whyText">
+                  Each answer explains the protocol decision so you can connect the concept to the visible path.
+                </p>
+              </div>
+
+              <div class="scenario-summary">
+                <h3>Scenario Focus</h3>
+                <p id="scenarioSummary">
+                  Same-subnet ARP is a local LAN process. The sender learns the destination MAC first, then sends the frame directly on the LAN.
+                </p>
+              </div>
+            </aside>
+
+            <section class="flow-panel usecase-panel">
+              <div class="merge-panel-head">
                 <div>
-                  <p class="compare-label">UDP</p>
-                  <p>Faster and lighter. Good for streaming, voice, and traffic where speed matters more than guaranteed delivery.</p>
+                  <h2>Protocol Use Cases</h2>
+                  <p class="merge-panel-copy">Pick the protocol that best matches the practical task.</p>
                 </div>
               </div>
-            </article>
+              <div id="useCaseGrid" class="usecase-grid"></div>
+            </section>
 
-            <article class="compare-card">
-              <h3>HTTP vs HTTPS</h3>
-              <div class="compare-row">
+            <section class="flow-panel compare-panel">
+              <div class="merge-panel-head">
                 <div>
-                  <p class="compare-label">HTTP</p>
-                  <p>Web traffic without encryption. Fine for basic concepts, but not for protecting passwords or sensitive data.</p>
-                </div>
-                <div>
-                  <p class="compare-label">HTTPS</p>
-                  <p>Encrypted web traffic. Use it when browsing securely, logging in, or sending data you do not want exposed.</p>
+                  <h2>Protocol Compare</h2>
+                  <p class="merge-panel-copy">Keep the common protocol pairings straight.</p>
                 </div>
               </div>
-            </article>
 
-            <article class="compare-card">
-              <h3>SSH vs Telnet</h3>
-              <div class="compare-row">
-                <div>
-                  <p class="compare-label">SSH</p>
-                  <p>Secure remote administration. Encrypts both credentials and the remote session.</p>
-                </div>
-                <div>
-                  <p class="compare-label">Telnet</p>
-                  <p>Legacy remote administration without encryption. Credentials can be exposed on the network.</p>
-                </div>
+              <div class="compare-grid">
+                <article class="compare-card">
+                  <h3>TCP vs UDP</h3>
+                  <div class="compare-row">
+                    <div>
+                      <p class="compare-label">TCP</p>
+                      <p>Reliable, ordered, acknowledgment-based. Good for web sessions, file transfer, and anything that must arrive intact.</p>
+                    </div>
+                    <div>
+                      <p class="compare-label">UDP</p>
+                      <p>Faster and lighter. Good for streaming, voice, and traffic where speed matters more than guaranteed delivery.</p>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="compare-card">
+                  <h3>HTTP vs HTTPS</h3>
+                  <div class="compare-row">
+                    <div>
+                      <p class="compare-label">HTTP</p>
+                      <p>Web traffic without encryption. Fine for basic concepts, but not for protecting passwords or sensitive data.</p>
+                    </div>
+                    <div>
+                      <p class="compare-label">HTTPS</p>
+                      <p>Encrypted web traffic. Use it when browsing securely, logging in, or sending data you do not want exposed.</p>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="compare-card">
+                  <h3>SSH vs Telnet</h3>
+                  <div class="compare-row">
+                    <div>
+                      <p class="compare-label">SSH</p>
+                      <p>Secure remote administration. Encrypts both credentials and the remote session.</p>
+                    </div>
+                    <div>
+                      <p class="compare-label">Telnet</p>
+                      <p>Legacy remote administration without encryption. Credentials can be exposed on the network.</p>
+                    </div>
+                  </div>
+                </article>
               </div>
-            </article>
+            </section>
           </div>
-        </section>
+        </details>
       </div>
 
       <div class="router-ports" aria-hidden="true">
