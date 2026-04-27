@@ -2480,6 +2480,67 @@ body.merge-page:not(.http-flow-page) {
   padding: 0;
 }
 
+.subnet-dashboard-page .router-shell,
+.subnet-dashboard-page .router-shell *,
+.subnet-dashboard-page .router-shell *::before,
+.subnet-dashboard-page .router-shell *::after {
+  box-sizing: border-box;
+}
+
+.subnet-dashboard-page .subnet-dashboard-workspace,
+.subnet-dashboard-page .subnet-dashboard-actions,
+.subnet-dashboard-page .subnet-dashboard-main,
+.subnet-dashboard-page #practiceSection,
+.subnet-dashboard-page .hub-section-panel,
+.subnet-dashboard-page .display-panel,
+.subnet-dashboard-page .subnet-dashboard-header,
+.subnet-dashboard-page .subnet-dashboard-head-copy,
+.subnet-dashboard-page .subnet-mode-groups,
+.subnet-dashboard-page .subnet-mode-group,
+.subnet-dashboard-page .subnet-mode-button-grid,
+.subnet-dashboard-page .subnet-mode-inline-actions,
+.subnet-dashboard-page .subnet-session-row,
+.subnet-dashboard-page .app-shell-badges,
+.subnet-dashboard-page .app-shell-actions,
+.subnet-dashboard-page .subnet-reference-grid,
+.subnet-dashboard-page .subnet-feedback-stack,
+.subnet-dashboard-page .subnet-reference-disclosure,
+.subnet-dashboard-page .subnet-reference-summary,
+.subnet-dashboard-page .subnet-reference-panel,
+.subnet-dashboard-page .subnet-reference-modal-shell,
+.subnet-dashboard-page #diagram,
+.subnet-dashboard-page #answers,
+.subnet-dashboard-page #actionButtons {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.subnet-dashboard-page .status-badge,
+.subnet-dashboard-page .hub-section-jump,
+.subnet-dashboard-page .subnet-mode-card,
+.subnet-dashboard-page .subnet-reference-card,
+.subnet-dashboard-page .mode-btn,
+.subnet-dashboard-page .section-btn,
+.subnet-dashboard-page .app-action-btn,
+.subnet-dashboard-page .app-action-link,
+.subnet-dashboard-page #answers button,
+.subnet-dashboard-page #actionButtons button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.subnet-dashboard-page .status-badge,
+.subnet-dashboard-page .app-shell-copy,
+.subnet-dashboard-page .app-shell-note,
+.subnet-dashboard-page .subnet-dashboard-subtitle,
+.subnet-dashboard-page .subnet-mode-card-copy,
+.subnet-dashboard-page .subnet-reference-card-copy,
+.subnet-dashboard-page #question,
+.subnet-dashboard-page #feedback,
+.subnet-dashboard-page .hint {
+  overflow-wrap: anywhere;
+}
+
 .subnet-dashboard-page .rack-room {
   max-width: 1520px;
 }
