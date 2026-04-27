@@ -2,6 +2,37 @@
   max-width: 1600px;
 }
 
+.merge-page .merge-workspace,
+.merge-page .merge-main-column,
+.merge-page .merge-reference-disclosure,
+.merge-page .merge-reference-stack,
+.merge-page .merge-secondary-disclosure,
+.merge-page .merge-reference-summary,
+.merge-page .merge-secondary-summary,
+.merge-page .usecase-grid,
+.merge-page .compare-grid,
+.merge-page .compare-row,
+.merge-page .legend-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.merge-page .usecase-card,
+.merge-page .compare-card,
+.merge-page .why-card,
+.merge-page .scenario-summary,
+.merge-page .legend-pill {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.merge-page .merge-reference-summary-copy,
+.merge-page .merge-panel-copy,
+.merge-page .compare-card p,
+.merge-page .scenario-subtitle {
+  overflow-wrap: anywhere;
+}
+
 .merge-shell {
   width: 100%;
   max-width: none;

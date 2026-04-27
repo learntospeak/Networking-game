@@ -2,6 +2,60 @@
   --flow-mobile-dock-space: 0px;
 }
 
+.flow-page .router-shell,
+.flow-page .router-shell *,
+.flow-page .router-shell *::before,
+.flow-page .router-shell *::after {
+  box-sizing: border-box;
+}
+
+.flow-page .rack-room,
+.flow-page .router-shell,
+.flow-page .flow-header,
+.flow-page .flow-panel,
+.flow-page .flow-panel-head,
+.flow-page .scenario-tabs,
+.flow-page .flow-layout,
+.flow-page .flow-display,
+.flow-page .flow-visual-panel,
+.flow-page .flow-display-head,
+.flow-page .flow-diagram-scroll,
+.flow-page .diagram-shell,
+.flow-page .legend-row,
+.flow-page .interaction-summary,
+.flow-page .action-buttons,
+.flow-page .flow-controls,
+.flow-page .why-card,
+.flow-page .scenario-summary,
+.flow-page .message-dot,
+.flow-page .status-indicator {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.flow-page .flow-nav-link,
+.flow-page .scenario-tab,
+.flow-page .action-buttons button,
+.flow-page .flow-controls button,
+.flow-page .legend-pill,
+.flow-page .flow-status,
+.flow-page .traffic-mode,
+.flow-page .step-badge {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.flow-page .flow-intro,
+.flow-page .scenario-tab-note,
+.flow-page .step-prompt,
+.flow-page .mobile-feedback-text,
+.flow-page .explanation-text,
+.flow-page .why-card p,
+.flow-page .scenario-summary p,
+.flow-page .device-meta {
+  overflow-wrap: anywhere;
+}
+
 .flow-page .rack-room {
   max-width: 1600px;
 }
@@ -49,6 +103,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 50px;
   padding: 0 18px 0 44px;
   border-radius: 10px;
@@ -938,6 +994,7 @@
   }
 
   .flow-nav-link {
+    width: 100%;
     min-height: 44px;
     padding: 0 14px 0 38px;
     font-size: 14px;

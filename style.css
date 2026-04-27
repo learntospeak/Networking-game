@@ -7,6 +7,54 @@ body {
   padding: 12px;
 }
 
+body:not(.terminal-page) .router-shell,
+body:not(.terminal-page) .router-shell *,
+body:not(.terminal-page) .router-shell *::before,
+body:not(.terminal-page) .router-shell *::after {
+  box-sizing: border-box;
+}
+
+body:not(.terminal-page) .rack-room,
+body:not(.terminal-page) .router-shell,
+body:not(.terminal-page) #practiceSection,
+body:not(.terminal-page) .hub-page-top,
+body:not(.terminal-page) .hub-hero-panel,
+body:not(.terminal-page) .hub-hero-stats,
+body:not(.terminal-page) .hub-section-panel,
+body:not(.terminal-page) .app-shell-panel,
+body:not(.terminal-page) .app-shell-head,
+body:not(.terminal-page) .app-shell-badges,
+body:not(.terminal-page) .app-shell-actions,
+body:not(.terminal-page) .hub-utility-grid,
+body:not(.terminal-page) .learning-paths-head,
+body:not(.terminal-page) .learning-path-grid,
+body:not(.terminal-page) .display-panel,
+body:not(.terminal-page) .scoreboard {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body:not(.terminal-page) .status-badge,
+body:not(.terminal-page) .app-action-btn,
+body:not(.terminal-page) .app-action-link,
+body:not(.terminal-page) .hub-section-jump,
+body:not(.terminal-page) .page-back-link,
+body:not(.terminal-page) .learning-path-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body:not(.terminal-page) .status-badge,
+body:not(.terminal-page) .app-shell-copy,
+body:not(.terminal-page) .app-shell-note,
+body:not(.terminal-page) .hub-hero-copy,
+body:not(.terminal-page) .learning-path-copy,
+body:not(.terminal-page) .learning-path-status,
+body:not(.terminal-page) .hub-section-head p,
+body:not(.terminal-page) .hub-hero-panel h2 {
+  overflow-wrap: anywhere;
+}
+
 .subnet-dashboard-workspace {
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(260px, 320px);

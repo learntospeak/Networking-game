@@ -2,6 +2,62 @@
   --protocol-mobile-dock-space: 0px;
 }
 
+.protocol-page .router-shell,
+.protocol-page .router-shell *,
+.protocol-page .router-shell *::before,
+.protocol-page .router-shell *::after {
+  box-sizing: border-box;
+}
+
+.protocol-page .rack-room,
+.protocol-page .router-shell,
+.protocol-page .protocol-header,
+.protocol-page .protocol-layout,
+.protocol-page .protocol-sections,
+.protocol-page .lab-panel,
+.protocol-page .selector-grid,
+.protocol-page .simulation-display,
+.protocol-page .simulation-visual-panel,
+.protocol-page .simulation-action-panel,
+.protocol-page .network-map-scroll,
+.protocol-page .network-map,
+.protocol-page .step-options,
+.protocol-page .sim-controls,
+.protocol-page .usecase-grid,
+.protocol-page .compare-grid,
+.protocol-page .compare-row,
+.protocol-page .explanation-panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.protocol-page .nav-link,
+.protocol-page .scenario-selector-btn,
+.protocol-page .step-options button,
+.protocol-page .sim-controls button,
+.protocol-page .status-badge,
+.protocol-page .scenario-progress,
+.protocol-page .simulation-mobile-status,
+.protocol-page .usecase-card,
+.protocol-page .compare-card,
+.protocol-page .prompt-panel,
+.protocol-page .why-panel,
+.protocol-page .summary-panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.protocol-page .protocol-intro,
+.protocol-page .panel-copy,
+.protocol-page .selector-subtitle,
+.protocol-page .flow-label,
+.protocol-page .simulation-mobile-result,
+.protocol-page .result-text,
+.protocol-page .usecase-feedback,
+.protocol-page .device-meta {
+  overflow-wrap: anywhere;
+}
+
 .protocol-page .rack-room {
   max-width: 1600px;
 }
@@ -49,6 +105,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 50px;
   padding: 0 18px 0 44px;
   border-radius: 10px;
@@ -586,6 +644,7 @@
   }
 
   .nav-link {
+    width: 100%;
     min-height: 44px;
     padding: 0 14px 0 38px;
     font-size: 14px;
