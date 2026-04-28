@@ -6,22 +6,19 @@
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260427mobile5">
   <link rel="stylesheet" href="./protocol-flow.css?v=20260427mobile1">
-  <link rel="stylesheet" href="./protocol-merge.css?v=20260427mobile2">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260427httpstage4">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260428httpstep1">
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
   >
-  <script src="./web-http-lab-data.js?v=20260426httpflow2" defer></script>
-  <script src="./web-http-lab.js?v=20260427httpstage4" defer></script>
 </head>
-<body class="flow-page merge-page http-flow-page">
+<body class="flow-page http-flow-page">
   <div class="rack-room">
-    <div class="router-shell flow-shell merge-shell http-flow-shell">
+    <div class="router-shell flow-shell http-flow-shell">
       <div class="router-top">
         <div>
           <div class="router-brand">NET-LAB WEB REQUEST PANEL</div>
-          <div class="flow-subbrand">HTTP and HTTPS request flow trainer</div>
+          <div class="flow-subbrand">HTTP/security learning flow</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -31,280 +28,119 @@
         </div>
       </div>
 
-      <div class="http-mobile-appbar">
-        <div class="http-mobile-appbar-copy">
-          <p id="httpMobileAppbarTitle" class="http-mobile-appbar-title">Web &amp; HTTP Lab</p>
-          <p id="httpMobileAppbarMeta" class="http-mobile-appbar-meta">Stage 1 of 3</p>
-        </div>
-        <div class="http-mobile-appbar-actions">
-          <button id="httpMobileHomeBtn" class="http-mobile-appbar-btn" type="button" aria-label="Home">&#8962;</button>
-          <button id="httpMobileMenuBtn" class="http-mobile-appbar-btn" type="button" aria-label="Open HTTP lab menu" aria-expanded="false">&#9776;</button>
-        </div>
-      </div>
-
       <header class="flow-header">
         <div>
-          <p class="flow-kicker">HTTP/HTTPS Request Trainer</p>
+          <p class="flow-kicker">Step 1</p>
           <h1>Web &amp; HTTP Lab</h1>
           <p class="flow-intro">
-            Follow a web request as a visible network flow: the browser asks for a page,
-            the request crosses the path, the server answers, and the browser loads the result.
+            Start with the big picture: the browser sends a request, the server responds,
+            and anything returned to your browser can be inspected in your own session.
           </p>
         </div>
         <a class="flow-nav-link" href="./index.html">Back to Main App</a>
       </header>
 
-      <div class="merge-workspace">
-        <div class="merge-main-column">
-          <details id="httpStageDisclosure" class="http-stage-disclosure">
-            <summary class="http-stage-summary">
-              <div class="http-stage-summary-copy">
-                <span class="flow-kicker">Stages</span>
-                <span id="httpStageSummaryTitle" class="http-stage-summary-title">Stage 1: HTTP Page Request</span>
-                <span id="httpStageSummaryNote" class="http-stage-summary-note">Readable page request</span>
-              </div>
-              <div class="http-stage-summary-meta">
-                <span id="httpStageSummaryBadge" class="http-stage-summary-badge">Stage 1 of 3</span>
-                <div id="scenarioStatus" class="flow-status idle">Ready</div>
-              </div>
-            </summary>
-
-            <section class="flow-panel scenario-panel merge-scenario-panel http-stage-panel">
-              <div id="scenarioTabs" class="scenario-tabs"></div>
-            </section>
-          </details>
-
-          <div class="flow-layout">
-            <section class="flow-panel diagram-panel">
-              <div class="display-panel flow-display">
-                <div class="flow-visual-panel">
-                  <div class="flow-display-head">
-                    <div>
-                      <p id="scenarioLabel" class="scenario-label">HTTP Flow</p>
-                      <h2 id="scenarioName" class="scenario-name">HTTP Page Request</h2>
-                    </div>
-                    <div class="flow-badge-stack">
-                      <div id="stepBadge" class="step-badge">Step 1 of 6</div>
-                      <div id="flowIndicator" class="flow-indicator idle" hidden>Flow: Open URL</div>
-                    </div>
-                  </div>
-
-                  <p id="scenarioSubtitle" class="scenario-subtitle">
-                    Ask the server for `/profile` with a plain HTTP request.
-                  </p>
-
-                  <div class="flow-diagram-scroll">
-                    <div class="diagram-shell">
-                      <div id="diagramStage" class="diagram-stage">
-                        <div id="messageLayer" class="message-layer" aria-hidden="true"></div>
-                        <div id="cablePcSwitch" class="flow-cable flow-cable-horizontal" data-cable="pc-switch"></div>
-                        <div id="cableSwitchRouter" class="flow-cable flow-cable-horizontal" data-cable="switch-router"></div>
-                        <div id="cableRouterServer" class="flow-cable flow-cable-horizontal" data-cable="router-server"></div>
-                        <div id="cableSwitchServerStart" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-start"></div>
-                        <div id="cableSwitchServer" class="flow-cable flow-cable-bypass" data-cable="switch-server"></div>
-                        <div id="cableSwitchServerEnd" class="flow-cable flow-cable-bypass-stem" data-cable="switch-server-end"></div>
-
-                        <div id="devicePc" class="device-node" data-device="pc">
-                          <div class="device-icon-wrap">
-                            <i id="devicePcIcon" class="fa-solid fa-desktop device-icon" aria-hidden="true"></i>
-                          </div>
-                          <p id="devicePcTitle" class="device-title">Browser</p>
-                          <p id="devicePcMeta" class="device-meta">User opens `/profile`</p>
-                        </div>
-
-                        <div id="deviceSwitch" class="device-node" data-device="switch">
-                          <div class="device-icon-wrap">
-                            <i id="deviceSwitchIcon" class="fa-solid fa-network-wired device-icon" aria-hidden="true"></i>
-                          </div>
-                          <p id="deviceSwitchTitle" class="device-title">Switch</p>
-                          <p id="deviceSwitchMeta" class="device-meta">Local forwarding path</p>
-                        </div>
-
-                        <div id="deviceRouter" class="device-node" data-device="router">
-                          <div class="device-icon-wrap">
-                            <i id="deviceRouterIcon" class="fa-solid fa-route device-icon" aria-hidden="true"></i>
-                          </div>
-                          <p id="deviceRouterTitle" class="device-title">Router</p>
-                          <p id="deviceRouterMeta" class="device-meta">Path to the web server</p>
-                        </div>
-
-                        <div id="deviceServer" class="device-node" data-device="server">
-                          <div class="device-icon-wrap">
-                            <i id="deviceServerIcon" class="fa-solid fa-server device-icon" aria-hidden="true"></i>
-                          </div>
-                          <p id="deviceServerTitle" class="device-title">Web Server</p>
-                          <p id="deviceServerMeta" class="device-meta">Returns the page response</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="legend-row">
-                    <span class="legend-pill legend-broadcast">Visible HTTP</span>
-                    <span class="legend-pill legend-unicast">Request Path</span>
-                    <span class="legend-pill legend-secure">Locked HTTPS</span>
-                    <span class="legend-pill legend-warning">Insecure on Path</span>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="flow-panel interaction-panel">
-              <div class="interaction-summary">
-                <div>
-                  <p id="mobileScenarioName" class="interaction-scenario-title">HTTP Page Request</p>
-                  <p id="mobileStepBadge" class="interaction-step-badge">Step 1 of 6</p>
-                </div>
-                <div id="mobileFeedbackState" class="interaction-feedback-state idle">Waiting for action</div>
-              </div>
-              <h2>Choose the Next Action</h2>
-              <p id="stepPrompt" class="step-prompt">
-                A user opens `http://learn.lab/profile`. What happens first?
-              </p>
-              <p id="mobileFeedbackText" class="mobile-feedback-text">
-                Pick the next web request move. Feedback will stay pinned here on mobile.
-              </p>
-
-              <div id="actionButtons" class="action-buttons"></div>
-
-              <div class="flow-controls">
-                <button id="nextStepBtn" type="button" hidden>Next Step</button>
-                <button id="resetScenarioBtn" type="button">Reset Scenario</button>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <details id="httpReferenceDisclosure" class="merge-reference-disclosure">
-          <summary class="merge-reference-summary">
-            <span class="flow-kicker">Reference</span>
-            <span class="merge-reference-summary-title">Open Reference</span>
-            <span class="merge-reference-summary-copy">Explanation, quick checks, and request compare stay hidden until opened.</span>
-          </summary>
-
-          <div class="merge-reference-stack">
-            <aside class="flow-panel explanation-panel merge-explanation-panel">
-              <h2>Explanation</h2>
-              <div id="trafficMode" class="traffic-mode idle">No traffic active</div>
-              <p id="explanationText" class="explanation-text">
-                Select an action to light the correct request path and show what happens next.
-              </p>
-
-              <div class="why-card">
-                <h3>Why This Matters</h3>
-                <p id="whyText">
-                  Each answer keeps the web request tied to the visible path so HTTP feels like a real network exchange.
-                </p>
-              </div>
-
-              <div class="scenario-summary">
-                <h3>Scenario Focus</h3>
-                <p id="scenarioSummary">
-                  HTTP works like another network request: ask for the page, move the request across the path, receive `200 OK`, and load the page.
-                </p>
-              </div>
-            </aside>
-
-            <details class="merge-secondary-disclosure">
-              <summary class="merge-secondary-summary">Quick Checks</summary>
-              <section class="flow-panel usecase-panel">
-                <div class="merge-panel-head">
-                  <div>
-                    <h2>Quick Checks</h2>
-                    <p class="merge-panel-copy">Use the same choose-and-check pattern for the key HTTP/HTTPS ideas.</p>
-                  </div>
-                </div>
-                <div id="useCaseGrid" class="usecase-grid"></div>
-              </section>
-            </details>
-
-            <details class="merge-secondary-disclosure">
-              <summary class="merge-secondary-summary">Request Compare</summary>
-              <section class="flow-panel compare-panel">
-                <div class="merge-panel-head">
-                  <div>
-                    <h2>Request Compare</h2>
-                    <p class="merge-panel-copy">Keep the request flow simple: ask, travel, respond, load.</p>
-                  </div>
-                </div>
-
-                <div class="compare-grid">
-                  <article class="compare-card">
-                    <h3>HTTP Request</h3>
-                    <div class="compare-row">
-                      <div>
-                        <p class="compare-label">Ask</p>
-                        <p>The browser creates `GET /profile` to ask the server for the page.</p>
-                      </div>
-                      <div>
-                        <p class="compare-label">Travel</p>
-                        <p>The request crosses the network path until the web server receives it.</p>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article class="compare-card">
-                    <h3>HTTP vs HTTPS</h3>
-                    <div class="compare-row">
-                      <div>
-                        <p class="compare-label">HTTP</p>
-                        <p>The request stays readable while it travels, so `GET /profile` is visible on the path.</p>
-                      </div>
-                      <div>
-                        <p class="compare-label">HTTPS</p>
-                        <p>The same request is carried inside encrypted traffic, so the path only sees a locked packet.</p>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article class="compare-card">
-                    <h3>Server Response</h3>
-                    <div class="compare-row">
-                      <div>
-                        <p class="compare-label">200 OK</p>
-                        <p>If the page exists, the server sends back `200 OK` with the page content.</p>
-                      </div>
-                      <div>
-                        <p class="compare-label">Load</p>
-                        <p>The browser uses the response to render the page for the user.</p>
-                      </div>
-                    </div>
-                  </article>
-                </div>
-              </section>
-            </details>
-          </div>
-        </details>
-      </div>
-
-      <div id="httpMobileMenuOverlay" class="http-mobile-menu-overlay" hidden>
-        <div class="http-mobile-overlay-backdrop" data-http-mobile-menu-close></div>
-        <section class="http-mobile-menu-panel" role="dialog" aria-modal="true" aria-labelledby="httpMobileMenuTitle">
-          <div class="http-mobile-overlay-head">
-            <h2 id="httpMobileMenuTitle">Menu</h2>
-            <button id="httpMobileMenuCloseBtn" class="http-mobile-overlay-close" type="button">Close</button>
-          </div>
-          <div class="http-mobile-menu-body">
-            <div class="http-mobile-menu-actions">
-              <button id="httpMobileStagesBtn" class="http-mobile-menu-action" type="button">Stages</button>
-              <button id="httpMobileReferenceBtn" class="http-mobile-menu-action" type="button">Reference</button>
-              <button id="httpMobileResetBtn" class="http-mobile-menu-action" type="button">Reset</button>
+      <main class="http-step-layout">
+        <section class="flow-panel http-step-panel http-overview-panel" aria-labelledby="httpBigPictureTitle">
+          <div class="flow-panel-head">
+            <div>
+              <p class="scenario-label">Big Picture</p>
+              <h2 id="httpBigPictureTitle">Browser to Server Flow</h2>
             </div>
-            <a class="http-mobile-menu-link" href="./index.html">Back to Main App</a>
+            <div class="traffic-mode reply">Request and response</div>
           </div>
-        </section>
-      </div>
 
-      <div id="httpMobileInfoOverlay" class="http-mobile-info-overlay" hidden>
-        <div class="http-mobile-overlay-backdrop" data-http-mobile-info-close></div>
-        <section class="http-mobile-info-panel" role="dialog" aria-modal="true" aria-labelledby="httpMobileInfoTitle">
-          <div class="http-mobile-overlay-head">
-            <h2 id="httpMobileInfoTitle">Lab Info</h2>
-            <button id="httpMobileInfoCloseBtn" class="http-mobile-overlay-close" type="button">Close</button>
+          <div class="display-panel http-flow-display">
+            <div class="http-flow-scroll" aria-label="Browser to server request flow">
+              <div class="http-flow-track">
+                <article class="http-flow-node is-browser">
+                  <div class="http-node-icon" aria-hidden="true">
+                    <i class="fa-solid fa-window-maximize"></i>
+                  </div>
+                  <h3>Browser</h3>
+                  <p>You open a website</p>
+                </article>
+
+                <div class="http-flow-arrow" aria-hidden="true">
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+
+                <article class="http-flow-node is-server">
+                  <div class="http-node-icon" aria-hidden="true">
+                    <i class="fa-solid fa-server"></i>
+                  </div>
+                  <h3>Server</h3>
+                  <p>Processes your request</p>
+                </article>
+
+                <div class="http-flow-arrow" aria-hidden="true">
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+
+                <article class="http-flow-node is-response">
+                  <div class="http-node-icon" aria-hidden="true">
+                    <i class="fa-solid fa-file-lines"></i>
+                  </div>
+                  <h3>Response</h3>
+                  <p>Sends data back</p>
+                </article>
+
+                <div class="http-flow-arrow" aria-hidden="true">
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+
+                <article class="http-flow-node is-devtools">
+                  <div class="http-node-icon" aria-hidden="true">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </div>
+                  <h3>DevTools</h3>
+                  <p>You can inspect this</p>
+                </article>
+              </div>
+            </div>
           </div>
-          <div id="httpMobileInfoScroll" class="http-mobile-info-scroll"></div>
         </section>
-      </div>
+
+        <section class="flow-panel http-step-panel http-explanation-panel" aria-labelledby="httpExplanationTitle">
+          <div class="flow-panel-head http-panel-head-compact">
+            <div>
+              <p class="scenario-label">Simple Explanation</p>
+              <h2 id="httpExplanationTitle">What is happening</h2>
+            </div>
+          </div>
+
+          <ul class="http-explanation-list">
+            <li>When you use a website, your browser sends a request.</li>
+            <li>The server responds with data.</li>
+            <li>Anything sent to your browser can be inspected.</li>
+          </ul>
+
+          <div class="http-boundary-note" aria-labelledby="httpBoundaryTitle">
+            <p id="httpBoundaryTitle" class="http-note-title">Important boundaries</p>
+            <ul class="http-boundary-list">
+              <li>You only see your own data.</li>
+              <li>Other websites cannot access this data.</li>
+              <li>Seeing other users&rsquo; data indicates a vulnerability.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="flow-panel http-step-panel http-realworld-panel" aria-labelledby="httpRealWorldTitle">
+          <div class="flow-panel-head http-panel-head-compact">
+            <div>
+              <p class="scenario-label">Real World</p>
+              <h2 id="httpRealWorldTitle">Where to see this</h2>
+            </div>
+          </div>
+
+          <ol class="http-realworld-steps">
+            <li>Right click &rarr; Inspect</li>
+            <li>Open Network tab</li>
+            <li>Click a request</li>
+            <li>View Headers</li>
+          </ol>
+        </section>
+      </main>
 
       <div class="router-ports" aria-hidden="true">
         <div class="port connected"><span class="cable"></span></div>
