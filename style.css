@@ -3268,22 +3268,30 @@ body.merge-page:not(.http-flow-page) {
 
   .subnet-dashboard-page .subnet-mobile-action-dock {
     position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
     z-index: auto;
     width: 100%;
     max-height: none;
     overflow: visible;
     margin-top: 12px;
+    margin-left: 0;
+    margin-right: 0;
     padding: 0 0 calc(12px + env(safe-area-inset-bottom));
     border-top: 0;
     border-radius: 0;
     background: none;
     box-shadow: none;
     backdrop-filter: none;
+    transform: none;
   }
 
   .subnet-dashboard-page #answers,
   .subnet-dashboard-page #actionButtons {
+    display: grid !important;
     grid-template-columns: 1fr !important;
+    width: 100%;
   }
 
   .subnet-dashboard-page #answers {
@@ -3315,7 +3323,11 @@ body.merge-page:not(.http-flow-page) {
   .subnet-dashboard-page .app-action-link,
   .subnet-dashboard-page #answers button,
   .subnet-dashboard-page #actionButtons button {
+    display: flex;
+    box-sizing: border-box;
     min-height: 52px;
+    width: 100%;
+    max-width: 100%;
     padding: 0 14px 0 38px;
     font-size: 14px;
     justify-content: flex-start;
