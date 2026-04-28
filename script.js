@@ -738,6 +738,7 @@ const els = {
   mobileMenuBtn: document.getElementById("subnetMobileMenuBtn"),
   mobileMenuOverlay: document.getElementById("subnetMobileMenuOverlay"),
   mobileMenuCloseBtn: document.getElementById("subnetMobileMenuCloseBtn"),
+  mobileMenuModesBtn: document.getElementById("subnetMobileModesBtn"),
   mobileMenuInfoBtn: document.getElementById("subnetMobileInfoBtn"),
   mobileMenuReferenceBtn: document.getElementById("subnetMobileReferenceBtn"),
   mobileInfoOverlay: document.getElementById("subnetMobileInfoOverlay"),
@@ -921,7 +922,30 @@ function syncSubnetMobilePanels() {
 
 function syncSubnetMobileLayout() {
   syncSubnetMobileAppbar();
+  document.body.classList.toggle(
+    "subnet-mobile-question-active",
+    isSubnetMobileTrainerView() && Boolean(els.questionPanel && !els.questionPanel.hidden)
+  );
   syncSubnetMobilePanels();
+}
+
+function returnToModePicker() {
+  if (state.examModeActive) {
+    const exited = exitExamMode();
+    if (exited === false) {
+      return false;
+    }
+  } else {
+    state.currentMode = "";
+    updateActiveMode("");
+    showPractice(true);
+    resetIntroState();
+    persistSectionProgress();
+  }
+
+  closeSubnetMobileMenu();
+  closeSubnetMobileInfo();
+  return true;
 }
 
 function openSubnetMobileMenu() {
@@ -985,6 +1009,10 @@ function syncQuestionPanelVisibility(forceShow = false) {
 
   const shouldShow = forceShow || state.examModeActive || state.examFinished || Boolean(state.currentMode);
   els.questionPanel.hidden = !shouldShow;
+  document.body.classList.toggle("subnet-mobile-question-active", isSubnetMobileTrainerView() && shouldShow);
+  if (shouldShow) {
+    els.questionPanel.scrollTop = 0;
+  }
   syncSubnetMobileLayout();
 }
 
@@ -1678,7 +1706,7 @@ function exitExamMode() {
   if (state.examModeActive && !state.examFinished) {
     const leaveExam = window.confirm("Leave exam mode and discard this exam attempt?");
     if (!leaveExam) {
-      return;
+      return false;
     }
   }
 
@@ -1698,6 +1726,7 @@ function exitExamMode() {
   resetIntroState();
   syncExamExitButton();
   persistSectionProgress();
+  return true;
 }
 
 function setSubnetState({ cidr, ip, blockSize, network, broadcast }) {
@@ -2125,6 +2154,7 @@ function bindEvents() {
   });
 
   els.mobileMenuCloseBtn?.addEventListener("click", () => closeSubnetMobileMenu({ restoreFocus: true }));
+  els.mobileMenuModesBtn?.addEventListener("click", returnToModePicker);
   els.mobileMenuInfoBtn?.addEventListener("click", () => openSubnetMobileInfo("progress"));
   els.mobileMenuReferenceBtn?.addEventListener("click", () => openSubnetMobileInfo("reference"));
 

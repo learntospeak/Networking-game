@@ -3235,6 +3235,10 @@ body.merge-page:not(.http-flow-page) {
     gap: 12px;
   }
 
+  .subnet-dashboard-page.subnet-mobile-question-active .subnet-mode-groups {
+    display: none;
+  }
+
   .subnet-dashboard-page .subnet-question-panel {
     order: 1;
     padding: 12px;
@@ -3243,8 +3247,13 @@ body.merge-page:not(.http-flow-page) {
     border-radius: 0;
   }
 
-  .subnet-dashboard-page .subnet-question-panel:not([hidden]) {
-    padding-bottom: calc(var(--subnet-mobile-dock-space) + 12px);
+  .subnet-dashboard-page.subnet-mobile-question-active .subnet-question-panel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .subnet-dashboard-page #question {
@@ -3258,21 +3267,18 @@ body.merge-page:not(.http-flow-page) {
   }
 
   .subnet-dashboard-page .subnet-mobile-action-dock {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 45;
-    max-height: min(44dvh, 340px);
-    overflow-y: auto;
-    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(71, 85, 105, 0.72);
-    border-radius: 20px 20px 0 0;
-    background: linear-gradient(180deg, rgba(10, 14, 20, 0.97) 0%, rgba(5, 8, 12, 0.99) 100%);
-    box-shadow:
-      0 -18px 40px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(56, 189, 248, 0.08);
-    backdrop-filter: blur(16px);
+    position: static;
+    z-index: auto;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    margin-top: 12px;
+    padding: 0 0 calc(12px + env(safe-area-inset-bottom));
+    border-top: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   .subnet-dashboard-page #answers,
