@@ -301,3 +301,381 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+.http-flow-page {
+  --http-mobile-viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .http-flow-page {
+    --http-mobile-viewport-height: 100dvh;
+  }
+}
+
+.http-mobile-appbar,
+.http-mobile-menu-overlay,
+.http-mobile-info-overlay {
+  display: none;
+}
+
+.http-mobile-appbar-title,
+.http-mobile-appbar-meta {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .http-flow-page {
+    --flow-mobile-dock-space: calc(248px + env(safe-area-inset-bottom));
+    height: var(--http-mobile-viewport-height);
+    min-height: var(--http-mobile-viewport-height);
+    max-height: var(--http-mobile-viewport-height);
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .http-flow-page .rack-room {
+    max-width: 100%;
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .http-flow-page .flow-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    overflow: hidden;
+  }
+
+  .http-flow-page .flow-shell::before {
+    inset: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .http-flow-page .router-top,
+  .http-flow-page .flow-header,
+  .http-flow-page .router-ports {
+    display: none;
+  }
+
+  .http-mobile-appbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex: 0 0 auto;
+    padding: calc(env(safe-area-inset-top) + 10px) 12px 10px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.54);
+    background: linear-gradient(180deg, rgba(8, 12, 18, 0.98) 0%, rgba(9, 15, 23, 0.96) 100%);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .http-mobile-appbar-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: grid;
+    gap: 4px;
+  }
+
+  .http-mobile-appbar-title {
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .http-mobile-appbar-meta {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .http-mobile-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
+  .http-mobile-appbar-btn,
+  .http-mobile-overlay-close {
+    width: auto;
+    min-width: 38px;
+    min-height: 38px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .http-mobile-appbar-btn::before,
+  .http-mobile-overlay-close::before {
+    display: none;
+  }
+
+  .merge-workspace,
+  .merge-main-column {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .merge-main-column {
+    flex-direction: column;
+  }
+
+  .merge-main-column .flow-layout {
+    display: flex !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0;
+    margin-top: 0;
+  }
+
+  .http-flow-page .diagram-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .http-flow-page .flow-display,
+  .http-flow-page .flow-visual-panel,
+  .http-flow-page .flow-diagram-scroll {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .http-flow-page .flow-display-head {
+    display: none;
+  }
+
+  .http-flow-page .flow-diagram-scroll {
+    padding: 12px 12px calc(var(--flow-mobile-dock-space) + 12px);
+    overflow: auto;
+  }
+
+  .http-flow-page .diagram-shell {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .http-flow-page .diagram-stage {
+    width: min(100%, 560px);
+    height: min(68vh, 640px);
+  }
+
+  .http-flow-page .interaction-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    width: auto;
+    max-height: min(38dvh, 316px);
+    margin: 0;
+    overflow-y: auto;
+    transform: none;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(71, 85, 105, 0.72);
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(180deg, rgba(10, 14, 20, 0.97) 0%, rgba(5, 8, 12, 0.99) 100%);
+    box-shadow:
+      0 -18px 40px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(56, 189, 248, 0.08);
+    backdrop-filter: blur(16px);
+  }
+
+  .http-flow-page .action-buttons,
+  .http-flow-page .flow-controls {
+    grid-template-columns: 1fr !important;
+  }
+
+  .http-mobile-menu-overlay,
+  .http-mobile-info-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    align-items: flex-end;
+  }
+
+  .http-mobile-info-overlay {
+    z-index: 82;
+  }
+
+  .http-flow-page.http-mobile-menu-open .http-mobile-menu-overlay,
+  .http-flow-page.http-mobile-info-open .http-mobile-info-overlay {
+    display: flex;
+  }
+
+  .http-mobile-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 12, 0.68);
+    backdrop-filter: blur(6px);
+  }
+
+  .http-mobile-menu-panel,
+  .http-mobile-info-panel {
+    position: relative;
+    width: 100%;
+    max-height: var(--http-mobile-viewport-height);
+    border-top: 1px solid rgba(71, 85, 105, 0.82);
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(180deg, rgba(8, 12, 18, 0.99) 0%, rgba(3, 7, 12, 1) 100%);
+    box-shadow:
+      0 -18px 48px rgba(0, 0, 0, 0.46),
+      0 0 0 1px rgba(56, 189, 248, 0.08);
+    overflow: hidden;
+  }
+
+  .http-mobile-info-panel {
+    display: flex;
+    flex-direction: column;
+    height: var(--http-mobile-viewport-height);
+    max-height: var(--http-mobile-viewport-height);
+    border-radius: 0;
+  }
+
+  .http-mobile-overlay-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.54);
+    background: rgba(6, 10, 14, 0.96);
+  }
+
+  .http-mobile-overlay-head h2 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .http-mobile-menu-body,
+  .http-mobile-info-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .http-mobile-menu-body {
+    display: grid;
+    gap: 12px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    max-height: calc(var(--http-mobile-viewport-height) - 68px);
+  }
+
+  .http-mobile-menu-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .http-mobile-menu-action,
+  .http-mobile-menu-link {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 42px;
+    margin: 0;
+    padding: 8px 12px 8px 30px;
+    justify-content: flex-start;
+    font-size: 13px;
+  }
+
+  .http-mobile-menu-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #5b6470;
+    background: linear-gradient(180deg, #424b57 0%, #1f2630 48%, #11161c 100%);
+    color: #e5e7eb;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.45),
+      0 8px 18px rgba(0, 0, 0, 0.24);
+  }
+
+  .http-mobile-menu-link::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #ef4444;
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.12),
+      0 0 10px rgba(239, 68, 68, 0.48);
+  }
+
+  .http-mobile-info-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    display: grid;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .http-mobile-appbar {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .http-mobile-appbar-actions {
+    gap: 4px;
+  }
+
+  .http-mobile-appbar-btn,
+  .http-mobile-overlay-close {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 16px;
+  }
+
+  .http-mobile-menu-body,
+  .http-mobile-info-scroll {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}

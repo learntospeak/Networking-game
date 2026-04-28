@@ -23,6 +23,16 @@
         </div>
       </div>
 
+      <div class="subnet-mobile-appbar">
+        <div class="subnet-mobile-appbar-copy">
+          <p id="subnetMobileAppbarTitle" class="subnet-mobile-appbar-title">Subnetting Lab</p>
+        </div>
+        <div class="subnet-mobile-appbar-actions">
+          <button id="subnetMobileHomeBtn" class="subnet-mobile-appbar-btn" type="button" aria-label="Home">&#8962;</button>
+          <button id="subnetMobileMenuBtn" class="subnet-mobile-appbar-btn" type="button" aria-label="Open subnetting menu" aria-expanded="false">&#9776;</button>
+        </div>
+      </div>
+
       <header class="subnet-dashboard-header">
         <div class="subnet-dashboard-head-copy">
           <p class="subnet-dashboard-kicker">Addressing Workspace</p>
@@ -307,6 +317,34 @@
           </div>
           <div id="referenceModalBody" class="subnet-reference-modal-body"></div>
         </div>
+      </div>
+
+      <div id="subnetMobileMenuOverlay" class="subnet-mobile-menu-overlay" hidden>
+        <div class="subnet-mobile-overlay-backdrop" data-subnet-mobile-menu-close></div>
+        <section class="subnet-mobile-menu-panel" role="dialog" aria-modal="true" aria-labelledby="subnetMobileMenuTitle">
+          <div class="subnet-mobile-overlay-head">
+            <h2 id="subnetMobileMenuTitle">Menu</h2>
+            <button id="subnetMobileMenuCloseBtn" class="subnet-mobile-overlay-close" type="button">Close</button>
+          </div>
+          <div class="subnet-mobile-menu-body">
+            <div class="subnet-mobile-menu-actions">
+              <button id="subnetMobileInfoBtn" class="subnet-mobile-menu-action" type="button">Progress</button>
+              <button id="subnetMobileReferenceBtn" class="subnet-mobile-menu-action" type="button">Reference</button>
+            </div>
+            <a class="subnet-mobile-menu-link" href="./index.html">Back to Main App</a>
+          </div>
+        </section>
+      </div>
+
+      <div id="subnetMobileInfoOverlay" class="subnet-mobile-info-overlay" hidden>
+        <div class="subnet-mobile-overlay-backdrop" data-subnet-mobile-info-close></div>
+        <section class="subnet-mobile-info-panel" role="dialog" aria-modal="true" aria-labelledby="subnetMobileInfoTitle">
+          <div class="subnet-mobile-overlay-head">
+            <h2 id="subnetMobileInfoTitle">Lab Info</h2>
+            <button id="subnetMobileInfoCloseBtn" class="subnet-mobile-overlay-close" type="button">Close</button>
+          </div>
+          <div id="subnetMobileInfoScroll" class="subnet-mobile-info-scroll"></div>
+        </section>
       </div>
 
       <p class="subnet-dashboard-note">Main task first. Reference stays secondary until you open it.</p>

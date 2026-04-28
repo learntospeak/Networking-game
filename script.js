@@ -732,7 +732,17 @@ const els = {
   streak: document.getElementById("streak"),
   correct: document.getElementById("correct"),
   wrong: document.getElementById("wrong"),
-  scoreboard: document.querySelector(".scoreboard")
+  scoreboard: document.querySelector(".scoreboard"),
+  mobileAppbarTitle: document.getElementById("subnetMobileAppbarTitle"),
+  mobileHomeBtn: document.getElementById("subnetMobileHomeBtn"),
+  mobileMenuBtn: document.getElementById("subnetMobileMenuBtn"),
+  mobileMenuOverlay: document.getElementById("subnetMobileMenuOverlay"),
+  mobileMenuCloseBtn: document.getElementById("subnetMobileMenuCloseBtn"),
+  mobileMenuInfoBtn: document.getElementById("subnetMobileInfoBtn"),
+  mobileMenuReferenceBtn: document.getElementById("subnetMobileReferenceBtn"),
+  mobileInfoOverlay: document.getElementById("subnetMobileInfoOverlay"),
+  mobileInfoCloseBtn: document.getElementById("subnetMobileInfoCloseBtn"),
+  mobileInfoScroll: document.getElementById("subnetMobileInfoScroll")
 };
 
 const NetlabApp = window.NetlabApp;
@@ -779,6 +789,8 @@ const state = {
   resumePromptVisible: false
 };
 
+const subnetMobilePanelRegistry = [];
+
 function syncDashboardModeCards(activeCard = "practice") {
   if (els.dashboardPracticeCard) {
     els.dashboardPracticeCard.classList.toggle("is-active", activeCard === "practice");
@@ -799,6 +811,167 @@ function syncReferenceDisclosureDefault() {
   els.referenceDisclosure.open = false;
 }
 
+function ensureSubnetMobilePanelRegistry() {
+  if (subnetMobilePanelRegistry.length) {
+    return;
+  }
+
+  [
+    els.appSectionShell,
+    els.scoreboard,
+    els.referenceDisclosure
+  ].filter(Boolean).forEach((element, index) => {
+    if (!element.parentNode) {
+      return;
+    }
+
+    const placeholder = document.createElement("div");
+    placeholder.hidden = true;
+    placeholder.className = "subnet-mobile-panel-placeholder";
+    placeholder.dataset.mobilePanelKey = String(index);
+    element.parentNode.insertBefore(placeholder, element);
+    subnetMobilePanelRegistry.push({ element, placeholder });
+  });
+}
+
+function restoreSubnetDesktopPanels() {
+  subnetMobilePanelRegistry.forEach(({ element, placeholder }) => {
+    const parent = placeholder.parentNode;
+    if (!parent || element.parentNode === parent) {
+      return;
+    }
+
+    parent.insertBefore(element, placeholder.nextSibling);
+  });
+}
+
+function currentSubnetMobileTitle() {
+  if (state.examModeActive) {
+    return state.examFinished ? "Subnetting Exam Results" : "Subnetting Exam";
+  }
+
+  if (state.currentMode) {
+    return formatModeLabel(state.currentMode);
+  }
+
+  return "Subnetting Lab";
+}
+
+function syncSubnetMobileAppbar() {
+  if (!els.mobileAppbarTitle) {
+    return;
+  }
+
+  els.mobileAppbarTitle.textContent = currentSubnetMobileTitle();
+}
+
+function closeSubnetMobileMenu(options = {}) {
+  const { restoreFocus = false } = options;
+
+  if (!els.mobileMenuOverlay) {
+    return;
+  }
+
+  document.body.classList.remove("subnet-mobile-menu-open");
+  els.mobileMenuOverlay.hidden = true;
+
+  if (els.mobileMenuBtn) {
+    els.mobileMenuBtn.setAttribute("aria-expanded", "false");
+    if (restoreFocus && isSubnetMobileTrainerView() && typeof els.mobileMenuBtn.focus === "function") {
+      els.mobileMenuBtn.focus();
+    }
+  }
+}
+
+function closeSubnetMobileInfo(options = {}) {
+  const { restoreFocus = false } = options;
+
+  if (!els.mobileInfoOverlay) {
+    return;
+  }
+
+  document.body.classList.remove("subnet-mobile-info-open");
+  els.mobileInfoOverlay.hidden = true;
+
+  if (restoreFocus && els.mobileMenuBtn && isSubnetMobileTrainerView() && typeof els.mobileMenuBtn.focus === "function") {
+    els.mobileMenuBtn.focus();
+  }
+}
+
+function syncSubnetMobilePanels() {
+  ensureSubnetMobilePanelRegistry();
+
+  if (!els.mobileInfoScroll) {
+    return;
+  }
+
+  if (!isSubnetMobileTrainerView()) {
+    restoreSubnetDesktopPanels();
+    closeSubnetMobileMenu();
+    closeSubnetMobileInfo();
+    return;
+  }
+
+  subnetMobilePanelRegistry.forEach(({ element }) => {
+    if (element.parentNode !== els.mobileInfoScroll) {
+      els.mobileInfoScroll.appendChild(element);
+    }
+  });
+}
+
+function syncSubnetMobileLayout() {
+  syncSubnetMobileAppbar();
+  syncSubnetMobilePanels();
+}
+
+function openSubnetMobileMenu() {
+  if (!isSubnetMobileTrainerView()) {
+    return;
+  }
+
+  syncSubnetMobileLayout();
+  closeSubnetMobileInfo();
+  document.body.classList.add("subnet-mobile-menu-open");
+  els.mobileMenuOverlay.hidden = false;
+  els.mobileMenuBtn?.setAttribute("aria-expanded", "true");
+
+  window.requestAnimationFrame(() => {
+    if (els.mobileMenuInfoBtn && typeof els.mobileMenuInfoBtn.focus === "function") {
+      els.mobileMenuInfoBtn.focus();
+    }
+  });
+}
+
+function openSubnetMobileInfo(section = "progress") {
+  if (!isSubnetMobileTrainerView()) {
+    return;
+  }
+
+  syncSubnetMobileLayout();
+  closeSubnetMobileMenu();
+  document.body.classList.add("subnet-mobile-info-open");
+  els.mobileInfoOverlay.hidden = false;
+
+  if (els.mobileInfoScroll) {
+    els.mobileInfoScroll.scrollTop = 0;
+  }
+
+  window.requestAnimationFrame(() => {
+    let target = els.appSectionShell;
+
+    if (section === "reference" && els.referenceDisclosure) {
+      els.referenceDisclosure.open = true;
+      target = els.referenceDisclosure;
+    }
+
+    target?.scrollIntoView({ block: "start" });
+
+    if (els.mobileInfoCloseBtn && typeof els.mobileInfoCloseBtn.focus === "function") {
+      els.mobileInfoCloseBtn.focus();
+    }
+  });
+}
+
 function openReferenceDisclosure() {
   if (els.referenceDisclosure) {
     els.referenceDisclosure.open = true;
@@ -812,6 +985,7 @@ function syncQuestionPanelVisibility(forceShow = false) {
 
   const shouldShow = forceShow || state.examModeActive || state.examFinished || Boolean(state.currentMode);
   els.questionPanel.hidden = !shouldShow;
+  syncSubnetMobileLayout();
 }
 
 function openReferenceTopic(topicId) {
@@ -999,6 +1173,7 @@ function restoreSavedProgress(savedState) {
   state.resumePromptVisible = false;
 
   NetlabApp?.clearLaunchAction();
+  syncSubnetMobileLayout();
   return true;
 }
 
@@ -1080,6 +1255,8 @@ function renderSectionShell() {
       window.location.href = NetlabApp.buildSectionUrl(SECTION_ID, "start");
     });
   }
+
+  syncSubnetMobileLayout();
 }
 
 function escapeHtml(value) {
@@ -1118,6 +1295,7 @@ function shuffle(arr) {
 function setQuestion(text, isPlaceholder = false) {
   els.question.textContent = text;
   els.question.classList.toggle("question-placeholder", isPlaceholder);
+  syncSubnetMobileAppbar();
 }
 
 function updateScoreboard() {
@@ -1153,6 +1331,7 @@ function showPractice(force = false) {
   syncQuestionPanelVisibility();
 
   renderSectionShell();
+  syncSubnetMobileLayout();
   if (NetlabApp && !state.resumePromptVisible) {
     persistSectionProgress();
   }
@@ -1175,6 +1354,7 @@ function showCheatSheet() {
 
   openReferenceTopic("quickRules");
   renderSectionShell();
+  syncSubnetMobileLayout();
   if (!state.resumePromptVisible) {
     persistSectionProgress();
   }
@@ -1303,16 +1483,19 @@ function setExamControlsDisabled(disabled) {
 function updateExamStatus() {
   if (!state.examModeActive || state.examFinished) {
     els.examStatus.hidden = true;
+    syncSubnetMobileAppbar();
     return;
   }
 
   els.examStatus.hidden = false;
   els.examStatus.textContent = `Question ${state.examIndex + 1} of ${state.examQuestionCount}`;
+  syncSubnetMobileAppbar();
 }
 
 function syncExamExitButton() {
   els.exitExamBtn.textContent = state.examModeActive && !state.examFinished ? "Cancel Exam" : "Exit Exam";
   els.exitExamBtn.hidden = !state.examModeActive;
+  syncSubnetMobileAppbar();
 }
 
 function takeRandomItems(list, count) {
@@ -1875,6 +2058,16 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && els.referenceModal && !els.referenceModal.hidden) {
       closeReferenceModal();
+      return;
+    }
+
+    if (event.key === "Escape" && document.body.classList.contains("subnet-mobile-info-open")) {
+      closeSubnetMobileInfo({ restoreFocus: true });
+      return;
+    }
+
+    if (event.key === "Escape" && document.body.classList.contains("subnet-mobile-menu-open")) {
+      closeSubnetMobileMenu({ restoreFocus: true });
     }
   });
   els.hintBtn.addEventListener("click", showHint);
@@ -1913,6 +2106,34 @@ function bindEvents() {
   window.addEventListener("netlab:profilemetachange", () => {
     renderSectionShell();
   });
+
+  els.mobileHomeBtn?.addEventListener("click", () => {
+    window.location.href = "./index.html";
+  });
+
+  els.mobileMenuBtn?.addEventListener("click", () => {
+    if (document.body.classList.contains("subnet-mobile-menu-open")) {
+      closeSubnetMobileMenu({ restoreFocus: true });
+      return;
+    }
+
+    openSubnetMobileMenu();
+  });
+
+  document.querySelectorAll("[data-subnet-mobile-menu-close]").forEach((element) => {
+    element.addEventListener("click", () => closeSubnetMobileMenu({ restoreFocus: true }));
+  });
+
+  els.mobileMenuCloseBtn?.addEventListener("click", () => closeSubnetMobileMenu({ restoreFocus: true }));
+  els.mobileMenuInfoBtn?.addEventListener("click", () => openSubnetMobileInfo("progress"));
+  els.mobileMenuReferenceBtn?.addEventListener("click", () => openSubnetMobileInfo("reference"));
+
+  document.querySelectorAll("[data-subnet-mobile-info-close]").forEach((element) => {
+    element.addEventListener("click", () => closeSubnetMobileInfo({ restoreFocus: true }));
+  });
+
+  els.mobileInfoCloseBtn?.addEventListener("click", () => closeSubnetMobileInfo({ restoreFocus: true }));
+  window.addEventListener("resize", syncSubnetMobileLayout);
 }
 
 async function bootSubnettingLab() {

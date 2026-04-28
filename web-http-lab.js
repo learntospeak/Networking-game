@@ -42,7 +42,20 @@ const els = {
   devicePcIcon: document.getElementById("devicePcIcon"),
   deviceSwitchIcon: document.getElementById("deviceSwitchIcon"),
   deviceRouterIcon: document.getElementById("deviceRouterIcon"),
-  deviceServerIcon: document.getElementById("deviceServerIcon")
+  deviceServerIcon: document.getElementById("deviceServerIcon"),
+  referenceDisclosure: document.getElementById("httpReferenceDisclosure"),
+  mobileAppbarTitle: document.getElementById("httpMobileAppbarTitle"),
+  mobileAppbarMeta: document.getElementById("httpMobileAppbarMeta"),
+  mobileHomeBtn: document.getElementById("httpMobileHomeBtn"),
+  mobileMenuBtn: document.getElementById("httpMobileMenuBtn"),
+  mobileMenuOverlay: document.getElementById("httpMobileMenuOverlay"),
+  mobileMenuCloseBtn: document.getElementById("httpMobileMenuCloseBtn"),
+  mobileMenuStagesBtn: document.getElementById("httpMobileStagesBtn"),
+  mobileMenuReferenceBtn: document.getElementById("httpMobileReferenceBtn"),
+  mobileMenuResetBtn: document.getElementById("httpMobileResetBtn"),
+  mobileInfoOverlay: document.getElementById("httpMobileInfoOverlay"),
+  mobileInfoCloseBtn: document.getElementById("httpMobileInfoCloseBtn"),
+  mobileInfoScroll: document.getElementById("httpMobileInfoScroll")
 };
 
 const deviceElements = {
@@ -70,10 +83,166 @@ const state = {
   completedScenarios: new Set()
 };
 
+const httpMobilePanelRegistry = [];
+
 const MESSAGE_TIME_SCALE = 1.96;
 
 function isMobileTrainerView() {
   return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function ensureHttpMobilePanelRegistry() {
+  if (httpMobilePanelRegistry.length) {
+    return;
+  }
+
+  [
+    els.stageDisclosure,
+    els.referenceDisclosure
+  ].filter(Boolean).forEach((element, index) => {
+    if (!element.parentNode) {
+      return;
+    }
+
+    const placeholder = document.createElement("div");
+    placeholder.hidden = true;
+    placeholder.className = "http-mobile-panel-placeholder";
+    placeholder.dataset.mobilePanelKey = String(index);
+    element.parentNode.insertBefore(placeholder, element);
+    httpMobilePanelRegistry.push({ element, placeholder });
+  });
+}
+
+function restoreHttpDesktopPanels() {
+  httpMobilePanelRegistry.forEach(({ element, placeholder }) => {
+    const parent = placeholder.parentNode;
+    if (!parent || element.parentNode === parent) {
+      return;
+    }
+
+    parent.insertBefore(element, placeholder.nextSibling);
+  });
+}
+
+function syncHttpMobileAppbar() {
+  const scenario = getScenario();
+
+  if (els.mobileAppbarTitle) {
+    els.mobileAppbarTitle.textContent = scenario?.name || "Web & HTTP Lab";
+  }
+
+  if (els.mobileAppbarMeta) {
+    els.mobileAppbarMeta.textContent = `Stage ${state.scenarioIndex + 1} of ${Math.max(scenarios.length, 1)}`;
+  }
+}
+
+function closeHttpMobileMenu(options = {}) {
+  const { restoreFocus = false } = options;
+
+  if (!els.mobileMenuOverlay) {
+    return;
+  }
+
+  document.body.classList.remove("http-mobile-menu-open");
+  els.mobileMenuOverlay.hidden = true;
+
+  if (els.mobileMenuBtn) {
+    els.mobileMenuBtn.setAttribute("aria-expanded", "false");
+    if (restoreFocus && isMobileTrainerView() && typeof els.mobileMenuBtn.focus === "function") {
+      els.mobileMenuBtn.focus();
+    }
+  }
+}
+
+function closeHttpMobileInfo(options = {}) {
+  const { restoreFocus = false } = options;
+
+  if (!els.mobileInfoOverlay) {
+    return;
+  }
+
+  document.body.classList.remove("http-mobile-info-open");
+  els.mobileInfoOverlay.hidden = true;
+
+  if (restoreFocus && els.mobileMenuBtn && isMobileTrainerView() && typeof els.mobileMenuBtn.focus === "function") {
+    els.mobileMenuBtn.focus();
+  }
+}
+
+function syncHttpMobilePanels() {
+  ensureHttpMobilePanelRegistry();
+
+  if (!els.mobileInfoScroll) {
+    return;
+  }
+
+  if (!isMobileTrainerView()) {
+    restoreHttpDesktopPanels();
+    closeHttpMobileMenu();
+    closeHttpMobileInfo();
+    return;
+  }
+
+  httpMobilePanelRegistry.forEach(({ element }) => {
+    if (element.parentNode !== els.mobileInfoScroll) {
+      els.mobileInfoScroll.appendChild(element);
+    }
+  });
+}
+
+function syncHttpMobileLayout() {
+  syncHttpMobileAppbar();
+  syncHttpMobilePanels();
+}
+
+function openHttpMobileMenu() {
+  if (!isMobileTrainerView()) {
+    return;
+  }
+
+  syncHttpMobileLayout();
+  closeHttpMobileInfo();
+  document.body.classList.add("http-mobile-menu-open");
+  els.mobileMenuOverlay.hidden = false;
+  els.mobileMenuBtn?.setAttribute("aria-expanded", "true");
+
+  window.requestAnimationFrame(() => {
+    if (els.mobileMenuStagesBtn && typeof els.mobileMenuStagesBtn.focus === "function") {
+      els.mobileMenuStagesBtn.focus();
+    }
+  });
+}
+
+function openHttpMobileInfo(section = "stages") {
+  if (!isMobileTrainerView()) {
+    return;
+  }
+
+  syncHttpMobileLayout();
+  closeHttpMobileMenu();
+  document.body.classList.add("http-mobile-info-open");
+  els.mobileInfoOverlay.hidden = false;
+
+  if (els.mobileInfoScroll) {
+    els.mobileInfoScroll.scrollTop = 0;
+  }
+
+  window.requestAnimationFrame(() => {
+    let target = els.stageDisclosure;
+
+    if (section === "reference" && els.referenceDisclosure) {
+      els.referenceDisclosure.open = true;
+      target = els.referenceDisclosure;
+    } else if (els.stageDisclosure) {
+      els.stageDisclosure.open = true;
+    }
+
+    target?.scrollIntoView({ block: "start" });
+
+    if (els.mobileInfoCloseBtn && typeof els.mobileInfoCloseBtn.focus === "function") {
+      els.mobileInfoCloseBtn.focus();
+    }
+  });
 }
 
 function getScenario() {
@@ -795,6 +964,8 @@ function updateStageSummary() {
       els.stageSummaryNote.textContent = scenario.note;
     }
   }
+
+  syncHttpMobileAppbar();
 }
 
 function renderScenarioTabs() {
@@ -810,7 +981,12 @@ function renderScenarioTabs() {
       <span class="scenario-tab-note">${scenario.note}</span>
       <span class="scenario-tab-status"></span>
     `;
-    button.addEventListener("click", () => loadScenario(index));
+    button.addEventListener("click", () => {
+      loadScenario(index);
+      if (isMobileTrainerView()) {
+        closeHttpMobileInfo();
+      }
+    });
     els.scenarioTabs.appendChild(button);
   });
 
@@ -985,6 +1161,7 @@ function renderStep() {
   els.nextStepBtn.hidden = true;
   els.nextStepBtn.textContent = "Next Step";
   updateStageSummary();
+  syncHttpMobileLayout();
 
   els.actionButtons.innerHTML = "";
 
@@ -1157,6 +1334,7 @@ function bindEvents() {
   els.resetScenarioBtn.addEventListener("click", resetScenario);
 
   window.addEventListener("resize", () => {
+    syncHttpMobileLayout();
     clearVisualState();
     updateMergeCableGeometry();
 
@@ -1167,9 +1345,52 @@ function bindEvents() {
 
     runVisualAction(step.visualAction).catch(() => {});
   });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("http-mobile-info-open")) {
+      closeHttpMobileInfo({ restoreFocus: true });
+      return;
+    }
+
+    if (event.key === "Escape" && document.body.classList.contains("http-mobile-menu-open")) {
+      closeHttpMobileMenu({ restoreFocus: true });
+    }
+  });
+
+  els.mobileHomeBtn?.addEventListener("click", () => {
+    window.location.href = "./index.html";
+  });
+
+  els.mobileMenuBtn?.addEventListener("click", () => {
+    if (document.body.classList.contains("http-mobile-menu-open")) {
+      closeHttpMobileMenu({ restoreFocus: true });
+      return;
+    }
+
+    openHttpMobileMenu();
+  });
+
+  document.querySelectorAll("[data-http-mobile-menu-close]").forEach((element) => {
+    element.addEventListener("click", () => closeHttpMobileMenu({ restoreFocus: true }));
+  });
+
+  els.mobileMenuCloseBtn?.addEventListener("click", () => closeHttpMobileMenu({ restoreFocus: true }));
+  els.mobileMenuStagesBtn?.addEventListener("click", () => openHttpMobileInfo("stages"));
+  els.mobileMenuReferenceBtn?.addEventListener("click", () => openHttpMobileInfo("reference"));
+  els.mobileMenuResetBtn?.addEventListener("click", () => {
+    closeHttpMobileMenu();
+    resetScenario();
+  });
+
+  document.querySelectorAll("[data-http-mobile-info-close]").forEach((element) => {
+    element.addEventListener("click", () => closeHttpMobileInfo({ restoreFocus: true }));
+  });
+
+  els.mobileInfoCloseBtn?.addEventListener("click", () => closeHttpMobileInfo({ restoreFocus: true }));
 }
 
 renderScenarioTabs();
 renderUseCases();
 bindEvents();
+syncHttpMobileLayout();
 loadScenario(0);
