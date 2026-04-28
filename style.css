@@ -3241,7 +3241,8 @@ body.merge-page:not(.http-flow-page) {
 
   .subnet-dashboard-page .subnet-question-panel {
     order: 1;
-    padding: 12px;
+    padding: 10px;
+    gap: 10px;
     border-left: 0;
     border-right: 0;
     border-radius: 0;
@@ -3257,9 +3258,10 @@ body.merge-page:not(.http-flow-page) {
   }
 
   .subnet-dashboard-page #question {
-    padding: 14px 16px;
-    font-size: clamp(18px, 5.8vw, 22px);
-    line-height: 1.35;
+    margin-bottom: 8px;
+    padding: 12px 14px;
+    font-size: clamp(16px, 5.1vw, 20px);
+    line-height: 1.3;
   }
 
   .subnet-dashboard-page #diagram {
@@ -3267,6 +3269,10 @@ body.merge-page:not(.http-flow-page) {
   }
 
   .subnet-dashboard-page .subnet-mobile-action-dock {
+    display: grid;
+    gap: 8px;
+    align-self: stretch;
+    min-width: 0;
     position: static;
     left: auto;
     right: auto;
@@ -3275,10 +3281,10 @@ body.merge-page:not(.http-flow-page) {
     width: 100%;
     max-height: none;
     overflow: visible;
-    margin-top: 12px;
+    margin-top: 8px;
     margin-left: 0;
     margin-right: 0;
-    padding: 0 0 calc(12px + env(safe-area-inset-bottom));
+    padding: 0 0 calc(8px + env(safe-area-inset-bottom));
     border-top: 0;
     border-radius: 0;
     background: none;
@@ -3292,28 +3298,37 @@ body.merge-page:not(.http-flow-page) {
     display: grid !important;
     grid-template-columns: 1fr !important;
     width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+    justify-items: stretch;
+    align-self: stretch;
   }
 
   .subnet-dashboard-page #answers {
-    gap: 8px;
+    gap: 6px;
   }
 
   .subnet-dashboard-page .subnet-feedback-stack {
-    gap: 6px;
-    margin-top: 8px;
+    gap: 4px;
+    margin-top: 0;
   }
 
   .subnet-dashboard-page .hint,
   .subnet-dashboard-page #feedback {
-    min-height: 18px;
+    min-height: 16px;
     margin: 0;
-    font-size: 13px;
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.3;
   }
 
   .subnet-dashboard-page #actionButtons {
-    gap: 8px;
-    margin-top: 10px;
+    gap: 6px;
+    margin-top: 0;
   }
 
   .subnet-dashboard-page .mode-btn,
@@ -3325,13 +3340,27 @@ body.merge-page:not(.http-flow-page) {
   .subnet-dashboard-page #actionButtons button {
     display: flex;
     box-sizing: border-box;
-    min-height: 52px;
+    align-items: center;
+    min-height: 44px;
     width: 100%;
     max-width: 100%;
-    padding: 0 14px 0 38px;
-    font-size: 14px;
+    margin: 0;
+    padding: 0 12px 0 32px;
+    font-size: 13px;
+    line-height: 1.2;
     justify-content: flex-start;
     text-align: left;
+  }
+
+  .subnet-dashboard-page #answers button::before,
+  .subnet-dashboard-page #actionButtons button::before {
+    left: 10px;
+    width: 8px;
+    height: 8px;
+  }
+
+  .subnet-dashboard-page button[hidden] {
+    display: none !important;
   }
 
   .subnet-mobile-menu-overlay,
