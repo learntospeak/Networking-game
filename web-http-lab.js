@@ -10,7 +10,7 @@ const els = {
   nextBtn: document.getElementById("httpNextBtn")
 };
 
-const STEP_COUNT = 6;
+const STEP_COUNT = 10;
 
 const ICONS = {
   browser: "fa-window-maximize",
@@ -253,6 +253,580 @@ const screens = [
       "DevTools created it"
     ],
     correctIndex: 1
+  },
+  {
+    id: "step-7-method-get",
+    step: 7,
+    title: "Request Methods",
+    meta: "Method 1 of 5",
+    type: "request",
+    contextLead: "GET asks the server to send data back. It is the common method for loading pages and reading information.",
+    contextItems: [
+      {
+        label: "GET /profile",
+        copy: "Ask for the existing /profile page."
+      },
+      {
+        label: "Host: learn.lab",
+        copy: "Tell the server which site should answer."
+      },
+      {
+        label: "Cookie: session=your-session",
+        copy: "Send the user's session with the request."
+      }
+    ],
+    lines: [
+      { text: "GET /profile", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Cookie: session=your-session", tone: "cookie" }
+    ]
+  },
+  {
+    id: "step-7-method-post",
+    step: 7,
+    title: "Request Methods",
+    meta: "Method 2 of 5",
+    type: "request",
+    contextLead: "POST sends new data to the server. It is often used for forms, logins, and creating something new.",
+    contextItems: [
+      {
+        label: "POST /login",
+        copy: "Send login data to the server."
+      },
+      {
+        label: "Content-Type: application/json",
+        copy: "Tell the server what kind of body is being sent."
+      },
+      {
+        label: "Body",
+        copy: "Carry the new data inside the request."
+      }
+    ],
+    lines: [
+      { text: "POST /login", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Content-Type: application/json", tone: "header" },
+      { text: "Body: {\"username\":\"sam\",\"password\":\"****\"}", tone: "body" }
+    ]
+  },
+  {
+    id: "step-7-method-put",
+    step: 7,
+    title: "Request Methods",
+    meta: "Method 3 of 5",
+    type: "request",
+    contextLead: "PUT replaces data at a location. Think of it as sending a full new version of that resource.",
+    contextItems: [
+      {
+        label: "PUT /profile",
+        copy: "Target the existing profile resource."
+      },
+      {
+        label: "Body",
+        copy: "Send the replacement data for that resource."
+      },
+      {
+        label: "Use case",
+        copy: "Update the whole profile record, not just one field."
+      }
+    ],
+    lines: [
+      { text: "PUT /profile", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Content-Type: application/json", tone: "header" },
+      { text: "Body: {\"displayName\":\"Sam\",\"role\":\"student\"}", tone: "body" }
+    ]
+  },
+  {
+    id: "step-7-method-patch",
+    step: 7,
+    title: "Request Methods",
+    meta: "Method 4 of 5",
+    type: "request",
+    contextLead: "PATCH changes part of existing data. It is used when only one small piece needs updating.",
+    contextItems: [
+      {
+        label: "PATCH /profile",
+        copy: "Target the existing profile resource."
+      },
+      {
+        label: "Body",
+        copy: "Send only the field that should change."
+      },
+      {
+        label: "Use case",
+        copy: "Update one setting without replacing the full record."
+      }
+    ],
+    lines: [
+      { text: "PATCH /profile", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Content-Type: application/json", tone: "header" },
+      { text: "Body: {\"displayName\":\"Sam\"}", tone: "body" }
+    ]
+  },
+  {
+    id: "step-7-method-delete",
+    step: 7,
+    title: "Request Methods",
+    meta: "Method 5 of 5",
+    type: "request",
+    contextLead: "DELETE asks the server to remove something. It targets a resource that already exists.",
+    contextItems: [
+      {
+        label: "DELETE /post/42",
+        copy: "Ask the server to remove post 42."
+      },
+      {
+        label: "Host: learn.lab",
+        copy: "Send the request to the right site."
+      },
+      {
+        label: "Result",
+        copy: "The server may remove the item or return an error if it does not exist."
+      }
+    ],
+    lines: [
+      { text: "DELETE /post/42", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" }
+    ]
+  },
+  {
+    id: "step-8-status-200",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 1 of 8",
+    type: "transit",
+    contextLead: "200 OK means the server handled the request successfully and returned the data.",
+    contextItems: [
+      {
+        label: "200 OK",
+        copy: "The request worked."
+      },
+      {
+        label: "Browser",
+        copy: "It can use the response and show the page."
+      },
+      {
+        label: "Common use",
+        copy: "Loading a normal page or API response."
+      }
+    ],
+    direction: "up",
+    packetTone: "response",
+    packetLabel: "200 OK",
+    packetPosition: "to-browser",
+    browserCopy: "Loads the returned data",
+    serverCopy: "Sends requested data",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-201",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 2 of 8",
+    type: "transit",
+    contextLead: "201 Created means the server successfully created something new.",
+    contextItems: [
+      {
+        label: "201 Created",
+        copy: "A new item was made successfully."
+      },
+      {
+        label: "Common use",
+        copy: "After a POST request that creates a new record."
+      },
+      {
+        label: "Browser",
+        copy: "It may receive details about the new item."
+      }
+    ],
+    direction: "up",
+    packetTone: "response",
+    packetLabel: "201 Created",
+    packetPosition: "to-browser",
+    browserCopy: "Receives new item details",
+    serverCopy: "Creates new data",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-204",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 3 of 8",
+    type: "transit",
+    contextLead: "204 No Content means the request worked, but the server does not need to send a response body back.",
+    contextItems: [
+      {
+        label: "204 No Content",
+        copy: "The request succeeded with no page data in the body."
+      },
+      {
+        label: "Common use",
+        copy: "After a successful DELETE or small update."
+      },
+      {
+        label: "Browser",
+        copy: "It gets success confirmation without extra content."
+      }
+    ],
+    direction: "up",
+    packetTone: "response",
+    packetLabel: "204 No Content",
+    packetPosition: "to-browser",
+    browserCopy: "Gets success without extra data",
+    serverCopy: "Confirms the action worked",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-301",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 4 of 8",
+    type: "transit",
+    contextLead: "301 Moved Permanently tells the browser that the resource now lives at a different address.",
+    contextItems: [
+      {
+        label: "301 Moved Permanently",
+        copy: "The browser should go to a new URL."
+      },
+      {
+        label: "Common use",
+        copy: "When a page or site address has changed."
+      },
+      {
+        label: "Browser",
+        copy: "It usually follows the redirect automatically."
+      }
+    ],
+    direction: "up",
+    packetTone: "info",
+    packetLabel: "301 Moved",
+    packetPosition: "to-browser",
+    browserCopy: "Follows the new address",
+    serverCopy: "Points to a new URL",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-401",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 5 of 8",
+    type: "transit",
+    contextLead: "401 Unauthorized means the request needs valid login credentials before it can continue.",
+    contextItems: [
+      {
+        label: "401 Unauthorized",
+        copy: "The browser is not authenticated yet."
+      },
+      {
+        label: "Common use",
+        copy: "Trying to access a protected page without logging in."
+      },
+      {
+        label: "Browser",
+        copy: "It usually needs to show a login flow."
+      }
+    ],
+    direction: "up",
+    packetTone: "warning",
+    packetLabel: "401 Unauthorized",
+    packetPosition: "to-browser",
+    browserCopy: "Needs a valid login",
+    serverCopy: "Rejects unauthenticated request",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-403",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 6 of 8",
+    type: "transit",
+    contextLead: "403 Forbidden means the server understood the request, but this user is not allowed to access that resource.",
+    contextItems: [
+      {
+        label: "403 Forbidden",
+        copy: "The request was understood but blocked."
+      },
+      {
+        label: "Common use",
+        copy: "A user is signed in but lacks permission."
+      },
+      {
+        label: "Browser",
+        copy: "It may show an access denied page."
+      }
+    ],
+    direction: "up",
+    packetTone: "warning",
+    packetLabel: "403 Forbidden",
+    packetPosition: "to-browser",
+    browserCopy: "Is not allowed in",
+    serverCopy: "Blocks access",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-404",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 7 of 8",
+    type: "transit",
+    contextLead: "404 Not Found means the server could not find the page or resource that was requested.",
+    contextItems: [
+      {
+        label: "404 Not Found",
+        copy: "The path does not point to an existing resource."
+      },
+      {
+        label: "Common use",
+        copy: "A missing page, file, or API item."
+      },
+      {
+        label: "Browser",
+        copy: "It usually shows a missing page message."
+      }
+    ],
+    direction: "up",
+    packetTone: "warning",
+    packetLabel: "404 Not Found",
+    packetPosition: "to-browser",
+    browserCopy: "Cannot load that resource",
+    serverCopy: "Cannot find that path",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-8-status-500",
+    step: 8,
+    title: "Response Codes",
+    meta: "Status 8 of 8",
+    type: "transit",
+    contextLead: "500 Server Error means something failed on the server while it was trying to handle the request.",
+    contextItems: [
+      {
+        label: "500 Server Error",
+        copy: "The problem happened on the server side."
+      },
+      {
+        label: "Common use",
+        copy: "A bug, crash, or unexpected failure while processing."
+      },
+      {
+        label: "Browser",
+        copy: "It receives an error instead of the expected data."
+      }
+    ],
+    direction: "up",
+    packetTone: "error",
+    packetLabel: "500 Server Error",
+    packetPosition: "to-browser",
+    browserCopy: "Gets an error page",
+    serverCopy: "Fails while processing",
+    browserActive: true,
+    serverActive: true
+  },
+  {
+    id: "step-9-pair-get-200",
+    step: 9,
+    title: "Method + Response Pairing",
+    meta: "Scenario 1 of 5",
+    type: "pairing",
+    contextLead: "A normal request for an existing page usually comes back with 200 OK.",
+    contextItems: [
+      {
+        label: "GET /profile",
+        copy: "Ask for a page that exists."
+      },
+      {
+        label: "200 OK",
+        copy: "The server found it and returned the data."
+      }
+    ],
+    lines: [
+      { text: "GET /profile", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" }
+    ],
+    statusLabel: "200 OK",
+    statusTone: "response",
+    statusCopy: "The page data comes back successfully."
+  },
+  {
+    id: "step-9-pair-post-201",
+    step: 9,
+    title: "Method + Response Pairing",
+    meta: "Scenario 2 of 5",
+    type: "pairing",
+    contextLead: "A POST request that creates a new item often returns 201 Created.",
+    contextItems: [
+      {
+        label: "POST /posts",
+        copy: "Send new data to create a post."
+      },
+      {
+        label: "201 Created",
+        copy: "The new post was created successfully."
+      }
+    ],
+    lines: [
+      { text: "POST /posts", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Body: {\"title\":\"Hello\"}", tone: "body" }
+    ],
+    statusLabel: "201 Created",
+    statusTone: "response",
+    statusCopy: "A new resource was made."
+  },
+  {
+    id: "step-9-pair-delete-204",
+    step: 9,
+    title: "Method + Response Pairing",
+    meta: "Scenario 3 of 5",
+    type: "pairing",
+    contextLead: "A DELETE request often returns 204 No Content when the removal worked and no body needs to come back.",
+    contextItems: [
+      {
+        label: "DELETE /post/42",
+        copy: "Ask the server to remove that post."
+      },
+      {
+        label: "204 No Content",
+        copy: "The delete worked and there is no page body to return."
+      }
+    ],
+    lines: [
+      { text: "DELETE /post/42", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" }
+    ],
+    statusLabel: "204 No Content",
+    statusTone: "response",
+    statusCopy: "The item was removed successfully."
+  },
+  {
+    id: "step-9-pair-get-404",
+    step: 9,
+    title: "Method + Response Pairing",
+    meta: "Scenario 4 of 5",
+    type: "pairing",
+    contextLead: "A GET request for something that does not exist often returns 404 Not Found.",
+    contextItems: [
+      {
+        label: "GET /missing-page",
+        copy: "Ask for a path that is not there."
+      },
+      {
+        label: "404 Not Found",
+        copy: "The server could not find that page."
+      }
+    ],
+    lines: [
+      { text: "GET /missing-page", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" }
+    ],
+    statusLabel: "404 Not Found",
+    statusTone: "warning",
+    statusCopy: "The requested resource does not exist."
+  },
+  {
+    id: "step-9-pair-post-401",
+    step: 9,
+    title: "Method + Response Pairing",
+    meta: "Scenario 5 of 5",
+    type: "pairing",
+    contextLead: "A POST request to a protected login area may return 401 Unauthorized when valid credentials are missing.",
+    contextItems: [
+      {
+        label: "POST /login",
+        copy: "Send login data to try to access the account."
+      },
+      {
+        label: "401 Unauthorized",
+        copy: "The request needs valid authentication before it can continue."
+      }
+    ],
+    lines: [
+      { text: "POST /login", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Body: {\"username\":\"sam\"}", tone: "body" }
+    ],
+    statusLabel: "401 Unauthorized",
+    statusTone: "warning",
+    statusCopy: "The browser must authenticate first."
+  },
+  {
+    id: "step-10-quiz-1",
+    step: 10,
+    title: "Methods and Responses Check",
+    meta: "Question 1 of 5",
+    type: "quiz",
+    question: "Which method is usually used to create new data?",
+    answers: [
+      "GET",
+      "POST",
+      "DELETE"
+    ],
+    correctIndex: 1
+  },
+  {
+    id: "step-10-quiz-2",
+    step: 10,
+    title: "Methods and Responses Check",
+    meta: "Question 2 of 5",
+    type: "quiz",
+    question: "Which method is used to update only part of existing data?",
+    answers: [
+      "PATCH",
+      "GET",
+      "301"
+    ],
+    correctIndex: 0
+  },
+  {
+    id: "step-10-quiz-3",
+    step: 10,
+    title: "Methods and Responses Check",
+    meta: "Question 3 of 5",
+    type: "quiz",
+    question: "Which response means a new item was created?",
+    answers: [
+      "404 Not Found",
+      "201 Created",
+      "401 Unauthorized"
+    ],
+    correctIndex: 1
+  },
+  {
+    id: "step-10-quiz-4",
+    step: 10,
+    title: "Methods and Responses Check",
+    meta: "Question 4 of 5",
+    type: "quiz",
+    question: "Which response means the browser needs valid login credentials?",
+    answers: [
+      "200 OK",
+      "204 No Content",
+      "401 Unauthorized"
+    ],
+    correctIndex: 2
+  },
+  {
+    id: "step-10-quiz-5",
+    step: 10,
+    title: "Methods and Responses Check",
+    meta: "Question 5 of 5",
+    type: "quiz",
+    question: "Which pairing best matches a successful delete?",
+    answers: [
+      "DELETE /post/42 -> 204 No Content",
+      "GET /profile -> 404 Not Found",
+      "POST /posts -> 500 Server Error"
+    ],
+    correctIndex: 0
   }
 ];
 
@@ -459,6 +1033,54 @@ function renderCompareVisual(screen) {
   `;
 }
 
+function renderPairingVisual(screen) {
+  const lines = screen.lines.map((line) => `
+    <div class="http-request-line is-${line.tone}">${escapeHtml(line.text)}</div>
+  `).join("");
+  const contextItems = (screen.contextItems || []).map((item) => `
+    <li class="http-pairing-context-item">
+      <span class="http-pairing-context-label">${escapeHtml(item.label)}</span>
+      <span class="http-pairing-context-copy">${escapeHtml(item.copy)}</span>
+    </li>
+  `).join("");
+
+  return `
+    <div class="http-visual-frame">
+      <div class="http-pairing-stack">
+        <div class="http-pairing-flow" role="img" aria-label="${escapeHtml(screen.title)}">
+          <div class="http-request-card">
+            <div class="http-request-toolbar" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="http-request-body">
+              ${lines}
+            </div>
+          </div>
+
+          <div class="http-pairing-arrow" aria-hidden="true">
+            <i class="fa-solid fa-arrow-down"></i>
+          </div>
+
+          <div class="http-status-card">
+            <p class="http-status-label">Response</p>
+            <div class="http-status-chip is-${screen.statusTone}">${escapeHtml(screen.statusLabel)}</div>
+            <p class="http-status-copy">${escapeHtml(screen.statusCopy)}</p>
+          </div>
+        </div>
+
+        <div class="http-pairing-context">
+          <p class="http-pairing-context-lead">${escapeHtml(screen.contextLead || "")}</p>
+          <ul class="http-pairing-context-list">
+            ${contextItems}
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderVisibilityVisual() {
   return `
     <div class="http-visual-frame">
@@ -504,6 +1126,10 @@ function renderVisual(screen) {
 
   if (screen.type === "compare") {
     return renderCompareVisual(screen);
+  }
+
+  if (screen.type === "pairing") {
+    return renderPairingVisual(screen);
   }
 
   if (screen.type === "visibility") {

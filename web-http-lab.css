@@ -368,6 +368,14 @@
   border-color: rgba(148, 163, 184, 0.32);
 }
 
+.http-request-line.is-header {
+  border-color: rgba(148, 163, 184, 0.32);
+}
+
+.http-request-line.is-body {
+  border-color: rgba(245, 158, 11, 0.34);
+}
+
 .http-request-line.is-cookie {
   border-color: rgba(34, 197, 94, 0.34);
 }
@@ -492,6 +500,21 @@
 .http-packet.is-response {
   border-color: rgba(34, 197, 94, 0.36);
   color: #dcfce7;
+}
+
+.http-packet.is-info {
+  border-color: rgba(56, 189, 248, 0.38);
+  color: #bfdbfe;
+}
+
+.http-packet.is-warning {
+  border-color: rgba(245, 158, 11, 0.38);
+  color: #fde68a;
+}
+
+.http-packet.is-error {
+  border-color: rgba(239, 68, 68, 0.38);
+  color: #fecaca;
 }
 
 .http-packet.from-browser,
@@ -652,6 +675,129 @@
   line-height: 1.45;
 }
 
+.http-pairing-stack {
+  width: 100%;
+  max-width: 500px;
+  display: grid;
+  gap: 12px;
+}
+
+.http-pairing-flow {
+  display: grid;
+  gap: 12px;
+}
+
+.http-pairing-arrow {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(71, 85, 105, 0.56);
+  background: rgba(7, 12, 18, 0.9);
+  color: #64748b;
+}
+
+.http-status-card {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.62);
+  background: var(--http-card);
+  text-align: center;
+}
+
+.http-status-label {
+  margin: 0 0 10px;
+  color: var(--http-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.http-status-chip {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(71, 85, 105, 0.62);
+  background: rgba(7, 12, 18, 0.96);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.http-status-chip.is-response {
+  border-color: rgba(34, 197, 94, 0.38);
+  color: #dcfce7;
+}
+
+.http-status-chip.is-warning {
+  border-color: rgba(245, 158, 11, 0.38);
+  color: #fde68a;
+}
+
+.http-status-chip.is-error {
+  border-color: rgba(239, 68, 68, 0.38);
+  color: #fecaca;
+}
+
+.http-status-chip.is-info {
+  border-color: rgba(56, 189, 248, 0.38);
+  color: #bfdbfe;
+}
+
+.http-status-copy {
+  margin: 12px 0 0;
+  color: var(--http-muted);
+  line-height: 1.45;
+}
+
+.http-pairing-context {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.62);
+  background:
+    radial-gradient(circle at right, rgba(56, 189, 248, 0.08), transparent 32%),
+    rgba(7, 12, 18, 0.94);
+}
+
+.http-pairing-context-lead {
+  margin: 0 0 12px;
+  color: var(--http-text);
+  line-height: 1.5;
+}
+
+.http-pairing-context-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.http-pairing-context-item {
+  display: grid;
+  gap: 4px;
+}
+
+.http-pairing-context-label {
+  color: #bfdbfe;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.http-pairing-context-copy {
+  color: var(--http-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .http-visibility-card,
 .http-quiz-card {
   padding: 18px;
@@ -775,11 +921,14 @@
   .http-compare-copy,
   .http-compare-context-copy,
   .http-compare-context-lead,
+  .http-status-copy,
   .http-visibility-list,
   .http-action-feedback,
   .http-request-line,
   .http-request-context-copy,
   .http-request-context-lead,
+  .http-pairing-context-copy,
+  .http-pairing-context-lead,
   .http-transit-context-copy,
   .http-transit-context-lead {
     font-size: 14px;
@@ -787,8 +936,14 @@
 
   .http-request-context-label,
   .http-transit-context-label,
-  .http-compare-context-label {
+  .http-compare-context-label,
+  .http-pairing-context-label,
+  .http-status-label {
     font-size: 12px;
+  }
+
+  .http-status-chip {
+    font-size: 13px;
   }
 }
 
