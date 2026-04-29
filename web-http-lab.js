@@ -99,6 +99,21 @@ const screens = [
     title: "Send the Request",
     meta: "Browser sends it",
     type: "transit",
+    contextLead: "The browser sends the finished request across the network toward the server.",
+    contextItems: [
+      {
+        label: "Browser",
+        copy: "It has built the request and is sending it out."
+      },
+      {
+        label: "GET /profile",
+        copy: "This request is now in transit."
+      },
+      {
+        label: "Server",
+        copy: "It has not received the request yet."
+      }
+    ],
     direction: "down",
     packetTone: "request",
     packetLabel: "GET /profile",
@@ -114,6 +129,21 @@ const screens = [
     title: "Send the Request",
     meta: "Server receives it",
     type: "transit",
+    contextLead: "The request reaches the server so it can read it and decide what data to send back.",
+    contextItems: [
+      {
+        label: "Server",
+        copy: "It can now process the request."
+      },
+      {
+        label: "GET /profile",
+        copy: "The server now knows which page the browser wants."
+      },
+      {
+        label: "Next",
+        copy: "The server prepares a response for that request."
+      }
+    ],
     direction: "down",
     packetTone: "request",
     packetLabel: "GET /profile",
@@ -129,6 +159,21 @@ const screens = [
     title: "Receive the Response",
     meta: "Response comes back",
     type: "transit",
+    contextLead: "After processing the request, the server sends data back to the browser.",
+    contextItems: [
+      {
+        label: "Server",
+        copy: "It sends the response back to the browser."
+      },
+      {
+        label: "200 OK",
+        copy: "This shows the request worked and data is returning."
+      },
+      {
+        label: "Browser",
+        copy: "It receives the response and can show the page."
+      }
+    ],
     direction: "up",
     packetTone: "response",
     packetLabel: "200 OK",
@@ -308,33 +353,49 @@ function renderRequestVisual(screen) {
 }
 
 function renderTransitVisual(screen) {
+  const contextItems = (screen.contextItems || []).map((item) => `
+    <li class="http-transit-context-item">
+      <span class="http-transit-context-label">${escapeHtml(item.label)}</span>
+      <span class="http-transit-context-copy">${escapeHtml(item.copy)}</span>
+    </li>
+  `).join("");
+
   return `
     <div class="http-visual-frame">
-      <div class="http-transit-visual" role="img" aria-label="${escapeHtml(screen.title)}">
-        ${renderFlowNode({
-          tone: "browser",
-          title: "Browser",
-          copy: screen.browserCopy,
-          active: screen.browserActive,
-          muted: !screen.browserActive,
-          compact: true
-        })}
-        <div class="http-transit-rail is-${screen.direction}">
-          <div class="http-transit-arrow">
-            <i class="fa-solid fa-arrow-${screen.direction}" aria-hidden="true"></i>
+      <div class="http-transit-stack">
+        <div class="http-transit-visual" role="img" aria-label="${escapeHtml(screen.title)}">
+          ${renderFlowNode({
+            tone: "browser",
+            title: "Browser",
+            copy: screen.browserCopy,
+            active: screen.browserActive,
+            muted: !screen.browserActive,
+            compact: true
+          })}
+          <div class="http-transit-rail is-${screen.direction}">
+            <div class="http-transit-arrow">
+              <i class="fa-solid fa-arrow-${screen.direction}" aria-hidden="true"></i>
+            </div>
+            <div class="http-packet is-${screen.packetTone} ${screen.packetPosition}">
+              ${escapeHtml(screen.packetLabel)}
+            </div>
           </div>
-          <div class="http-packet is-${screen.packetTone} ${screen.packetPosition}">
-            ${escapeHtml(screen.packetLabel)}
-          </div>
+          ${renderFlowNode({
+            tone: "server",
+            title: "Server",
+            copy: screen.serverCopy,
+            active: screen.serverActive,
+            muted: !screen.serverActive,
+            compact: true
+          })}
         </div>
-        ${renderFlowNode({
-          tone: "server",
-          title: "Server",
-          copy: screen.serverCopy,
-          active: screen.serverActive,
-          muted: !screen.serverActive,
-          compact: true
-        })}
+
+        <div class="http-transit-context">
+          <p class="http-transit-context-lead">${escapeHtml(screen.contextLead || "")}</p>
+          <ul class="http-transit-context-list">
+            ${contextItems}
+          </ul>
+        </div>
       </div>
     </div>
   `;
