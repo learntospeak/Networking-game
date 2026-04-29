@@ -159,19 +159,19 @@ const screens = [
     title: "Receive the Response",
     meta: "Response comes back",
     type: "transit",
-    contextLead: "After processing the request, the server sends data back to the browser.",
+    contextLead: "After processing the request, the server sends the response back so the browser can load the page.",
     contextItems: [
       {
         label: "Server",
-        copy: "It sends the response back to the browser."
+        copy: "It sends page data back to the browser."
       },
       {
         label: "200 OK",
-        copy: "This shows the request worked and data is returning."
+        copy: "This shows the request worked and the response is on its way."
       },
       {
         label: "Browser",
-        copy: "It receives the response and can show the page."
+        copy: "It receives the response and can show the page to the user."
       }
     ],
     direction: "up",
@@ -188,7 +188,22 @@ const screens = [
     step: 4,
     title: "HTTP vs HTTPS",
     meta: "Visible vs encrypted",
-    type: "compare"
+    type: "compare",
+    contextLead: "Both HTTP and HTTPS move requests between the browser and server, but they protect that traffic differently while it travels.",
+    contextItems: [
+      {
+        label: "HTTP",
+        copy: "The request and response are visible in transit."
+      },
+      {
+        label: "HTTPS",
+        copy: "The request and response are encrypted in transit."
+      },
+      {
+        label: "Browser",
+        copy: "Once the response reaches your browser, you can still inspect your own data there."
+      }
+    ]
   },
   {
     id: "step-5-visibility",
@@ -401,28 +416,44 @@ function renderTransitVisual(screen) {
   `;
 }
 
-function renderCompareVisual() {
+function renderCompareVisual(screen) {
+  const contextItems = (screen.contextItems || []).map((item) => `
+    <li class="http-compare-context-item">
+      <span class="http-compare-context-label">${escapeHtml(item.label)}</span>
+      <span class="http-compare-context-copy">${escapeHtml(item.copy)}</span>
+    </li>
+  `).join("");
+
   return `
     <div class="http-visual-frame">
-      <div class="http-compare-list" role="img" aria-label="HTTP is visible in transit while HTTPS is encrypted in transit">
-        <article class="http-compare-row is-http">
-          <div class="http-compare-icon" aria-hidden="true">
-            <i class="fa-solid fa-eye"></i>
-          </div>
-          <div>
-            <p class="http-compare-label">HTTP</p>
-            <p class="http-compare-copy">Visible in transit</p>
-          </div>
-        </article>
-        <article class="http-compare-row is-https">
-          <div class="http-compare-icon" aria-hidden="true">
-            <i class="fa-solid fa-lock"></i>
-          </div>
-          <div>
-            <p class="http-compare-label">HTTPS</p>
-            <p class="http-compare-copy">Encrypted in transit</p>
-          </div>
-        </article>
+      <div class="http-compare-stack">
+        <div class="http-compare-list" role="img" aria-label="HTTP is visible in transit while HTTPS is encrypted in transit">
+          <article class="http-compare-row is-http">
+            <div class="http-compare-icon" aria-hidden="true">
+              <i class="fa-solid fa-eye"></i>
+            </div>
+            <div>
+              <p class="http-compare-label">HTTP</p>
+              <p class="http-compare-copy">Visible in transit</p>
+            </div>
+          </article>
+          <article class="http-compare-row is-https">
+            <div class="http-compare-icon" aria-hidden="true">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+              <p class="http-compare-label">HTTPS</p>
+              <p class="http-compare-copy">Encrypted in transit</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="http-compare-context">
+          <p class="http-compare-context-lead">${escapeHtml(screen.contextLead || "")}</p>
+          <ul class="http-compare-context-list">
+            ${contextItems}
+          </ul>
+        </div>
       </div>
     </div>
   `;
@@ -472,7 +503,7 @@ function renderVisual(screen) {
   }
 
   if (screen.type === "compare") {
-    return renderCompareVisual();
+    return renderCompareVisual(screen);
   }
 
   if (screen.type === "visibility") {
