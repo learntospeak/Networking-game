@@ -47,7 +47,8 @@
     progressBucket: emptyBucket(),
     rowIdsBySection: {},
     authSubscription: null,
-    rewardToastTimer: 0
+    rewardToastTimer: 0,
+    progressPulseTimer: 0
   };
 
   function emptyBucket() {
@@ -349,12 +350,7 @@
     return runtime.audioContext;
   }
 
-  function playSuccessSound() {
-    if (!isSoundEnabled()) {
-      return;
-    }
-
-    const context = soundContext();
+  function resumeAudioContext(context) {
     if (!context) {
       return;
     }
@@ -364,28 +360,151 @@
         return null;
       });
     }
+  }
 
-    const now = context.currentTime;
+  function scheduleTone(context, now, note) {
+    const oscillator = context.createOscillator();
     const gain = context.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.connect(context.destination);
+    const start = now + (note.start || 0);
+    const duration = Math.max(0.03, Number(note.duration) || 0.08);
+    const peak = Math.max(0.008, Number(note.volume) || 0.03);
 
-    const notes = [
-      { frequency: 523.25, start: 0, duration: 0.08 },
-      { frequency: 659.25, start: 0.09, duration: 0.11 }
+    oscillator.type = note.type || "sine";
+    oscillator.frequency.setValueAtTime(Number(note.frequency) || 440, start);
+    if (Number.isFinite(Number(note.endFrequency))) {
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, Number(note.endFrequency)), start + duration);
+    }
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(peak, start + Math.min(0.014, duration / 2));
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.02);
+  }
+
+  function playUiSound(kind) {
+    if (!isSoundEnabled()) {
+      return;
+    }
+
+    const context = soundContext();
+    if (!context) {
+      return;
+    }
+
+    resumeAudioContext(context);
+    const now = context.currentTime;
+    const sequence = {
+      step: [
+        { frequency: 440, duration: 0.06, volume: 0.02, type: "triangle" }
+      ],
+      section: [
+        { frequency: 523.25, duration: 0.08, volume: 0.026, type: "triangle" },
+        { frequency: 659.25, start: 0.09, duration: 0.11, volume: 0.03, type: "triangle" }
+      ],
+      lab: [
+        { frequency: 523.25, duration: 0.07, volume: 0.028, type: "triangle" },
+        { frequency: 659.25, start: 0.08, duration: 0.09, volume: 0.03, type: "triangle" },
+        { frequency: 783.99, start: 0.18, duration: 0.13, volume: 0.034, type: "triangle" }
+      ],
+      incorrect: [
+        { frequency: 246.94, endFrequency: 196, duration: 0.09, volume: 0.016, type: "sine" }
+      ]
+    }[String(kind || "").trim().toLowerCase()] || [
+      { frequency: 440, duration: 0.06, volume: 0.02, type: "triangle" }
     ];
 
-    notes.forEach(function (note) {
-      const oscillator = context.createOscillator();
-      oscillator.type = "triangle";
-      oscillator.frequency.setValueAtTime(note.frequency, now + note.start);
-      oscillator.connect(gain);
-      oscillator.start(now + note.start);
-      oscillator.stop(now + note.start + note.duration);
+    sequence.forEach(function (note) {
+      scheduleTone(context, now, note);
+    });
+  }
+
+  function playSuccessSound() {
+    playUiSound("section");
+  }
+
+  function ensureProgressPulse() {
+    if (typeof document === "undefined" || !document.body) {
+      return null;
+    }
+
+    let toast = document.getElementById("netlabProgressPulse");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "netlabProgressPulse";
+      toast.className = "micro-progress-toast";
+      toast.setAttribute("aria-live", "polite");
+      document.body.appendChild(toast);
+    }
+
+    return toast;
+  }
+
+  function showProgressPulse(payload) {
+    const toast = ensureProgressPulse();
+    if (!toast) {
+      return null;
+    }
+
+    const tone = ["step", "section", "lab", "error"].includes(String(payload?.tone || ""))
+      ? String(payload.tone)
+      : "step";
+    const label = String(payload?.label || (tone === "error" ? "Try Again" : "Step Complete")).trim();
+    const coins = Math.max(0, normaliseNumber(payload?.coins));
+
+    toast.className = "micro-progress-toast is-" + tone;
+    toast.innerHTML = [
+      "<span class=\"micro-progress-toast-label\">" + escapeHtml(label) + "</span>",
+      coins ? "<span class=\"micro-progress-toast-coins\">+" + escapeHtml(String(coins)) + " coins</span>" : ""
+    ].join("");
+    toast.classList.add("is-visible");
+
+    if (runtime.progressPulseTimer) {
+      window.clearTimeout(runtime.progressPulseTimer);
+    }
+
+    runtime.progressPulseTimer = window.setTimeout(function () {
+      toast.classList.remove("is-visible");
+      runtime.progressPulseTimer = 0;
+    }, Math.max(900, normaliseNumber(payload?.duration) || 1500));
+
+    if (payload?.sound !== false) {
+      playUiSound(payload?.soundKind || tone);
+    }
+
+    return {
+      label: label,
+      coins: coins,
+      tone: tone
+    };
+  }
+
+  function grantProgressReward(payload) {
+    const reward = awardCoins({
+      key: payload?.key,
+      coins: payload?.coins,
+      title: payload?.title || payload?.label || "Progress Reward",
+      message: payload?.message || "Progress recorded.",
+      firstTimeOnly: payload?.firstTimeOnly,
+      toast: payload?.toast,
+      sound: false
     });
 
-    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+    if (reward || payload?.showWhenUnawarded !== false) {
+      showProgressPulse({
+        label: payload?.label || "Step Complete",
+        coins: reward ? reward.coins : 0,
+        tone: payload?.tone || "step",
+        duration: payload?.duration,
+        sound: payload?.sound !== false,
+        soundKind: payload?.soundKind
+      });
+    }
+
+    return reward;
   }
 
   function ensureRewardToast() {
@@ -765,8 +884,12 @@
     };
 
     persistProfileState("reward-granted", reward);
-    showRewardToast(reward);
-    playSuccessSound();
+    if (payload?.toast !== false) {
+      showRewardToast(reward);
+    }
+    if (payload?.sound !== false) {
+      playUiSound(payload?.soundKind || "section");
+    }
     return clone(reward);
   }
 
@@ -775,11 +898,15 @@
       return null;
     }
 
-    return awardCoins({
+    return grantProgressReward({
       key: "section-milestone:" + sectionId + ":complete-all",
       coins: 20,
-      title: "Section Milestone",
-      message: record.sectionLabel + " fully completed."
+      title: "Lab Complete",
+      label: "Lab Complete",
+      tone: "lab",
+      message: record.sectionLabel + " fully completed.",
+      toast: false,
+      showWhenUnawarded: false
     });
   }
 
@@ -1024,7 +1151,10 @@
     },
     isSoundEnabled: isSoundEnabled,
     setSoundEnabled: setSoundEnabled,
+    playUiSound: playUiSound,
     awardCoins: awardCoins,
+    grantProgressReward: grantProgressReward,
+    showProgressPulse: showProgressPulse,
     coinsForDifficulty: coinsForDifficulty,
     signUpProfile: signUpProfile,
     logInProfile: logInProfile,

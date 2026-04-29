@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Subnetting Lab</title>
-  <link rel="stylesheet" href="./style.css?v=20260428mobilefs3">
+  <link rel="stylesheet" href="./style.css?v=20260429micro1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
-  <script src="./app-data.js?v=20260425sync1" defer></script>
-  <script src="./script.js?v=20260428mobilefs1" defer></script>
+  <script src="./app-data.js?v=20260429micro1" defer></script>
+  <script src="./script.js?v=20260429micro1" defer></script>
 </head>
 <body class="subnet-dashboard-page">
   <div class="rack-room">
@@ -202,7 +202,10 @@
                     <p class="subnet-panel-kicker">Active Prompt</p>
                     <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
                   </div>
-                  <p id="examStatus" hidden></p>
+                  <div class="subnet-question-progress">
+                    <p id="subnetProgressBadge" class="subnet-progress-badge">Completed 0 / 10 modes</p>
+                    <p id="examStatus" hidden></p>
+                  </div>
                 </div>
                 <div id="diagram"></div>
                 <div class="subnet-mobile-action-dock">

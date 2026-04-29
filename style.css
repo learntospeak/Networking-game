@@ -198,6 +198,29 @@ body:not(.terminal-page) .hub-hero-panel h2 {
   text-align: left;
 }
 
+.subnet-dashboard-page .subnet-question-progress {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.subnet-progress-badge {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  background: rgba(8, 22, 38, 0.7);
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .subnet-dashboard-page #question.question-placeholder {
   color: #94a3b8;
   opacity: 1;
@@ -424,6 +447,14 @@ body:not(.terminal-page) .hub-hero-panel h2 {
 
   .subnet-dashboard-page .subnet-question-head {
     gap: 10px;
+  }
+
+  .subnet-dashboard-page .subnet-question-progress {
+    justify-items: start;
+  }
+
+  .subnet-progress-badge {
+    white-space: normal;
   }
 }
 
@@ -927,6 +958,106 @@ button::before {
 .reward-toast-message {
   color: #dbe4f0;
   line-height: 1.5;
+}
+
+.micro-progress-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 2100;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background:
+    radial-gradient(circle at top, rgba(96, 165, 250, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(10, 15, 23, 0.96) 0%, rgba(4, 8, 15, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 32px rgba(2, 6, 23, 0.28);
+  color: #f8fafc;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -12px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.micro-progress-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.micro-progress-toast-label,
+.micro-progress-toast-coins {
+  display: inline-flex;
+  align-items: center;
+}
+
+.micro-progress-toast-label {
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.micro-progress-toast-label::before {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 197, 94, 0.26);
+  background: rgba(21, 128, 61, 0.22);
+  color: #86efac;
+  content: "\2713";
+  font-size: 12px;
+}
+
+.micro-progress-toast-coins {
+  padding: 0 10px;
+  min-height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  background: rgba(146, 64, 14, 0.2);
+  color: #fde68a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.micro-progress-toast.is-step {
+  border-color: rgba(96, 165, 250, 0.34);
+}
+
+.micro-progress-toast.is-section {
+  border-color: rgba(74, 222, 128, 0.34);
+}
+
+.micro-progress-toast.is-lab {
+  border-color: rgba(250, 204, 21, 0.4);
+}
+
+.micro-progress-toast.is-lab .micro-progress-toast-label::before {
+  border-color: rgba(250, 204, 21, 0.3);
+  background: rgba(120, 53, 15, 0.24);
+  color: #fde68a;
+}
+
+.micro-progress-toast.is-error {
+  border-color: rgba(248, 113, 113, 0.36);
+}
+
+.micro-progress-toast.is-error .micro-progress-toast-label::before {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.24);
+  color: #fca5a5;
+  content: "!";
 }
 
 .learning-paths-head {
@@ -2512,12 +2643,18 @@ h3 {
     width: 100%;
   }
 
-.reward-toast {
+  .reward-toast {
     left: 12px;
     right: 12px;
     bottom: 12px;
     min-width: 0;
     max-width: none;
+  }
+
+  .micro-progress-toast {
+    top: 12px;
+    max-width: calc(100vw - 20px);
+    padding: 9px 12px;
   }
 }
 

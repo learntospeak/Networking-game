@@ -1602,17 +1602,31 @@
     const scenario = currentScenario();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const firstCompletion = !session.completedScenarioIds.has(scenario.id);
+    const completionCoins = NetlabApp?.coinsForDifficulty
+      ? NetlabApp.coinsForDifficulty(scenario.difficulty, challengePresentation ? 10 : 5)
+      : (challengePresentation ? 10 : 5);
 
     session.completedScenarioIds.add(scenario.id);
     session.scenarioCompleted = true;
     printLine("Scenario complete. You reached the objective with live command input.", "success");
-    if (firstCompletion && NetlabApp?.awardCoins) {
+    if (firstCompletion && NetlabApp?.grantProgressReward) {
+      NetlabApp.grantProgressReward({
+        key: `scenario-complete:${currentSectionId()}:${scenario.id}`,
+        coins: completionCoins,
+        title: challengePresentation ? "Challenge Complete" : "Lesson Complete",
+        label: "Section Complete",
+        tone: "section",
+        message: scenario.title
+      });
+    } else if (firstCompletion && NetlabApp?.awardCoins) {
       NetlabApp.awardCoins({
         key: `scenario-complete:${currentSectionId()}:${scenario.id}`,
-        coins: NetlabApp.coinsForDifficulty(scenario.difficulty, challengePresentation ? 10 : 5),
+        coins: completionCoins,
         title: challengePresentation ? "Challenge Complete" : "Lesson Complete",
         message: scenario.title
       });
+    } else {
+      NetlabApp?.showProgressPulse?.({ label: "Section Complete", tone: "section" });
     }
     renderPanel();
     persistSectionProgress();
@@ -1622,6 +1636,7 @@
     const scenario = currentScenario();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const skipCount = Math.max(1, Number(count) || 1);
+    const completedStepNumber = Math.min(scenario.steps.length, session.stepIndex + skipCount);
 
     for (let index = 0; index < skipCount; index += 1) {
       if (session.stepIndex >= scenario.steps.length - 1) {
@@ -1634,6 +1649,18 @@
 
     session.attemptsForStep = 0;
     session.hintLevel = -1;
+    if (NetlabApp?.grantProgressReward) {
+      NetlabApp.grantProgressReward({
+        key: `scenario-step:${currentSectionId()}:${scenario.id}:step-${completedStepNumber}`,
+        coins: challengePresentation ? 3 : 2,
+        title: challengePresentation ? "Challenge Step" : "Lesson Step",
+        label: "Step Complete",
+        tone: "step",
+        message: `${scenario.title} - Step ${completedStepNumber}`
+      });
+    } else {
+      NetlabApp?.showProgressPulse?.({ label: "Step Complete", tone: "step" });
+    }
     if (skipCount > 1) {
       printLine("You already collected the deeper evidence, so the coach skipped the redundant intermediate task.", "success");
     }
@@ -4133,6 +4160,10 @@
 
     if (evaluation.countsAsAttempt !== false) {
       session.hintLevel = Math.max(session.hintLevel, CoachEngine.getHintTierFromAttempts(session.attemptsForStep));
+    }
+
+    if (evaluation.classification !== "exploration") {
+      NetlabApp?.showProgressPulse?.({ label: "Try Again", tone: "error" });
     }
 
     printLine(

@@ -11,6 +11,8 @@ const els = {
 };
 
 const STEP_COUNT = 10;
+const NetlabApp = window.NetlabApp;
+const SECTION_ID = "web-http-lab";
 
 const ICONS = {
   browser: "fa-window-maximize",
@@ -833,6 +835,8 @@ const screens = [
 const quizState = new Map();
 
 let currentIndex = 0;
+let highestUnlockedIndex = 0;
+let highestCompletedCount = 0;
 
 function escapeHtml(text) {
   return String(text)
@@ -852,6 +856,149 @@ function getQuizState(screenId) {
   }
 
   return quizState.get(screenId);
+}
+
+function screenRewardCoins(screen) {
+  if (!screen) {
+    return 1;
+  }
+
+  if (screen.type === "quiz" || screen.type === "pairing" || screen.type === "compare" || screen.type === "visibility") {
+    return 2;
+  }
+
+  return 1;
+}
+
+function serializeQuizState() {
+  const snapshot = {};
+
+  quizState.forEach(function (value, key) {
+    snapshot[key] = {
+      solved: Boolean(value?.solved),
+      wrongSelections: Array.isArray(value?.wrongSelections) ? value.wrongSelections.slice() : []
+    };
+  });
+
+  return snapshot;
+}
+
+function currentCompletedStepCount() {
+  const screen = screens[currentIndex];
+  if (!screen) {
+    return 0;
+  }
+
+  if (currentIndex === screens.length - 1 && screen.type === "quiz" && getQuizState(screen.id).solved) {
+    return STEP_COUNT;
+  }
+
+  return Math.max(0, Number(screen.step) - 1);
+}
+
+function persistedCompletedStepCount() {
+  const furthestIndex = Math.max(0, Math.min(screens.length - 1, highestUnlockedIndex));
+  const furthestScreen = screens[furthestIndex];
+  const furthestCount = furthestScreen
+    ? ((furthestIndex === screens.length - 1 && furthestScreen.type === "quiz" && getQuizState(furthestScreen.id).solved)
+      ? STEP_COUNT
+      : Math.max(0, Number(furthestScreen.step) - 1))
+    : 0;
+
+  highestCompletedCount = Math.max(highestCompletedCount, currentCompletedStepCount(), furthestCount);
+  return highestCompletedCount;
+}
+
+function buildProgressSnapshot() {
+  return {
+    currentIndex: currentIndex,
+    highestUnlockedIndex: highestUnlockedIndex,
+    highestCompletedCount: highestCompletedCount,
+    quizState: serializeQuizState()
+  };
+}
+
+function persistHttpProgress() {
+  if (!NetlabApp?.saveSectionProgress) {
+    return;
+  }
+
+  const screen = screens[currentIndex];
+  NetlabApp.saveSectionProgress(SECTION_ID, {
+    sectionLabel: "Web & HTTP Lab",
+    currentItemId: screen.id,
+    currentItemLabel: `${screen.title} - ${screen.meta}`,
+    completedCount: persistedCompletedStepCount(),
+    totalCount: STEP_COUNT,
+    summaryText: `Step ${screen.step} of ${STEP_COUNT} · Screen ${currentIndex + 1}/${screens.length}`,
+    state: buildProgressSnapshot()
+  });
+}
+
+function restoreSavedProgress(savedState) {
+  if (!savedState) {
+    return false;
+  }
+
+  const savedIndex = Math.max(0, Math.min(screens.length - 1, Number(savedState.currentIndex) || 0));
+  currentIndex = savedIndex;
+  highestUnlockedIndex = Math.max(savedIndex, Math.min(screens.length - 1, Number(savedState.highestUnlockedIndex) || savedIndex));
+  highestCompletedCount = Math.max(0, Math.min(STEP_COUNT, Number(savedState.highestCompletedCount) || 0));
+  quizState.clear();
+
+  const savedQuizState = savedState.quizState && typeof savedState.quizState === "object" ? savedState.quizState : {};
+  Object.keys(savedQuizState).forEach(function (screenId) {
+    const value = savedQuizState[screenId] || {};
+    quizState.set(screenId, {
+      solved: Boolean(value.solved),
+      wrongSelections: Array.isArray(value.wrongSelections) ? value.wrongSelections.slice() : []
+    });
+  });
+
+  return true;
+}
+
+function celebrateScreenAdvance(completedScreen, nextScreen) {
+  if (!completedScreen) {
+    return;
+  }
+
+  if (!nextScreen) {
+    return;
+  }
+
+  if (completedScreen.step !== nextScreen.step) {
+    if (NetlabApp?.grantProgressReward) {
+      NetlabApp.grantProgressReward({
+        key: `http-section-complete:${completedScreen.step}`,
+        coins: 3,
+        title: `HTTP Step ${completedScreen.step}`,
+        label: "Section Complete",
+        tone: "section",
+        message: completedScreen.title
+      });
+    } else {
+      NetlabApp?.showProgressPulse?.({ label: "Section Complete", tone: "section", coins: 3 });
+    }
+    return;
+  }
+
+  if (NetlabApp?.grantProgressReward) {
+    NetlabApp.grantProgressReward({
+      key: `http-screen-complete:${completedScreen.id}`,
+      coins: screenRewardCoins(completedScreen),
+      title: "HTTP Step",
+      label: "Step Complete",
+      tone: "step",
+      message: completedScreen.meta
+    });
+  } else {
+    NetlabApp?.showProgressPulse?.({
+      label: "Step Complete",
+      tone: "step",
+      coins: screenRewardCoins(completedScreen)
+    });
+  }
 }
 
 function renderFlowNode({ tone, title, copy, active = false, muted = false, compact = false }) {
@@ -1207,7 +1354,7 @@ function renderActions(screen) {
 function renderScreen({ scroll = false } = {}) {
   const screen = screens[currentIndex];
 
-  els.stepKicker.textContent = `Step ${screen.step} of ${STEP_COUNT}`;
+  els.stepKicker.textContent = `Step ${screen.step} of ${STEP_COUNT} · Screen ${currentIndex + 1} / ${screens.length}`;
   els.screenTitle.textContent = screen.title;
   els.screenMeta.textContent = screen.meta;
   els.screenVisual.innerHTML = renderVisual(screen);
@@ -1216,6 +1363,8 @@ function renderScreen({ scroll = false } = {}) {
   if (scroll) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  persistHttpProgress();
 }
 
 function goBack() {
@@ -1230,6 +1379,7 @@ function goBack() {
 function resetFlow() {
   quizState.clear();
   currentIndex = 0;
+  highestUnlockedIndex = 0;
   renderScreen({ scroll: true });
 }
 
@@ -1248,7 +1398,10 @@ function goNext() {
     return;
   }
 
+  const nextScreen = screens[currentIndex + 1];
+  celebrateScreenAdvance(screen, nextScreen);
   currentIndex += 1;
+  highestUnlockedIndex = Math.max(highestUnlockedIndex, currentIndex);
   renderScreen({ scroll: true });
 }
 
@@ -1267,8 +1420,37 @@ function handleQuizAnswer(answerIndex) {
 
   if (answerIndex === screen.correctIndex) {
     state.solved = true;
+    if (currentIndex === screens.length - 1) {
+      if (NetlabApp?.saveSectionProgress) {
+        highestUnlockedIndex = Math.max(highestUnlockedIndex, currentIndex);
+      }
+      persistHttpProgress();
+    }
   } else if (!state.wrongSelections.includes(answerIndex)) {
     state.wrongSelections.push(answerIndex);
+    NetlabApp?.showProgressPulse?.({ label: "Try Again", tone: "error" });
+  }
+
+  renderScreen();
+}
+
+async function initHttpLab() {
+  if (NetlabApp?.whenReady) {
+    await NetlabApp.whenReady();
+  }
+
+  const launchAction = NetlabApp?.getLaunchAction?.();
+  if (launchAction === "start") {
+    NetlabApp?.resetSectionProgress?.(SECTION_ID);
+    NetlabApp?.clearLaunchAction?.();
+  }
+
+  const savedRecord = NetlabApp?.getSectionProgress?.(SECTION_ID);
+  if (launchAction === "resume" && savedRecord?.state) {
+    restoreSavedProgress(savedRecord.state);
+    NetlabApp?.clearLaunchAction?.();
+  } else if (launchAction && launchAction !== "start") {
+    NetlabApp?.clearLaunchAction?.();
   }
 
   renderScreen();
@@ -1277,4 +1459,4 @@ function handleQuizAnswer(answerIndex) {
 els.backBtn.addEventListener("click", goBack);
 els.nextBtn.addEventListener("click", goNext);
 
-renderScreen();
+initHttpLab();

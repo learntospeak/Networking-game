@@ -743,7 +743,8 @@ const els = {
   mobileMenuReferenceBtn: document.getElementById("subnetMobileReferenceBtn"),
   mobileInfoOverlay: document.getElementById("subnetMobileInfoOverlay"),
   mobileInfoCloseBtn: document.getElementById("subnetMobileInfoCloseBtn"),
-  mobileInfoScroll: document.getElementById("subnetMobileInfoScroll")
+  mobileInfoScroll: document.getElementById("subnetMobileInfoScroll"),
+  subnetProgressBadge: document.getElementById("subnetProgressBadge")
 };
 
 const NetlabApp = window.NetlabApp;
@@ -763,6 +764,11 @@ const subnetExamModes = [
   "usableRange",
   "hostRequirement"
 ];
+
+const subnetModeGroups = {
+  addressing: subnetExamModes.slice(),
+  operations: ["commandQuiz", "securityQuiz"]
+};
 
 const state = {
   currentAnswer: "",
@@ -801,6 +807,88 @@ function syncDashboardModeCards(activeCard = "practice") {
   }
   if (els.dashboardExamCard) {
     els.dashboardExamCard.classList.toggle("is-active", activeCard === "exam");
+  }
+}
+
+function completedModeCount() {
+  return state.completedModes.size;
+}
+
+function subnetModeGroupId(mode) {
+  if (subnetModeGroups.addressing.includes(mode)) {
+    return "addressing";
+  }
+
+  if (subnetModeGroups.operations.includes(mode)) {
+    return "operations";
+  }
+
+  return "";
+}
+
+function completedModesInGroup(groupId) {
+  const group = subnetModeGroups[groupId] || [];
+  return group.filter((mode) => state.completedModes.has(mode)).length;
+}
+
+function updateSubnetProgressBadge() {
+  if (!els.subnetProgressBadge) {
+    return;
+  }
+
+  if (state.examModeActive && !state.examFinished) {
+    els.subnetProgressBadge.textContent = `Question ${state.examIndex + 1} / ${state.examQuestionCount}`;
+    return;
+  }
+
+  if (state.examModeActive && state.examFinished) {
+    els.subnetProgressBadge.textContent = `Score ${state.examScore} / ${state.examQuestionCount}`;
+    return;
+  }
+
+  els.subnetProgressBadge.textContent = `Completed ${completedModeCount()} / ${modeButtons.length} modes`;
+}
+
+function celebrateSubnetModeCompletion(mode) {
+  const rewardCoins = mode === "commandQuiz" || mode === "securityQuiz" ? 3 : 2;
+
+  if (NetlabApp?.grantProgressReward) {
+    NetlabApp.grantProgressReward({
+      key: `subnet-mode-complete:${mode}`,
+      coins: rewardCoins,
+      title: "Subnetting Step",
+      label: "Step Complete",
+      tone: "step",
+      message: formatModeLabel(mode)
+    });
+  } else {
+    NetlabApp?.showProgressPulse?.({ label: "Step Complete", tone: "step", coins: rewardCoins });
+  }
+
+  const groupId = subnetModeGroupId(mode);
+  if (!groupId) {
+    return;
+  }
+
+  const group = subnetModeGroups[groupId];
+  if (completedModesInGroup(groupId) !== group.length) {
+    return;
+  }
+
+  const sectionCoins = groupId === "addressing" ? 4 : 3;
+  const sectionTitle = groupId === "addressing" ? "Addressing Section" : "Operations Section";
+
+  if (NetlabApp?.grantProgressReward) {
+    NetlabApp.grantProgressReward({
+      key: `subnet-section-complete:${groupId}`,
+      coins: sectionCoins,
+      title: sectionTitle,
+      label: "Section Complete",
+      tone: "section",
+      message: sectionTitle
+    });
+  } else {
+    NetlabApp?.showProgressPulse?.({ label: "Section Complete", tone: "section", coins: sectionCoins });
   }
 }
 
@@ -1199,6 +1287,7 @@ function restoreSavedProgress(savedState) {
   syncQuestionPanelVisibility(!ui.questionPlaceholder || Boolean(ui.diagramHtml) || (ui.answers || []).length > 0);
   syncExamExitButton();
   state.resumePromptVisible = false;
+  updateSubnetProgressBadge();
 
   NetlabApp?.clearLaunchAction();
   syncSubnetMobileLayout();
@@ -1324,12 +1413,14 @@ function setQuestion(text, isPlaceholder = false) {
   els.question.textContent = text;
   els.question.classList.toggle("question-placeholder", isPlaceholder);
   syncSubnetMobileAppbar();
+  updateSubnetProgressBadge();
 }
 
 function updateScoreboard() {
   els.streak.textContent = state.streak;
   els.correct.textContent = state.correct;
   els.wrong.textContent = state.wrong;
+  updateSubnetProgressBadge();
 }
 
 function updateActiveMode(mode) {
@@ -1402,6 +1493,7 @@ function resetIntroState() {
   els.restartExamBtn.hidden = true;
   els.exitExamBtn.hidden = true;
   syncQuestionPanelVisibility(false);
+  updateSubnetProgressBadge();
 }
 
 function resetQuestionUi({ showHint = true } = {}) {
@@ -1512,12 +1604,14 @@ function updateExamStatus() {
   if (!state.examModeActive || state.examFinished) {
     els.examStatus.hidden = true;
     syncSubnetMobileAppbar();
+    updateSubnetProgressBadge();
     return;
   }
 
   els.examStatus.hidden = false;
   els.examStatus.textContent = `Question ${state.examIndex + 1} of ${state.examQuestionCount}`;
   syncSubnetMobileAppbar();
+  updateSubnetProgressBadge();
 }
 
 function syncExamExitButton() {
@@ -1647,15 +1741,18 @@ function submitExamAnswer(answer) {
     state.examScore += 1;
     els.feedback.textContent = "Correct";
     els.feedback.className = "correct";
+    NetlabApp?.showProgressPulse?.({ label: "Step Complete", tone: "step" });
   } else {
     els.feedback.textContent = `Wrong (Correct: ${state.currentAnswer})`;
     els.feedback.className = "wrong";
+    NetlabApp?.showProgressPulse?.({ label: "Try Again", tone: "error" });
   }
 
   els.hintBtn.hidden = true;
   els.nextBtn.hidden = false;
   els.nextBtn.textContent =
     state.examIndex === state.examQuestionCount - 1 ? "Finish Exam" : "Next Question";
+  updateSubnetProgressBadge();
   persistSectionProgress();
 }
 
@@ -1691,7 +1788,17 @@ function finishExamMode() {
 
   els.restartExamBtn.hidden = false;
   syncExamExitButton();
-  if (passed && NetlabApp?.awardCoins) {
+  updateSubnetProgressBadge();
+  if (passed && NetlabApp?.grantProgressReward) {
+    NetlabApp.grantProgressReward({
+      key: "subnetting-exam-pass",
+      coins: 20,
+      title: "Subnetting Milestone",
+      label: "Section Complete",
+      tone: "section",
+      message: "Passed the subnetting exam."
+    });
+  } else if (passed && NetlabApp?.awardCoins) {
     NetlabApp.awardCoins({
       key: "subnetting-exam-pass",
       coins: 20,
@@ -2026,11 +2133,19 @@ function checkAnswer(answer) {
     state.streak += 1;
     els.feedback.textContent = "Correct";
     els.feedback.className = "correct";
+    const firstCompletion = Boolean(state.currentMode) && !state.completedModes.has(state.currentMode);
+    if (firstCompletion) {
+      state.completedModes.add(state.currentMode);
+      celebrateSubnetModeCompletion(state.currentMode);
+    } else {
+      NetlabApp?.showProgressPulse?.({ label: "Step Complete", tone: "step" });
+    }
   } else {
     state.wrong += 1;
     state.streak = 0;
     els.feedback.textContent = `Wrong (Correct: ${state.currentAnswer})`;
     els.feedback.className = "wrong";
+    NetlabApp?.showProgressPulse?.({ label: "Try Again", tone: "error" });
   }
 
   updateScoreboard();
@@ -2051,7 +2166,6 @@ function setMode(mode) {
   if (state.examModeActive) return;
 
   state.currentMode = mode;
-  state.completedModes.add(mode);
   updateActiveMode(mode);
   showPractice();
   startQuiz();
