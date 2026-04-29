@@ -6,11 +6,12 @@
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260427mobile5">
   <link rel="stylesheet" href="./protocol-flow.css?v=20260427mobile1">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260428httpstep1">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260429httpflow6">
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
   >
+  <script src="./web-http-lab.js?v=20260429httpflow6" defer></script>
 </head>
 <body class="flow-page http-flow-page">
   <div class="rack-room">
@@ -18,7 +19,7 @@
       <div class="router-top">
         <div>
           <div class="router-brand">NET-LAB WEB REQUEST PANEL</div>
-          <div class="flow-subbrand">HTTP/security learning flow</div>
+          <div class="flow-subbrand">HTTP/HTTPS learning flow</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -28,117 +29,16 @@
         </div>
       </div>
 
-      <header class="flow-header">
-        <div>
-          <p class="flow-kicker">Step 1</p>
-          <h1>Web &amp; HTTP Lab</h1>
-          <p class="flow-intro">
-            Start with the big picture: the browser sends a request, the server responds,
-            and anything returned to your browser can be inspected in your own session.
-          </p>
-        </div>
-        <a class="flow-nav-link" href="./index.html">Back to Main App</a>
-      </header>
-
-      <main class="http-step-layout">
-        <section class="flow-panel http-step-panel http-overview-panel" aria-labelledby="httpBigPictureTitle">
-          <div class="flow-panel-head">
-            <div>
-              <p class="scenario-label">Big Picture</p>
-              <h2 id="httpBigPictureTitle">Browser to Server Flow</h2>
-            </div>
-            <div class="traffic-mode reply">Request and response</div>
+      <main class="http-stage-shell">
+        <section class="flow-panel http-screen" aria-live="polite">
+          <div class="http-screen-top">
+            <p id="httpStepKicker" class="flow-kicker">Step 1 of 6</p>
+            <h1 id="httpScreenTitle" class="http-screen-title">Browser to Server Flow</h1>
+            <p id="httpScreenMeta" class="http-screen-meta">Big picture</p>
           </div>
 
-          <div class="display-panel http-flow-display">
-            <div class="http-flow-scroll" aria-label="Browser to server request flow">
-              <div class="http-flow-track">
-                <article class="http-flow-node is-browser">
-                  <div class="http-node-icon" aria-hidden="true">
-                    <i class="fa-solid fa-window-maximize"></i>
-                  </div>
-                  <h3>Browser</h3>
-                  <p>You open a website</p>
-                </article>
-
-                <div class="http-flow-arrow" aria-hidden="true">
-                  <i class="fa-solid fa-arrow-right"></i>
-                </div>
-
-                <article class="http-flow-node is-server">
-                  <div class="http-node-icon" aria-hidden="true">
-                    <i class="fa-solid fa-server"></i>
-                  </div>
-                  <h3>Server</h3>
-                  <p>Processes your request</p>
-                </article>
-
-                <div class="http-flow-arrow" aria-hidden="true">
-                  <i class="fa-solid fa-arrow-right"></i>
-                </div>
-
-                <article class="http-flow-node is-response">
-                  <div class="http-node-icon" aria-hidden="true">
-                    <i class="fa-solid fa-file-lines"></i>
-                  </div>
-                  <h3>Response</h3>
-                  <p>Sends data back</p>
-                </article>
-
-                <div class="http-flow-arrow" aria-hidden="true">
-                  <i class="fa-solid fa-arrow-right"></i>
-                </div>
-
-                <article class="http-flow-node is-devtools">
-                  <div class="http-node-icon" aria-hidden="true">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                  </div>
-                  <h3>DevTools</h3>
-                  <p>You can inspect this</p>
-                </article>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="flow-panel http-step-panel http-explanation-panel" aria-labelledby="httpExplanationTitle">
-          <div class="flow-panel-head http-panel-head-compact">
-            <div>
-              <p class="scenario-label">Simple Explanation</p>
-              <h2 id="httpExplanationTitle">What is happening</h2>
-            </div>
-          </div>
-
-          <ul class="http-explanation-list">
-            <li>When you use a website, your browser sends a request.</li>
-            <li>The server responds with data.</li>
-            <li>Anything sent to your browser can be inspected.</li>
-          </ul>
-
-          <div class="http-boundary-note" aria-labelledby="httpBoundaryTitle">
-            <p id="httpBoundaryTitle" class="http-note-title">Important boundaries</p>
-            <ul class="http-boundary-list">
-              <li>You only see your own data.</li>
-              <li>Other websites cannot access this data.</li>
-              <li>Seeing other users&rsquo; data indicates a vulnerability.</li>
-            </ul>
-          </div>
-        </section>
-
-        <section class="flow-panel http-step-panel http-realworld-panel" aria-labelledby="httpRealWorldTitle">
-          <div class="flow-panel-head http-panel-head-compact">
-            <div>
-              <p class="scenario-label">Real World</p>
-              <h2 id="httpRealWorldTitle">Where to see this</h2>
-            </div>
-          </div>
-
-          <ol class="http-realworld-steps">
-            <li>Right click &rarr; Inspect</li>
-            <li>Open Network tab</li>
-            <li>Click a request</li>
-            <li>View Headers</li>
-          </ol>
+          <div id="httpScreenVisual" class="display-panel http-screen-visual"></div>
+          <div id="httpScreenActions" class="http-screen-actions"></div>
         </section>
       </main>
 
