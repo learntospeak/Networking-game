@@ -6,12 +6,12 @@
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260427mobile5">
   <link rel="stylesheet" href="./protocol-flow.css?v=20260427mobile1">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260429httpflow6">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260429httpflow7">
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
   >
-  <script src="./web-http-lab.js?v=20260429httpflow6" defer></script>
+  <script src="./web-http-lab.js?v=20260429httpflow7" defer></script>
 </head>
 <body class="flow-page http-flow-page">
   <div class="rack-room">
@@ -38,7 +38,14 @@
           </div>
 
           <div id="httpScreenVisual" class="display-panel http-screen-visual"></div>
-          <div id="httpScreenActions" class="http-screen-actions"></div>
+          <div id="httpScreenActions" class="http-screen-actions">
+            <div id="httpActionFeedback" class="http-action-feedback" hidden></div>
+            <div id="httpAnswerGrid" class="http-answer-grid" hidden></div>
+            <div class="http-nav-row">
+              <button id="httpBackBtn" class="http-back-btn" type="button">Back</button>
+              <button id="httpNextBtn" class="http-next-btn" type="button">Next</button>
+            </div>
+          </div>
         </section>
       </main>
 

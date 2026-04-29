@@ -83,12 +83,17 @@
 .http-screen-actions {
   display: grid;
   gap: 10px;
+  margin-top: auto;
 }
 
 .http-nav-row,
 .http-answer-grid {
   display: grid;
   gap: 10px;
+}
+
+.http-screen-actions [hidden] {
+  display: none !important;
 }
 
 .http-nav-row {

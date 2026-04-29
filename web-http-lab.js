@@ -3,7 +3,11 @@ const els = {
   screenTitle: document.getElementById("httpScreenTitle"),
   screenMeta: document.getElementById("httpScreenMeta"),
   screenVisual: document.getElementById("httpScreenVisual"),
-  screenActions: document.getElementById("httpScreenActions")
+  screenActions: document.getElementById("httpScreenActions"),
+  actionFeedback: document.getElementById("httpActionFeedback"),
+  answerGrid: document.getElementById("httpAnswerGrid"),
+  backBtn: document.getElementById("httpBackBtn"),
+  nextBtn: document.getElementById("httpNextBtn")
 };
 
 const STEP_COUNT = 6;
@@ -369,42 +373,17 @@ function renderVisual(screen) {
   return renderQuizVisual(screen);
 }
 
-function createButton(label, className, onClick, options = {}) {
-  const {
-    disabled = false
-  } = options;
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = className;
-  button.textContent = label;
-  button.disabled = disabled;
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function createNavRow({ nextDisabled = false, nextLabel = "Next" }) {
-  const navRow = document.createElement("div");
-  navRow.className = "http-nav-row";
-
-  navRow.appendChild(
-    createButton("Back", "http-back-btn", goBack, { disabled: currentIndex === 0 })
-  );
-
-  navRow.appendChild(
-    createButton(nextLabel, "http-next-btn", goNext, { disabled: nextDisabled })
-  );
-
-  return navRow;
-}
-
 function renderQuizActions(screen) {
   const state = getQuizState(screen.id);
-  const answerGrid = document.createElement("div");
-  answerGrid.className = "http-answer-grid";
+  els.answerGrid.hidden = false;
+  els.answerGrid.innerHTML = "";
 
   screen.answers.forEach((answer, index) => {
-    const button = createButton(answer, "http-answer-btn", () => handleQuizAnswer(index));
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "http-answer-btn";
+    button.textContent = answer;
+    button.addEventListener("click", () => handleQuizAnswer(index));
     const wasWrong = state.wrongSelections.includes(index);
 
     if (wasWrong) {
@@ -419,38 +398,37 @@ function renderQuizActions(screen) {
       button.disabled = true;
     }
 
-    answerGrid.appendChild(button);
+    els.answerGrid.appendChild(button);
   });
 
-  const feedback = document.createElement("div");
-  feedback.className = "http-action-feedback";
+  els.actionFeedback.hidden = false;
+  els.actionFeedback.className = "http-action-feedback";
 
   if (state.solved) {
-    feedback.classList.add("good");
-    feedback.textContent = "Correct.";
+    els.actionFeedback.classList.add("good");
+    els.actionFeedback.textContent = "Correct.";
   } else if (state.wrongSelections.length) {
-    feedback.classList.add("bad");
-    feedback.textContent = "Not quite. Try again.";
+    els.actionFeedback.classList.add("bad");
+    els.actionFeedback.textContent = "Not quite. Try again.";
   } else {
-    feedback.textContent = "Choose one answer.";
+    els.actionFeedback.textContent = "Choose one answer.";
   }
 
-  els.screenActions.appendChild(feedback);
-  els.screenActions.appendChild(answerGrid);
-  els.screenActions.appendChild(
-    createNavRow({
-      nextDisabled: !state.solved,
-      nextLabel: currentIndex === screens.length - 1 ? "Restart" : "Next"
-    })
-  );
+  els.nextBtn.disabled = !state.solved;
+  els.nextBtn.textContent = currentIndex === screens.length - 1 ? "Restart" : "Next";
 }
 
 function renderStandardActions() {
-  els.screenActions.appendChild(createNavRow());
+  els.actionFeedback.hidden = true;
+  els.actionFeedback.textContent = "";
+  els.answerGrid.hidden = true;
+  els.answerGrid.innerHTML = "";
+  els.nextBtn.disabled = false;
+  els.nextBtn.textContent = currentIndex === screens.length - 1 ? "Restart" : "Next";
 }
 
 function renderActions(screen) {
-  els.screenActions.innerHTML = "";
+  els.backBtn.disabled = currentIndex === 0;
 
   if (screen.type === "quiz") {
     renderQuizActions(screen);
@@ -529,5 +507,8 @@ function handleQuizAnswer(answerIndex) {
 
   renderScreen();
 }
+
+els.backBtn.addEventListener("click", goBack);
+els.nextBtn.addEventListener("click", goNext);
 
 renderScreen();
