@@ -930,7 +930,7 @@ function persistHttpProgress() {
     currentItemLabel: `${screen.title} - ${screen.meta}`,
     completedCount: persistedCompletedStepCount(),
     totalCount: STEP_COUNT,
-    summaryText: `Step ${screen.step} of ${STEP_COUNT} · Screen ${currentIndex + 1}/${screens.length}`,
+    summaryText: `Step ${screen.step} of ${STEP_COUNT} | Screen ${currentIndex + 1}/${screens.length}`,
     state: buildProgressSnapshot()
   });
 }
@@ -1354,7 +1354,7 @@ function renderActions(screen) {
 function renderScreen({ scroll = false } = {}) {
   const screen = screens[currentIndex];
 
-  els.stepKicker.textContent = `Step ${screen.step} of ${STEP_COUNT} · Screen ${currentIndex + 1} / ${screens.length}`;
+  els.stepKicker.textContent = `Step ${screen.step} of ${STEP_COUNT} | Screen ${currentIndex + 1} / ${screens.length}`;
   els.screenTitle.textContent = screen.title;
   els.screenMeta.textContent = screen.meta;
   els.screenVisual.innerHTML = renderVisual(screen);
@@ -1373,14 +1373,14 @@ function goBack() {
   }
 
   currentIndex -= 1;
-  renderScreen({ scroll: true });
+  renderScreen();
 }
 
 function resetFlow() {
   quizState.clear();
   currentIndex = 0;
   highestUnlockedIndex = 0;
-  renderScreen({ scroll: true });
+  renderScreen();
 }
 
 function goNext() {
@@ -1402,7 +1402,7 @@ function goNext() {
   celebrateScreenAdvance(screen, nextScreen);
   currentIndex += 1;
   highestUnlockedIndex = Math.max(highestUnlockedIndex, currentIndex);
-  renderScreen({ scroll: true });
+  renderScreen();
 }
 
 function handleQuizAnswer(answerIndex) {

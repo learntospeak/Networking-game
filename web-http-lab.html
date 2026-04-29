@@ -6,7 +6,7 @@
   <title>Web &amp; HTTP Lab</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
   <link rel="stylesheet" href="./protocol-flow.css?v=20260427mobile1">
-  <link rel="stylesheet" href="./web-http-lab.css?v=20260429httpflow9">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260429httpflow10">
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
-  <script src="./web-http-lab.js?v=20260429httpflow9" defer></script>
+  <script src="./web-http-lab.js?v=20260429httpflow10" defer></script>
 </head>
 <body class="flow-page http-flow-page">
   <div class="rack-room">
@@ -33,6 +33,11 @@
       </div>
 
       <main class="http-stage-shell">
+        <div class="http-shell-nav" aria-label="HTTP lab navigation">
+          <a class="http-shell-link is-home" href="./index.html">Home</a>
+          <a class="http-shell-link is-exit" href="./index.html">Exit Lab</a>
+        </div>
+
         <section class="flow-panel http-screen" aria-live="polite">
           <div class="http-screen-top">
             <p id="httpStepKicker" class="flow-kicker">Step 1 of 6</p>
