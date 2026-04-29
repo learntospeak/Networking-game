@@ -33,6 +33,13 @@ const screens = [
     title: "Build the Request",
     meta: "Reveal 1 of 3",
     type: "request",
+    contextLead: "The browser starts building the message it will send to the server.",
+    contextItems: [
+      {
+        label: "GET /profile",
+        copy: "This asks for the /profile page."
+      }
+    ],
     lines: [
       { text: "GET /profile", tone: "request" }
     ]
@@ -43,6 +50,17 @@ const screens = [
     title: "Build the Request",
     meta: "Reveal 2 of 3",
     type: "request",
+    contextLead: "Now the browser adds which website should handle the request.",
+    contextItems: [
+      {
+        label: "GET /profile",
+        copy: "This asks for the /profile page."
+      },
+      {
+        label: "Host: learn.lab",
+        copy: "This tells the server which site the request is for."
+      }
+    ],
     lines: [
       { text: "GET /profile", tone: "request" },
       { text: "Host: learn.lab", tone: "host" }
@@ -54,6 +72,21 @@ const screens = [
     title: "Build the Request",
     meta: "Reveal 3 of 3",
     type: "request",
+    contextLead: "The browser also sends session information so the site knows which user is making the request.",
+    contextItems: [
+      {
+        label: "GET /profile",
+        copy: "This asks for the /profile page."
+      },
+      {
+        label: "Host: learn.lab",
+        copy: "This tells the server which site should answer."
+      },
+      {
+        label: "Cookie: session=your-session",
+        copy: "This carries your session so the response matches your account."
+      }
+    ],
     lines: [
       { text: "GET /profile", tone: "request" },
       { text: "Host: learn.lab", tone: "host" },
@@ -242,17 +275,32 @@ function renderRequestVisual(screen) {
   const lines = screen.lines.map((line) => `
     <div class="http-request-line is-${line.tone}">${escapeHtml(line.text)}</div>
   `).join("");
+  const contextItems = (screen.contextItems || []).map((item) => `
+    <li class="http-request-context-item">
+      <span class="http-request-context-label">${escapeHtml(item.label)}</span>
+      <span class="http-request-context-copy">${escapeHtml(item.copy)}</span>
+    </li>
+  `).join("");
 
   return `
     <div class="http-visual-frame">
-      <div class="http-request-card" role="img" aria-label="HTTP request being built one line at a time">
-        <div class="http-request-toolbar" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
+      <div class="http-request-stack">
+        <div class="http-request-card" role="img" aria-label="HTTP request being built one line at a time">
+          <div class="http-request-toolbar" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="http-request-body">
+            ${lines}
+          </div>
         </div>
-        <div class="http-request-body">
-          ${lines}
+
+        <div class="http-request-context">
+          <p class="http-request-context-lead">${escapeHtml(screen.contextLead || "")}</p>
+          <ul class="http-request-context-list">
+            ${contextItems}
+          </ul>
         </div>
       </div>
     </div>

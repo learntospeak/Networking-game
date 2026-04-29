@@ -299,6 +299,13 @@
   max-width: 500px;
 }
 
+.http-request-stack {
+  width: 100%;
+  max-width: 500px;
+  display: grid;
+  gap: 12px;
+}
+
 .http-request-card {
   border-radius: 20px;
   border: 1px solid rgba(71, 85, 105, 0.72);
@@ -363,6 +370,47 @@
 
 .http-request-line.is-cookie {
   border-color: rgba(34, 197, 94, 0.34);
+}
+
+.http-request-context {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.62);
+  background:
+    radial-gradient(circle at right, rgba(56, 189, 248, 0.08), transparent 32%),
+    rgba(7, 12, 18, 0.94);
+}
+
+.http-request-context-lead {
+  margin: 0 0 12px;
+  color: var(--http-text);
+  line-height: 1.5;
+}
+
+.http-request-context-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.http-request-context-item {
+  display: grid;
+  gap: 4px;
+}
+
+.http-request-context-label {
+  color: #bfdbfe;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.http-request-context-copy {
+  color: var(--http-muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .http-transit-visual {
@@ -629,8 +677,14 @@
   .http-compare-copy,
   .http-visibility-list,
   .http-action-feedback,
-  .http-request-line {
+  .http-request-line,
+  .http-request-context-copy,
+  .http-request-context-lead {
     font-size: 14px;
+  }
+
+  .http-request-context-label {
+    font-size: 12px;
   }
 }
 
