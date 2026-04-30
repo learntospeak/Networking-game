@@ -142,6 +142,7 @@
   function buildMistakeMessage(step, execution, state, attempts, classification, partial) {
     if (partial) {
       return {
+        source: "partial",
         classification: partial.classification || "inefficient",
         feedback: partial.feedback,
         coach: withLayerLead(state, partial.coach || step.context || step.explanation),
@@ -152,6 +153,7 @@
 
     if (classification === "invalid_command") {
       return {
+        source: "incorrect",
         classification,
         feedback: "That command is not available in this training shell.",
         coach: withLayerLead(state, step.context || "Stay inside the tools and commands that fit the current platform and scenario."),
@@ -164,6 +166,7 @@
       const syntaxMessage = (execution.stderr || []).join(" ");
       if (/illegal port specification/i.test(syntaxMessage)) {
         return {
+          source: "incorrect",
           classification,
           feedback: "The `-p` value is not a valid port list.",
           coach: withLayerLead(state, "Use `-p` with a port number or comma-separated port list, then put the target after that. For example, keep the port after `-p` and the host as the final argument."),
@@ -173,6 +176,7 @@
       }
 
       return {
+        source: "incorrect",
         classification,
         feedback: "The command is recognized, but the syntax or arguments are off.",
         coach: withLayerLead(state, step.context || "Look at the flags, argument order, or the target you passed in."),
@@ -182,6 +186,7 @@
     }
 
     return {
+      source: "incorrect",
       classification,
       feedback: "That command is valid, but it does not move this scenario forward.",
       coach: withLayerLead(state, step.context || "Use the current objective and the terminal output to decide the next practical move."),
@@ -199,6 +204,7 @@
     if (matchedSuccess) {
       return {
         success: true,
+        source: "success",
         classification: "success",
         feedback: matchedSuccess.feedback || step.successFeedback || "That command works for this task.",
         coach: withLayerLead(state, matchedSuccess.coach || step.explanation),
@@ -212,6 +218,7 @@
     if (matchedExploration) {
       return {
         success: false,
+        source: "exploration",
         classification: matchedExploration.classification || "exploration",
         feedback: matchedExploration.feedback,
         coach: withLayerLead(state, matchedExploration.coach || step.context || step.explanation),

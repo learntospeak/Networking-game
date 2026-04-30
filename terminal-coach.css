@@ -575,8 +575,23 @@
   color: #93c5fd;
 }
 
+.terminal-line.mission {
+  color: #cbd5e1;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.terminal-line.stage {
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
 .terminal-line.coach {
   color: #fcd34d;
+}
+
+.terminal-line.hint {
+  color: #fde68a;
 }
 
 .terminal-line.error {
@@ -585,6 +600,11 @@
 
 .terminal-line.success {
   color: #86efac;
+}
+
+.terminal-line.review {
+  color: #bfdbfe;
+  font-weight: 600;
 }
 
 .terminal-line.dim {

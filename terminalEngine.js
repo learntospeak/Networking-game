@@ -909,7 +909,8 @@
       riskyActions: [],
       successfulStepObjectives: [],
       submittedCommands: [],
-      duplicateWrongTracker: {}
+      duplicateWrongTracker: {},
+      submittedCommandTracker: {}
     };
   }
 
@@ -944,6 +945,44 @@
     }
 
     return null;
+  }
+
+  function currentObjectiveReminder(step = currentStep()) {
+    return step?.objective
+      ? `Current objective: ${step.objective}`
+      : "Stay focused on the current objective and use the last output to justify the next move.";
+  }
+
+  function recommendedCommandFamily(scenario = currentScenario()) {
+    return Array.isArray(scenario?.commandFocus) && scenario.commandFocus.length
+      ? scenario.commandFocus.join(", ")
+      : "the command family that matches the current objective";
+  }
+
+  function progressiveWrongAttemptGuidance(step = currentStep(), attempts = session.attemptsForStep, scenario = currentScenario()) {
+    if (attempts <= 1) {
+      return "Think about what you still need to prove at this stage before you widen the investigation.";
+    }
+
+    if (attempts === 2) {
+      return currentObjectiveReminder(step);
+    }
+
+    if (attempts === 3) {
+      return `Use ${recommendedCommandFamily(scenario)} if you need a stronger evidence path.`;
+    }
+
+    return "If the path is still unclear, use the Hint control or step back to the last useful evidence before trying again.";
+  }
+
+  function repeatedCommandCoaching(rawInput) {
+    const key = String(rawInput || "").trim().toLowerCase();
+    const count = session.reviewStats?.submittedCommandTracker?.[key] || 0;
+    if (count < 2) {
+      return "";
+    }
+
+    return "You have already run this check. Repeat it after a change, or choose a command that proves something new.";
   }
 
   function fillText(element, value, options = {}) {
@@ -1433,6 +1472,31 @@
     scrollTerminal();
   }
 
+  function printTaggedLine(label, text, type = "system") {
+    if (!text) return;
+    printLine(`[${label}] ${text}`, type);
+  }
+
+  function printMissionLine(text) {
+    printTaggedLine("Mission", text, "mission");
+  }
+
+  function printStageLine(text) {
+    printTaggedLine("Stage", text, "stage");
+  }
+
+  function printCoachLine(text, type = "coach") {
+    printTaggedLine("Coach", text, type);
+  }
+
+  function printHintLine(text) {
+    printTaggedLine("Hint", text, "hint");
+  }
+
+  function printReviewLine(text) {
+    printTaggedLine("Review", text, "review");
+  }
+
   function printLines(lines, type = "system") {
     const values = Array.isArray(lines) ? lines : [lines];
     values.forEach((value) => {
@@ -1865,21 +1929,31 @@
     const machineSummary = machineContextSummary(scenario);
     const stageInfo = currentStageInfo(scenario);
 
-    printLine(`[${challengePresentation ? "Challenge" : scenario.category}] ${scenario.title}`, "system");
-    printLine(`Track: ${scenarioEnvironmentLabel(scenario)}`, "dim");
-    printLine(`Layer: ${scenarioLayerText(scenario)}`, "dim");
-    printLine(`Objective: ${scenarioObjectiveText(scenario)}`, "dim");
-    printLine(`Environment: ${shellLabel()} shell`, "dim");
+    if (scenarioHasStages(scenario)) {
+      printLine("=== Mission Started ===", "mission");
+      if (scenario.role) {
+        printMissionLine(`Role: ${scenario.role}`);
+      }
+      printMissionLine(`Scenario: ${scenario.title}`);
+      printMissionLine(`Objective: ${scenarioObjectiveText(scenario)}`);
+      printMissionLine(`Environment: ${shellLabel()} shell`);
+    } else {
+      printLine(`[${challengePresentation ? "Challenge" : scenario.category}] ${scenario.title}`, "system");
+      printLine(`Track: ${scenarioEnvironmentLabel(scenario)}`, "dim");
+      printLine(`Layer: ${scenarioLayerText(scenario)}`, "dim");
+      printLine(`Objective: ${scenarioObjectiveText(scenario)}`, "dim");
+      printLine(`Environment: ${shellLabel()} shell`, "dim");
+    }
     if (machineSummary) {
       printLine(`Machine context: ${machineSummary}`, "dim");
     }
-    if (scenario.scenarioIntro) {
+    if (scenario.scenarioIntro && !scenarioHasStages(scenario)) {
       printLine(`Context: ${scenario.scenarioIntro}`, "dim");
     }
     if (stageInfo) {
-      printLine(`Stage: ${stageInfo.stage.title}`, "dim");
+      printLine(`--- Stage ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title} ---`, "stage");
       if (stageInfo.stage.briefing) {
-        printLine(`Stage briefing: ${stageInfo.stage.briefing}`, "dim");
+        printStageLine(`Goal: ${stageInfo.stage.briefing}`);
       }
     }
     if (challengePresentation) {
@@ -1890,13 +1964,13 @@
     }
     if (challengePresentation && Array.isArray(scenario.successConditions) && scenario.successConditions.length) {
       printLine(`Success signals: ${scenario.successConditions.join(" | ")}`, "dim");
-      printLine("Minimal guidance is active. Work from evidence and decide your own sequence.", "coach");
+      printCoachLine("Minimal guidance is active. Work from evidence and decide your own sequence.");
       return;
     }
     if (step.context) {
       printLine(`Context: ${step.context}`, "dim");
     }
-    printLine(`Current task: ${step.objective}`, "coach");
+    printCoachLine(`Current objective: ${step.objective}`);
   }
 
   function resetScenarioState() {
@@ -1969,9 +2043,16 @@
     session.completedScenarioIds.add(scenario.id);
     session.scenarioCompleted = true;
     if (finalStageInfo?.stage?.completionSummary) {
-      printLine(finalStageInfo.stage.completionSummary, "success");
+      printStageLine(`Stage Complete: ${finalStageInfo.stage.title}`);
+      printStageLine(finalStageInfo.stage.completionSummary);
     }
-    printLine("Scenario complete. You reached the objective with live command input.", "success");
+    if (scenarioHasStages(scenario)) {
+      printLine("=== Mission Complete ===", "review");
+      printReviewLine("You resolved the incident path and completed the mission objectives.");
+      printReviewLine("Open the Mission Review panel to see your performance breakdown.");
+    } else {
+      printReviewLine("Scenario complete. You reached the objective with live command input.");
+    }
     if (firstCompletion && NetlabApp?.grantProgressReward) {
       NetlabApp.grantProgressReward({
         key: `scenario-complete:${currentSectionId()}:${scenario.id}`,
@@ -2031,15 +2112,17 @@
     const nextStageInfo = currentStageInfo(scenario);
     if (previousStageInfo && nextStageInfo && previousStageInfo.stage.id !== nextStageInfo.stage.id) {
       if (previousStageInfo.stage.completionSummary) {
-        printLine(previousStageInfo.stage.completionSummary, "success");
+        printStageLine(`Stage Complete: ${previousStageInfo.stage.title}`);
+        printStageLine(previousStageInfo.stage.completionSummary);
       }
-      printLine(`Stage: ${nextStageInfo.stage.title}`, "dim");
+      printLine(`--- Stage ${nextStageInfo.stageIndex + 1}: ${nextStageInfo.stage.title} ---`, "stage");
+      printStageLine(`Next Stage: ${nextStageInfo.stage.title}`);
       if (nextStageInfo.stage.briefing) {
-        printLine(`Stage briefing: ${nextStageInfo.stage.briefing}`, "dim");
+        printStageLine(`Goal: ${nextStageInfo.stage.briefing}`);
       }
     }
     if (challengePresentation) {
-      printLine("Progress recorded. Keep investigating and let the evidence drive the next move.", "coach");
+      printCoachLine("Progress recorded. Keep investigating and let the evidence drive the next move.");
       renderPanel();
       persistSectionProgress();
       return;
@@ -2047,7 +2130,7 @@
     if (currentStep().context) {
       printLine(`Context: ${currentStep().context}`, "dim");
     }
-    printLine(`Next task: ${currentStep().objective}`, "coach");
+    printCoachLine(`Next objective: ${currentStep().objective}`);
     renderPanel();
     persistSectionProgress();
   }
@@ -4513,22 +4596,6 @@
       session.reviewStats = createReviewStats();
     }
 
-    if (evaluation.success) {
-      session.reviewStats.successfulAccepted += 1;
-      session.reviewStats.successfulStepObjectives.push(step.objective);
-    } else if (evaluation.classification === "exploration") {
-      session.reviewStats.explorationCommands += 1;
-    } else if (evaluation.classification === "inefficient") {
-      session.reviewStats.partialCommands += 1;
-    } else {
-      session.reviewStats.incorrectCommands += 1;
-      const repeatedKey = String(execution.raw || "").trim().toLowerCase();
-      session.reviewStats.duplicateWrongTracker[repeatedKey] = (session.reviewStats.duplicateWrongTracker[repeatedKey] || 0) + 1;
-      if (session.reviewStats.duplicateWrongTracker[repeatedKey] > 1) {
-        session.reviewStats.repeatedIncorrectCommands += 1;
-      }
-    }
-
     if (!evaluation.success && evaluation.countsAsAttempt !== false) {
       session.attemptsForStep += 1;
     }
@@ -4542,11 +4609,29 @@
       }
     }
 
+    const normalizedCommand = String(execution.raw || "").trim().toLowerCase();
+    const repeatedCommandMessage = !evaluation.success ? repeatedCommandCoaching(execution.raw) : "";
+
     if (evaluation.success) {
-      printLine(evaluation.feedback, "success");
-      printLine(evaluation.coach, "coach");
+      session.reviewStats.successfulAccepted += 1;
+      session.reviewStats.successfulStepObjectives.push(step.objective);
+    } else if (evaluation.source === "exploration" || evaluation.classification === "exploration") {
+      session.reviewStats.explorationCommands += 1;
+    } else if (evaluation.source === "partial" || evaluation.classification === "inefficient") {
+      session.reviewStats.partialCommands += 1;
+    } else {
+      session.reviewStats.incorrectCommands += 1;
+      session.reviewStats.duplicateWrongTracker[normalizedCommand] = (session.reviewStats.duplicateWrongTracker[normalizedCommand] || 0) + 1;
+      if (session.reviewStats.duplicateWrongTracker[normalizedCommand] > 1) {
+        session.reviewStats.repeatedIncorrectCommands += 1;
+      }
+    }
+
+    if (evaluation.success) {
+      printCoachLine(`Good. ${evaluation.feedback}`, "success");
+      printCoachLine(evaluation.coach);
       if (step.whyThisMatters) {
-        printLine(`Why this matters: ${step.whyThisMatters}`, "dim");
+        printCoachLine(`Why this matters: ${step.whyThisMatters}`, "dim");
       }
       advanceStep(evaluation.advanceBy || 1);
       return;
@@ -4560,18 +4645,32 @@
       NetlabApp?.showProgressPulse?.({ label: "Try Again", tone: "error" });
     }
 
-    printLine(
-      evaluation.feedback,
-      evaluation.classification === "invalid_command" ? "error" : evaluation.classification === "exploration" ? "system" : "coach"
-    );
-    printLine(evaluation.coach, "dim");
+    if (evaluation.source === "exploration" || evaluation.classification === "exploration") {
+      printCoachLine(`Exploration noted. ${evaluation.feedback}`, "system");
+      printCoachLine(evaluation.coach, "dim");
+    } else if (evaluation.source === "partial" || evaluation.classification === "inefficient") {
+      printCoachLine(`Close. ${evaluation.feedback}`);
+      printCoachLine(evaluation.coach, "dim");
+    } else {
+      printCoachLine("That did not move the investigation forward.", evaluation.classification === "invalid_command" ? "error" : "coach");
+      printCoachLine(evaluation.feedback, "dim");
+      printCoachLine(progressiveWrongAttemptGuidance(step, session.attemptsForStep, currentScenario()), "dim");
+      if (evaluation.coach) {
+        printCoachLine(evaluation.coach, "dim");
+      }
+    }
+
+    if (repeatedCommandMessage) {
+      printCoachLine(repeatedCommandMessage, "dim");
+    }
+
     if (evaluation.hint) {
-      printLine(`Hint [${hintContextLabel()}]: ${evaluation.hint}`, "coach");
+      printHintLine(`Hint ${Math.max(1, session.hintLevel + 1)} [${hintContextLabel()}]: ${evaluation.hint}`);
     }
     if (execution.status === "syntax_error" || execution.status === "invalid_command") {
       const reference = getCommandReference(execution.raw);
       if (reference) {
-        printLine(`Reference: ${reference.command} -> ${reference.meaning}`, "dim");
+        printCoachLine(`Reference: ${reference.command} -> ${reference.meaning}`, "dim");
       }
     }
     renderPanel();
@@ -4599,6 +4698,8 @@
     }
     session.reviewStats.totalSubmitted += 1;
     session.reviewStats.submittedCommands.push(rawInput);
+    const normalizedCommand = rawInput.toLowerCase();
+    session.reviewStats.submittedCommandTracker[normalizedCommand] = (session.reviewStats.submittedCommandTracker[normalizedCommand] || 0) + 1;
     const riskyMatch = riskyCommandMatch(rawInput);
     if (riskyMatch) {
       session.reviewStats.riskyActions.push({
@@ -4651,7 +4752,10 @@
 
     session.hintLevel = Math.min(2, session.hintLevel + 1);
     const hint = CoachEngine.getHint(currentStep(), session.hintLevel, session.state);
-    printLine(`Hint ${session.hintLevel + 1} [${hintContextLabel()}]: ${hint}`, "coach");
+    printHintLine(`Hint ${session.hintLevel + 1} [${hintContextLabel()}]: ${hint}`);
+    if (currentStep()?.explanation) {
+      printCoachLine(`Context: ${currentStep().explanation}`, "dim");
+    }
     renderPanel();
     persistSectionProgress();
   }

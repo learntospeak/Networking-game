@@ -1044,7 +1044,7 @@
         stageIndex,
         stageStepIndex: stepIndex
       })))
-      : scenario.steps;
+      : (Array.isArray(scenario.steps) ? scenario.steps : []);
     const layeredScenario = {
       ...scenario,
       mode: scenario.mode || "lesson",
@@ -1081,7 +1081,7 @@
       machineContexts: normalizeMachineContexts(layeredScenario.machineContexts).length
         ? normalizeMachineContexts(layeredScenario.machineContexts)
         : contextMeta.machineContexts,
-      steps: layeredScenario.steps.map((stepConfig) => refineStep(stepConfig, layeredScenario))
+      steps: (Array.isArray(layeredScenario.steps) ? layeredScenario.steps : []).map((stepConfig) => refineStep(stepConfig, layeredScenario))
     };
   }
 
@@ -2049,6 +2049,17 @@
       simulatedOutput: config.simulatedOutput || [],
       successCondition: config.successCondition || "",
       feedbackText: config.feedbackText || "",
+      role: config.role || "",
+      estimatedTime: config.estimatedTime || "",
+      scenarioType: config.scenarioType || "",
+      missionBriefing: config.missionBriefing || "",
+      learningObjectives: config.learningObjectives || [],
+      successCriteria: config.successCriteria || [],
+      environmentNotes: config.environmentNotes || "",
+      verificationRequired: Boolean(config.verificationRequired),
+      verificationSteps: config.verificationSteps || [],
+      riskyCommands: config.riskyCommands || [],
+      stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
       environmentPolicy: contextMeta.environmentPolicy,
@@ -2084,6 +2095,17 @@
       simulatedOutput: config.simulatedOutput || [],
       successCondition: config.successCondition || "",
       feedbackText: config.feedbackText || "",
+      role: config.role || "",
+      estimatedTime: config.estimatedTime || "",
+      scenarioType: config.scenarioType || "",
+      missionBriefing: config.missionBriefing || "",
+      learningObjectives: config.learningObjectives || [],
+      successCriteria: config.successCriteria || [],
+      environmentNotes: config.environmentNotes || "",
+      verificationRequired: Boolean(config.verificationRequired),
+      verificationSteps: config.verificationSteps || [],
+      riskyCommands: config.riskyCommands || [],
+      stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
       environmentPolicy: contextMeta.environmentPolicy,
@@ -2119,6 +2141,17 @@
       simulatedOutput: config.simulatedOutput || [],
       successCondition: config.successCondition || "",
       feedbackText: config.feedbackText || "",
+      role: config.role || "",
+      estimatedTime: config.estimatedTime || "",
+      scenarioType: config.scenarioType || "",
+      missionBriefing: config.missionBriefing || "",
+      learningObjectives: config.learningObjectives || [],
+      successCriteria: config.successCriteria || [],
+      environmentNotes: config.environmentNotes || "",
+      verificationRequired: Boolean(config.verificationRequired),
+      verificationSteps: config.verificationSteps || [],
+      riskyCommands: config.riskyCommands || [],
+      stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
       environmentPolicy: contextMeta.environmentPolicy,
@@ -4599,6 +4632,189 @@
           successFeedback: "You confirmed the share mapping table.",
           accepts: [rawMatch(/^net\s+use$/i)]
         })
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-staged-share-access-triage",
+      title: "Share Access Incident Review",
+      category: "Troubleshooting",
+      difficulty: "Beginner",
+      role: "Junior Support Technician",
+      estimatedTime: "10-15 minutes",
+      scenarioType: "Troubleshooting",
+      objective: "Confirm local network health, validate name resolution, and restore access to the shared tools location.",
+      missionBriefing: "A user reports they cannot reach the internal tools share from their workstation. Confirm the workstation configuration, verify server reachability and DNS resolution, then re-establish and verify the expected share mapping before you close the case.",
+      learningObjectives: [
+        "Confirm local Windows network settings before testing remote services",
+        "Separate reachability evidence from DNS evidence",
+        "Verify a share mapping instead of assuming the access issue is resolved"
+      ],
+      successCriteria: [
+        "Review local IP configuration",
+        "Confirm the file server is reachable",
+        "Validate DNS resolution for the host",
+        "Map and verify the required share"
+      ],
+      environmentNotes: "This is a controlled training shell. Commands behave like a safe Windows lab and are intended to reinforce incident workflow rather than full operating system behavior.",
+      verificationRequired: true,
+      verificationSteps: ["net use"],
+      riskyCommands: [
+        {
+          pattern: "shutdown",
+          reason: "Restarting the workstation before diagnosis can interrupt the user and hide the original condition."
+        },
+        {
+          pattern: "del",
+          reason: "Deleting files is not part of this access investigation and could damage user data."
+        }
+      ],
+      commandFocus: ["ipconfig", "ping", "nslookup", "net use"],
+      acceptedCommands: ["ipconfig /all", "ping fileserver", "nslookup fileserver", "net use Z: \\\\fileserver\\Tools", "net use"],
+      simulatedOutput: [
+        "IPv4 Address . . . . . . . . . . : 192.168.56.25",
+        "Reply from 192.168.56.20: bytes=32 time<1ms TTL=128",
+        "Name:    fileserver",
+        "The command completed successfully."
+      ],
+      successCondition: "Work from local validation through name resolution and verify the restored share mapping.",
+      feedbackText: "The learner followed a support workflow from local checks through verification instead of guessing at the cause.",
+      environment: {
+        cwd: "C:/Lab",
+        targets: selectTargets("fileserver")
+      },
+      stages: [
+        {
+          id: "triage",
+          title: "Triage",
+          briefing: "Establish whether the workstation is configured correctly and can still reach the target host.",
+          completionSummary: "You confirmed the workstation has a valid local configuration and can still reach the file server.",
+          steps: [
+            step({
+              objective: "Review the workstation IP configuration in full detail.",
+              hints: ["Start with the local network configuration.", "You need the full adapter details, not the short view.", "Try `ipconfig /all`."],
+              explanation: "A good incident workflow begins with the host's own IP, gateway, and DNS configuration before it blames remote systems.",
+              whyThisMatters: "Local configuration issues can imitate server or DNS faults if they are not ruled out first.",
+              successFeedback: "You reviewed the local adapter configuration.",
+              accepts: [rawMatch(/^ipconfig\s+\/all$/i)],
+              partials: [
+                {
+                  match: rawMatch(/^ipconfig$/i),
+                  classification: "inefficient",
+                  feedback: "You are using the right tool, but this incident needs the full adapter details."
+                }
+              ],
+              exploration: [
+                {
+                  match: rawMatch(/^(?:hostname|whoami)$/i),
+                  feedback: "That host context is useful background, but it does not yet confirm the network configuration for this ticket."
+                }
+              ]
+            }),
+            step({
+              objective: "Confirm the file server responds to a reachability test.",
+              hints: ["Now move from local config to host reachability.", "Use a basic ICMP test against the file server.", "Try `ping fileserver`."],
+              explanation: "A successful ping gives you a quick answer about host reachability before you move into DNS or share access assumptions.",
+              whyThisMatters: "Support work becomes faster when you separate basic reachability from higher-layer access issues.",
+              successFeedback: "You confirmed the file server responds to ping.",
+              accepts: [rawMatch(/^ping\s+(?:fileserver|192\.168\.56\.20)$/i)],
+              partials: [
+                {
+                  match: rawMatch(/^tracert\s+(?:fileserver|192\.168\.56\.20)$/i),
+                  classification: "inefficient",
+                  feedback: "Route tracing can be useful later, but first confirm simple reachability."
+                }
+              ],
+              exploration: [
+                {
+                  match: rawMatch(/^hostname$/i),
+                  feedback: "The workstation identity is already known. The current goal is to prove whether the target host responds."
+                }
+              ]
+            })
+          ]
+        },
+        {
+          id: "investigation",
+          title: "Investigation",
+          briefing: "Distinguish name-resolution evidence from share-access evidence before you restore the user's workflow.",
+          completionSummary: "You confirmed DNS resolution and rebuilt the required share mapping.",
+          steps: [
+            step({
+              objective: "Resolve the file server hostname through DNS.",
+              hints: ["Use the direct DNS lookup command.", "You need name-resolution evidence, not another reachability test.", "Try `nslookup fileserver`."],
+              explanation: "DNS proof is separate from ping proof. Looking them up independently reduces guesswork about where the failure sits.",
+              whyThisMatters: "IP connectivity and name resolution are different checks. Good technicians prove both.",
+              successFeedback: "You resolved the file server name through DNS.",
+              accepts: [rawMatch(/^nslookup\s+fileserver$/i)],
+              partials: [
+                {
+                  match: rawMatch(/^ping\s+(?:fileserver|192\.168\.56\.20)$/i),
+                  classification: "inefficient",
+                  feedback: "Ping confirms reachability, but this stage needs direct DNS evidence."
+                }
+              ],
+              exploration: [
+                {
+                  match: rawMatch(/^ipconfig(?:\s+\/all)?$/i),
+                  feedback: "Reviewing the local adapter again is safe, but this stage is about proving name resolution specifically."
+                }
+              ]
+            }),
+            step({
+              objective: "Map the remote Tools share to drive Z:.",
+              hints: ["Use NET USE to map the share.", "The destination is the Tools share on fileserver.", "Try `net use Z: \\\\fileserver\\Tools`."],
+              explanation: "Once host and DNS checks look healthy, restoring the user's expected share path is the next practical support action.",
+              whyThisMatters: "Support investigations should end with a concrete recovery action, not only with observations.",
+              successFeedback: "You mapped the remote Tools share.",
+              accepts: [
+                rawMatch(/^net\s+use\s+Z:\s+\\+fileserver\\+Tools$/i),
+                mappedShareMatch("Z:", "\\\\fileserver\\Tools", { raw: /^net\s+use\s+Z:\s+\\+fileserver\\+Tools$/i })
+              ],
+              partials: [
+                {
+                  match: rawMatch(/^net\s+use$/i),
+                  classification: "inefficient",
+                  feedback: "Close, but listing mappings only verifies the result after you create the share mapping."
+                }
+              ],
+              exploration: [
+                {
+                  match: rawMatch(/^net\s+share$/i),
+                  feedback: "That shows local shared resources. This incident needs the remote share to be mapped on the workstation."
+                }
+              ]
+            })
+          ]
+        },
+        {
+          id: "verification",
+          title: "Verification",
+          briefing: "Verify the restored share mapping before closing the ticket.",
+          completionSummary: "You verified the final state before closing the incident.",
+          steps: [
+            step({
+              objective: "Display the current mapping table and verify that drive Z: is present.",
+              hints: ["Confirm the final state before you close the ticket.", "List the current share mappings.", "Try `net use`."],
+              explanation: "Verification is what separates a guess from a completed support action.",
+              whyThisMatters: "Good technicians do not stop after making a change. They prove the result.",
+              successFeedback: "You verified the share mapping table.",
+              accepts: [rawMatch(/^net\s+use$/i)],
+              partials: [
+                {
+                  match: mappedShareMatch("Z:", "\\\\fileserver\\Tools", { raw: /^net\s+use\s+Z:\s+\\+fileserver\\+Tools$/i }),
+                  classification: "inefficient",
+                  feedback: "The mapping already exists. This final step is to verify it, not recreate it."
+                }
+              ],
+              exploration: [
+                {
+                  match: rawMatch(/^dir\s+Z:$/i),
+                  feedback: "Browsing the mapped drive is reasonable follow-up context, but first verify that the mapping itself is present."
+                }
+              ]
+            })
+          ]
+        }
       ]
     }),
     windowsLessonScenario({
