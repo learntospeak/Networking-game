@@ -35,7 +35,43 @@
     scenarioLevel: document.getElementById("scenarioLevel"),
     scenarioEnvironmentBadge: document.getElementById("scenarioEnvironmentBadge"),
     scenarioObjective: document.getElementById("scenarioObjective"),
+    scenarioStageTitle: document.getElementById("scenarioStageTitle"),
+    scenarioStageBriefing: document.getElementById("scenarioStageBriefing"),
     scenarioFlex: document.getElementById("scenarioFlex"),
+    missionCaseFileCard: document.getElementById("missionCaseFileCard"),
+    missionCaseTitle: document.getElementById("missionCaseTitle"),
+    missionCaseMeta: document.getElementById("missionCaseMeta"),
+    missionCaseRole: document.getElementById("missionCaseRole"),
+    missionCaseDifficulty: document.getElementById("missionCaseDifficulty"),
+    missionCaseEstimatedTime: document.getElementById("missionCaseEstimatedTime"),
+    missionCaseType: document.getElementById("missionCaseType"),
+    missionBriefingBlock: document.getElementById("missionBriefingBlock"),
+    missionBriefingText: document.getElementById("missionBriefingText"),
+    missionObjectivesBlock: document.getElementById("missionObjectivesBlock"),
+    missionObjectivesList: document.getElementById("missionObjectivesList"),
+    missionSuccessBlock: document.getElementById("missionSuccessBlock"),
+    missionSuccessList: document.getElementById("missionSuccessList"),
+    missionEnvironmentBlock: document.getElementById("missionEnvironmentBlock"),
+    missionEnvironmentText: document.getElementById("missionEnvironmentText"),
+    missionCurrentStageTitle: document.getElementById("missionCurrentStageTitle"),
+    missionCurrentStageBriefing: document.getElementById("missionCurrentStageBriefing"),
+    missionStageProgress: document.getElementById("missionStageProgress"),
+    missionTotalProgress: document.getElementById("missionTotalProgress"),
+    missionReviewCard: document.getElementById("missionReviewCard"),
+    missionReviewOverall: document.getElementById("missionReviewOverall"),
+    reviewTroubleshootingScore: document.getElementById("reviewTroubleshootingScore"),
+    reviewTroubleshootingFeedback: document.getElementById("reviewTroubleshootingFeedback"),
+    reviewAccuracyScore: document.getElementById("reviewAccuracyScore"),
+    reviewAccuracyFeedback: document.getElementById("reviewAccuracyFeedback"),
+    reviewEfficiencyScore: document.getElementById("reviewEfficiencyScore"),
+    reviewEfficiencyFeedback: document.getElementById("reviewEfficiencyFeedback"),
+    reviewVerificationScore: document.getElementById("reviewVerificationScore"),
+    reviewVerificationFeedback: document.getElementById("reviewVerificationFeedback"),
+    reviewRiskScore: document.getElementById("reviewRiskScore"),
+    reviewRiskFeedback: document.getElementById("reviewRiskFeedback"),
+    missionReviewStrengths: document.getElementById("missionReviewStrengths"),
+    missionReviewImprovements: document.getElementById("missionReviewImprovements"),
+    missionReviewTakeaway: document.getElementById("missionReviewTakeaway"),
     environmentSummary: document.getElementById("environmentSummary"),
     machineContextList: document.getElementById("machineContextList") || document.getElementById("challengeContextList"),
     stepObjective: document.getElementById("stepObjective"),
@@ -46,6 +82,8 @@
     mobileEnvironmentBadge: document.getElementById("mobileEnvironmentBadge"),
     mobileLayerBadge: document.getElementById("mobileLayerBadge"),
     mobileScenarioTitle: document.getElementById("mobileScenarioTitle"),
+    mobileStageTitle: document.getElementById("mobileStageTitle"),
+    mobileStageBriefing: document.getElementById("mobileStageBriefing"),
     mobileStepObjective: document.getElementById("mobileStepObjective"),
     mobileMachineContext: document.getElementById("mobileMachineContext"),
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
@@ -87,6 +125,7 @@
     mobileLayoutLocked: false,
     mobileContextCollapsed: false,
     terminalEntries: [],
+    reviewStats: null,
     resumePromptVisible: false,
     outputPinnedToLatest: true
   };
@@ -797,6 +836,287 @@
     return currentScenario().steps[session.stepIndex];
   }
 
+  function scenarioStages(scenario = currentScenario()) {
+    return Array.isArray(scenario?.stages) ? scenario.stages : [];
+  }
+
+  function scenarioHasStages(scenario = currentScenario()) {
+    return scenarioStages(scenario).length > 0;
+  }
+
+  function totalStepsForScenario(scenario = currentScenario()) {
+    return Array.isArray(scenario?.steps) ? scenario.steps.length : 0;
+  }
+
+  function currentStageInfo(scenario = currentScenario(), stepIndex = session.stepIndex) {
+    const stages = scenarioStages(scenario);
+    if (!stages.length) {
+      return null;
+    }
+
+    let missionOffset = 0;
+    for (let index = 0; index < stages.length; index += 1) {
+      const stage = stages[index];
+      const stageSteps = Array.isArray(stage.steps) ? stage.steps.length : 0;
+      if (!stageSteps) {
+        continue;
+      }
+
+      if (stepIndex < missionOffset + stageSteps) {
+        return {
+          stage,
+          stageIndex: index,
+          stageCount: stages.length,
+          stageStepIndex: stepIndex - missionOffset,
+          stageStepCount: stageSteps,
+          missionStepIndex: stepIndex,
+          missionStepCount: totalStepsForScenario(scenario)
+        };
+      }
+
+      missionOffset += stageSteps;
+    }
+
+    const lastStage = stages[stages.length - 1];
+    return {
+      stage: lastStage,
+      stageIndex: stages.length - 1,
+      stageCount: stages.length,
+      stageStepIndex: Math.max(0, (Array.isArray(lastStage.steps) ? lastStage.steps.length : 1) - 1),
+      stageStepCount: Array.isArray(lastStage.steps) ? lastStage.steps.length : 1,
+      missionStepIndex: Math.max(0, totalStepsForScenario(scenario) - 1),
+      missionStepCount: totalStepsForScenario(scenario)
+    };
+  }
+
+  function missionProgressText(scenario = currentScenario(), completedStepCount = session.stepIndex) {
+    const stageInfo = currentStageInfo(scenario);
+    if (!stageInfo) {
+      return "";
+    }
+
+    return `Mission progress: ${completedStepCount}/${stageInfo.missionStepCount} tasks complete. Current stage: ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}.`;
+  }
+
+  function createReviewStats() {
+    return {
+      totalSubmitted: 0,
+      successfulAccepted: 0,
+      partialCommands: 0,
+      incorrectCommands: 0,
+      explorationCommands: 0,
+      repeatedIncorrectCommands: 0,
+      riskyActions: [],
+      successfulStepObjectives: [],
+      submittedCommands: [],
+      duplicateWrongTracker: {}
+    };
+  }
+
+  function cloneReviewStats(stats) {
+    return JSON.parse(JSON.stringify(stats || createReviewStats()));
+  }
+
+  function clampScore(value) {
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function verificationKeywords() {
+    return /\b(verify|verified|verification|confirm|confirmed|test|tested|resolution|reachable|reachability)\b/i;
+  }
+
+  function riskyCommandMatch(rawInput, scenario = currentScenario()) {
+    const rules = Array.isArray(scenario?.riskyCommands) ? scenario.riskyCommands : [];
+    const raw = String(rawInput || "").trim();
+
+    for (const rule of rules) {
+      if (!rule || !rule.pattern) {
+        continue;
+      }
+
+      if (rule.pattern instanceof RegExp && rule.pattern.test(raw)) {
+        return rule;
+      }
+
+      if (typeof rule.pattern === "string" && raw.toLowerCase().includes(rule.pattern.toLowerCase())) {
+        return rule;
+      }
+    }
+
+    return null;
+  }
+
+  function fillText(element, value, options = {}) {
+    if (!element) {
+      return;
+    }
+
+    const text = String(value || "").trim();
+    element.hidden = options.hideWhenEmpty !== false ? !text : false;
+    element.textContent = text;
+  }
+
+  function renderListItems(target, items = []) {
+    if (!target) {
+      return 0;
+    }
+
+    const values = Array.isArray(items)
+      ? items.map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
+
+    target.innerHTML = "";
+    values.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      target.appendChild(li);
+    });
+    return values.length;
+  }
+
+  function renderMissionCaseFile(scenario = currentScenario(), stageInfo = currentStageInfo(scenario)) {
+    if (!els.missionCaseFileCard) {
+      return;
+    }
+
+    const shouldShow = scenarioHasStages(scenario);
+    els.missionCaseFileCard.hidden = !shouldShow;
+    if (!shouldShow) {
+      return;
+    }
+
+    fillText(els.missionCaseTitle, scenario.title, { hideWhenEmpty: false });
+
+    const role = scenario.role ? `Role: ${scenario.role}` : "";
+    const difficulty = scenario.difficulty || scenario.level ? `Difficulty: ${scenario.difficulty || scenario.level}` : "";
+    const estimatedTime = scenario.estimatedTime ? `Estimated Time: ${scenario.estimatedTime}` : "";
+    const scenarioType = scenario.scenarioType ? `Scenario Type: ${scenario.scenarioType}` : "";
+
+    fillText(els.missionCaseRole, role);
+    fillText(els.missionCaseDifficulty, difficulty);
+    fillText(els.missionCaseEstimatedTime, estimatedTime);
+    fillText(els.missionCaseType, scenarioType);
+
+    if (els.missionCaseMeta) {
+      els.missionCaseMeta.hidden = !(role || difficulty || estimatedTime || scenarioType);
+    }
+
+    fillText(els.missionBriefingText, scenario.missionBriefing || "");
+    if (els.missionBriefingBlock) {
+      els.missionBriefingBlock.hidden = !String(scenario.missionBriefing || "").trim();
+    }
+
+    const objectiveCount = renderListItems(els.missionObjectivesList, scenario.learningObjectives);
+    if (els.missionObjectivesBlock) {
+      els.missionObjectivesBlock.hidden = objectiveCount === 0;
+    }
+
+    const successCount = renderListItems(els.missionSuccessList, scenario.successCriteria);
+    if (els.missionSuccessBlock) {
+      els.missionSuccessBlock.hidden = successCount === 0;
+    }
+
+    fillText(els.missionEnvironmentText, scenario.environmentNotes || "");
+    if (els.missionEnvironmentBlock) {
+      els.missionEnvironmentBlock.hidden = !String(scenario.environmentNotes || "").trim();
+    }
+
+    fillText(els.missionCurrentStageTitle, stageInfo ? `${stageInfo.stage.title}` : "");
+    fillText(els.missionCurrentStageBriefing, stageInfo?.stage?.briefing || "");
+    fillText(
+      els.missionStageProgress,
+      stageInfo ? `Stage ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}` : ""
+    );
+    fillText(
+      els.missionTotalProgress,
+      stageInfo ? `Mission ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}` : ""
+    );
+  }
+
+  function categorySummary(score) {
+    if (score >= 90) return "Excellent";
+    if (score >= 75) return "Good";
+    if (score >= 60) return "Passed with Coaching Notes";
+    return "Needs Practice";
+  }
+
+  function renderMissionReview(scenario = currentScenario()) {
+    if (!els.missionReviewCard) {
+      return;
+    }
+
+    const stats = session.reviewStats || createReviewStats();
+    const totalSubmitted = Math.max(1, stats.totalSubmitted);
+    const expectedSteps = Math.max(1, totalStepsForScenario(scenario));
+    const commandAccuracy = clampScore(((stats.successfulAccepted + (stats.partialCommands * 0.5) + (stats.explorationCommands * 0.35)) / totalSubmitted) * 100);
+    const inefficiencyPenalty = Math.max(0, stats.totalSubmitted - expectedSteps) * 6;
+    const explorationCredit = Math.min(stats.explorationCommands * 3, 12);
+    const efficiency = clampScore(100 - inefficiencyPenalty + explorationCredit);
+    const troubleshootingLogic = clampScore(100 - (stats.incorrectCommands * 8) - (stats.repeatedIncorrectCommands * 6) - (stats.partialCommands * 3));
+
+    const verificationConfigured = Boolean(scenario.verificationRequired || (Array.isArray(scenario.verificationSteps) && scenario.verificationSteps.length));
+    const verificationObserved = stats.successfulStepObjectives.some((objective) => verificationKeywords().test(objective))
+      || (Array.isArray(scenario.verificationSteps) && scenario.verificationSteps.some((item) => stats.submittedCommands.some((command) => command.toLowerCase().includes(String(item).toLowerCase()))));
+    const verificationScore = verificationConfigured ? (verificationObserved ? 100 : 55) : null;
+
+    const riskConfigured = Array.isArray(scenario.riskyCommands) && scenario.riskyCommands.length > 0;
+    const riskScore = riskConfigured ? clampScore(100 - (stats.riskyActions.length * 30)) : null;
+
+    const scoredValues = [troubleshootingLogic, commandAccuracy, efficiency];
+    if (verificationScore !== null) scoredValues.push(verificationScore);
+    if (riskScore !== null) scoredValues.push(riskScore);
+    const overallScore = clampScore(scoredValues.reduce((sum, value) => sum + value, 0) / scoredValues.length);
+
+    const strengths = [];
+    const improvements = [];
+
+    if (troubleshootingLogic >= 75) strengths.push("Followed a mostly logical path through the task.");
+    else improvements.push("Reduce repeated or random attempts and let the last result guide the next step.");
+
+    if (commandAccuracy >= 80) strengths.push("Most submitted commands supported the objective.");
+    else improvements.push("Tighten command selection so more of your input moves the investigation forward.");
+
+    if (efficiency >= 75) strengths.push("Completed the mission without excessive extra commands.");
+    else improvements.push("Trim unnecessary commands once the evidence already points to the next action.");
+
+    if (verificationScore === 100) strengths.push("Verified the outcome before closing the work.");
+    else if (verificationScore !== null) improvements.push("Add an explicit verification step before you consider the task resolved.");
+
+    if (riskScore === null) {
+      strengths.push("Stayed within the safe boundaries of the training environment.");
+    } else if (stats.riskyActions.length === 0) {
+      strengths.push("Avoided risky or destructive actions during the mission.");
+    } else {
+      improvements.push("Pause before using destructive or disruptive commands unless the evidence clearly justifies them.");
+    }
+
+    const takeaway = verificationScore === 100
+      ? "Strong technicians do not stop at a likely fix. They confirm the result and leave a clear trail of evidence."
+      : "Good support and security work is not just about finding an answer. It is about using evidence, choosing safe actions, and proving the result.";
+
+    els.missionReviewCard.hidden = !session.scenarioCompleted;
+    fillText(els.missionReviewOverall, `Overall: ${categorySummary(overallScore)}`, { hideWhenEmpty: false });
+
+    fillText(els.reviewTroubleshootingScore, `${troubleshootingLogic}%`, { hideWhenEmpty: false });
+    fillText(els.reviewTroubleshootingFeedback, troubleshootingLogic >= 75 ? "You followed a mostly logical troubleshooting path." : "Your path reached the objective, but repeated incorrect attempts reduced the diagnostic quality.");
+
+    fillText(els.reviewAccuracyScore, `${commandAccuracy}%`, { hideWhenEmpty: false });
+    fillText(els.reviewAccuracyFeedback, commandAccuracy >= 80 ? "Most submitted commands moved the task forward." : "Several submitted commands did not support the current objective.");
+
+    fillText(els.reviewEfficiencyScore, `${efficiency}%`, { hideWhenEmpty: false });
+    fillText(els.reviewEfficiencyFeedback, efficiency >= 75 ? "You completed the work with a reasonable command footprint." : "You completed the mission, but extra commands reduced efficiency.");
+
+    fillText(els.reviewVerificationScore, verificationScore === null ? "Not assessed" : verificationScore === 100 ? "Complete" : "Needs stronger closure", { hideWhenEmpty: false });
+    fillText(els.reviewVerificationFeedback, verificationScore === null ? "This scenario did not provide enough verification metadata to assess closure." : verificationScore === 100 ? "You confirmed the result before closing the task." : "The mission ended without a strong verification signal.");
+
+    fillText(els.reviewRiskScore, riskScore === null ? "Not assessed" : stats.riskyActions.length ? "Coaching needed" : "Good", { hideWhenEmpty: false });
+    fillText(els.reviewRiskFeedback, riskScore === null ? "No scenario-specific risky command rules were defined." : stats.riskyActions.length ? stats.riskyActions.map((entry) => entry.reason).join(" ") : "No risky or destructive actions were detected.");
+
+    renderListItems(els.missionReviewStrengths, strengths);
+    renderListItems(els.missionReviewImprovements, improvements.length ? improvements : ["Keep using evidence-led sequencing and verification discipline."]);
+    fillText(els.missionReviewTakeaway, takeaway, { hideWhenEmpty: false });
+  }
+
   function totalScenarios() {
     return session.scenarios.length;
   }
@@ -1245,6 +1565,7 @@
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const environmentLabel = scenarioEnvironmentLabel(scenario);
+    const stageInfo = currentStageInfo(scenario);
 
     syncMobileAppBarTitle();
     syncMobileAppBarActions();
@@ -1252,9 +1573,15 @@
     els.scenarioCountBadge.textContent = challengePresentation
       ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
       : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
-    els.stepCountBadge.textContent = challengePresentation
-      ? "Challenge Active"
-      : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
+    if (challengePresentation) {
+      els.stepCountBadge.textContent = stageInfo
+        ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Mission ${stageInfo.missionStepIndex + 1} / ${stageInfo.missionStepCount}`
+        : "Challenge Active";
+    } else {
+      els.stepCountBadge.textContent = stageInfo
+        ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
+        : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
+    }
     if (els.environmentBadge) {
       els.environmentBadge.textContent = environmentLabel;
     }
@@ -1270,19 +1597,39 @@
       els.scenarioEnvironmentBadge.textContent = environmentLabel;
     }
     els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
+    if (els.scenarioStageTitle) {
+      els.scenarioStageTitle.hidden = !stageInfo;
+      els.scenarioStageTitle.textContent = stageInfo ? `Current Stage: ${stageInfo.stage.title}` : "";
+    }
+    if (els.scenarioStageBriefing) {
+      els.scenarioStageBriefing.hidden = !stageInfo || !stageInfo.stage.briefing;
+      els.scenarioStageBriefing.textContent = stageInfo?.stage.briefing || "";
+    }
     els.scenarioFlex.textContent = allowedApproachText(scenario);
+    renderMissionCaseFile(scenario, stageInfo);
+    renderMissionReview(scenario);
     if (els.environmentSummary) {
       els.environmentSummary.textContent = environmentSummaryText(scenario);
     }
     renderMachineContexts(scenario);
     els.stepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
-    els.progressSummary.textContent = `${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`;
+    els.progressSummary.textContent = stageInfo
+      ? `${missionProgressText(scenario)} ${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`
+      : `${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`;
     if (els.mobileEnvironmentBadge) {
       els.mobileEnvironmentBadge.textContent = environmentLabel;
     }
     els.mobileScenarioTitle.textContent = challengePresentation
       ? `${scenario.title} - Challenge ${session.scenarioIndex + 1}/${totalScenarios()}`
       : `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
+    if (els.mobileStageTitle) {
+      els.mobileStageTitle.hidden = !stageInfo;
+      els.mobileStageTitle.textContent = stageInfo ? `Stage ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}` : "";
+    }
+    if (els.mobileStageBriefing) {
+      els.mobileStageBriefing.hidden = !stageInfo || !stageInfo.stage.briefing;
+      els.mobileStageBriefing.textContent = stageInfo?.stage.briefing || "";
+    }
     els.mobileStepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
     if (els.mobileMachineContext) {
       els.mobileMachineContext.textContent = primaryMachineContextText(scenario);
@@ -1316,6 +1663,7 @@
     const scenario = currentScenario();
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const stageInfo = currentStageInfo(scenario);
 
     // Terminal tracks are stateful, so resume stores both the selected scenario and the mutated shell state.
     return {
@@ -1332,10 +1680,11 @@
       currentLayer: session.currentLayer,
       mobileContextCollapsed: session.mobileContextCollapsed,
       terminalEntries: NetlabApp ? NetlabApp.clone(session.terminalEntries) : session.terminalEntries.slice(),
+      reviewStats: NetlabApp ? NetlabApp.clone(session.reviewStats) : cloneReviewStats(session.reviewStats),
       runtimeState: StateManager.clone(session.state),
       currentItemLabel: challengePresentation
         ? scenario.title
-        : `${scenario.title} - ${step.objective}`
+        : `${scenario.title}${stageInfo ? ` - ${stageInfo.stage.title}` : ""} - ${step.objective}`
     };
   }
 
@@ -1350,13 +1699,14 @@
     const summaryText = challengePresentation
       ? `${session.completedScenarioIds.size}/${totalScenarios()} challenges completed`
       : `${session.completedScenarioIds.size}/${totalScenarios()} scenarios completed`;
+    const stageInfo = currentStageInfo(scenario);
 
     savedProgressRecord = NetlabApp.saveSectionProgress(currentSectionId(), {
       sectionLabel: sectionLabel(),
       currentItemId: scenario.id,
       currentItemLabel: challengePresentation
         ? scenario.title
-        : `${scenario.title} - ${step.objective}`,
+        : `${scenario.title}${stageInfo ? ` - ${stageInfo.stage.title}` : ""} - ${step.objective}`,
       completedCount: session.completedScenarioIds.size,
       totalCount: totalScenarios(),
       summaryText: summaryText,
@@ -1378,7 +1728,7 @@
     }
 
     session.scenarioIndex = scenarioIndex;
-    session.stepIndex = Math.max(0, Math.min(Number(snapshot.stepIndex) || 0, currentScenario().steps.length - 1));
+    session.stepIndex = Math.max(0, Math.min(Number(snapshot.stepIndex) || 0, totalStepsForScenario(currentScenario()) - 1));
     session.completedScenarioIds = new Set(Array.isArray(snapshot.completedScenarioIds) ? snapshot.completedScenarioIds : []);
     session.attemptsForStep = Number(snapshot.attemptsForStep) || 0;
     session.hintLevel = Number.isFinite(Number(snapshot.hintLevel)) ? Number(snapshot.hintLevel) : -1;
@@ -1389,6 +1739,7 @@
     session.currentLayer = snapshot.currentLayer || currentScenario().layer || "application";
     session.mobileContextCollapsed = Boolean(snapshot.mobileContextCollapsed);
     session.state = snapshot.runtimeState ? StateManager.clone(snapshot.runtimeState) : StateManager.createState(currentScenario().environment);
+    session.reviewStats = snapshot.reviewStats ? (NetlabApp ? NetlabApp.clone(snapshot.reviewStats) : cloneReviewStats(snapshot.reviewStats)) : createReviewStats();
 
     restoreTerminalEntries(snapshot.terminalEntries || []);
     if (!session.terminalEntries.length) {
@@ -1512,6 +1863,7 @@
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const machineSummary = machineContextSummary(scenario);
+    const stageInfo = currentStageInfo(scenario);
 
     printLine(`[${challengePresentation ? "Challenge" : scenario.category}] ${scenario.title}`, "system");
     printLine(`Track: ${scenarioEnvironmentLabel(scenario)}`, "dim");
@@ -1523,6 +1875,12 @@
     }
     if (scenario.scenarioIntro) {
       printLine(`Context: ${scenario.scenarioIntro}`, "dim");
+    }
+    if (stageInfo) {
+      printLine(`Stage: ${stageInfo.stage.title}`, "dim");
+      if (stageInfo.stage.briefing) {
+        printLine(`Stage briefing: ${stageInfo.stage.briefing}`, "dim");
+      }
     }
     if (challengePresentation) {
       const knownTargets = scenarioKnownTargets(scenario);
@@ -1548,6 +1906,7 @@
     session.attemptsForStep = 0;
     session.hintLevel = -1;
     session.scenarioCompleted = false;
+    session.reviewStats = createReviewStats();
   }
 
   function loadScenario(index, options = {}) {
@@ -1601,6 +1960,7 @@
   function markScenarioComplete() {
     const scenario = currentScenario();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const finalStageInfo = currentStageInfo(scenario);
     const firstCompletion = !session.completedScenarioIds.has(scenario.id);
     const completionCoins = NetlabApp?.coinsForDifficulty
       ? NetlabApp.coinsForDifficulty(scenario.difficulty, challengePresentation ? 10 : 5)
@@ -1608,6 +1968,9 @@
 
     session.completedScenarioIds.add(scenario.id);
     session.scenarioCompleted = true;
+    if (finalStageInfo?.stage?.completionSummary) {
+      printLine(finalStageInfo.stage.completionSummary, "success");
+    }
     printLine("Scenario complete. You reached the objective with live command input.", "success");
     if (firstCompletion && NetlabApp?.grantProgressReward) {
       NetlabApp.grantProgressReward({
@@ -1637,6 +2000,7 @@
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const skipCount = Math.max(1, Number(count) || 1);
     const completedStepNumber = Math.min(scenario.steps.length, session.stepIndex + skipCount);
+    const previousStageInfo = currentStageInfo(scenario);
 
     for (let index = 0; index < skipCount; index += 1) {
       if (session.stepIndex >= scenario.steps.length - 1) {
@@ -1663,6 +2027,16 @@
     }
     if (skipCount > 1) {
       printLine("You already collected the deeper evidence, so the coach skipped the redundant intermediate task.", "success");
+    }
+    const nextStageInfo = currentStageInfo(scenario);
+    if (previousStageInfo && nextStageInfo && previousStageInfo.stage.id !== nextStageInfo.stage.id) {
+      if (previousStageInfo.stage.completionSummary) {
+        printLine(previousStageInfo.stage.completionSummary, "success");
+      }
+      printLine(`Stage: ${nextStageInfo.stage.title}`, "dim");
+      if (nextStageInfo.stage.briefing) {
+        printLine(`Stage briefing: ${nextStageInfo.stage.briefing}`, "dim");
+      }
     }
     if (challengePresentation) {
       printLine("Progress recorded. Keep investigating and let the evidence drive the next move.", "coach");
@@ -4135,6 +4509,26 @@
       session.attemptsForStep + 1
     );
 
+    if (!session.reviewStats) {
+      session.reviewStats = createReviewStats();
+    }
+
+    if (evaluation.success) {
+      session.reviewStats.successfulAccepted += 1;
+      session.reviewStats.successfulStepObjectives.push(step.objective);
+    } else if (evaluation.classification === "exploration") {
+      session.reviewStats.explorationCommands += 1;
+    } else if (evaluation.classification === "inefficient") {
+      session.reviewStats.partialCommands += 1;
+    } else {
+      session.reviewStats.incorrectCommands += 1;
+      const repeatedKey = String(execution.raw || "").trim().toLowerCase();
+      session.reviewStats.duplicateWrongTracker[repeatedKey] = (session.reviewStats.duplicateWrongTracker[repeatedKey] || 0) + 1;
+      if (session.reviewStats.duplicateWrongTracker[repeatedKey] > 1) {
+        session.reviewStats.repeatedIncorrectCommands += 1;
+      }
+    }
+
     if (!evaluation.success && evaluation.countsAsAttempt !== false) {
       session.attemptsForStep += 1;
     }
@@ -4199,6 +4593,19 @@
     printLine(`${getPromptLabel()} ${rawInput}`, "command");
     pushHistory(rawInput);
     els.terminalInput.value = "";
+
+    if (!session.reviewStats) {
+      session.reviewStats = createReviewStats();
+    }
+    session.reviewStats.totalSubmitted += 1;
+    session.reviewStats.submittedCommands.push(rawInput);
+    const riskyMatch = riskyCommandMatch(rawInput);
+    if (riskyMatch) {
+      session.reviewStats.riskyActions.push({
+        command: rawInput,
+        reason: riskyMatch.reason || "Potentially risky command used in the scenario."
+      });
+    }
 
     const execution = executeInput(rawInput);
     presentExecution(execution);

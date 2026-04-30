@@ -282,6 +282,21 @@
   line-height: 1.65;
 }
 
+.scenario-stage-title {
+  margin: 0 0 6px;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scenario-stage-briefing {
+  margin: 0 0 12px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
 .scenario-flex {
   padding: 12px 14px;
   border-radius: 12px;
@@ -341,6 +356,91 @@
 .support-card p {
   margin: 0;
   line-height: 1.65;
+}
+
+.mission-case-file-card {
+  border-color: rgba(71, 85, 105, 0.92);
+  background: linear-gradient(180deg, rgba(7, 10, 15, 0.97) 0%, rgba(12, 17, 24, 0.99) 100%);
+}
+
+.mission-case-title {
+  margin: 0 0 12px;
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mission-case-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mission-case-block + .mission-case-block {
+  margin-top: 14px;
+}
+
+.mission-case-label {
+  margin: 0 0 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mission-case-copy {
+  margin: 0;
+  color: #dbe4ef;
+  line-height: 1.65;
+}
+
+.mission-case-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #dbe4ef;
+  display: grid;
+  gap: 6px;
+}
+
+.mission-case-stage-block,
+.mission-case-progress-block {
+  padding-top: 12px;
+  border-top: 1px solid rgba(51, 65, 85, 0.72);
+}
+
+.mission-review-card {
+  border-color: rgba(71, 85, 105, 0.92);
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.98) 0%, rgba(12, 18, 26, 0.99) 100%);
+}
+
+.mission-review-overall {
+  margin: 0 0 14px;
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mission-review-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.mission-review-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(51, 65, 85, 0.78);
+  background: rgba(7, 11, 16, 0.88);
+}
+
+.mission-review-score {
+  margin: 0 0 6px;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .machine-context-list {
@@ -588,6 +688,21 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.terminal-mobile-stage {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.terminal-mobile-briefing {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .terminal-mobile-objective {

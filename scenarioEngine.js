@@ -1014,7 +1014,37 @@
     return "application";
   }
 
+  function normalizeScenarioStages(stages = []) {
+    return stages
+      .map((stage, stageIndex) => {
+        if (!stage || !Array.isArray(stage.steps) || !stage.steps.length) {
+          return null;
+        }
+
+        return {
+          id: stage.id || `stage-${stageIndex + 1}`,
+          title: stage.title || `Stage ${stageIndex + 1}`,
+          briefing: stage.briefing || "",
+          completionSummary: stage.completionSummary || "",
+          steps: stage.steps.slice()
+        };
+      })
+      .filter(Boolean);
+  }
+
   function refineScenario(scenario) {
+    const normalizedStages = normalizeScenarioStages(scenario.stages);
+    const flattenedSteps = normalizedStages.length
+      ? normalizedStages.flatMap((stage, stageIndex) => stage.steps.map((stepConfig, stepIndex) => ({
+        ...stepConfig,
+        stageId: stage.id,
+        stageTitle: stage.title,
+        stageBriefing: stage.briefing,
+        stageCompletionSummary: stage.completionSummary,
+        stageIndex,
+        stageStepIndex: stepIndex
+      })))
+      : scenario.steps;
     const layeredScenario = {
       ...scenario,
       mode: scenario.mode || "lesson",
@@ -1026,7 +1056,9 @@
       layers: Array.isArray(scenario.layers) && scenario.layers.length
         ? scenario.layers
         : [scenario.layer || inferScenarioLayer(scenario)],
-      layer: inferScenarioLayer(scenario)
+      layer: inferScenarioLayer(scenario),
+      stages: normalizedStages,
+      steps: flattenedSteps
     };
 
     const shell = layeredScenario.shell || (
@@ -5653,10 +5685,20 @@
     environmentPolicy: "segregated | combined",
     layer: "network | application | exploitation",
     layers: ["network", "application"],
+    role: "string",
     level: "Beginner | Intermediate | Advanced",
     difficulty: "Beginner | Intermediate | Advanced | custom challenge difficulty",
+    estimatedTime: "string",
+    scenarioType: "string",
     shell: "linux | cmd | cisco | metasploit",
     objective: "string",
+    missionBriefing: "string",
+    learningObjectives: ["string"],
+    successCriteria: ["string"],
+    environmentNotes: "string",
+    verificationRequired: "boolean",
+    verificationSteps: ["string"],
+    riskyCommands: [{ pattern: "string", reason: "string" }],
     scenarioIntro: "string",
     commandFocus: ["command names"],
     acceptedCommands: ["example command"],
@@ -5676,6 +5718,27 @@
       processes: [{ pid: 1234, name: "string" }],
       targets: [{ ip: "string", hostname: "string", ports: [{ port: 80, proto: "tcp", service: "http" }] }]
     },
+    stages: [
+      {
+        id: "string",
+        title: "string",
+        briefing: "string",
+        completionSummary: "string",
+        steps: [
+          {
+            objective: "string",
+            context: "string",
+            hints: ["hint 1", "hint 2", "hint 3"],
+            explanation: "string",
+            whyThisMatters: "string",
+            successFeedback: "string",
+            accepts: ["match rules"],
+            partials: ["partial feedback rules"],
+            exploration: ["non-penalized discovery rules"]
+          }
+        ]
+      }
+    ],
     steps: [
       {
         objective: "string",
