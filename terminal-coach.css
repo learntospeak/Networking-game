@@ -1920,7 +1920,7 @@
 
   .terminal-page.terminal-beginner-mode .beginner-task-strip,
   .terminal-page.terminal-beginner-mode .beginner-help-strip {
-    display: block;
+    display: none;
   }
 
   .beginner-mode-banner {
