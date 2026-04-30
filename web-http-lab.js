@@ -88,7 +88,14 @@ const screens = [
         label: "Cookie: session=your-session",
         copy: "This carries your session so the response matches your account."
       }
-    },
+    ],
+    lines: [
+      { text: "GET /profile", tone: "request" },
+      { text: "Host: learn.lab", tone: "host" },
+      { text: "Cookie: session=your-session", tone: "cookie" }
+    ]
+  },
+  /*
     "headers-useful-fields": {
       title: "Restore the Signed-In Ticket View",
       prompt:
@@ -3241,6 +3248,37 @@ const screens = [
     const method = request && request.method ? request.method : "GET";
 
     return [
+      {
+        label: "Browser",
+        copy: "It has built the request and is sending it out."
+      },
+      {
+        label: "GET /profile",
+        copy: "This request is now in transit."
+      },
+      {
+        label: "Server",
+        copy: "It has not received the request yet."
+      }
+    ],
+    direction: "down",
+    packetTone: "request",
+    packetLabel: "GET /profile",
+    packetPosition: "from-browser",
+    browserCopy: "Sends the request",
+    serverCopy: "Waiting for it",
+    browserActive: true,
+    serverActive: false
+  },
+  */
+  {
+    id: "step-3-request-travel",
+    step: 3,
+    title: "Send the Request",
+    meta: "Request leaves the browser",
+    type: "transit",
+    contextLead: "Once the browser finishes building the request, it sends that message across the network toward the server.",
+    contextItems: [
       {
         label: "Browser",
         copy: "It has built the request and is sending it out."

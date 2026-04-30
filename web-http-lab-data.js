@@ -1611,166 +1611,25 @@
             }
           },
           focusVisual: {
-            type: "compare",
-            defaultExplainKey: "intercept-off",
-            options: [
-              {
-                label: "The browser decides it needs the /profile page",
-                correct: true,
-                why: "Opening the URL starts a request for a specific page."
-              },
-              {
-                label: "The server sends 200 OK before any request exists",
-                correct: false,
-                why: "The server only answers after it receives a request."
-              },
-              {
-                label: "The browser waits for the page to appear without making a request",
-                correct: false,
-                why: "The browser has to start a real web request before any page can load."
-              }
+            type: "terms",
+            defaultExplainKey: "intercept-on",
+            items: [
+              { label: "Intercept OFF", key: "intercept-off" },
+              { label: "Intercept ON", key: "intercept-on" }
             ],
-            explanation: "Opening the website starts a page request for /profile.",
-            visualAction: {
-              mode: "warning",
-              trafficLabel: "Browser starts a plain HTTP page request",
-              flowIndicator: { label: "Open URL", tone: "warning" }
-            }
+            interactiveParts: ["intercept-on"]
           },
-          {
-            prompt: "What request does the browser create for that page?",
-            options: [
-              {
-                label: "GET /profile",
-                correct: true,
-                why: "GET asks the server to send back the page or resource."
-              },
-              {
-                label: "200 OK",
-                correct: false,
-                why: "200 OK is a response from the server, not the browser request."
-              },
-              {
-                label: "POST /profile",
-                correct: false,
-                why: "POST is for sending data to the server. This step is asking for a page."
-              }
-            ],
-            explanation: "The browser builds an HTTP GET request for /profile.",
-            visualAction: {
-              mode: "warning",
-              trafficLabel: "Browser creates GET /profile",
-              flowIndicator: { label: "Build GET", tone: "warning" },
-              requestLabel: "GET /profile"
-            }
+          focusExplain: {
+            "intercept-on": "ON = next request stops here.",
+            "intercept-off": "OFF lets the request pass straight through the proxy."
           },
-          {
-            prompt: "After the request is built, what should happen next?",
-            options: [
-              {
-                label: "Send GET /profile across the network to the web server",
-                correct: true,
-                why: "Once the request exists, it has to travel to the server that can answer it."
-              },
-              {
-                label: "Render the page before the server answers",
-                correct: false,
-                why: "The browser needs the server response before it can load the page."
-              },
-              {
-                label: "Wait for the server response before sending the request",
-                correct: false,
-                why: "The request has to travel first before the server can respond."
-              }
-            ],
-            explanation: "The HTTP request now travels across the network path toward the server.",
-            visualAction: {
-              mode: "warning",
-              trafficLabel: "GET /profile travels to the web server",
-              flowIndicator: { label: "HTTP Request", tone: "warning" },
-              requestLabel: "GET /profile"
-            }
+          focusWrong: {
+            "intercept-off": "Close - OFF lets the request pass through without stopping."
           },
-          {
-            prompt: "The server receives GET /profile. What should it do next?",
-            options: [
-              {
-                label: "Process the request and prepare the page response",
-                correct: true,
-                why: "The server now has the page request and can build the answer."
-              },
-              {
-                label: "Ask the browser which MAC address it should use",
-                correct: false,
-                why: "That is not part of the HTTP request flow being taught here."
-              },
-              {
-                label: "Return 404 immediately without checking the page",
-                correct: false,
-                why: "If the page exists, the correct successful response is not 404."
-              }
-            ],
-            explanation: "The web server handles GET /profile and prepares the page response.",
-            visualAction: {
-              mode: "warning",
-              trafficLabel: "Web server processes GET /profile",
-              flowIndicator: { label: "Server Handles GET", tone: "warning" },
-              requestLabel: "GET /profile"
-            }
-          },
-          {
-            prompt: "What does the server send back if the page exists?",
-            options: [
-              {
-                label: "HTTP/1.1 200 OK",
-                correct: true,
-                why: "200 OK is the normal success response for a page request that worked."
-              },
-              {
-                label: "GET /profile",
-                correct: false,
-                why: "That is still the client request, not the server response."
-              },
-              {
-                label: "Who has 192.168.1.20?",
-                correct: false,
-                why: "That is not an HTTP page response. This step needs the server success reply."
-              }
-            ],
-            explanation: "The server returns 200 OK with the page content.",
-            visualAction: {
-              mode: "reply",
-              trafficLabel: "200 OK returns from the server to the browser",
-              flowIndicator: { label: "200 OK", tone: "reply" },
-              responseLabel: "200 OK"
-            }
-          },
-          {
-            prompt: "Once the browser receives 200 OK, what is the last step?",
-            options: [
-              {
-                label: "Render the /profile page for the user",
-                correct: true,
-                why: "The browser now has the response and can load the page."
-              },
-              {
-                label: "Send the same GET request forever",
-                correct: false,
-                why: "The request has already succeeded. The next step is to show the result."
-              },
-              {
-                label: "Discard the page because the path already finished",
-                correct: false,
-                why: "The whole point of the flow is to get the page back to the browser."
-              }
-            ],
-            explanation: "The browser uses the response body to load the /profile page.",
-            visualAction: {
-              mode: "reply",
-              trafficLabel: "Browser loads the returned page",
-              flowIndicator: { label: "Render Page", tone: "reply" },
-              pageLabel: "Profile Loaded"
-            }
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "intercept-on"
           }
         ]
       },
