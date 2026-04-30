@@ -1014,6 +1014,438 @@
     return "application";
   }
 
+  const allocatedTicketIds = new Set();
+
+  function stableTicketSeed(text) {
+    return String(text || "").split("").reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) % 1000003, 7);
+  }
+
+  function nextTicketId(prefix, scenarioId) {
+    const base = prefix === "CIS" ? 200 : prefix === "CYB" ? 300 : 100;
+    let candidate = base + 1 + (stableTicketSeed(`${prefix}:${scenarioId || ""}`) % 700);
+    let ticketId = `${prefix}-${candidate}`;
+
+    while (allocatedTicketIds.has(ticketId)) {
+      candidate += 1;
+      ticketId = `${prefix}-${candidate}`;
+    }
+
+    allocatedTicketIds.add(ticketId);
+    return ticketId;
+  }
+
+  function scenarioSteps(scenario) {
+    return Array.isArray(scenario?.steps) ? scenario.steps : [];
+  }
+
+  function scenarioTextBlob(scenario) {
+    return [
+      scenario?.id,
+      scenario?.title,
+      scenario?.category,
+      scenario?.objective,
+      scenario?.successCondition,
+      scenario?.scenarioIntro,
+      ...(scenario?.commandFocus || [])
+    ].filter(Boolean).join(" ").toLowerCase();
+  }
+
+  function scenarioTicketPrefix(scenario, shell) {
+    const text = scenarioTextBlob(scenario);
+    const category = String(scenario?.category || "").toLowerCase();
+
+    if (scenario?.ticketId) {
+      return String(scenario.ticketId).split("-")[0] || "NET";
+    }
+
+    if (scenario?.mode === "challenge") return "CYB";
+    if (shell === "cisco") return "CIS";
+    if (shell === "cmd") return "WIN";
+    if (/\bproxy\b|\bhttp\b|\bweb\b|\brequest\b|\bresponse\b|\bparameter\b|\bcookie\b|\bapi\b/.test(text) || category.includes("proxy")) return "WEB";
+    if (/\bnetwork\b|\bnmap\b|\bnetcat\b|\bcisco\b|\brouter\b|\bping\b|\broute\b|\bdns\b|\btracert\b|\bpathping\b/.test(text)) return "NET";
+    return "LNX";
+  }
+
+  function inferScenarioRole(scenario, shell) {
+    if (scenario?.role) return scenario.role;
+
+    if (scenario?.mode === "challenge") return "Junior Security Analyst";
+    if (shell === "cisco") return "Junior Network Technician";
+    if (shell === "cmd") return "Junior Support Technician";
+
+    const text = scenarioTextBlob(scenario);
+    if (/\bproxy\b|\bhttp\b|\bweb\b/.test(text)) return "Junior Web Security Analyst";
+    if (/\bnetwork\b|\bnmap\b|\bnetcat\b|\bdns\b|\broute\b|\bservice\b/.test(text)) return "Junior Network Support Technician";
+    return "Junior Linux Support Technician";
+  }
+
+  function inferScenarioType(scenario, shell) {
+    if (scenario?.scenarioType) return scenario.scenarioType;
+
+    const text = scenarioTextBlob(scenario);
+    const category = String(scenario?.category || "").toLowerCase();
+
+    if (scenario?.mode === "challenge") return "Security Investigation";
+    if (shell === "cisco") return /config|interface|route|hostname|startup/i.test(text) ? "Configuration Lab" : "Network Verification";
+    if (category.includes("troubleshooting") || /\bincident\b|\btriage\b|\bfailure\b|\bissue\b/.test(text)) return "Troubleshooting";
+    if (category.includes("file") || category.includes("text") || category.includes("archive") || category.includes("python")) return "Operational Workflow";
+    if (category.includes("network") || /\bping\b|\btracert\b|\bnslookup\b|\broute\b|\bnetstat\b/.test(text)) return "Network Investigation";
+    if (category.includes("proxy") || /\bhttp\b|\brequest\b|\bresponse\b/.test(text)) return "Web Investigation";
+    if (category.includes("metasploit") || category.includes("exploitation")) return "Controlled Exploitation Workflow";
+    return shell === "cmd" ? "Support Workflow" : "Terminal Workflow";
+  }
+
+  function inferEstimatedTime(scenario) {
+    if (scenario?.estimatedTime) return scenario.estimatedTime;
+
+    const steps = scenarioSteps(scenario).length;
+    if (steps <= 1) return "5 minutes";
+    if (steps <= 3) return "8-10 minutes";
+    if (steps <= 5) return "10-15 minutes";
+    return "15-20 minutes";
+  }
+
+  function inferPriority(scenario) {
+    if (scenario?.priority) return scenario.priority;
+
+    const text = scenarioTextBlob(scenario);
+    const difficulty = String(scenario?.difficulty || scenario?.level || "").toLowerCase();
+
+    if (scenario?.mode === "challenge" || /\bincident\b|\btriage\b|\boutage\b|\bservice\b|\bfailure\b/.test(text)) return "High";
+    if (difficulty === "advanced" || difficulty === "intermediate") return "Medium";
+    return "Low";
+  }
+
+  function toTitleTag(value) {
+    return String(value || "")
+      .replace(/[-_/]+/g, " ")
+      .replace(/\b\w/g, (match) => match.toUpperCase())
+      .trim();
+  }
+
+  function inferTags(scenario, shell) {
+    if (Array.isArray(scenario?.tags) && scenario.tags.length) return scenario.tags;
+
+    const tags = new Set();
+    tags.add(toTitleTag(shell === "cmd" ? "windows" : shell === "cisco" ? "cisco" : scenario?.mode === "challenge" ? "cyber" : "linux"));
+    tags.add(toTitleTag(inferScenarioType(scenario, shell)));
+    if (scenario?.category) tags.add(toTitleTag(scenario.category));
+    (scenario?.commandFocus || []).slice(0, 4).forEach((command) => tags.add(toTitleTag(command)));
+    (scenario?.layers || [scenario?.layer]).filter(Boolean).forEach((layer) => tags.add(toTitleTag(layer)));
+    return Array.from(tags).filter(Boolean).slice(0, 6);
+  }
+
+  function inferSkills(scenario, shell) {
+    if (Array.isArray(scenario?.skills) && scenario.skills.length) return scenario.skills;
+
+    const text = scenarioTextBlob(scenario);
+    const skills = new Set();
+
+    if (shell === "cmd") skills.add("Windows command line");
+    if (shell === "linux") skills.add("Linux command line");
+    if (shell === "cisco") skills.add("Cisco IOS navigation");
+    if (scenario?.mode === "challenge") skills.add("Evidence-led investigation");
+    if (/\bping\b|\bnslookup\b|\bipconfig\b|\broute\b|\btracert\b|\bpathping\b|\bnetstat\b/.test(text)) skills.add("Network troubleshooting");
+    if (/\bdir\b|\bls\b|\bcd\b|\bpwd\b|\btree\b/.test(text)) skills.add("Filesystem navigation");
+    if (/\bcat\b|\btype\b|\bgrep\b|\bfindstr\b/.test(text)) skills.add("Evidence review");
+    if (/\bshow\b|\bconfigure terminal\b|\binterface\b|\bstartup-config\b|\brunning-config\b/.test(text)) skills.add("Configuration verification");
+    if (/\bsearchsploit\b|\bmsfconsole\b|\bexploit\b|\bpayload\b/.test(text)) skills.add("Security tooling");
+
+    return Array.from(skills).slice(0, 5);
+  }
+
+  function inferScenarioSummary(scenario) {
+    if (scenario?.summary) return scenario.summary;
+    if (scenario?.successCondition) return firstSentence(scenario.successCondition);
+    return firstSentence(scenario?.objective || scenario?.scenarioIntro || "");
+  }
+
+  function inferMissionBriefing(scenario, shell, contextMeta) {
+    if (scenario?.missionBriefing) return scenario.missionBriefing;
+
+    const role = inferScenarioRole(scenario, shell);
+    const summary = inferScenarioSummary(scenario);
+    const environmentLabel = contextMeta?.environmentLabel || environmentCategoryLabel(contextMeta?.environmentCategory || "linux");
+    const intro = firstSentence(scenario?.scenarioIntro || "");
+
+    const base = `${role}, work through the ${environmentLabel.toLowerCase()} task "${scenario.title}" and use terminal evidence to ${String(summary || scenario.objective || "").replace(/\.$/, "")}.`;
+    if (intro) {
+      return `${base} ${intro}`;
+    }
+    return `${base} Keep the workflow disciplined and confirm the visible result before you move on.`;
+  }
+
+  function inferLearningObjectives(scenario) {
+    if (Array.isArray(scenario?.learningObjectives) && scenario.learningObjectives.length) {
+      return scenario.learningObjectives;
+    }
+
+    const objectives = scenarioSteps(scenario)
+      .map((stepConfig) => String(stepConfig?.objective || "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (objectives.length) {
+      return objectives;
+    }
+
+    return [scenario?.objective || "Use terminal evidence to complete the assigned task."].filter(Boolean);
+  }
+
+  function inferSuccessCriteria(scenario) {
+    if (Array.isArray(scenario?.successCriteria) && scenario.successCriteria.length) {
+      return scenario.successCriteria;
+    }
+
+    const criteria = scenarioSteps(scenario)
+      .map((stepConfig) => String(stepConfig?.objective || "").trim())
+      .filter(Boolean)
+      .slice(0, 5);
+
+    return criteria.length ? criteria : [scenario?.successCondition || scenario?.objective].filter(Boolean);
+  }
+
+  function inferEnvironmentNotes(scenario, shell, contextMeta) {
+    if (scenario?.environmentNotes) return scenario.environmentNotes;
+
+    if (scenario?.mode === "challenge") {
+      return "This is a controlled challenge environment. Investigate methodically, justify each action with evidence, and avoid treating the lab like a production target.";
+    }
+
+    if (shell === "cisco") {
+      return "This is a simulated network device. Verify the current state before making changes, and confirm the resulting configuration before you consider the task complete.";
+    }
+
+    if (shell === "cmd") {
+      return "This is a simulated Windows support environment. Commands are scoped to a safe lab and should be used to confirm evidence before any corrective action.";
+    }
+
+    return `This is a simulated ${String(contextMeta?.environmentLabel || "Linux Terminal Learning").toLowerCase()} environment. Use the shell to gather evidence first and treat command output like a case record.`;
+  }
+
+  function inferVerificationRequired(scenario) {
+    if (typeof scenario?.verificationRequired === "boolean") return scenario.verificationRequired;
+
+    const text = scenarioTextBlob(scenario);
+    if (scenarioSteps(scenario).length > 1) return true;
+    return /\bverify\b|\bconfirm\b|\bvalidation\b|\bresolved\b/.test(text);
+  }
+
+  function inferVerificationSteps(scenario) {
+    if (Array.isArray(scenario?.verificationSteps) && scenario.verificationSteps.length) {
+      return scenario.verificationSteps;
+    }
+
+    if (!inferVerificationRequired(scenario)) {
+      return [];
+    }
+
+    const lastObjective = scenarioSteps(scenario).slice(-1)[0]?.objective;
+    return [
+      lastObjective || "Confirm the final command output supports the conclusion.",
+      "Confirm the command output supports the conclusion.",
+      "Confirm the final state matches the objective."
+    ];
+  }
+
+  function inferRiskyCommands(scenario, shell) {
+    if (Array.isArray(scenario?.riskyCommands) && scenario.riskyCommands.length) {
+      return scenario.riskyCommands;
+    }
+
+    const text = scenarioTextBlob(scenario);
+    const rules = [];
+
+    if ((shell === "linux" || scenario?.mode === "challenge") && /\bservice\b|\bconfig\b|\bprocess\b|\bincident\b|\btriage\b|\bfile\b/.test(text)) {
+      rules.push(
+        { pattern: "rm -rf", reason: "This can delete important files and should not be used casually during investigation." },
+        { pattern: "shutdown", reason: "Restarting or shutting down before diagnosis can interrupt users and hide useful evidence." }
+      );
+    }
+
+    if (shell === "cmd" && /\bservice\b|\bincident\b|\btriage\b|\btask\b|\buser\b|\bshare\b|\badmin\b/.test(text)) {
+      rules.push(
+        { pattern: "shutdown", reason: "Restarting a workstation or server before diagnosis can interrupt users and hide the original condition." },
+        { pattern: "del", reason: "Deleting files is risky during support work unless the cause and recovery path are already confirmed." }
+      );
+    }
+
+    if (shell === "cisco" && /\bconfig\b|\binterface\b|\broute\b|\bhostname\b|\bstartup\b|\brunning\b/.test(text)) {
+      rules.push(
+        { pattern: "reload", reason: "Reloading network equipment before saving or verifying configuration can cause avoidable outages." },
+        { pattern: "erase startup-config", reason: "Erasing the startup configuration is destructive and inappropriate for routine training tasks." }
+      );
+    }
+
+    return rules;
+  }
+
+  function inferStageKind(scenario, stepConfig, stepIndex, totalSteps) {
+    const text = `${stepConfig?.objective || ""} ${stepConfig?.successFeedback || ""}`.toLowerCase();
+    const scenarioType = inferScenarioType(scenario, scenario.shell).toLowerCase();
+
+    if (scenario?.mode === "challenge") {
+      if (stepIndex === 0) return "scope";
+      if (/\breport\b|\bsummary\b|\bconclusion\b/.test(text)) return "reporting";
+      if (/\bcat\b|\btype\b|\bgrep\b|\bfindstr\b|\bresponse\b|\brequest\b|\bparameter\b|\bproof\b/.test(text)) return "analysis";
+      return stepIndex === totalSteps - 1 ? "analysis" : "enumeration";
+    }
+
+    if (shellDisplayLabel(scenario.shell).includes("Cisco")) {
+      if (/\bshow\b|\binspect\b|\breview\b|\bdisplay\b|\bcheck\b/.test(text) && !/\brunning-config\b|\bstartup-config\b/.test(text)) return "inspect";
+      if (/\bcopy running-config startup-config\b|\bwrite memory\b|\bshow running-config\b|\bstartup-config\b|\bverify\b|\bconfirm\b/.test(text)) return "verification";
+      return "configuration";
+    }
+
+    if (/\bverify\b|\bverification\b|\bconfirm\b|\bresolved\b|\bfinal\b|\brunning-config\b|\bmapping table\b/.test(text)) {
+      return "verification";
+    }
+
+    if (/\bconfigure\b|\bset\b|\bmap\b|\bcreate\b|\bstart\b|\bstop\b|\bkill\b|\bterminate\b|\bassign\b|\bextract\b|\bdownload\b|\brun\b|\bload\b|\buse exploit\b/.test(text)) {
+      return scenarioType.includes("troubleshooting") ? "resolution" : "practice";
+    }
+
+    if (/\blist\b|\bdisplay\b|\breview\b|\binspect\b|\bshow\b|\bquery\b|\bcheck\b|\bresolve\b|\bread\b|\bopen\b|\bping\b|\bnslookup\b|\broute\b|\btracert\b|\bpathping\b/.test(text)) {
+      if (stepIndex === 0) {
+        return scenarioType.includes("troubleshooting") || scenarioType.includes("investigation") ? "triage" : "orientation";
+      }
+      return scenarioType.includes("troubleshooting") || scenarioType.includes("investigation") ? "investigation" : "practice";
+    }
+
+    if (stepIndex === 0) return "orientation";
+    if (stepIndex === totalSteps - 1) return "verification";
+    return "practice";
+  }
+
+  function stageTemplate(kind, scenario) {
+    const templates = {
+      orientation: {
+        title: "Orientation",
+        briefing: "Confirm the current working context before you take action.",
+        completionSummary: "You established the starting context and identified the relevant workspace."
+      },
+      practice: {
+        title: "Practice",
+        briefing: "Work through the operational command sequence and confirm the expected outcome.",
+        completionSummary: "You completed the core workflow and produced the expected result."
+      },
+      triage: {
+        title: "Triage",
+        briefing: "Collect the first evidence you need before you assume a cause.",
+        completionSummary: "You gathered the initial evidence needed to continue the task logically."
+      },
+      investigation: {
+        title: "Investigation",
+        briefing: "Use targeted commands to narrow the issue and confirm the important signal.",
+        completionSummary: "You narrowed the problem space with evidence-led command output."
+      },
+      resolution: {
+        title: "Resolution",
+        briefing: "Apply the necessary change or corrective action based on the evidence collected so far.",
+        completionSummary: "You applied the required change to move the task toward resolution."
+      },
+      inspect: {
+        title: "Inspect Current State",
+        briefing: "Review the current device state before you enter configuration mode.",
+        completionSummary: "You confirmed the live router state before making changes."
+      },
+      configuration: {
+        title: "Apply Configuration",
+        briefing: "Move through the IOS workflow and apply the required configuration safely.",
+        completionSummary: "You completed the intended configuration changes on the device."
+      },
+      verification: {
+        title: "Verification",
+        briefing: "Confirm that the output and final state match the mission objective.",
+        completionSummary: "You verified the final state instead of assuming the task was complete."
+      },
+      scope: {
+        title: "Scope",
+        briefing: "Establish the problem space and decide what evidence matters first.",
+        completionSummary: "You framed the investigation and identified the right starting evidence."
+      },
+      enumeration: {
+        title: "Enumeration",
+        briefing: "Enumerate the environment carefully and gather the evidence needed for analysis.",
+        completionSummary: "You collected the important technical details without overreaching."
+      },
+      analysis: {
+        title: "Analysis",
+        briefing: "Interpret the evidence and confirm the strongest next conclusion.",
+        completionSummary: "You translated raw evidence into a justified technical conclusion."
+      },
+      reporting: {
+        title: "Reporting",
+        briefing: "Summarize the important finding or next action clearly before closing the task.",
+        completionSummary: "You closed the task with a defensible summary of what the evidence showed."
+      }
+    };
+
+    return templates[kind] || templates.practice;
+  }
+
+  function autoStagesForScenario(scenario) {
+    const existingStages = normalizeScenarioStages(scenario?.stages || []);
+    if (existingStages.length) {
+      return existingStages;
+    }
+
+    const steps = scenarioSteps(scenario);
+    if (steps.length < 2) {
+      return [];
+    }
+
+    const grouped = [];
+    steps.forEach((stepConfig, stepIndex) => {
+      const kind = inferStageKind(scenario, stepConfig, stepIndex, steps.length);
+      const lastGroup = grouped[grouped.length - 1];
+
+      if (lastGroup && lastGroup.kind === kind) {
+        lastGroup.steps.push(stepConfig);
+        return;
+      }
+
+      grouped.push({ kind, steps: [stepConfig] });
+    });
+
+    return grouped.map((group, index) => {
+      const template = stageTemplate(group.kind, scenario);
+      return {
+        id: `${group.kind}-${index + 1}`,
+        title: template.title,
+        briefing: template.briefing,
+        steps: group.steps.slice(),
+        completionSummary: template.completionSummary
+      };
+    });
+  }
+
+  function enrichScenarioMetadata(scenario, shell, contextMeta) {
+    const difficulty = scenario.difficulty || scenario.level || "Beginner";
+    const stages = autoStagesForScenario(scenario);
+
+    return {
+      ...scenario,
+      difficulty,
+      role: inferScenarioRole(scenario, shell),
+      estimatedTime: inferEstimatedTime(scenario),
+      scenarioType: inferScenarioType(scenario, shell),
+      missionBriefing: inferMissionBriefing(scenario, shell, contextMeta),
+      learningObjectives: inferLearningObjectives(scenario),
+      successCriteria: inferSuccessCriteria(scenario),
+      environmentNotes: inferEnvironmentNotes(scenario, shell, contextMeta),
+      verificationRequired: inferVerificationRequired(scenario),
+      verificationSteps: inferVerificationSteps(scenario),
+      riskyCommands: inferRiskyCommands(scenario, shell),
+      ticketId: scenario.ticketId || nextTicketId(scenarioTicketPrefix(scenario, shell), scenario.id),
+      priority: inferPriority(scenario),
+      tags: inferTags(scenario, shell),
+      skills: inferSkills(scenario, shell),
+      summary: inferScenarioSummary(scenario),
+      stages
+    };
+  }
+
   function normalizeScenarioStages(stages = []) {
     return stages
       .map((stage, stageIndex) => {
@@ -1033,7 +1465,21 @@
   }
 
   function refineScenario(scenario) {
-    const normalizedStages = normalizeScenarioStages(scenario.stages);
+    const shell = scenario.shell || (
+      scenario.environment?.platform === "cmd"
+        ? "cmd"
+        : scenario.environment?.platform === "cisco"
+          ? "cisco"
+          : "linux"
+    );
+    const environment = scenario.environment || (shell === "cmd" ? cmdEnv() : shell === "cisco" ? ciscoEnv() : linuxEnv());
+    const contextMeta = buildScenarioContextMetadata(scenario, environment, shell);
+    const enrichedScenario = enrichScenarioMetadata({
+      ...scenario,
+      shell,
+      environment
+    }, shell, contextMeta);
+    const normalizedStages = normalizeScenarioStages(enrichedScenario.stages);
     const flattenedSteps = normalizedStages.length
       ? normalizedStages.flatMap((stage, stageIndex) => stage.steps.map((stepConfig, stepIndex) => ({
         ...stepConfig,
@@ -1044,32 +1490,22 @@
         stageIndex,
         stageStepIndex: stepIndex
       })))
-      : (Array.isArray(scenario.steps) ? scenario.steps : []);
+      : scenarioSteps(enrichedScenario);
     const layeredScenario = {
-      ...scenario,
-      mode: scenario.mode || "lesson",
-      hiddenSteps: Boolean(scenario.hiddenSteps),
-      challengeObjective: scenario.challengeObjective || "",
-      successConditions: scenario.successConditions || [],
-      allowedApproaches: scenario.allowedApproaches || [],
-      difficulty: scenario.difficulty || scenario.level,
-      layers: Array.isArray(scenario.layers) && scenario.layers.length
-        ? scenario.layers
-        : [scenario.layer || inferScenarioLayer(scenario)],
-      layer: inferScenarioLayer(scenario),
+      ...enrichedScenario,
+      mode: enrichedScenario.mode || "lesson",
+      hiddenSteps: Boolean(enrichedScenario.hiddenSteps),
+      challengeObjective: enrichedScenario.challengeObjective || "",
+      successConditions: enrichedScenario.successConditions || [],
+      allowedApproaches: enrichedScenario.allowedApproaches || [],
+      difficulty: enrichedScenario.difficulty || enrichedScenario.level,
+      layers: Array.isArray(enrichedScenario.layers) && enrichedScenario.layers.length
+        ? enrichedScenario.layers
+        : [enrichedScenario.layer || inferScenarioLayer(enrichedScenario)],
+      layer: inferScenarioLayer(enrichedScenario),
       stages: normalizedStages,
       steps: flattenedSteps
     };
-
-    const shell = layeredScenario.shell || (
-      layeredScenario.environment?.platform === "cmd"
-        ? "cmd"
-        : layeredScenario.environment?.platform === "cisco"
-          ? "cisco"
-          : "linux"
-    );
-    const environment = layeredScenario.environment || (shell === "cmd" ? cmdEnv() : shell === "cisco" ? ciscoEnv() : linuxEnv());
-    const contextMeta = buildScenarioContextMetadata(layeredScenario, environment, shell);
 
     return {
       ...layeredScenario,
@@ -2059,6 +2495,11 @@
       verificationRequired: Boolean(config.verificationRequired),
       verificationSteps: config.verificationSteps || [],
       riskyCommands: config.riskyCommands || [],
+      ticketId: config.ticketId || "",
+      priority: config.priority || "",
+      tags: config.tags || [],
+      skills: config.skills || [],
+      summary: config.summary || "",
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
@@ -2105,6 +2546,11 @@
       verificationRequired: Boolean(config.verificationRequired),
       verificationSteps: config.verificationSteps || [],
       riskyCommands: config.riskyCommands || [],
+      ticketId: config.ticketId || "",
+      priority: config.priority || "",
+      tags: config.tags || [],
+      skills: config.skills || [],
+      summary: config.summary || "",
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
@@ -2151,6 +2597,11 @@
       verificationRequired: Boolean(config.verificationRequired),
       verificationSteps: config.verificationSteps || [],
       riskyCommands: config.riskyCommands || [],
+      ticketId: config.ticketId || "",
+      priority: config.priority || "",
+      tags: config.tags || [],
+      skills: config.skills || [],
+      summary: config.summary || "",
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
@@ -5967,6 +6418,11 @@
     verificationRequired: "boolean",
     verificationSteps: ["string"],
     riskyCommands: [{ pattern: "string", reason: "string" }],
+    ticketId: "LNX-101 | WIN-101 | CIS-201 | CYB-301 | WEB-101 | NET-101",
+    priority: "Low | Medium | High",
+    tags: ["string"],
+    skills: ["string"],
+    summary: "string",
     scenarioIntro: "string",
     commandFocus: ["command names"],
     acceptedCommands: ["example command"],
