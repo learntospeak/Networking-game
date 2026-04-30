@@ -664,13 +664,24 @@
 }
 
 .terminal-inline-input-slot,
+.terminal-mobile-control-mount,
 .terminal-dock-input-mount {
   width: 100%;
 }
 
 .terminal-inline-input-slot:empty,
+.terminal-mobile-control-mount:empty,
 .terminal-dock-input-mount:empty {
   display: none;
+}
+
+.terminal-inline-input-slot {
+  display: grid;
+  gap: 10px;
+  padding: 14px 20px 20px;
+  border-top: 1px solid #334155;
+  background:
+    linear-gradient(180deg, rgba(6, 10, 14, 0.97) 0%, rgba(3, 7, 12, 0.98) 100%);
 }
 
 .terminal-output {
@@ -762,12 +773,7 @@
 }
 
 .terminal-mobile-context {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid #334155;
-  background: rgba(7, 11, 16, 0.9);
+  display: none;
 }
 
 .terminal-mobile-context-head {
@@ -1884,6 +1890,10 @@
 
   .terminal-inline-input-slot {
     display: none !important;
+  }
+
+  .terminal-mobile-control-mount {
+    display: block;
   }
 
   .terminal-mobile-menu-overlay,

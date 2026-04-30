@@ -134,7 +134,9 @@
     terminalOutput: document.getElementById("terminalOutput"),
     terminalJumpTopBtn: document.getElementById("terminalJumpTopBtn"),
     terminalJumpLatestBtn: document.getElementById("terminalJumpLatestBtn"),
+    terminalControls: document.querySelector(".terminal-controls"),
     terminalInlineInputSlot: document.getElementById("terminalInlineInputSlot"),
+    terminalMobileControlMount: document.getElementById("terminalMobileControlMount"),
     terminalDockInputMount: document.getElementById("terminalDockInputMount"),
     terminalForm: document.getElementById("terminalForm"),
     terminalPrompt: document.getElementById("terminalPrompt"),
@@ -245,7 +247,7 @@
   }
 
   function usesInlineMobileInput() {
-    return false;
+    return !isMobileTerminalLayout();
   }
 
   function isCiscoState() {
@@ -747,9 +749,36 @@
       return;
     }
 
-    const target = inlineMobileInput ? els.terminalInlineInputSlot : els.terminalDockInputMount;
-    if (target && els.terminalForm.parentElement !== target) {
-      target.appendChild(els.terminalForm);
+    if (inlineMobileInput) {
+      if (els.terminalInlineInputSlot) {
+        [
+          els.beginnerTaskStrip,
+          els.beginnerHelpStrip,
+          els.terminalControls,
+          els.terminalForm
+        ].filter(Boolean).forEach((node) => {
+          if (node.parentElement !== els.terminalInlineInputSlot) {
+            els.terminalInlineInputSlot.appendChild(node);
+          }
+        });
+      }
+      return;
+    }
+
+    if (els.terminalMobileControlMount) {
+      [
+        els.beginnerTaskStrip,
+        els.beginnerHelpStrip,
+        els.terminalControls
+      ].filter(Boolean).forEach((node) => {
+        if (node.parentElement !== els.terminalMobileControlMount) {
+          els.terminalMobileControlMount.appendChild(node);
+        }
+      });
+    }
+
+    if (els.terminalDockInputMount && els.terminalForm.parentElement !== els.terminalDockInputMount) {
+      els.terminalDockInputMount.appendChild(els.terminalForm);
     }
   }
 
