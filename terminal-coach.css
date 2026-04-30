@@ -1708,11 +1708,11 @@
   .terminal-page {
     --terminal-mobile-dock-space: 0px;
     min-height: var(--terminal-mobile-viewport-height);
-    height: auto;
-    max-height: none;
+    height: var(--terminal-mobile-viewport-height);
+    max-height: var(--terminal-mobile-viewport-height);
     padding: 0;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: hidden;
     overscroll-behavior: none;
     scroll-padding-bottom: 0;
     touch-action: manipulation;
@@ -1722,6 +1722,7 @@
     max-width: 100%;
     display: flex;
     min-height: var(--terminal-mobile-viewport-height);
+    height: var(--terminal-mobile-viewport-height);
   }
 
   .terminal-shell {
@@ -1729,7 +1730,8 @@
     flex-direction: column;
     width: 100%;
     min-height: var(--terminal-mobile-viewport-height);
-    height: auto;
+    height: var(--terminal-mobile-viewport-height);
+    max-height: var(--terminal-mobile-viewport-height);
     padding: 0;
     border-radius: 0;
     border-left: 0;
@@ -1822,6 +1824,7 @@
     flex: 1 1 auto;
     gap: 0;
     min-height: 0;
+    height: 100%;
     overflow: hidden;
   }
 
@@ -1830,15 +1833,18 @@
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
-    height: auto;
+    height: 100%;
+    max-height: 100%;
     border: 0;
     border-radius: 0;
     box-shadow: none;
+    overflow: hidden;
   }
 
   .terminal-output-shell {
     flex: 1 1 auto;
     min-height: 0;
+    height: 0;
     order: 2;
   }
 
@@ -1861,6 +1867,7 @@
   .terminal-mobile-dock {
     display: block;
     flex: 0 0 auto;
+    flex-shrink: 0;
     order: 3;
     position: sticky;
     bottom: 0;
@@ -1878,6 +1885,7 @@
 
   .task-complete-card {
     order: 4;
+    flex: 0 0 auto;
     margin: 0 12px 10px;
     max-height: 180px;
     overflow-y: auto;
