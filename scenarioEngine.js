@@ -11,6 +11,9 @@
       explanation: config.explanation,
       whyThisMatters: config.whyThisMatters || "",
       successFeedback: config.successFeedback || "That command moves the task forward.",
+      nextObjective: config.nextObjective || "",
+      realWorldNote: config.realWorldNote || "",
+      completionSummary: config.completionSummary || "",
       accepts: config.accepts || [],
       partials: config.partials || [],
       exploration: config.exploration || []
@@ -998,6 +1001,47 @@
     };
   }
 
+  function inferNextObjective(stepConfig, scenario) {
+    if (stepConfig?.nextObjective) return stepConfig.nextObjective;
+
+    const steps = scenarioSteps(scenario);
+    const stepIndex = steps.indexOf(stepConfig);
+    const nextStep = stepIndex >= 0 ? steps[stepIndex + 1] : null;
+    if (nextStep?.objective) {
+      return nextStep.objective;
+    }
+
+    return "Continue with the current mission objective and verify the result before you close the work.";
+  }
+
+  function inferRealWorldNote(stepConfig, scenario) {
+    if (stepConfig?.realWorldNote) return stepConfig.realWorldNote;
+
+    const text = `${stepConfig?.objective || ""} ${stepConfig?.successFeedback || ""} ${scenario?.title || ""}`.toLowerCase();
+
+    if (/\bping\b|\breachab|\bresponds\b/.test(text)) {
+      return "In real support work, a successful ping narrows the fault but does not justify closing the ticket without application or name-resolution checks.";
+    }
+
+    if (/\bnslookup\b|\bdns\b|\bresolve\b|\bhostname\b/.test(text)) {
+      return "Real incidents often stall when name resolution is assumed instead of tested directly. A quick DNS check can save a lot of guesswork.";
+    }
+
+    if (/\bdir\b|\bls\b|\bpwd\b|\bcd\b|\btree\b/.test(text)) {
+      return "Technicians lose time when they act in the wrong directory or on the wrong host. Context checks are quiet, but they prevent expensive mistakes.";
+    }
+
+    if (/\bcat\b|\btype\b|\bgrep\b|\bfindstr\b|\blog\b|\bnote\b/.test(text)) {
+      return "Ticket notes and logs often contain the first reliable evidence. Reading them early keeps the rest of the investigation anchored to facts.";
+    }
+
+    if (/\binterface\b|\broute\b|\bhostname\b|\bno shutdown\b|\bip address\b/.test(text)) {
+      return "Network changes should be traceable to an observed device state. Operators who verify before and after changes create safer maintenance records.";
+    }
+
+    return "Professional troubleshooting is not just about using the right command. It is about proving what changed in your understanding after you ran it.";
+  }
+
   function ensureProgressiveHints(stepConfig, scenario) {
     const hints = Array.isArray(stepConfig.hints) ? stepConfig.hints.filter(Boolean) : [];
     if (hints.length >= 3) return hints.slice(0, 3);
@@ -1093,6 +1137,8 @@
       explanation: enrichExplanation(stepConfig, scenario),
       whyThisMatters: inferWhyThisMatters({ ...stepConfig, explanation: enrichExplanation(stepConfig, scenario) }),
       successFeedback: enrichSuccessFeedback(stepConfig, scenario),
+      nextObjective: inferNextObjective(stepConfig, scenario),
+      realWorldNote: inferRealWorldNote(stepConfig, scenario),
       partials: (stepConfig.partials || []).map((entry) => enrichPartialFeedbackEntry(entry, stepConfig)),
       exploration: [
         ...buildExplorationRules(scenario, stepConfig).map((entry) => enrichExplorationEntry(entry)),
@@ -1289,6 +1335,110 @@
     if (scenario?.summary) return scenario.summary;
     if (scenario?.successCondition) return firstSentence(scenario.successCondition);
     return firstSentence(scenario?.objective || scenario?.scenarioIntro || "");
+  }
+
+  function inferTicketTitle(scenario) {
+    return scenario?.ticketTitle || scenario?.title || "Assigned Mission";
+  }
+
+  function inferReportedBy(scenario, shell) {
+    if (scenario?.reportedBy) return scenario.reportedBy;
+    if (scenario?.mode === "challenge") return "SOC Triage Queue";
+    if (shell === "cisco") return "Network Operations Queue";
+    if (shell === "cmd") return "Helpdesk Queue";
+    return "Operations Queue";
+  }
+
+  function inferReportedTime(scenario) {
+    if (scenario?.reportedTime) return scenario.reportedTime;
+    return "";
+  }
+
+  function inferAffectedSystem(scenario, shell, contextMeta) {
+    if (scenario?.affectedSystem) return scenario.affectedSystem;
+    if (scenario?.mode === "challenge") return "Controlled training target";
+    if (shell === "cisco") return "Branch router";
+    if (shell === "cmd") return "Windows workstation";
+    return contextMeta?.environmentLabel === "Linux Terminal Learning" ? "Linux host" : (contextMeta?.environmentLabel || "Training system");
+  }
+
+  function inferSymptomsList(scenario, shell) {
+    if (Array.isArray(scenario?.symptoms) && scenario.symptoms.length) {
+      return scenario.symptoms;
+    }
+
+    const text = scenarioTextBlob(scenario);
+    const symptoms = [];
+
+    if (/\bdns\b|\bresolve\b|\bhostname\b|\bnslookup\b/.test(text)) {
+      symptoms.push("The reported issue points to a name-resolution failure rather than a total network outage.");
+      symptoms.push("IP connectivity may still work even if hostnames fail.");
+    } else if (/\blog\b|\bcrash\b|\bpanic\b|\bservice\b/.test(text)) {
+      symptoms.push("Service behavior needs to be confirmed from host-side evidence.");
+      symptoms.push("The reported fault is based on symptoms, not yet on verified root cause.");
+    } else if (/\bshare\b|\bfileserver\b|\bnet use\b/.test(text)) {
+      symptoms.push("Shared resource access appears affected from the workstation perspective.");
+      symptoms.push("The issue could still be reachability, name resolution, or share state.");
+    } else if (/\brouter\b|\binterface\b|\bno shutdown\b|\bcisco\b/.test(text)) {
+      symptoms.push("The branch network appears impacted, but the device state still needs to be inspected.");
+      symptoms.push("Configuration should not be changed before the current operational state is clear.");
+    } else if (shell === "cmd") {
+      symptoms.push("The workstation issue still needs evidence from the command line.");
+    } else {
+      symptoms.push("The report provides a symptom, not a confirmed technical cause.");
+    }
+
+    return symptoms.slice(0, 3);
+  }
+
+  function inferUserReport(scenario) {
+    if (scenario?.userReport) return scenario.userReport;
+    return inferReportedSymptom(scenario, scenario.shell);
+  }
+
+  function inferKnownFacts(scenario, shell) {
+    if (Array.isArray(scenario?.knownFacts) && scenario.knownFacts.length) {
+      return scenario.knownFacts;
+    }
+
+    const facts = [];
+    if (scenario?.objective) {
+      facts.push(`The current assignment is to ${String(scenario.objective).replace(/\.$/, "")}.`);
+    }
+    if (scenario?.scenarioIntro) {
+      facts.push(firstSentence(scenario.scenarioIntro));
+    }
+    if (shell === "cisco") {
+      facts.push("The training device is simulated, but the IOS workflow is meant to mirror real operator discipline.");
+    } else if (shell === "cmd") {
+      facts.push("The workstation environment is simulated and intended for evidence-led support practice.");
+    } else if (scenario?.mode === "challenge") {
+      facts.push("The environment is controlled for training and should be investigated methodically.");
+    }
+
+    return facts.filter(Boolean).slice(0, 3);
+  }
+
+  function inferConstraints(scenario) {
+    if (Array.isArray(scenario?.constraints) && scenario.constraints.length) {
+      return scenario.constraints;
+    }
+
+    return [
+      inferDoNotAssumeNote(scenario),
+      "Do not change settings until you have evidence that justifies the action.",
+      "Verify the final state before you close the ticket."
+    ].filter(Boolean).slice(0, 3);
+  }
+
+  function inferEscalationNote(scenario, shell) {
+    if (scenario?.escalationNote) return scenario.escalationNote;
+    if (scenario?.mode === "challenge") return "Escalate only after you can explain what the evidence supports and what still needs confirmation.";
+    if (shell === "cisco") return "If the live device state still does not match the intended branch design after verification, capture the evidence before escalation.";
+    if (/\bdns\b|\bresolve\b|\bhostname\b/.test(scenarioTextBlob(scenario))) {
+      return "If DNS remains the leading hypothesis after local checks, collect the command evidence before escalation.";
+    }
+    return "";
   }
 
   function inferReportedSymptom(scenario, shell) {
@@ -1678,7 +1828,17 @@
       verificationSteps: inferVerificationSteps(scenario),
       riskyCommands: inferRiskyCommands(scenario, shell),
       ticketId: scenario.ticketId || nextTicketId(scenarioTicketPrefix(scenario, shell), scenario.id),
+      ticketTitle: inferTicketTitle(scenario),
+      reportedBy: inferReportedBy(scenario, shell),
+      reportedTime: inferReportedTime(scenario),
       priority: inferPriority(scenario),
+      affectedSystem: inferAffectedSystem(scenario, shell, contextMeta),
+      symptoms: inferSymptomsList(scenario, shell),
+      userReport: inferUserReport(scenario),
+      knownFacts: inferKnownFacts(scenario, shell),
+      constraints: inferConstraints(scenario),
+      escalationNote: inferEscalationNote(scenario, shell),
+      easterEggNote: scenario.easterEggNote || scenarioEasterEgg(scenario),
       tags: inferTags(scenario, shell),
       skills: inferSkills(scenario, shell),
       summary: inferScenarioSummary(scenario),
@@ -2736,7 +2896,17 @@
       verificationSteps: config.verificationSteps || [],
       riskyCommands: config.riskyCommands || [],
       ticketId: config.ticketId || "",
+      ticketTitle: config.ticketTitle || "",
+      reportedBy: config.reportedBy || "",
+      reportedTime: config.reportedTime || "",
       priority: config.priority || "",
+      affectedSystem: config.affectedSystem || "",
+      symptoms: config.symptoms || [],
+      userReport: config.userReport || "",
+      knownFacts: config.knownFacts || [],
+      constraints: config.constraints || [],
+      escalationNote: config.escalationNote || "",
+      easterEggNote: config.easterEggNote || "",
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
@@ -2787,7 +2957,17 @@
       verificationSteps: config.verificationSteps || [],
       riskyCommands: config.riskyCommands || [],
       ticketId: config.ticketId || "",
+      ticketTitle: config.ticketTitle || "",
+      reportedBy: config.reportedBy || "",
+      reportedTime: config.reportedTime || "",
       priority: config.priority || "",
+      affectedSystem: config.affectedSystem || "",
+      symptoms: config.symptoms || [],
+      userReport: config.userReport || "",
+      knownFacts: config.knownFacts || [],
+      constraints: config.constraints || [],
+      escalationNote: config.escalationNote || "",
+      easterEggNote: config.easterEggNote || "",
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
@@ -2838,7 +3018,17 @@
       verificationSteps: config.verificationSteps || [],
       riskyCommands: config.riskyCommands || [],
       ticketId: config.ticketId || "",
+      ticketTitle: config.ticketTitle || "",
+      reportedBy: config.reportedBy || "",
+      reportedTime: config.reportedTime || "",
       priority: config.priority || "",
+      affectedSystem: config.affectedSystem || "",
+      symptoms: config.symptoms || [],
+      userReport: config.userReport || "",
+      knownFacts: config.knownFacts || [],
+      constraints: config.constraints || [],
+      escalationNote: config.escalationNote || "",
+      easterEggNote: config.easterEggNote || "",
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
@@ -4426,9 +4616,34 @@
       category: "Files and navigation",
       difficulty: "Beginner",
       role: "Junior Support Technician",
+      ticketId: "WIN-102",
+      ticketTitle: "Incident folder requires initial workstation triage",
+      reportedBy: "Helpdesk Queue",
+      reportedTime: "09:14",
+      priority: "Medium",
+      affectedSystem: "Windows support workstation",
+      symptoms: [
+        "A triage folder has been prepared for a service-access issue",
+        "The written case note has not been reviewed yet",
+        "No remediation should begin before the note is confirmed"
+      ],
+      userReport: "The ticket notes say a service issue is being escalated, but the workstation side of the evidence has not been reviewed yet.",
+      knownFacts: [
+        "The analyst workstation is already in the incident workspace",
+        "A triage note is present in the current folder",
+        "A deeper notes folder also exists for later review"
+      ],
+      constraints: [
+        "Do not assume the written note matches the real fault until you read it",
+        "Use the current workspace before jumping to other folders",
+        "Base the next technical action on the case note, not on guesswork"
+      ],
       estimatedTime: "5-8 minutes",
       scenarioType: "Incident Triage",
+      escalationNote: "If the note points to a service fault, capture the workstation-side evidence before escalating to server or network teams.",
+      easterEggNote: "The ticket summary says 'internet broken'. Classic.",
       missionBriefing: "You have been handed a Windows workstation incident folder. Before changing anything, confirm the current workspace, identify the note location, and read the triage note so you understand the reported service issue.",
+      summary: "Review the Windows incident folder, confirm the visible artifacts, and read the case note before any deeper troubleshooting begins.",
       learningObjectives: [
         "Start from the current Windows workspace before navigating elsewhere",
         "Use folder listings to identify the relevant evidence",
@@ -4470,6 +4685,8 @@
               explanation: "Beginner Windows workflows should start with a local listing so the learner sees the current folder before moving.",
               whyThisMatters: "Support work is easier when you confirm what is already in front of you before you navigate away from it.",
               successFeedback: "You listed the incident workspace.",
+              nextObjective: "Read the triage note in the current folder so the reported symptom is confirmed before deeper troubleshooting begins.",
+              realWorldNote: "Support queues often attach the next clue to the case folder itself. Missing that note can send a technician down the wrong path.",
               accepts: [commandMatch("dir")]
             })
           ]
@@ -4486,6 +4703,8 @@
               explanation: "Reading the note first keeps the investigation aligned with what was actually reported.",
               whyThisMatters: "Good technicians confirm the written symptom before they jump into diagnosis or remediation.",
               successFeedback: "You reviewed the triage note.",
+              nextObjective: "Use the written note to decide whether the next stage should focus on services, logs, or access checks.",
+              realWorldNote: "A short ticket note rarely proves the cause by itself, but it does tell you which symptom the next command needs to test.",
               accepts: [
                 rawMatch(/^type\s+triage\.txt$/i),
                 rawMatch(/^type\s+C:\\Lab\\Incident\\triage\.txt$/i)

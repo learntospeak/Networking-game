@@ -284,6 +284,70 @@
         </section>
       </div>
 
+      <div id="ticketBriefingOverlay" class="ticket-briefing-overlay" hidden></div>
+      <aside id="ticketBriefingCard" class="ticket-briefing-card" aria-hidden="true" aria-labelledby="ticketBriefingTitle" hidden>
+        <div class="ticket-briefing-shell">
+          <div class="ticket-briefing-head">
+            <div>
+              <p class="ticket-briefing-kicker">Assigned Ticket</p>
+              <h2 id="ticketBriefingTitle">Mission Ticket</h2>
+            </div>
+            <button id="ticketBriefingCloseBtn" class="ticket-briefing-close" type="button" aria-label="Close ticket briefing">Close</button>
+          </div>
+          <div class="ticket-briefing-meta">
+            <span id="ticketBriefingId" class="scenario-mini-badge" hidden></span>
+            <span id="ticketBriefingPriority" class="scenario-mini-badge" hidden></span>
+            <span id="ticketBriefingReportedBy" class="scenario-mini-badge" hidden></span>
+            <span id="ticketBriefingReportedTime" class="scenario-mini-badge" hidden></span>
+            <span id="ticketBriefingRole" class="scenario-mini-badge" hidden></span>
+            <span id="ticketBriefingEstimatedTime" class="scenario-mini-badge" hidden></span>
+          </div>
+          <div id="ticketBriefingAffectedBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Affected System</p>
+            <p id="ticketBriefingAffectedSystem" class="ticket-briefing-copy"></p>
+          </div>
+          <div id="ticketBriefingSummaryBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Ticket Summary</p>
+            <p id="ticketBriefingSummary" class="ticket-briefing-copy"></p>
+          </div>
+          <div id="ticketBriefingUserReportBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">User Report</p>
+            <p id="ticketBriefingUserReport" class="ticket-briefing-copy"></p>
+          </div>
+          <div id="ticketBriefingSymptomsBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Symptoms</p>
+            <ul id="ticketBriefingSymptoms" class="ticket-briefing-list"></ul>
+          </div>
+          <div id="ticketBriefingKnownFactsBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Known Facts</p>
+            <ul id="ticketBriefingKnownFacts" class="ticket-briefing-list"></ul>
+          </div>
+          <div id="ticketBriefingObjectiveBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Technician Objective</p>
+            <p id="ticketBriefingObjective" class="ticket-briefing-copy"></p>
+          </div>
+          <div id="ticketBriefingConstraintsBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Constraints</p>
+            <ul id="ticketBriefingConstraints" class="ticket-briefing-list"></ul>
+          </div>
+          <div id="ticketBriefingTagsBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Tags</p>
+            <p id="ticketBriefingTags" class="ticket-briefing-copy"></p>
+          </div>
+          <div id="ticketBriefingEscalationBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Escalation Note</p>
+            <p id="ticketBriefingEscalationNote" class="ticket-briefing-copy"></p>
+          </div>
+          <div id="ticketBriefingEasterEggBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Desk Note</p>
+            <p id="ticketBriefingEasterEggNote" class="ticket-briefing-copy"></p>
+          </div>
+          <div class="ticket-briefing-actions">
+            <button id="ticketBriefingStartBtn" class="ticket-briefing-start" type="button">Start Investigation</button>
+          </div>
+        </div>
+      </aside>
+
       <div id="commandSheetOverlay" class="command-sheet-overlay" hidden></div>
       <aside id="commandSheet" class="command-sheet" aria-hidden="true" aria-labelledby="commandSheetTitle">
         <div class="command-sheet-shell">

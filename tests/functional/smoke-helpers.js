@@ -69,6 +69,14 @@ async function gotoAndStabilize(page, path) {
   await page.waitForLoadState("networkidle").catch(() => {});
 }
 
+async function dismissTicketBriefingIfPresent(page) {
+  const startButton = page.locator("#ticketBriefingStartBtn");
+  if (await startButton.isVisible().catch(() => false)) {
+    await startButton.click();
+    await page.waitForTimeout(150);
+  }
+}
+
 async function checkNoHorizontalOverflow(page) {
   return page.evaluate(() => {
     const root = document.documentElement;
@@ -129,8 +137,10 @@ async function waitForTerminalMutation(page, previousCount, command) {
 async function resetTerminalScenario(page) {
   const reset = page.locator("#resetScenarioBtn");
   if (await reset.isVisible()) {
+    await dismissTicketBriefingIfPresent(page);
     await reset.click();
     await page.waitForTimeout(250);
+    await dismissTicketBriefingIfPresent(page);
   }
 }
 
@@ -139,6 +149,7 @@ async function startChallengeIfNeeded(page) {
   if (await startButton.isVisible()) {
     await startButton.click();
     await page.waitForTimeout(250);
+    await dismissTicketBriefingIfPresent(page);
   }
 }
 
@@ -150,6 +161,8 @@ async function runTerminalCommand(page, command, options = {}) {
   if (options.ensureChallengeStarted) {
     await startChallengeIfNeeded(page);
   }
+
+  await dismissTicketBriefingIfPresent(page);
 
   const before = await getTerminalSnapshot(page);
   const input = page.locator("#terminalInput");

@@ -72,6 +72,37 @@
     missionReviewStrengths: document.getElementById("missionReviewStrengths"),
     missionReviewImprovements: document.getElementById("missionReviewImprovements"),
     missionReviewTakeaway: document.getElementById("missionReviewTakeaway"),
+    ticketBriefingOverlay: document.getElementById("ticketBriefingOverlay"),
+    ticketBriefingCard: document.getElementById("ticketBriefingCard"),
+    ticketBriefingTitle: document.getElementById("ticketBriefingTitle"),
+    ticketBriefingCloseBtn: document.getElementById("ticketBriefingCloseBtn"),
+    ticketBriefingId: document.getElementById("ticketBriefingId"),
+    ticketBriefingPriority: document.getElementById("ticketBriefingPriority"),
+    ticketBriefingReportedBy: document.getElementById("ticketBriefingReportedBy"),
+    ticketBriefingReportedTime: document.getElementById("ticketBriefingReportedTime"),
+    ticketBriefingRole: document.getElementById("ticketBriefingRole"),
+    ticketBriefingEstimatedTime: document.getElementById("ticketBriefingEstimatedTime"),
+    ticketBriefingAffectedBlock: document.getElementById("ticketBriefingAffectedBlock"),
+    ticketBriefingAffectedSystem: document.getElementById("ticketBriefingAffectedSystem"),
+    ticketBriefingSummaryBlock: document.getElementById("ticketBriefingSummaryBlock"),
+    ticketBriefingSummary: document.getElementById("ticketBriefingSummary"),
+    ticketBriefingUserReportBlock: document.getElementById("ticketBriefingUserReportBlock"),
+    ticketBriefingUserReport: document.getElementById("ticketBriefingUserReport"),
+    ticketBriefingSymptomsBlock: document.getElementById("ticketBriefingSymptomsBlock"),
+    ticketBriefingSymptoms: document.getElementById("ticketBriefingSymptoms"),
+    ticketBriefingKnownFactsBlock: document.getElementById("ticketBriefingKnownFactsBlock"),
+    ticketBriefingKnownFacts: document.getElementById("ticketBriefingKnownFacts"),
+    ticketBriefingObjectiveBlock: document.getElementById("ticketBriefingObjectiveBlock"),
+    ticketBriefingObjective: document.getElementById("ticketBriefingObjective"),
+    ticketBriefingConstraintsBlock: document.getElementById("ticketBriefingConstraintsBlock"),
+    ticketBriefingConstraints: document.getElementById("ticketBriefingConstraints"),
+    ticketBriefingTagsBlock: document.getElementById("ticketBriefingTagsBlock"),
+    ticketBriefingTags: document.getElementById("ticketBriefingTags"),
+    ticketBriefingEscalationBlock: document.getElementById("ticketBriefingEscalationBlock"),
+    ticketBriefingEscalationNote: document.getElementById("ticketBriefingEscalationNote"),
+    ticketBriefingEasterEggBlock: document.getElementById("ticketBriefingEasterEggBlock"),
+    ticketBriefingEasterEggNote: document.getElementById("ticketBriefingEasterEggNote"),
+    ticketBriefingStartBtn: document.getElementById("ticketBriefingStartBtn"),
     environmentSummary: document.getElementById("environmentSummary"),
     machineContextList: document.getElementById("machineContextList") || document.getElementById("challengeContextList"),
     stepObjective: document.getElementById("stepObjective"),
@@ -130,7 +161,9 @@
     outputPinnedToLatest: true,
     debugScenarioKey: "",
     debugStageKey: "",
-    debugReviewKey: ""
+    debugReviewKey: "",
+    ticketBriefingSeen: false,
+    ticketBriefingOpen: false
   };
   let savedProgressRecord = null;
   const mobilePanelRegistry = [];
@@ -1016,6 +1049,24 @@
     element.textContent = text;
   }
 
+  function fillBadge(element, label, value) {
+    fillText(element, value ? `${label}: ${value}` : "");
+  }
+
+  function fillBlock(block, element, value) {
+    fillText(element, value || "");
+    if (block) {
+      block.hidden = !String(value || "").trim();
+    }
+  }
+
+  function fillListBlock(block, list, items = []) {
+    const count = renderListItems(list, items);
+    if (block) {
+      block.hidden = count === 0;
+    }
+  }
+
   function missionDebug(label, details = "") {
     if (!window.console || typeof window.console.log !== "function") {
       return;
@@ -1110,6 +1161,105 @@
       els.missionTotalProgress,
       stageInfo ? `Mission ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}` : ""
     );
+  }
+
+  function ticketBriefingPayload(scenario = currentScenario()) {
+    if (!scenario) {
+      return null;
+    }
+
+    const tags = Array.isArray(scenario.tags)
+      ? scenario.tags.map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
+
+    return {
+      title: scenario.ticketTitle || scenario.title || "Assigned Mission",
+      ticketId: scenario.ticketId || "",
+      priority: scenario.priority || "",
+      reportedBy: scenario.reportedBy || "",
+      reportedTime: scenario.reportedTime || "",
+      role: scenario.role || "",
+      estimatedTime: scenario.estimatedTime || "",
+      affectedSystem: scenario.affectedSystem || scenario.environmentLabel || scenarioEnvironmentLabel(scenario),
+      summary: scenario.summary || scenario.missionBriefing || scenario.scenarioIntro || scenarioObjectiveText(scenario),
+      userReport: scenario.userReport || "",
+      symptoms: Array.isArray(scenario.symptoms) ? scenario.symptoms : [],
+      knownFacts: Array.isArray(scenario.knownFacts) ? scenario.knownFacts : [],
+      objective: scenario.objective || scenarioObjectiveText(scenario),
+      constraints: Array.isArray(scenario.constraints) ? scenario.constraints : [],
+      tags,
+      escalationNote: scenario.escalationNote || "",
+      easterEggNote: scenario.easterEggNote || ""
+    };
+  }
+
+  function renderTicketBriefing(scenario = currentScenario()) {
+    if (!els.ticketBriefingCard) {
+      return;
+    }
+
+    const payload = ticketBriefingPayload(scenario);
+    if (!payload) {
+      return;
+    }
+
+    fillText(els.ticketBriefingTitle, payload.title, { hideWhenEmpty: false });
+    fillBadge(els.ticketBriefingId, "Ticket", payload.ticketId);
+    fillBadge(els.ticketBriefingPriority, "Priority", payload.priority);
+    fillBadge(els.ticketBriefingReportedBy, "Reported By", payload.reportedBy);
+    fillBadge(els.ticketBriefingReportedTime, "Reported", payload.reportedTime);
+    fillBadge(els.ticketBriefingRole, "Role", payload.role);
+    fillBadge(els.ticketBriefingEstimatedTime, "Estimated", payload.estimatedTime);
+    fillBlock(els.ticketBriefingAffectedBlock, els.ticketBriefingAffectedSystem, payload.affectedSystem);
+    fillBlock(els.ticketBriefingSummaryBlock, els.ticketBriefingSummary, payload.summary);
+    fillBlock(els.ticketBriefingUserReportBlock, els.ticketBriefingUserReport, payload.userReport);
+    fillListBlock(els.ticketBriefingSymptomsBlock, els.ticketBriefingSymptoms, payload.symptoms);
+    fillListBlock(els.ticketBriefingKnownFactsBlock, els.ticketBriefingKnownFacts, payload.knownFacts);
+    fillBlock(els.ticketBriefingObjectiveBlock, els.ticketBriefingObjective, payload.objective);
+    fillListBlock(els.ticketBriefingConstraintsBlock, els.ticketBriefingConstraints, payload.constraints);
+    fillBlock(els.ticketBriefingTagsBlock, els.ticketBriefingTags, payload.tags.join(" | "));
+    fillBlock(els.ticketBriefingEscalationBlock, els.ticketBriefingEscalationNote, payload.escalationNote);
+    fillBlock(els.ticketBriefingEasterEggBlock, els.ticketBriefingEasterEggNote, payload.easterEggNote);
+  }
+
+  function closeTicketBriefing(options = {}) {
+    if (!els.ticketBriefingCard) {
+      return;
+    }
+
+    const restoreFocus = options.restoreFocus !== false;
+    session.ticketBriefingOpen = false;
+    els.ticketBriefingCard.hidden = true;
+    els.ticketBriefingCard.setAttribute("aria-hidden", "true");
+    if (els.ticketBriefingOverlay) {
+      els.ticketBriefingOverlay.hidden = true;
+    }
+    document.body.classList.remove("ticket-briefing-open");
+
+    if (restoreFocus) {
+      focusTerminalInputAtEnd();
+    }
+  }
+
+  function openTicketBriefing(scenario = currentScenario()) {
+    if (!els.ticketBriefingCard) {
+      return;
+    }
+
+    renderTicketBriefing(scenario);
+    session.ticketBriefingSeen = true;
+    session.ticketBriefingOpen = true;
+    els.ticketBriefingCard.hidden = false;
+    els.ticketBriefingCard.setAttribute("aria-hidden", "false");
+    if (els.ticketBriefingOverlay) {
+      els.ticketBriefingOverlay.hidden = false;
+    }
+    document.body.classList.add("ticket-briefing-open");
+    if (els.ticketBriefingStartBtn) {
+      window.setTimeout(() => {
+        els.ticketBriefingStartBtn.focus({ preventScroll: true });
+      }, 0);
+    }
   }
 
   function categorySummary(score) {
@@ -1831,6 +1981,7 @@
       mobileContextCollapsed: session.mobileContextCollapsed,
       terminalEntries: NetlabApp ? NetlabApp.clone(session.terminalEntries) : session.terminalEntries.slice(),
       reviewStats: NetlabApp ? NetlabApp.clone(session.reviewStats) : cloneReviewStats(session.reviewStats),
+      ticketBriefingSeen: session.ticketBriefingSeen,
       runtimeState: StateManager.clone(session.state),
       currentItemLabel: challengePresentation
         ? scenario.title
@@ -1890,7 +2041,10 @@
     session.mobileContextCollapsed = Boolean(snapshot.mobileContextCollapsed);
     session.state = snapshot.runtimeState ? StateManager.clone(snapshot.runtimeState) : StateManager.createState(currentScenario().environment);
     session.reviewStats = snapshot.reviewStats ? (NetlabApp ? NetlabApp.clone(snapshot.reviewStats) : cloneReviewStats(snapshot.reviewStats)) : createReviewStats();
+    session.ticketBriefingSeen = Boolean(snapshot.ticketBriefingSeen);
+    session.ticketBriefingOpen = false;
 
+    closeTicketBriefing({ restoreFocus: false });
     restoreTerminalEntries(snapshot.terminalEntries || []);
     if (!session.terminalEntries.length) {
       if (session.scenarioStarted) {
@@ -2062,6 +2216,7 @@
   }
 
   function resetScenarioState() {
+    closeTicketBriefing({ restoreFocus: false });
     session.state = StateManager.createState(currentScenario().environment);
     setCurrentLayer(currentScenario().layer || "application");
     session.stepIndex = 0;
@@ -2069,6 +2224,8 @@
     session.hintLevel = -1;
     session.scenarioCompleted = false;
     session.reviewStats = createReviewStats();
+    session.ticketBriefingSeen = false;
+    session.ticketBriefingOpen = false;
   }
 
   function loadScenario(index, options = {}) {
@@ -2097,6 +2254,9 @@
       }
     }
     renderPanel();
+    if (announce && !session.ticketBriefingSeen) {
+      openTicketBriefing(currentScenario());
+    }
     document.dispatchEvent(new CustomEvent("terminalcoach:scenariochange", {
       detail: {
         scenario: currentScenario(),
@@ -2110,7 +2270,7 @@
       persistSectionProgress();
     }
     syncMobileViewportMetrics();
-    if (focus && els.terminalInput && !isMobileTerminalLayout()) {
+    if (focus && els.terminalInput && !isMobileTerminalLayout() && !session.ticketBriefingOpen) {
       els.terminalInput.focus();
     }
   }
@@ -4716,10 +4876,27 @@
     }
 
     if (evaluation.success) {
-      printCoachLine(`Good. ${evaluation.feedback}`, "success");
-      printCoachLine(evaluation.coach);
-      if (step.whyThisMatters) {
-        printCoachLine(`Why this matters: ${step.whyThisMatters}`, "dim");
+      const nextStep = currentScenario().steps?.[session.stepIndex + (evaluation.advanceBy || 1)] || null;
+      const proofText = String(step.successFeedback || evaluation.feedback || step.explanation || "Good. That command moved the investigation forward.").trim();
+      const explanationText = String(step.explanation || "").trim();
+      const whyText = String(step.whyThisMatters || step.completionSummary || "").trim();
+      const nextText = String(step.nextObjective || nextStep?.objective || "Continue with the current mission objective.").trim();
+      const realWorldText = String(step.realWorldNote || "").trim();
+
+      printLine("[Task Complete]", "success");
+      printCoachLine(`What you proved: ${proofText}`, "success");
+      if (explanationText && explanationText !== proofText) {
+        printCoachLine(`Command note: ${explanationText}`, "dim");
+      }
+      if (whyText) {
+        printCoachLine(`Why it matters: ${whyText}`, "dim");
+      }
+      if (realWorldText) {
+        printCoachLine(`Real-world note: ${realWorldText}`, "dim");
+      }
+      printCoachLine(`Next: ${nextText}`, "dim");
+      if (evaluation.coach) {
+        printCoachLine(evaluation.coach);
       }
       advanceStep(evaluation.advanceBy || 1);
       return;
@@ -4768,6 +4945,10 @@
     event.preventDefault();
     const rawInput = els.terminalInput.value.trim();
     if (!rawInput) return;
+
+    if (session.ticketBriefingOpen) {
+      closeTicketBriefing({ restoreFocus: false });
+    }
 
     if (!session.scenarioStarted) {
       els.terminalInput.value = "";
@@ -4881,6 +5062,21 @@
     if (els.nextScenarioBtn) {
       els.nextScenarioBtn.addEventListener("click", nextScenario);
     }
+    if (els.ticketBriefingStartBtn) {
+      els.ticketBriefingStartBtn.addEventListener("click", () => {
+        closeTicketBriefing();
+      });
+    }
+    if (els.ticketBriefingCloseBtn) {
+      els.ticketBriefingCloseBtn.addEventListener("click", () => {
+        closeTicketBriefing();
+      });
+    }
+    if (els.ticketBriefingOverlay) {
+      els.ticketBriefingOverlay.addEventListener("click", () => {
+        closeTicketBriefing();
+      });
+    }
     if (els.mobileContextToggleBtn) {
       els.mobileContextToggleBtn.addEventListener("click", () => {
         setMobileContextCollapsed(!session.mobileContextCollapsed);
@@ -4964,6 +5160,11 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") {
+        return;
+      }
+
+      if (session.ticketBriefingOpen) {
+        closeTicketBriefing();
         return;
       }
 

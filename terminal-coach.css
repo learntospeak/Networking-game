@@ -871,6 +871,171 @@
   overflow: hidden;
 }
 
+.ticket-briefing-open {
+  overflow: hidden;
+}
+
+.ticket-briefing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: rgba(2, 6, 12, 0.64);
+  backdrop-filter: blur(6px);
+}
+
+.ticket-briefing-overlay[hidden],
+.ticket-briefing-card[hidden] {
+  display: none !important;
+}
+
+.ticket-briefing-card {
+  position: fixed;
+  inset: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  pointer-events: none;
+}
+
+.ticket-briefing-shell {
+  width: min(780px, 100%);
+  max-height: min(92vh, 920px);
+  overflow: auto;
+  border-radius: 24px;
+  border: 1px solid rgba(71, 85, 105, 0.82);
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.985) 0%, rgba(4, 8, 14, 0.995) 100%);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(56, 189, 248, 0.08);
+  pointer-events: auto;
+}
+
+.ticket-briefing-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 22px 0;
+}
+
+.ticket-briefing-kicker {
+  margin: 0 0 6px;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ticket-briefing-head h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(24px, 2.4vw, 30px);
+}
+
+.ticket-briefing-close,
+.ticket-briefing-start {
+  position: relative;
+  min-height: 44px;
+  padding: 10px 16px 10px 24px;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: rgba(8, 12, 18, 0.9);
+  color: #e2e8f0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ticket-briefing-close::before,
+.ticket-briefing-start::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.ticket-briefing-close::before {
+  background: #ef4444;
+  box-shadow:
+    0 0 0 2px rgba(239, 68, 68, 0.14),
+    0 0 14px rgba(239, 68, 68, 0.42);
+}
+
+.ticket-briefing-start::before {
+  background: #22c55e;
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.14),
+    0 0 14px rgba(34, 197, 94, 0.42);
+}
+
+.ticket-briefing-close:hover,
+.ticket-briefing-start:hover {
+  border-color: #7b8796;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.ticket-briefing-close:focus-visible,
+.ticket-briefing-start:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.36);
+  outline-offset: 2px;
+}
+
+.ticket-briefing-meta,
+.ticket-briefing-block,
+.ticket-briefing-actions {
+  padding-inline: 22px;
+}
+
+.ticket-briefing-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ticket-briefing-block {
+  margin-top: 16px;
+}
+
+.ticket-briefing-label {
+  margin: 0 0 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ticket-briefing-copy {
+  margin: 0;
+  color: #e2e8f0;
+  line-height: 1.7;
+}
+
+.ticket-briefing-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.ticket-briefing-list li + li {
+  margin-top: 6px;
+}
+
+.ticket-briefing-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+
 .command-sheet-overlay {
   position: fixed;
   inset: 0;
@@ -1694,6 +1859,35 @@
     height: var(--terminal-mobile-viewport-height);
   }
 
+  .ticket-briefing-card {
+    inset: 10px;
+    padding: 0;
+  }
+
+  .ticket-briefing-shell {
+    max-height: calc(var(--terminal-mobile-viewport-height) - 20px);
+    border-radius: 18px;
+  }
+
+  .ticket-briefing-head,
+  .ticket-briefing-meta,
+  .ticket-briefing-block,
+  .ticket-briefing-actions {
+    padding-inline: 16px;
+  }
+
+  .ticket-briefing-head {
+    padding-top: 16px;
+  }
+
+  .ticket-briefing-actions {
+    justify-content: stretch;
+  }
+
+  .ticket-briefing-start {
+    width: 100%;
+  }
+
   .command-sheet-toolbar,
   .command-sheet-results {
     padding: 12px;
@@ -1756,6 +1950,10 @@
 
   .terminal-mobile-menu-body,
   .terminal-mobile-info-scroll,
+  .ticket-briefing-head,
+  .ticket-briefing-meta,
+  .ticket-briefing-block,
+  .ticket-briefing-actions,
   .command-sheet-toolbar,
   .command-sheet-results {
     padding-left: 10px;
