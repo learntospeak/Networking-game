@@ -14,6 +14,10 @@
       nextObjective: config.nextObjective || "",
       realWorldNote: config.realWorldNote || "",
       completionSummary: config.completionSummary || "",
+      walkthrough: config.walkthrough || [],
+      demoCommand: config.demoCommand || "",
+      demoOutput: config.demoOutput || [],
+      demoExplanation: config.demoExplanation || "",
       accepts: config.accepts || [],
       partials: config.partials || [],
       exploration: config.exploration || []
@@ -2910,6 +2914,7 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      walkthrough: config.walkthrough || [],
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
@@ -2971,6 +2976,7 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      walkthrough: config.walkthrough || [],
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
@@ -3032,6 +3038,7 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      walkthrough: config.walkthrough || [],
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
       environmentLabel: contextMeta.environmentLabel,
@@ -4644,6 +4651,25 @@
       easterEggNote: "The ticket summary says 'internet broken'. Classic.",
       missionBriefing: "You have been handed a Windows workstation incident folder. Before changing anything, confirm the current workspace, identify the note location, and read the triage note so you understand the reported service issue.",
       summary: "Review the Windows incident folder, confirm the visible artifacts, and read the case note before any deeper troubleshooting begins.",
+      walkthrough: [
+        {
+          command: "dir",
+          explanation: "Start by listing the current incident folder. Before you change paths or open files, confirm what evidence is already in front of you.",
+          output: [
+            " Volume in drive C is OS",
+            " Directory of C:\\Lab\\Incident",
+            "04/17/2026  08:20 AM    <DIR>          Notes",
+            "04/17/2026  08:22 AM                33 triage.txt"
+          ]
+        },
+        {
+          command: "type triage.txt",
+          explanation: "Now read the triage note. A good junior technician confirms the written symptom before assuming which system or service is at fault.",
+          output: [
+            "Review startup items and case notes."
+          ]
+        }
+      ],
       learningObjectives: [
         "Start from the current Windows workspace before navigating elsewhere",
         "Use folder listings to identify the relevant evidence",

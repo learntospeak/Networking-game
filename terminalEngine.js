@@ -128,6 +128,7 @@
     terminalPrompt: document.getElementById("terminalPrompt"),
     terminalInput: document.getElementById("terminalInput"),
     hintBtn: document.getElementById("hintBtn"),
+    watchWalkthroughBtn: document.getElementById("watchWalkthroughBtn"),
     previousScenarioBtn: document.getElementById("previousScenarioBtn"),
     resetScenarioBtn: document.getElementById("resetScenarioBtn"),
     nextScenarioBtn: document.getElementById("nextScenarioBtn")
@@ -1043,20 +1044,171 @@
       : "the command family that matches the current objective";
   }
 
+  function commandPanelCategoryLabel(scenario = currentScenario()) {
+    if (pageConfig.commandSheetDefaultCategory) {
+      return pageConfig.commandSheetDefaultCategory;
+    }
+
+    if (scenario?.shell === "cmd") return "Windows CMD";
+    if (scenario?.shell === "cisco") return "Cisco CLI";
+    return "Linux";
+  }
+
+  function commandFamilyLabel(step = currentStep(), scenario = currentScenario()) {
+    const suggested = suggestedCommandForStep(step);
+    if (suggested) {
+      return String(suggested).split(/\s+/)[0];
+    }
+
+    const family = Array.isArray(scenario?.commandFocus) && scenario.commandFocus.length
+      ? scenario.commandFocus[0]
+      : "";
+
+    return family || "the command you need for this task";
+  }
+
+  function normalizeDemoOutput(value) {
+    if (Array.isArray(value)) {
+      return value.map((line) => String(line || "")).filter(Boolean);
+    }
+
+    if (value === null || value === undefined || value === "") {
+      return [];
+    }
+
+    return [String(value)];
+  }
+
+  function extractBacktickCommand(text) {
+    const match = String(text || "").match(/`([^`]+)`/);
+    return match ? match[1].trim() : "";
+  }
+
+  function suggestedCommandForStep(step = currentStep()) {
+    if (!step) {
+      return "";
+    }
+
+    if (step.demoCommand) {
+      return String(step.demoCommand).trim();
+    }
+
+    if (Array.isArray(step.walkthrough) && step.walkthrough.length && step.walkthrough[0]?.command) {
+      return String(step.walkthrough[0].command).trim();
+    }
+
+    const hinted = (step.hints || []).map(extractBacktickCommand).find(Boolean);
+    if (hinted) {
+      return hinted;
+    }
+
+    const acceptRule = (step.accepts || []).find((rule) => rule && (rule.command || rule.finalCwd));
+    if (acceptRule?.finalCwd) {
+      return `cd ${acceptRule.finalCwd}`;
+    }
+    if (acceptRule?.command) {
+      return String(acceptRule.command).trim();
+    }
+
+    return "";
+  }
+
+  function fallbackDemoOutput(command) {
+    if (!command) {
+      return [];
+    }
+
+    const previousState = session.state;
+    const cloneState = StateManager.clone(session.state);
+    let execution = null;
+
+    try {
+      session.state = cloneState;
+      execution = executeInput(command);
+    } catch (error) {
+      execution = null;
+    } finally {
+      session.state = previousState;
+    }
+
+    if (!execution) {
+      return [];
+    }
+
+    return [...(execution.stdout || []), ...(execution.stderr || [])]
+      .map((line) => String(line || ""))
+      .filter(Boolean)
+      .slice(0, 6);
+  }
+
+  function walkthroughEntriesForScenario(scenario = currentScenario(), startIndex = session.stepIndex) {
+    if (Array.isArray(scenario?.walkthrough) && scenario.walkthrough.length) {
+      return scenario.walkthrough;
+    }
+
+    const steps = Array.isArray(scenario?.steps) ? scenario.steps.slice(startIndex, startIndex + 3) : [];
+    return steps
+      .map((step) => {
+        const command = suggestedCommandForStep(step);
+        if (!command) {
+          return null;
+        }
+
+        return {
+          command,
+          output: normalizeDemoOutput(step.demoOutput).length ? normalizeDemoOutput(step.demoOutput) : fallbackDemoOutput(command),
+          explanation: step.demoExplanation || step.explanation || step.successFeedback || step.whyThisMatters || ""
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function walkthroughAvailable(scenario = currentScenario()) {
+    return walkthroughEntriesForScenario(scenario).length > 0;
+  }
+
+  function walkthroughHintText(step = currentStep(), level = session.hintLevel + 1, scenario = currentScenario()) {
+    const objective = step?.objective || scenarioObjectiveText(scenario) || "the current task";
+    const commandFamily = commandFamilyLabel(step, scenario);
+    const category = commandPanelCategoryLabel(scenario);
+    const command = suggestedCommandForStep(step);
+    const coachHint = CoachEngine.getHint(step, Math.max(0, Math.min(2, level)), session.state);
+
+    if (level <= 0) {
+      return `You need to prove: ${objective} Open Commands -> ${category} and look for ${commandFamily}.`;
+    }
+
+    if (level === 1) {
+      return `You need to prove: ${objective} Open Commands -> ${category} and look for ${commandFamily}.`;
+    }
+
+    if (level === 2) {
+      return command
+        ? `The command you likely need is ${command}.`
+        : `Open Commands -> ${category}. The command family you need is ${commandFamily}.`;
+    }
+
+    if (command) {
+      return `Run: ${command}`;
+    }
+
+    return coachHint || `Open Commands -> ${category} and choose the command that best matches ${objective}.`;
+  }
+
   function progressiveWrongAttemptGuidance(step = currentStep(), attempts = session.attemptsForStep, scenario = currentScenario()) {
     if (attempts <= 1) {
-      return "Think about what you still need to prove at this stage before you widen the investigation.";
+      return "Need help? Open Commands or use Hint.";
     }
 
     if (attempts === 2) {
-      return currentObjectiveReminder(step);
+      return `Stay with the current task: ${step?.objective || "use the last result to guide the next command."}`;
     }
 
     if (attempts === 3) {
-      return `Use ${recommendedCommandFamily(scenario)} if you need a stronger evidence path.`;
+      return `Open Commands and look for ${recommendedCommandFamily(scenario)}.`;
     }
 
-    return "If the path is still unclear, use the Hint control or step back to the last useful evidence before trying again.";
+    return "Use Hint for a stronger nudge, or watch the walkthrough and then try it yourself.";
   }
 
   function repeatedCommandCoaching(rawInput) {
@@ -1066,7 +1218,7 @@
       return "";
     }
 
-    return "You have already run this check. Repeat it after a change, or choose a command that proves something new.";
+    return "You already ran that check. Unless something changed, try a different command.";
   }
 
   function fillText(element, value, options = {}) {
@@ -1778,6 +1930,10 @@
     printTaggedLine("Review", text, "review");
   }
 
+  function printWalkthroughLine(text) {
+    printTaggedLine("Walkthrough", text, "walkthrough");
+  }
+
   function printLines(lines, type = "system") {
     const values = Array.isArray(lines) ? lines : [lines];
     values.forEach((value) => {
@@ -1967,19 +2123,23 @@
 
     if (session.scenarioCompleted) {
       els.coachSignal.textContent = "Scenario complete. Move to the next scenario or reset this one and run it cleaner.";
-    } else if (challengePresentation && session.attemptsForStep > 0) {
-      els.coachSignal.textContent = "Minimal guidance is active. Use the evidence you already created before widening the workflow.";
     } else if (challengePresentation) {
-      els.coachSignal.textContent = pageConfig.challengeIntroSignal || "Minimal guidance is active. Investigate, reason, and decide your own next move.";
-    } else if (session.attemptsForStep > 0) {
-      els.coachSignal.textContent = "Stay on the current objective. Use the output you already produced before you widen the workflow.";
-    } else if (step.context) {
-      els.coachSignal.textContent = step.context;
+      els.coachSignal.textContent = "Need help? Open Commands or use Hint.";
     } else {
-      els.coachSignal.textContent = "Work from evidence. Good operators confirm context before they act.";
+      els.coachSignal.textContent = "Need help? Open Commands or use Hint.";
     }
 
     els.mobileCoachSignal.textContent = els.coachSignal.textContent;
+
+    if (els.watchWalkthroughBtn) {
+      const walkthroughReady = walkthroughAvailable(scenario);
+      els.watchWalkthroughBtn.disabled = !walkthroughReady || !session.scenarioStarted;
+      els.watchWalkthroughBtn.title = !session.scenarioStarted
+        ? "Start the scenario first."
+        : walkthroughReady
+          ? "Watch a short demonstration without changing your progress."
+          : "No safe walkthrough is available for this scenario yet.";
+    }
 
     renderHintLadder();
     updatePrompt();
@@ -2236,13 +2396,10 @@
     }
     if (challengePresentation && Array.isArray(scenario.successConditions) && scenario.successConditions.length) {
       printLine(`Success signals: ${scenario.successConditions.join(" | ")}`, "dim");
-      printCoachLine("Minimal guidance is active. Work from evidence and decide your own sequence.");
+      printCoachLine("Need help? Open Commands or use Hint.");
       return;
     }
-    if (step.context) {
-      printLine(`Context: ${step.context}`, "dim");
-    }
-    printCoachLine(`Current objective: ${step.objective}`);
+    printCoachLine("Need help? Open Commands or use Hint.");
   }
 
   function resetScenarioState() {
@@ -4907,7 +5064,7 @@
 
     if (evaluation.success) {
       const nextStep = currentScenario().steps?.[session.stepIndex + (evaluation.advanceBy || 1)] || null;
-      const proofText = String(step.successFeedback || evaluation.feedback || step.explanation || "Good. That command moved the investigation forward.").trim();
+      const proofText = String(step.successFeedback || "Good. That command moved the investigation forward.").trim();
       const explanationText = String(step.explanation || "").trim();
       const whyText = String(step.whyThisMatters || step.completionSummary || "").trim();
       const nextText = String(step.nextObjective || nextStep?.objective || "Continue with the current mission objective.").trim();
@@ -4941,18 +5098,18 @@
     }
 
     if (evaluation.source === "exploration" || evaluation.classification === "exploration") {
-      printCoachLine(`Exploration noted. ${evaluation.feedback}`, "system");
-      printCoachLine(evaluation.coach, "dim");
-    } else if (evaluation.source === "partial" || evaluation.classification === "inefficient") {
-      printCoachLine(`Close. ${evaluation.feedback}`);
-      printCoachLine(evaluation.coach, "dim");
-    } else {
-      printCoachLine("That did not move the investigation forward.", evaluation.classification === "invalid_command" ? "error" : "coach");
-      printCoachLine(evaluation.feedback, "dim");
-      printCoachLine(progressiveWrongAttemptGuidance(step, session.attemptsForStep, currentScenario()), "dim");
-      if (evaluation.coach) {
-        printCoachLine(evaluation.coach, "dim");
+      printCoachLine("Useful context, but the task is still open.", "system");
+      if (evaluation.feedback) {
+        printCoachLine(evaluation.feedback, "dim");
       }
+    } else if (evaluation.source === "partial" || evaluation.classification === "inefficient") {
+      printCoachLine("Close. You are in the right area, but not there yet.");
+      if (evaluation.feedback) {
+        printCoachLine(evaluation.feedback, "dim");
+      }
+    } else {
+      printCoachLine("That did not answer the current task yet. Try using the command panel or request a hint.", evaluation.classification === "invalid_command" ? "error" : "coach");
+      printCoachLine(progressiveWrongAttemptGuidance(step, session.attemptsForStep, currentScenario()), "dim");
     }
 
     if (repeatedCommandMessage) {
@@ -5022,6 +5179,40 @@
     }
   }
 
+  function runWalkthrough() {
+    if (!session.scenarioStarted) {
+      printLine("Start the selected challenge before watching a walkthrough.", "coach");
+      return;
+    }
+
+    const scenario = currentScenario();
+    const entries = walkthroughEntriesForScenario(scenario);
+    if (!entries.length) {
+      printWalkthroughLine("No safe walkthrough is available for this scenario yet.");
+      return;
+    }
+
+    printWalkthroughLine("Demonstration mode. This will not complete the scenario or change your saved progress.");
+    printWalkthroughLine("We are going to investigate this task step by step.");
+
+    entries.forEach((entry, index) => {
+      if (entry.explanation) {
+        printWalkthroughLine(entry.explanation);
+      }
+      printLine(`${getPromptLabel()} ${entry.command}`, "walkthrough");
+      const outputLines = normalizeDemoOutput(entry.output);
+      if (outputLines.length) {
+        printLines(outputLines, "walkthrough");
+      }
+      if (index < entries.length - 1) {
+        printWalkthroughLine("Next, use that result to guide the following check.");
+      }
+    });
+
+    printWalkthroughLine("Now try it yourself.");
+    renderPanel();
+  }
+
   function showHint() {
     if (!session.scenarioStarted) {
       printLine("Start the selected challenge before requesting hints.", "coach");
@@ -5050,11 +5241,7 @@
     }
 
     session.hintLevel = Math.min(2, session.hintLevel + 1);
-    const hint = CoachEngine.getHint(currentStep(), session.hintLevel, session.state);
-    printHintLine(`Hint ${session.hintLevel + 1} [${hintContextLabel()}]: ${hint}`);
-    if (currentStep()?.explanation) {
-      printCoachLine(`Context: ${currentStep().explanation}`, "dim");
-    }
+    printHintLine(`Hint ${session.hintLevel + 1} [${hintContextLabel()}]: ${walkthroughHintText(currentStep(), session.hintLevel + 1, currentScenario())}`);
     renderPanel();
     persistSectionProgress();
   }
@@ -5082,6 +5269,9 @@
     }
     if (els.hintBtn) {
       els.hintBtn.addEventListener("click", showHint);
+    }
+    if (els.watchWalkthroughBtn) {
+      els.watchWalkthroughBtn.addEventListener("click", runWalkthrough);
     }
     if (els.previousScenarioBtn) {
       els.previousScenarioBtn.addEventListener("click", previousScenario);

@@ -487,7 +487,7 @@
 
 .terminal-controls {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -605,6 +605,10 @@
 .terminal-line.review {
   color: #bfdbfe;
   font-weight: 600;
+}
+
+.terminal-line.walkthrough {
+  color: #d8b4fe;
 }
 
 .terminal-line.dim {
@@ -844,6 +848,13 @@
   box-shadow:
     0 0 0 2px rgba(56, 189, 248, 0.16),
     0 0 16px rgba(56, 189, 248, 0.55);
+}
+
+#watchWalkthroughBtn::before {
+  background: #a78bfa;
+  box-shadow:
+    0 0 0 2px rgba(167, 139, 250, 0.16),
+    0 0 16px rgba(167, 139, 250, 0.5);
 }
 
 #previousScenarioBtn::before {
