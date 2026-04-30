@@ -192,6 +192,37 @@ async function runTerminalCommand(page, command, options = {}) {
   };
 }
 
+async function runWalkthroughDemo(page, options = {}) {
+  if (options.resetBefore) {
+    await resetTerminalScenario(page);
+  }
+
+  if (options.ensureChallengeStarted) {
+    await startChallengeIfNeeded(page);
+  }
+
+  await dismissTicketBriefingIfPresent(page);
+
+  const before = await getTerminalSnapshot(page);
+  const walkthroughButton = page.locator("#watchWalkthroughBtn");
+  await expect(walkthroughButton).toBeVisible();
+  await expect(walkthroughButton).toBeEnabled();
+  await walkthroughButton.click();
+  await waitForTerminalMutation(page, before.lineCount, "watch walkthrough");
+  await page.waitForTimeout(150);
+  const after = await getTerminalSnapshot(page);
+  const delta = after.lines.slice(before.lineCount);
+
+  return {
+    before,
+    after,
+    delta,
+    progressed: after.stepBadge !== before.stepBadge || after.scenarioTitle !== before.scenarioTitle || delta.some((line) => /scenario complete/i.test(line.text)),
+    completed: delta.some((line) => /\[task complete\]|\[review\]|\[mission complete\]/i.test(line.text)),
+    walkthroughVisible: delta.some((line) => /\[walkthrough\]|\[demo command\]|\[why\]|\[now try\]/i.test(line.text))
+  };
+}
+
 async function assertVisible(page, selector) {
   await expect(page.locator(selector)).toBeVisible();
 }
@@ -315,5 +346,6 @@ module.exports = {
   pushWarning,
   readText,
   runTerminalCommand,
+  runWalkthroughDemo,
   clickSubnetAnswer
 };

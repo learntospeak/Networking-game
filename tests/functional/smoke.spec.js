@@ -12,6 +12,7 @@ const {
   pushWarning,
   readText,
   runTerminalCommand,
+  runWalkthroughDemo,
   clickSubnetAnswer
 } = require("./smoke-helpers");
 
@@ -102,6 +103,14 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const report = createSmokeReport("Windows CMD Lab", "/terminal-coach.html?track=windows");
   observePage(page, report);
   await gotoAndStabilize(page, report.url);
+
+  await expect(page.locator("#watchWalkthroughBtn")).toBeVisible();
+  const walkthroughResult = await runWalkthroughDemo(page, { resetBefore: true });
+  pushCheck(report, "walkthrough button present", true, "#watchWalkthroughBtn visible");
+  pushCheck(report, "walkthrough appends demo output", walkthroughResult.walkthroughVisible, walkthroughResult.delta.map((line) => line.text).slice(-8).join(" | "));
+  pushCheck(report, "walkthrough does not advance step", !walkthroughResult.progressed, `${walkthroughResult.before.stepBadge} -> ${walkthroughResult.after.stepBadge}`);
+  pushCheck(report, "walkthrough does not complete scenario", !walkthroughResult.completed, walkthroughResult.delta.map((line) => line.text).slice(-8).join(" | "));
+  pushCheck(report, "terminal input remains enabled after walkthrough", await page.locator("#terminalInput").isEnabled(), "terminal input enabled");
 
   await runTerminalTrackTest(page, report, [
     "dir",

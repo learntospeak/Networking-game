@@ -4911,6 +4911,31 @@
               successFeedback: "You listed the incident workspace.",
               nextObjective: "Read the triage note in the current folder so the reported symptom is confirmed before deeper troubleshooting begins.",
               realWorldNote: "Support queues often attach the next clue to the case folder itself. Missing that note can send a technician down the wrong path.",
+              walkthrough: [
+                {
+                  objective: "List the folders and files in the current incident workspace.",
+                  howToThink: "Do not guess where the next clue is. First inspect the folder you are already standing in.",
+                  whereToLook: "Open Command Help -> Windows CMD and look for the command that lists files and folders.",
+                  command: "dir",
+                  output: [
+                    " Volume in drive C is OS",
+                    " Directory of C:\\Lab\\Incident",
+                    "04/17/2026  08:20 AM    <DIR>          Notes",
+                    "04/17/2026  08:22 AM                33 triage.txt"
+                  ],
+                  explanation: "Start by listing what is in front of you. That lets you discover the note file and the deeper Notes folder without guessing.",
+                  whyThisMatters: "A good junior technician confirms the visible evidence first instead of jumping to a path from memory.",
+                  nowTry: "Type dir yourself."
+                },
+                {
+                  objective: "Notice the next useful evidence in the folder listing.",
+                  howToThink: "The listing tells you there are two useful items here: a triage note in the current folder and a deeper Notes folder for later review.",
+                  whereToLook: "Stay with the current listing before you decide which item to inspect next.",
+                  explanation: "For this ticket, read the triage note first. The Notes folder can be explored later after the written symptom is confirmed.",
+                  whyThisMatters: "This is the same habit you would use in a real ticket: inspect what exists, then choose the smallest next step that answers the current question.",
+                  nowTry: "Next, read triage.txt."
+                }
+              ],
               accepts: [commandMatch("dir")]
             })
           ]
@@ -4929,6 +4954,28 @@
               successFeedback: "You reviewed the triage note.",
               nextObjective: "Use the written note to decide whether the next stage should focus on services, logs, or access checks.",
               realWorldNote: "A short ticket note rarely proves the cause by itself, but it does tell you which symptom the next command needs to test.",
+              walkthrough: [
+                {
+                  objective: "Read the incident note in the current folder.",
+                  howToThink: "Once you know which file contains the written report, read it before you start browsing other folders.",
+                  whereToLook: "Open Command Help -> Windows CMD and look for the file-reading command.",
+                  command: "type triage.txt",
+                  output: [
+                    "Review startup items and case notes."
+                  ],
+                  explanation: "type opens the note directly from the current folder, so you can confirm what the ticket actually says.",
+                  whyThisMatters: "The written symptom guides the next diagnostic command. It does not prove the cause, but it keeps the investigation anchored to the ticket.",
+                  nowTry: "Type type triage.txt yourself."
+                },
+                {
+                  objective: "Plan the follow-up evidence path.",
+                  howToThink: "The note points toward startup items and deeper case notes. That tells you where the next stage of investigation should go.",
+                  whereToLook: "If you need more context later, you can inspect the Notes folder shown by the earlier dir output.",
+                  explanation: "A careful technician reads the ticket note first, then decides whether to move into the deeper notes folder or another troubleshooting area.",
+                  whyThisMatters: "You are learning a sequence here: inspect the workspace, read the note, then move deeper only after the current clue is understood.",
+                  nowTry: "Use the ticket note to decide the next command family."
+                }
+              ],
               accepts: [
                 rawMatch(/^type\s+triage\.txt$/i),
                 rawMatch(/^type\s+C:\\Lab\\Incident\\triage\.txt$/i)

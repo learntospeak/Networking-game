@@ -1203,30 +1203,103 @@
       .slice(0, 6);
   }
 
-  function walkthroughEntriesForScenario(scenario = currentScenario(), startIndex = session.stepIndex) {
-    if (Array.isArray(scenario?.walkthrough) && scenario.walkthrough.length) {
-      return scenario.walkthrough;
-    }
+  function normalizeWalkthroughEntries(entries = []) {
+    return (Array.isArray(entries) ? entries : [])
+      .map((entry) => {
+        if (!entry) {
+          return null;
+        }
 
-    const steps = Array.isArray(scenario?.steps) ? scenario.steps.slice(startIndex, startIndex + 3) : [];
-    return steps
-      .map((step) => {
-        const command = suggestedCommandForStep(step);
-        if (!command) {
+        const command = String(entry.command || entry.demoCommand || "").trim();
+        const output = normalizeDemoOutput(entry.output || entry.demoOutput);
+        const explanation = String(entry.explanation || entry.demoExplanation || entry.successFeedback || entry.explanationText || "").trim();
+        const why = String(entry.why || entry.whyThisMatters || "").trim();
+        const nowTry = String(entry.nowTry || entry.nextObjective || "").trim();
+        const objective = String(entry.objective || "").trim();
+        const whereToLook = String(entry.whereToLook || "").trim();
+        const howToThink = String(entry.howToThink || "").trim();
+
+        if (!command && !explanation && !why && !objective && !whereToLook && !howToThink) {
           return null;
         }
 
         return {
           command,
-          output: normalizeDemoOutput(step.demoOutput).length ? normalizeDemoOutput(step.demoOutput) : fallbackDemoOutput(command),
-          explanation: step.demoExplanation || step.explanation || step.successFeedback || step.whyThisMatters || ""
+          output,
+          explanation,
+          why,
+          nowTry,
+          objective,
+          whereToLook,
+          howToThink
         };
       })
       .filter(Boolean);
   }
 
+  function fallbackWalkthroughEntries(step = currentStep(), scenario = currentScenario()) {
+    const objective = String(step?.objective || scenarioObjectiveText(scenario) || "the current task").trim();
+    const category = commandPanelCategoryLabel(scenario);
+    const commandFamily = commandFamilyLabel(step, scenario);
+    const command = suggestedCommandForStep(step);
+    const explanation = String(step?.demoExplanation || step?.successFeedback || step?.explanation || "").trim();
+    const why = String(step?.whyThisMatters || "").trim();
+
+    const entry = {
+      objective: `Current task: ${objective}`,
+      howToThink: "Look at the current task first, then choose a command that proves one thing clearly.",
+      whereToLook: `Open ${isBeginnerMode() ? "Command Help" : "Commands"} -> ${category} and look for ${commandFamily}.`,
+      command: command || "",
+      output: command ? (normalizeDemoOutput(step?.demoOutput).length ? normalizeDemoOutput(step.demoOutput) : fallbackDemoOutput(command)) : [],
+      explanation: explanation || "This is a safe demo path for the current task.",
+      why: why || (command ? "This command helps you gather the evidence you need before guessing." : "Use the command reference to pick a command that answers the current task."),
+      nowTry: command ? `Type ${command} yourself.` : "Open Command Help and choose the command that best fits the task."
+    };
+
+    return [entry];
+  }
+
+  function walkthroughPayload(scenario = currentScenario(), step = currentStep(), stepIndex = session.stepIndex) {
+    const stageInfo = currentStageInfo(scenario, stepIndex);
+    const customStepWalkthrough = normalizeWalkthroughEntries(step?.walkthrough);
+    const customStageWalkthrough = normalizeWalkthroughEntries(stageInfo?.stage?.walkthrough);
+    const customScenarioWalkthrough = normalizeWalkthroughEntries(scenario?.walkthrough);
+    const customStepDemo = normalizeWalkthroughEntries([
+      {
+        command: step?.demoCommand,
+        output: step?.demoOutput,
+        explanation: step?.demoExplanation,
+        whyThisMatters: step?.whyThisMatters,
+        nextObjective: step?.nextObjective,
+        objective: step?.objective
+      }
+    ]);
+
+    if (customStepWalkthrough.length) {
+      return { entries: customStepWalkthrough, source: "step", custom: true, fallback: false };
+    }
+
+    if (customStageWalkthrough.length) {
+      return { entries: customStageWalkthrough, source: "stage", custom: true, fallback: false };
+    }
+
+    if (customScenarioWalkthrough.length) {
+      return { entries: customScenarioWalkthrough, source: "scenario", custom: true, fallback: false };
+    }
+
+    if (customStepDemo.length) {
+      return { entries: customStepDemo, source: "step-demo", custom: true, fallback: false };
+    }
+
+    return { entries: fallbackWalkthroughEntries(step, scenario), source: "fallback", custom: false, fallback: true };
+  }
+
+  function walkthroughEntriesForScenario(scenario = currentScenario(), startIndex = session.stepIndex) {
+    return walkthroughPayload(scenario, scenario?.steps?.[startIndex] || currentStep(), startIndex).entries;
+  }
+
   function walkthroughAvailable(scenario = currentScenario()) {
-    return walkthroughEntriesForScenario(scenario).length > 0;
+    return walkthroughPayload(scenario).entries.length > 0;
   }
 
   function walkthroughHintText(step = currentStep(), level = session.hintLevel + 1, scenario = currentScenario()) {
@@ -5408,13 +5481,20 @@
   }
 
   function runWalkthrough() {
+    console.log("[WalkthroughDebug] button clicked");
     if (!session.scenarioStarted) {
       printLine("Start the selected challenge before watching a walkthrough.", "coach");
       return;
     }
 
     const scenario = currentScenario();
-    const entries = walkthroughEntriesForScenario(scenario);
+    const step = currentStep();
+    const payload = walkthroughPayload(scenario, step, session.stepIndex);
+    const entries = payload.entries;
+    console.log("[WalkthroughDebug] scenario", scenario?.title || scenario?.id);
+    console.log("[WalkthroughDebug] step", step?.objective);
+    console.log("[WalkthroughDebug] using custom walkthrough", Boolean(payload.custom));
+    console.log("[WalkthroughDebug] using fallback walkthrough", Boolean(payload.fallback));
     if (!entries.length) {
       printWalkthroughLine("No safe walkthrough is available for this scenario yet.");
       return;
@@ -5424,25 +5504,40 @@
     printWalkthroughLine(isBeginnerMode() ? "We are going to solve this like a junior support technician." : "We are going to investigate this task step by step.");
 
     entries.forEach((entry, index) => {
-      const step = currentScenario().steps?.[Math.min(session.stepIndex + index, currentScenario().steps.length - 1)];
-      if (isBeginnerMode() && step?.objective) {
-        printWalkthroughLine(`Step ${index + 1}: ${step.objective}`);
-        printWalkthroughLine(`Try command family: ${commandPanelCategoryLabel(currentScenario())} -> ${commandFamilyLabel(step, currentScenario())}`);
+      const scenarioStep = currentScenario().steps?.[Math.min(session.stepIndex + index, currentScenario().steps.length - 1)];
+      const activeObjective = entry.objective || scenarioStep?.objective || step?.objective;
+      if (activeObjective) {
+        printWalkthroughLine(`Current task: ${activeObjective}`);
+      }
+      if (entry.howToThink) {
+        printWalkthroughLine(`How to think: ${entry.howToThink}`);
+      }
+      if (entry.whereToLook) {
+        printWalkthroughLine(`Where to look: ${entry.whereToLook}`);
+      } else if (isBeginnerMode() && scenarioStep?.objective) {
+        printWalkthroughLine(`Where to look: ${commandPanelCategoryLabel(currentScenario())} -> ${commandFamilyLabel(scenarioStep, currentScenario())}`);
       }
       if (entry.explanation) {
         printWalkthroughLine(entry.explanation);
       }
-      printLine(`${getPromptLabel()} ${entry.command}`, "walkthrough");
-      const outputLines = normalizeDemoOutput(entry.output);
-      if (outputLines.length) {
-        printLines(outputLines, "walkthrough");
+      if (entry.command) {
+        printTaggedLine("Demo Command", `${getPromptLabel()} ${entry.command}`, "walkthrough");
+        const outputLines = normalizeDemoOutput(entry.output);
+        if (outputLines.length) {
+          printLines(outputLines, "walkthrough");
+        }
+      }
+      if (entry.why) {
+        printTaggedLine("Why", entry.why, "walkthrough");
       }
       if (index < entries.length - 1) {
         printWalkthroughLine("Next, use that result to guide the following check.");
       }
+      printTaggedLine("Now Try", entry.nowTry || (entry.command ? `Type ${entry.command} yourself.` : "Now try the task yourself."), "walkthrough");
     });
 
     printWalkthroughLine("Now try it yourself.");
+    focusTerminalInputAtEnd();
     renderPanel();
   }
 
@@ -5505,6 +5600,8 @@
     }
     if (els.watchWalkthroughBtn) {
       els.watchWalkthroughBtn.addEventListener("click", runWalkthrough);
+    } else {
+      console.warn("[WalkthroughDebug] no walkthrough button found");
     }
     if (els.previousScenarioBtn) {
       els.previousScenarioBtn.addEventListener("click", previousScenario);
