@@ -25,7 +25,7 @@
       href: "./cisco-cli-lab.html"
     },
     "web-http-lab": {
-      label: "Web & HTTP Lab",
+      label: "HTTP Reference Lab",
       href: "./web-http-lab.html"
     },
     "cyber-challenge": {
@@ -33,7 +33,7 @@
       href: "./challenge-mode.html"
     },
     "protocol-lab": {
-      label: "Protocol Lab",
+      label: "ARP Reference",
       href: "./protocol-merge.html"
     }
   };

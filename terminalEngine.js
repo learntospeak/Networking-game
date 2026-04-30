@@ -943,6 +943,36 @@
     };
   }
 
+  function visibleStageInfo(scenario = currentScenario(), stepIndex = session.stepIndex) {
+    const explicitStageInfo = currentStageInfo(scenario, stepIndex);
+    if (explicitStageInfo) {
+      return explicitStageInfo;
+    }
+
+    const totalSteps = Math.max(1, totalStepsForScenario(scenario));
+    const activeStep = scenario?.steps?.[Math.max(0, Math.min(stepIndex, totalSteps - 1))] || currentStep();
+    const briefing = String(
+      scenarioUsesChallengePresentation(scenario)
+        ? (scenario.challengeObjective || activeStep?.objective || scenario?.objective || "")
+        : (scenario?.objective || activeStep?.objective || "")
+    ).trim();
+
+    return {
+      stage: {
+        id: "current-task",
+        title: "Current Task",
+        briefing
+      },
+      stageIndex: 0,
+      stageCount: 1,
+      stageStepIndex: Math.max(0, Math.min(stepIndex, totalSteps - 1)),
+      stageStepCount: totalSteps,
+      missionStepIndex: Math.max(0, Math.min(stepIndex, totalSteps - 1)),
+      missionStepCount: totalSteps,
+      fallback: true
+    };
+  }
+
   function missionProgressText(scenario = currentScenario(), completedStepCount = session.stepIndex) {
     const stageInfo = currentStageInfo(scenario);
     if (!stageInfo) {
@@ -1098,7 +1128,7 @@
     return values.length;
   }
 
-  function renderMissionCaseFile(scenario = currentScenario(), stageInfo = currentStageInfo(scenario)) {
+  function renderMissionCaseFile(scenario = currentScenario(), stageInfo = visibleStageInfo(scenario)) {
     if (!els.missionCaseFileCard) {
       return;
     }
@@ -1367,7 +1397,7 @@
     fillText(els.missionReviewTakeaway, takeaway, { hideWhenEmpty: false });
   }
 
-  function renderStageUI(stageInfo = currentStageInfo(currentScenario()), scenario = currentScenario()) {
+  function renderStageUI(stageInfo = visibleStageInfo(currentScenario()), scenario = currentScenario()) {
     const stageTitleText = stageInfo ? `Current Stage: ${stageInfo.stage.title}` : "";
     const stageBriefingText = stageInfo?.stage?.briefing || "";
     const mobileStageTitleText = stageInfo ? `Stage ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}` : "";
@@ -1880,7 +1910,7 @@
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const environmentLabel = scenarioEnvironmentLabel(scenario);
-    const stageInfo = currentStageInfo(scenario);
+    const stageInfo = visibleStageInfo(scenario);
 
     syncMobileAppBarTitle();
     syncMobileAppBarActions();
@@ -1963,7 +1993,7 @@
     const scenario = currentScenario();
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
-    const stageInfo = currentStageInfo(scenario);
+    const stageInfo = visibleStageInfo(scenario);
 
     // Terminal tracks are stateful, so resume stores both the selected scenario and the mutated shell state.
     return {
