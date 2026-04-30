@@ -878,6 +878,126 @@
     return "At this level, treat the shell output as evidence. Explore just enough to support the next action instead of memorising a fixed path.";
   }
 
+  function stepEvidenceBoundary(stepConfig, scenario) {
+    const text = `${stepConfig?.objective || ""} ${stepConfig?.successFeedback || ""} ${scenario?.title || ""}`.toLowerCase();
+
+    if (/\bping\b|\breachab|\bresponds\b/.test(text)) {
+      return "A successful reachability check tells you the host answers on the network. It does not prove DNS, application health, or user access are healthy.";
+    }
+
+    if (/\bnslookup\b|\bdns\b|\bresolve\b|\bhostname\b/.test(text)) {
+      return "A successful lookup proves that DNS returned an answer. It does not prove the target service is reachable or behaving correctly.";
+    }
+
+    if (/\bdir\b|\bls\b|\bpwd\b|\bcd\b|\btree\b/.test(text)) {
+      return "This confirms where you are and what artifacts are available. It does not explain the fault by itself, but it keeps the investigation grounded.";
+    }
+
+    if (/\bcat\b|\btype\b|\bgrep\b|\bfindstr\b|\bread\b|\blog\b|\bnote\b/.test(text)) {
+      return "Reading the artifact gives you direct evidence from the system or note trail. You still need to decide whether that evidence actually explains the reported symptom.";
+    }
+
+    if (/\bshow ip interface brief\b|\binterface\b|\bno shutdown\b|\bip address\b|\broute\b|\bhostname\b/.test(text)) {
+      return "This confirms device state or configuration. It still needs a follow-up verification step before you treat the network issue as resolved.";
+    }
+
+    if (/\btasklist\b|\bps\b|\btaskkill\b|\bkill\b|\bprocess\b/.test(text)) {
+      return "Process evidence tells you what is running right now. It does not prove user impact is resolved until you verify behavior afterward.";
+    }
+
+    if (/\bnet use\b|\bshare\b|\bmapped\b/.test(text)) {
+      return "This confirms the share state you can see from the workstation. It does not prove every downstream file operation is healthy unless you verify it.";
+    }
+
+    if (/\bnmap\b|\bscan\b|\bport\b|\bservice version\b|\bnetcat\b|\bsmtp\b/.test(text)) {
+      return "This gives you network evidence at a point in time. It does not replace application testing, user validation, or authorization checks.";
+    }
+
+    if (/\bpython\b|\bscript\b|\bextract\b|\bdownload\b/.test(text)) {
+      return "This proves the workflow step succeeded locally. It does not tell you whether the resulting content is correct until you inspect the output.";
+    }
+
+    return "This gives you one piece of evidence. Use it to decide the next step instead of assuming the entire issue is already understood.";
+  }
+
+  function enrichExplanation(stepConfig, scenario) {
+    const base = String(stepConfig?.explanation || "").trim();
+    const evidenceBoundary = stepEvidenceBoundary(stepConfig, scenario);
+    if (!base) {
+      return evidenceBoundary;
+    }
+
+    if (/does not prove|doesn't prove|point in time|follow-up verification/i.test(base)) {
+      return base;
+    }
+
+    return `${base} ${evidenceBoundary}`;
+  }
+
+  function enrichSuccessFeedback(stepConfig, scenario) {
+    const base = String(stepConfig?.successFeedback || "That command moves the task forward.").trim();
+    const text = `${stepConfig?.objective || ""} ${base}`.toLowerCase();
+
+    if (/that proves|you proved|you confirmed|you verified|does not prove/i.test(base)) {
+      return base;
+    }
+
+    if (/\bping\b|\breachab|\bresponds\b/.test(text)) {
+      return `${base} You now have network evidence, not just a user report, and you can decide whether the next check belongs to DNS, routing, or the service itself.`;
+    }
+
+    if (/\bnslookup\b|\bdns\b|\bresolve\b/.test(text)) {
+      return `${base} That separates name resolution from pure connectivity and keeps the diagnosis honest.`;
+    }
+
+    if (/\bdir\b|\bls\b|\bpwd\b|\bcd\b|\btree\b/.test(text)) {
+      return `${base} You have confirmed the working context and can move forward without guessing at paths or artifact names.`;
+    }
+
+    if (/\bcat\b|\btype\b|\bgrep\b|\bfindstr\b|\bread\b|\blog\b|\bnote\b/.test(text)) {
+      return `${base} You converted a file or note into usable evidence for the next decision.`;
+    }
+
+    if (/\binterface\b|\broute\b|\bhostname\b|\bno shutdown\b|\bip address\b/.test(text)) {
+      return `${base} The configuration or state change is visible now, which means you can move into verification instead of assumption.`;
+    }
+
+    if (/\bkill\b|\btaskkill\b|\bprocess\b/.test(text)) {
+      return `${base} The corrective action is done, but a professional still verifies that the symptom actually cleared.`;
+    }
+
+    return `${base} Use that result to choose the next logical check instead of widening the investigation too early.`;
+  }
+
+  function enrichPartialFeedbackEntry(entry, stepConfig) {
+    if (!entry || !entry.feedback) return entry;
+
+    const feedback = String(entry.feedback).trim();
+    if (/current question|current objective|right now|does not answer|doesn't answer/i.test(feedback)) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      feedback: `${feedback} Right now, stay focused on the current question before you widen the workflow.`
+    };
+  }
+
+  function enrichExplorationEntry(entry) {
+    if (!entry || !entry.feedback) return entry;
+
+    const feedback = String(entry.feedback).trim();
+    const coach = String(entry.coach || "").trim();
+
+    return {
+      ...entry,
+      feedback: /does not yet complete|background|useful later|not the root cause|does not complete/i.test(feedback)
+        ? feedback
+        : `${feedback} It is useful background, but it does not yet complete the objective.`,
+      coach: coach || "Use the discovery you just gathered to decide the narrowest next command that actually answers the ticket."
+    };
+  }
+
   function ensureProgressiveHints(stepConfig, scenario) {
     const hints = Array.isArray(stepConfig.hints) ? stepConfig.hints.filter(Boolean) : [];
     if (hints.length >= 3) return hints.slice(0, 3);
@@ -897,7 +1017,12 @@
   }
 
   function inferWhyThisMatters(stepConfig) {
-    return stepConfig.whyThisMatters || firstSentence(stepConfig.explanation);
+    const base = stepConfig.whyThisMatters || firstSentence(stepConfig.explanation);
+    if (/before you close|before you move on|before you act|before you change anything/i.test(base)) {
+      return base;
+    }
+
+    return `${base} That discipline is what keeps a technician from confusing activity with proof.`;
   }
 
   function buildExplorationRules(scenario, stepConfig) {
@@ -907,33 +1032,33 @@
 
     if (scenario.shell === "linux") {
       rules.push(
-        explorationRule(commandMatch("pwd"), "Good context check. Knowing your current path reduces wrong turns before you act.", "Use the printed path to decide whether you should stay here or move somewhere more relevant."),
-        explorationRule(commandMatch("ls"), "Good discovery step. Listings are how you reduce guessing in a live filesystem.", "Use the listing to identify the directory or file name that best matches the objective."),
-        explorationRule(rawMatch(/^ls\s+\/.*$/i), "Useful exploration. Checking another directory is a valid way to discover where data or logs live.", "Walk the tree one level at a time so you can justify the next move instead of memorising paths."),
-        explorationRule(commandMatch("cd"), "Exploration is valid. If you move into a candidate directory, confirm it with pwd or ls.", "Real operators often probe the tree before they commit to a final path."),
-        explorationRule(commandMatch("cat"), "Reading a file can be useful once you have narrowed the path.", "Use file reads to confirm clues after discovery has reduced the search space.")
+        explorationRule(commandMatch("pwd"), "Good context check. A junior technician should know exactly where they are before they start changing paths or reading the wrong artifact.", "Use the printed path to decide whether you should stay here, move deeper, or step back and confirm the intended location."),
+        explorationRule(commandMatch("ls"), "Good discovery step. Listings reduce guesswork and help you separate likely evidence from clutter in a live filesystem.", "Use the listing to identify which directory or filename best fits the ticket symptom before you read anything."),
+        explorationRule(rawMatch(/^ls\s+\/.*$/i), "Useful exploration. Checking another directory is a valid way to discover where service data, notes, or logs actually live.", "Walk the tree one level at a time so your next move is based on evidence instead of path memorisation."),
+        explorationRule(commandMatch("cd"), "Exploration is valid. Moving into a candidate directory is fine if you confirm quickly whether it contains the right evidence.", "Real operators often probe the tree before they commit to the final path. Just make sure the move answers the current question."),
+        explorationRule(commandMatch("cat"), "Reading a file can be useful once you have narrowed the path to something likely to explain the symptom.", "Use file reads to confirm clues after discovery has reduced the search space. Do not treat every file as equally relevant.")
       );
     } else if (scenario.shell === "cmd") {
       rules.push(
-        explorationRule(commandMatch("dir"), "Good discovery step. dir is how you inspect the current Windows workspace before changing state.", "Use the listing to decide which folder or file actually matches the task."),
-        explorationRule(commandMatch("cd"), "Exploration is valid. Moving into a candidate folder is fine if you verify what is inside it next.", "In CMD, directory changes are part of discovery when the exact path is not yet obvious."),
-        explorationRule(commandMatch("type"), "Reading a file is a valid way to gather evidence after you have found the right location.", "Use type to confirm clues from a specific note or log once the path is narrowed."),
-        explorationRule(commandMatch("findstr"), "Filtering is a sensible move once you already know which Windows file contains the signal.", "Use findstr after you have read or located the right file.")
+        explorationRule(commandMatch("dir"), "Good discovery step. dir is how a Windows technician confirms the current workspace before making assumptions about where the evidence lives.", "Use the listing to decide which folder or file actually matches the ticket note before you change context."),
+        explorationRule(commandMatch("cd"), "Exploration is valid. Moving into a candidate folder is fine if you verify immediately whether it contains the right case evidence.", "In CMD, directory changes are part of discovery when the exact path is not yet obvious. Just keep the move tied to the symptom you are investigating."),
+        explorationRule(commandMatch("type"), "Reading a file is a valid way to gather evidence once you have found the right note, log, or configuration artifact.", "Use type to confirm clues from a specific artifact once the path is narrowed. Reading random files is noise, not investigation."),
+        explorationRule(commandMatch("findstr"), "Filtering is a sensible move once you already know which Windows file contains the likely signal.", "Use findstr after you have located the correct file so the filter answers a real question instead of creating more noise.")
       );
     } else if (scenario.shell === "cisco") {
       rules.push(
-        explorationRule(commandMatch("enable"), "Good first move. On Cisco gear, privilege level matters before you can inspect or change most state.", "Move into privileged EXEC first, then decide whether you only need show commands or a config mode change."),
-        explorationRule(rawMatch(/^show\s+version$/i), "Useful discovery. show version confirms the platform and IOS context before you change anything.", "Use version output to ground yourself, then pivot to interface or routing evidence."),
-        explorationRule(rawMatch(/^show\s+ip\s+interface\s+brief$/i), "Good discovery step. show ip interface brief is the fast way to spot status and addressing issues.", "Use the interface summary to choose the exact interface you need to inspect or configure."),
-        explorationRule(rawMatch(/^show\s+interfaces(?:\s+\S+)?$/i), "Useful exploration. Detailed interface output can confirm whether the problem is status, addressing, or description related.", "Use the interface evidence to decide whether the next move belongs in privileged mode or configuration mode.")
+        explorationRule(commandMatch("enable"), "Good first move. On Cisco gear, privilege level matters before you can inspect or change most of the state that affects users.", "Move into privileged EXEC first, then decide whether you only need show commands or whether the evidence justifies configuration mode."),
+        explorationRule(rawMatch(/^show\s+version$/i), "Useful discovery. show version confirms the platform and IOS context before you change anything on the device.", "Use version output to ground yourself, then pivot to the specific interface or routing evidence that actually matches the reported fault."),
+        explorationRule(rawMatch(/^show\s+ip\s+interface\s+brief$/i), "Good discovery step. show ip interface brief is the fastest way to spot interface state and addressing issues without diving into full config immediately.", "Use the summary to choose the exact interface you need to inspect or configure. That keeps the change small and deliberate."),
+        explorationRule(rawMatch(/^show\s+interfaces(?:\s+\S+)?$/i), "Useful exploration. Detailed interface output can confirm whether the problem is status, addressing, or description related.", "Use the evidence to decide whether the next move belongs in privileged mode or configuration mode. Avoid changing a port before you can describe the current state.")
       );
     }
 
     if (category.includes("nmap") || category.includes("networking") || category.includes("exploitation") || category.includes("netcat") || category.includes("metasploit")) {
       rules.push(
-        explorationRule(commandMatch("ping"), "That is a valid discovery move. Reachability checks often come before deeper service work.", "Use the result to decide whether you should keep scanning, narrow ports, or change approach."),
-        explorationRule(commandMatch("nmap"), "That is in the right tool family. Use what the scan gives you to justify the next, more targeted step.", "Good operators move from broad evidence to narrow evidence instead of guessing."),
-        explorationRule(commandMatch("searchsploit"), "Research is valid once you have enough evidence to justify it.", "Tie exploit research back to a confirmed service or version so the workflow stays disciplined.")
+        explorationRule(commandMatch("ping"), "That is a valid discovery move. Reachability checks often come before deeper service work, especially when the ticket simply says the host is 'down'.", "Use the result to decide whether you should keep scanning, narrow ports, or change approach. Do not assume an application problem until the network basics are proven."),
+        explorationRule(commandMatch("nmap"), "That is in the right tool family. Use what the scan gives you to justify the next, more targeted step instead of scanning wider just because you can.", "Good operators move from broad evidence to narrow evidence instead of guessing."),
+        explorationRule(commandMatch("searchsploit"), "Research is valid once you have enough evidence to justify it. Treat it as a follow-up to confirmed service data, not as a replacement for it.", "Tie exploit research back to a confirmed service or version so the workflow stays disciplined.")
       );
     }
 
@@ -946,8 +1071,8 @@
 
     if (category.includes("troubleshooting")) {
       rules.push(
-        explorationRule(commandMatch("ps"), "Good evidence-gathering step. Process listings are how you verify which PID you should care about.", "Use the output to isolate the exact process before you kill anything."),
-        explorationRule(commandMatch("tasklist"), "Good evidence-gathering step. Task listings are how you verify the exact Windows process before you stop it.", "Use the output to isolate the right PID before you terminate anything.")
+        explorationRule(commandMatch("ps"), "Good evidence-gathering step. Process listings are how you verify which PID you should care about before you touch anything disruptive.", "Use the output to isolate the exact process before you kill anything. Otherwise you are changing state without proving the cause."),
+        explorationRule(commandMatch("tasklist"), "Good evidence-gathering step. Task listings are how you verify the exact Windows process before you stop it.", "Use the output to isolate the right PID before you terminate anything. That is the difference between troubleshooting and guessing.")
       );
     }
 
@@ -965,8 +1090,14 @@
       ...stepConfig,
       hints: ensureProgressiveHints(stepConfig, scenario),
       context: inferStepContext(scenario, stepConfig),
-      whyThisMatters: inferWhyThisMatters(stepConfig),
-      exploration: [...buildExplorationRules(scenario, stepConfig), ...(stepConfig.exploration || [])]
+      explanation: enrichExplanation(stepConfig, scenario),
+      whyThisMatters: inferWhyThisMatters({ ...stepConfig, explanation: enrichExplanation(stepConfig, scenario) }),
+      successFeedback: enrichSuccessFeedback(stepConfig, scenario),
+      partials: (stepConfig.partials || []).map((entry) => enrichPartialFeedbackEntry(entry, stepConfig)),
+      exploration: [
+        ...buildExplorationRules(scenario, stepConfig).map((entry) => enrichExplorationEntry(entry)),
+        ...(stepConfig.exploration || []).map((entry) => enrichExplorationEntry(entry))
+      ]
     };
   }
 
@@ -1160,19 +1291,123 @@
     return firstSentence(scenario?.objective || scenario?.scenarioIntro || "");
   }
 
+  function inferReportedSymptom(scenario, shell) {
+    const text = scenarioTextBlob(scenario);
+
+    if (/\bdns\b|\bnslookup\b|\bresolve\b|\bhostname\b/.test(text)) {
+      return "The report suggests something works by IP but fails by name, so DNS is suspicious but not yet guilty.";
+    }
+
+    if (/\blog\b|\bcrash\b|\bpanic\b|\bworker\b|\bservice note\b/.test(text)) {
+      return "A service owner or operator has reported a fault, but the ticket still needs evidence from the host before anyone can claim to know the cause.";
+    }
+
+    if (/\binterface\b|\bno shutdown\b|\brouter\b|\bcisco\b/.test(text)) {
+      return "The site says the network link or branch access is broken, but the device state still has to be inspected before you change configuration.";
+    }
+
+    if (/\bshare\b|\bnet use\b|\bfileserver\b/.test(text)) {
+      return "The user says the shared workspace is unavailable, but you still need to separate reachability, name resolution, and share state.";
+    }
+
+    if (/\bprocess\b|\btaskkill\b|\bkill\b|\brogue\b/.test(text)) {
+      return "The symptom points to a runaway process or unstable service, but you should confirm the exact process before taking action.";
+    }
+
+    if (/\bproxy\b|\bhttp\b|\brequest\b|\bresponse\b|\bparameter\b|\bweb\b/.test(text)) {
+      return "The application is behaving unexpectedly, but the useful evidence still needs to be isolated from the surrounding traffic or surface noise.";
+    }
+
+    if (/\bnmap\b|\bnetcat\b|\bport\b|\bservice\b|\bscan\b/.test(text)) {
+      return "The ticket needs network evidence first, not a guess based on symptoms or assumptions about which service matters.";
+    }
+
+    if (shell === "cmd") {
+      return "The user report gives you a symptom, not a root cause. Start by proving what the workstation actually shows you.";
+    }
+
+    if (shell === "cisco") {
+      return "The change request or outage note gives you a direction, but the device still needs to be inspected before you touch the running state.";
+    }
+
+    return "The starting note gives you a symptom, not a conclusion. Use the terminal to turn that report into evidence.";
+  }
+
+  function inferDoNotAssumeNote(scenario) {
+    const text = scenarioTextBlob(scenario);
+
+    if (/\bdns\b|\bresolve\b|\bhostname\b/.test(text)) {
+      return "Do not assume the server is down just because a name fails to resolve.";
+    }
+
+    if (/\bping\b|\breachab|\bport\b|\bservice\b/.test(text)) {
+      return "Do not confuse basic network reachability with application health or user access.";
+    }
+
+    if (/\blog\b|\bconfig\b|\bfile\b/.test(text)) {
+      return "Do not assume the first file you open contains the real answer; confirm the artifact is the right one first.";
+    }
+
+    if (/\binterface\b|\brouter\b|\bno shutdown\b|\bip address\b/.test(text)) {
+      return "Do not change configuration before you can describe the current device state clearly.";
+    }
+
+    if (/\bprocess\b|\bkill\b|\btaskkill\b/.test(text)) {
+      return "Do not stop a process until you have proven it is the one tied to the symptom.";
+    }
+
+    return "Do not assume the first plausible answer is the right one. Collect enough evidence to justify the next move.";
+  }
+
+  function inferProfessionalVerificationNote(scenario) {
+    const text = scenarioTextBlob(scenario);
+
+    if (/\brouter\b|\binterface\b|\bcisco\b/.test(text)) {
+      return "A professional closes the task only after the device state and the expected operational view agree.";
+    }
+
+    if (/\bshare\b|\bfileserver\b|\bservice\b|\bprocess\b/.test(text)) {
+      return "A professional verifies the visible result before closing the ticket, rather than assuming the first corrective step solved the symptom.";
+    }
+
+    if (/\bproxy\b|\bhttp\b|\bweb\b|\bchallenge\b/.test(text)) {
+      return "A professional records what the evidence supports, what it does not prove yet, and what the next justified step would be.";
+    }
+
+    return "A professional verifies the final state before marking the work complete.";
+  }
+
+  function scenarioEasterEgg(scenario) {
+    const easterEggs = {
+      "linux-log-triage": "A log entry complains about coffee being unavailable. This is not the root cause, but morale is clearly degraded.",
+      "hidden-config-hunt": "The previous technician named one folder final_final_really_final. Proceed with caution.",
+      "win-dir-incident-triage": "The ticket summary says 'internet broken'. Classic.",
+      "win-staged-share-access-triage": "A sticky note on the monitor says: 'DNS is always innocent until proven guilty.' It is lying about half the time.",
+      "cisco-no-shutdown-lan": "The router hostname is still Router. Somewhere, a documentation specialist just sighed.",
+      "challenge-web-surface-recon": "Someone helpfully labeled a scan note 'quick check'. It was not quick, and it definitely was not the whole story."
+    };
+
+    return easterEggs[scenario?.id] || "";
+  }
+
   function inferMissionBriefing(scenario, shell, contextMeta) {
     if (scenario?.missionBriefing) return scenario.missionBriefing;
 
     const role = inferScenarioRole(scenario, shell);
     const summary = inferScenarioSummary(scenario);
-    const environmentLabel = contextMeta?.environmentLabel || environmentCategoryLabel(contextMeta?.environmentCategory || "linux");
+    const ticketId = scenario?.ticketId || `${scenarioTicketPrefix(scenario, shell)}-TBD`;
     const intro = firstSentence(scenario?.scenarioIntro || "");
+    const symptom = inferReportedSymptom(scenario, shell);
+    const caution = inferDoNotAssumeNote(scenario);
+    const verification = inferProfessionalVerificationNote(scenario);
 
-    const base = `${role}, work through the ${environmentLabel.toLowerCase()} task "${scenario.title}" and use terminal evidence to ${String(summary || scenario.objective || "").replace(/\.$/, "")}.`;
-    if (intro) {
-      return `${base} ${intro}`;
-    }
-    return `${base} Keep the workflow disciplined and confirm the visible result before you move on.`;
+    return [
+      `${role}, you are picking up ticket ${ticketId}: ${scenario.title}.`,
+      symptom,
+      intro || `Your current objective is to ${String(summary || scenario.objective || "").replace(/\.$/, "")}.`,
+      caution,
+      verification
+    ].filter(Boolean).join(" ");
   }
 
   function inferLearningObjectives(scenario) {
@@ -1208,19 +1443,24 @@
   function inferEnvironmentNotes(scenario, shell, contextMeta) {
     if (scenario?.environmentNotes) return scenario.environmentNotes;
 
+    const easterEgg = scenarioEasterEgg(scenario);
+    let note = "";
+
     if (scenario?.mode === "challenge") {
-      return "This is a controlled challenge environment. Investigate methodically, justify each action with evidence, and avoid treating the lab like a production target.";
+      note = "This is a controlled challenge environment. Investigate methodically, justify each action with evidence, and avoid treating the lab like a production target.";
+    } else if (shell === "cisco") {
+      note = "This is a simulated network device. Review the current state first, make the smallest justified change, and verify the operational result before you consider the task complete.";
+    } else if (shell === "cmd") {
+      note = "This is a simulated Windows support environment. Commands are scoped to a safe lab and should be used to confirm evidence before any corrective action is taken.";
+    } else {
+      note = `This is a simulated ${String(contextMeta?.environmentLabel || "Linux Terminal Learning").toLowerCase()} environment. Treat command output like case evidence and keep your next move tied to what the system actually shows you.`;
     }
 
-    if (shell === "cisco") {
-      return "This is a simulated network device. Verify the current state before making changes, and confirm the resulting configuration before you consider the task complete.";
+    if (easterEgg) {
+      note = `${note} ${easterEgg}`;
     }
 
-    if (shell === "cmd") {
-      return "This is a simulated Windows support environment. Commands are scoped to a safe lab and should be used to confirm evidence before any corrective action.";
-    }
-
-    return `This is a simulated ${String(contextMeta?.environmentLabel || "Linux Terminal Learning").toLowerCase()} environment. Use the shell to gather evidence first and treat command output like a case record.`;
+    return note;
   }
 
   function inferVerificationRequired(scenario) {
@@ -1243,8 +1483,8 @@
     const lastObjective = scenarioSteps(scenario).slice(-1)[0]?.objective;
     return [
       lastObjective || "Confirm the final command output supports the conclusion.",
-      "Confirm the command output supports the conclusion.",
-      "Confirm the final state matches the objective."
+      "Confirm what the command output does and does not prove before you close the ticket.",
+      "Confirm the final state matches the objective from the user or system perspective."
     ];
   }
 
@@ -1321,62 +1561,62 @@
     const templates = {
       orientation: {
         title: "Orientation",
-        briefing: "Confirm the current working context before you take action.",
-        completionSummary: "You established the starting context and identified the relevant workspace."
+        briefing: "Establish the starting context so you know where you are, what artifacts exist, and what the ticket is actually asking you to prove.",
+        completionSummary: "You established the starting context and reduced the chance of chasing the wrong artifact or path."
       },
       practice: {
         title: "Practice",
-        briefing: "Work through the operational command sequence and confirm the expected outcome.",
-        completionSummary: "You completed the core workflow and produced the expected result."
+        briefing: "Work through the operational sequence carefully and make sure each command answers a real question instead of adding noise.",
+        completionSummary: "You completed the core workflow with usable evidence at each step."
       },
       triage: {
         title: "Triage",
-        briefing: "Collect the first evidence you need before you assume a cause.",
-        completionSummary: "You gathered the initial evidence needed to continue the task logically."
+        briefing: "Collect enough evidence to understand the shape of the fault before changing anything.",
+        completionSummary: "You gathered the first solid evidence and avoided jumping straight to conclusions."
       },
       investigation: {
         title: "Investigation",
-        briefing: "Use targeted commands to narrow the issue and confirm the important signal.",
-        completionSummary: "You narrowed the problem space with evidence-led command output."
+        briefing: "Narrow the cause. Avoid jumping straight to fixes before you know what layer is failing or which artifact matters.",
+        completionSummary: "You narrowed the problem space with evidence-led command output and a clearer hypothesis."
       },
       resolution: {
         title: "Resolution",
-        briefing: "Apply the necessary change or corrective action based on the evidence collected so far.",
-        completionSummary: "You applied the required change to move the task toward resolution."
+        briefing: "Apply the smallest fix that addresses the proven cause, not the broadest change you can make.",
+        completionSummary: "You applied a targeted corrective action that matched the evidence you had collected."
       },
       inspect: {
         title: "Inspect Current State",
-        briefing: "Review the current device state before you enter configuration mode.",
-        completionSummary: "You confirmed the live router state before making changes."
+        briefing: "Review the current device state before you enter configuration mode. A good network operator can describe the device before changing it.",
+        completionSummary: "You confirmed the live router state before making changes to the running configuration."
       },
       configuration: {
         title: "Apply Configuration",
-        briefing: "Move through the IOS workflow and apply the required configuration safely.",
-        completionSummary: "You completed the intended configuration changes on the device."
+        briefing: "Move through the IOS workflow and apply the required configuration safely, with the smallest justified change set.",
+        completionSummary: "You completed the intended configuration changes and kept the workflow controlled."
       },
       verification: {
         title: "Verification",
-        briefing: "Confirm that the output and final state match the mission objective.",
+        briefing: "Confirm the issue is actually resolved from the user or system perspective before you close the work.",
         completionSummary: "You verified the final state instead of assuming the task was complete."
       },
       scope: {
         title: "Scope",
-        briefing: "Establish the problem space and decide what evidence matters first.",
+        briefing: "Establish the problem space and decide what evidence matters first. Challenge work still begins with disciplined scoping.",
         completionSummary: "You framed the investigation and identified the right starting evidence."
       },
       enumeration: {
         title: "Enumeration",
-        briefing: "Enumerate the environment carefully and gather the evidence needed for analysis.",
+        briefing: "Enumerate the environment carefully and gather the evidence needed for analysis without collecting noise just because a tool can do it.",
         completionSummary: "You collected the important technical details without overreaching."
       },
       analysis: {
         title: "Analysis",
-        briefing: "Interpret the evidence and confirm the strongest next conclusion.",
+        briefing: "Interpret the evidence and confirm the strongest next conclusion. Separate what the data supports from what it merely suggests.",
         completionSummary: "You translated raw evidence into a justified technical conclusion."
       },
       reporting: {
         title: "Reporting",
-        briefing: "Summarize the important finding or next action clearly before closing the task.",
+        briefing: "Summarise the cause, action taken, and verification result like a real ticket note before you close the task.",
         completionSummary: "You closed the task with a defensible summary of what the evidence showed."
       }
     };
