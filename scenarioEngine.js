@@ -3734,13 +3734,30 @@
       title: "Incident Folder Triage",
       category: "Files and navigation",
       difficulty: "Beginner",
-      objective: "List the incident workspace so you can see where the case notes live.",
+      role: "Junior Support Technician",
+      estimatedTime: "5-8 minutes",
+      scenarioType: "Incident Triage",
+      missionBriefing: "You have been handed a Windows workstation incident folder. Before changing anything, confirm the current workspace, identify the note location, and read the triage note so you understand the reported service issue.",
+      learningObjectives: [
+        "Start from the current Windows workspace before navigating elsewhere",
+        "Use folder listings to identify the relevant evidence",
+        "Read the case note before deciding on next technical actions"
+      ],
+      successCriteria: [
+        "List the incident folder",
+        "Identify the triage note",
+        "Read the note and confirm the reported issue"
+      ],
+      environmentNotes: "This scenario simulates a Windows support workstation and focuses on evidence-led triage, not on immediate remediation.",
+      verificationRequired: true,
+      verificationSteps: ["type triage.txt"],
+      objective: "Review the incident workspace so you can see where the case notes live, then confirm the written incident note.",
       scenarioIntro: "You are on the Windows analyst workstation at C:\\Lab\\Incident. Start by listing the current folder so the learner sees the immediate Windows context before changing anything.",
-      commandFocus: ["dir"],
-      acceptedCommands: ["dir", "dir C:\\Lab\\Incident"],
-      simulatedOutput: [" Directory of C:\\Lab\\Incident", "Notes", "triage.txt"],
-      successCondition: "List the incident folder and identify the Notes directory.",
-      feedbackText: "The learner now has the core Windows workspace in view before navigating deeper.",
+      commandFocus: ["dir", "type"],
+      acceptedCommands: ["dir", "dir C:\\Lab\\Incident", "type triage.txt"],
+      simulatedOutput: [" Directory of C:\\Lab\\Incident", "Notes", "triage.txt", "Review startup items and case notes."],
+      successCondition: "List the incident folder and then read the triage note before moving deeper into the case.",
+      feedbackText: "The learner confirmed the visible workspace and read the note before guessing at the service issue.",
       environment: {
         cwd: "C:/Lab/Incident",
         directories: ["C:/Lab/Incident/Notes"],
@@ -3749,14 +3766,49 @@
           { path: "C:/Lab/Incident/Notes/service.txt", content: "Spooler restarts are failing.\n" }
         ]
       },
-      steps: [
-        step({
-          objective: "List the current incident folder in CMD.",
-          hints: ["Start with the Windows directory listing command.", "You only need the current folder view first.", "Try `dir`."],
-          explanation: "Beginner Windows workflows should start with a local listing so the learner sees the current folder before moving.",
-          successFeedback: "You listed the incident workspace.",
-          accepts: [commandMatch("dir")]
-        })
+      stages: [
+        {
+          id: "workspace-review",
+          title: "Workspace Review",
+          briefing: "Confirm the current incident workspace before you navigate or change anything.",
+          completionSummary: "You established the current Windows workspace and identified the key incident artifacts.",
+          steps: [
+            step({
+              objective: "List the current incident folder in CMD.",
+              hints: ["Start with the Windows directory listing command.", "You only need the current folder view first.", "Try `dir`."],
+              explanation: "Beginner Windows workflows should start with a local listing so the learner sees the current folder before moving.",
+              whyThisMatters: "Support work is easier when you confirm what is already in front of you before you navigate away from it.",
+              successFeedback: "You listed the incident workspace.",
+              accepts: [commandMatch("dir")]
+            })
+          ]
+        },
+        {
+          id: "case-note-confirmation",
+          title: "Case Note Confirmation",
+          briefing: "Read the incident note so your next actions are based on the written report, not on assumptions.",
+          completionSummary: "You confirmed the written note before progressing to deeper troubleshooting.",
+          steps: [
+            step({
+              objective: "Read the triage note in the current incident folder.",
+              hints: ["Use the Windows file-reading command.", "The note file is triage.txt in the current folder.", "Try `type triage.txt`."],
+              explanation: "Reading the note first keeps the investigation aligned with what was actually reported.",
+              whyThisMatters: "Good technicians confirm the written symptom before they jump into diagnosis or remediation.",
+              successFeedback: "You reviewed the triage note.",
+              accepts: [
+                rawMatch(/^type\s+triage\.txt$/i),
+                rawMatch(/^type\s+C:\\Lab\\Incident\\triage\.txt$/i)
+              ],
+              partials: [
+                {
+                  match: commandMatch("dir"),
+                  classification: "inefficient",
+                  feedback: "The workspace is already confirmed. The next step is to read the incident note itself."
+                }
+              ]
+            })
+          ]
+        }
       ]
     }),
     windowsLessonScenario({
