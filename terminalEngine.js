@@ -110,6 +110,18 @@
     hintLadder: document.getElementById("hintLadder"),
     progressSummary: document.getElementById("progressSummary"),
     layerTransitionBanner: document.getElementById("layerTransitionBanner"),
+    beginnerModeBanner: document.getElementById("beginnerModeBanner"),
+    beginnerModeSummary: document.getElementById("beginnerModeSummary"),
+    beginnerGuideBtn: document.getElementById("beginnerGuideBtn"),
+    beginnerTaskStrip: document.getElementById("beginnerTaskStrip"),
+    beginnerCurrentTaskText: document.getElementById("beginnerCurrentTaskText"),
+    beginnerTaskHelpText: document.getElementById("beginnerTaskHelpText"),
+    beginnerHelpStrip: document.getElementById("beginnerHelpStrip"),
+    beginnerHelpStripText: document.getElementById("beginnerHelpStripText"),
+    taskCompleteCard: document.getElementById("taskCompleteCard"),
+    taskCompleteProof: document.getElementById("taskCompleteProof"),
+    taskCompleteWhy: document.getElementById("taskCompleteWhy"),
+    taskCompleteNext: document.getElementById("taskCompleteNext"),
     mobileEnvironmentBadge: document.getElementById("mobileEnvironmentBadge"),
     mobileLayerBadge: document.getElementById("mobileLayerBadge"),
     mobileScenarioTitle: document.getElementById("mobileScenarioTitle"),
@@ -129,9 +141,14 @@
     terminalInput: document.getElementById("terminalInput"),
     hintBtn: document.getElementById("hintBtn"),
     watchWalkthroughBtn: document.getElementById("watchWalkthroughBtn"),
+    commandSheetBtn: document.getElementById("commandSheetBtn"),
     previousScenarioBtn: document.getElementById("previousScenarioBtn"),
     resetScenarioBtn: document.getElementById("resetScenarioBtn"),
-    nextScenarioBtn: document.getElementById("nextScenarioBtn")
+    nextScenarioBtn: document.getElementById("nextScenarioBtn"),
+    beginnerOnboardingOverlay: document.getElementById("beginnerOnboardingOverlay"),
+    beginnerOnboardingCard: document.getElementById("beginnerOnboardingCard"),
+    beginnerOnboardingStartBtn: document.getElementById("beginnerOnboardingStartBtn"),
+    beginnerOnboardingWalkthroughBtn: document.getElementById("beginnerOnboardingWalkthroughBtn")
   };
 
   const session = {
@@ -164,7 +181,9 @@
     debugStageKey: "",
     debugReviewKey: "",
     ticketBriefingSeen: false,
-    ticketBriefingOpen: false
+    ticketBriefingOpen: false,
+    beginnerGuideSeen: false,
+    beginnerGuideOpen: false
   };
   let savedProgressRecord = null;
   const mobilePanelRegistry = [];
@@ -185,6 +204,44 @@
 
   function isMobileTerminalLayout() {
     return window.matchMedia("(max-width: 768px)").matches;
+  }
+
+  function isBeginnerMode() {
+    return Boolean(pageConfig.isBeginnerMode);
+  }
+
+  function beginnerGuideStorageKey() {
+    return pageConfig.beginnerGuideStorageKey || `netlab:beginner-guide:${currentSectionId()}`;
+  }
+
+  function readLocalFlag(key) {
+    try {
+      return window.localStorage?.getItem(key) === "1";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function writeLocalFlag(key, value) {
+    try {
+      if (!window.localStorage) {
+        return;
+      }
+      if (value) {
+        window.localStorage.setItem(key, "1");
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch (error) {
+      // Ignore storage failures in private or restricted browser contexts.
+    }
+  }
+
+  function mobileDebug(label) {
+    if (!window.console || typeof window.console.log !== "function" || !isMobileTerminalLayout()) {
+      return;
+    }
+    window.console.log(`[MobileDebug] ${label}`);
   }
 
   function usesInlineMobileInput() {
@@ -321,7 +378,7 @@
   }
 
   function closeMobileMenu(options = {}) {
-    const { restoreFocus = false } = options;
+    const { restoreFocus = false, focusTerminal = false } = options;
 
     if (!els.mobileMenuOverlay) {
       return;
@@ -336,10 +393,14 @@
         els.mobileMenuBtn.focus();
       }
     }
+
+    if (focusTerminal) {
+      window.setTimeout(() => focusTerminalInputAtEnd(), 40);
+    }
   }
 
   function closeMobileInfo(options = {}) {
-    const { restoreFocus = false } = options;
+    const { restoreFocus = false, focusTerminal = false } = options;
 
     if (!els.mobileInfoOverlay) {
       return;
@@ -351,6 +412,10 @@
     if (els.mobileMenuBtn && restoreFocus && isMobileTerminalLayout() && typeof els.mobileMenuBtn.focus === "function") {
       els.mobileMenuBtn.focus();
     }
+
+    if (focusTerminal) {
+      window.setTimeout(() => focusTerminalInputAtEnd(), 40);
+    }
   }
 
   function blurTerminalInput() {
@@ -359,6 +424,7 @@
     }
 
     session.mobileBlurTimer = cancelScheduledTimeout(session.mobileBlurTimer);
+    mobileDebug("input blur");
     els.terminalInput.blur();
     syncMobileInputState(false);
   }
@@ -566,12 +632,12 @@
       const commandsBtn = document.createElement("button");
       commandsBtn.type = "button";
       commandsBtn.className = "terminal-mobile-menu-action";
-      commandsBtn.textContent = "Commands";
+      commandsBtn.textContent = isBeginnerMode() ? "Command Help" : "Commands";
 
       const infoBtn = document.createElement("button");
       infoBtn.type = "button";
       infoBtn.className = "terminal-mobile-menu-action";
-      infoBtn.textContent = "Instructions";
+      infoBtn.textContent = isBeginnerMode() ? "Beginner Guide" : "Instructions";
 
       const resetBtn = document.createElement("button");
       resetBtn.type = "button";
@@ -610,8 +676,8 @@
       els.mobileSwitchLinks = switchLinks;
       els.mobileExitLink = exitLink;
 
-      backdrop.addEventListener("click", () => closeMobileMenu({ restoreFocus: true }));
-      closeBtn.addEventListener("click", () => closeMobileMenu({ restoreFocus: true }));
+      backdrop.addEventListener("click", () => closeMobileMenu({ restoreFocus: true, focusTerminal: isBeginnerMode() }));
+      closeBtn.addEventListener("click", () => closeMobileMenu({ restoreFocus: true, focusTerminal: isBeginnerMode() }));
       commandsBtn.addEventListener("click", () => {
         closeMobileMenu();
         blurTerminalInput();
@@ -644,7 +710,7 @@
 
       const heading = document.createElement("h2");
       heading.id = "terminalMobileInfoTitle";
-      heading.textContent = "Instructions";
+      heading.textContent = isBeginnerMode() ? "Beginner Guide" : "Instructions";
 
       const closeBtn = document.createElement("button");
       closeBtn.type = "button";
@@ -663,8 +729,8 @@
       els.mobileInfoCloseBtn = closeBtn;
       els.mobileInfoScroll = scroll;
 
-      backdrop.addEventListener("click", () => closeMobileInfo({ restoreFocus: true }));
-      closeBtn.addEventListener("click", () => closeMobileInfo({ restoreFocus: true }));
+      backdrop.addEventListener("click", () => closeMobileInfo({ restoreFocus: true, focusTerminal: isBeginnerMode() }));
+      closeBtn.addEventListener("click", () => closeMobileInfo({ restoreFocus: true, focusTerminal: isBeginnerMode() }));
     }
 
     syncMobileAppBarTitle();
@@ -768,10 +834,6 @@
       document.body.style.setProperty("--terminal-visual-keyboard-offset", "0px");
       syncMobileInputState(activeInput);
       measureTerminalDockSpace();
-
-      if (typeof window.scrollTo === "function") {
-        window.scrollTo(0, 0);
-      }
     });
   }
 
@@ -1171,33 +1233,34 @@
     const objective = step?.objective || scenarioObjectiveText(scenario) || "the current task";
     const commandFamily = commandFamilyLabel(step, scenario);
     const category = commandPanelCategoryLabel(scenario);
+    const helpLabel = isBeginnerMode() ? "Command Help" : "Commands";
     const command = suggestedCommandForStep(step);
     const coachHint = CoachEngine.getHint(step, Math.max(0, Math.min(2, level)), session.state);
 
     if (level <= 0) {
-      return `You need to prove: ${objective} Open Commands -> ${category} and look for ${commandFamily}.`;
+      return `You need to prove: ${objective} Open ${helpLabel} -> ${category} and look for ${commandFamily}.`;
     }
 
     if (level === 1) {
-      return `You need to prove: ${objective} Open Commands -> ${category} and look for ${commandFamily}.`;
+      return `You need to prove: ${objective} Open ${helpLabel} -> ${category} and look for ${commandFamily}.`;
     }
 
     if (level === 2) {
       return command
         ? `The command you likely need is ${command}.`
-        : `Open Commands -> ${category}. The command family you need is ${commandFamily}.`;
+        : `Open ${helpLabel} -> ${category}. The command family you need is ${commandFamily}.`;
     }
 
     if (command) {
       return `Run: ${command}`;
     }
 
-    return coachHint || `Open Commands -> ${category} and choose the command that best matches ${objective}.`;
+    return coachHint || `Open ${helpLabel} -> ${category} and choose the command that best matches ${objective}.`;
   }
 
   function progressiveWrongAttemptGuidance(step = currentStep(), attempts = session.attemptsForStep, scenario = currentScenario()) {
     if (attempts <= 1) {
-      return "Need help? Open Commands or use Hint.";
+      return isBeginnerMode() ? "Need help? Open Command Help, Hint, or Watch Walkthrough." : "Need help? Open Commands or use Hint.";
     }
 
     if (attempts === 2) {
@@ -1205,7 +1268,7 @@
     }
 
     if (attempts === 3) {
-      return `Open Commands and look for ${recommendedCommandFamily(scenario)}.`;
+      return `${isBeginnerMode() ? "Open Command Help" : "Open Commands"} and look for ${recommendedCommandFamily(scenario)}.`;
     }
 
     return "Use Hint for a stronger nudge, or watch the walkthrough and then try it yourself.";
@@ -1219,6 +1282,20 @@
     }
 
     return "You already ran that check. Unless something changed, try a different command.";
+  }
+
+  function shortCoachCopy(text, fallback = "") {
+    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return fallback;
+    }
+
+    const sentenceMatch = normalized.match(/^(.+?[.!?])(\s|$)/);
+    const sentence = sentenceMatch ? sentenceMatch[1].trim() : normalized;
+    if (sentence.length <= 140) {
+      return sentence;
+    }
+    return `${sentence.slice(0, 137).trimEnd()}...`;
   }
 
   function fillText(element, value, options = {}) {
@@ -1402,6 +1479,73 @@
     fillBlock(els.ticketBriefingTagsBlock, els.ticketBriefingTags, payload.tags.join(" | "));
     fillBlock(els.ticketBriefingEscalationBlock, els.ticketBriefingEscalationNote, payload.escalationNote);
     fillBlock(els.ticketBriefingEasterEggBlock, els.ticketBriefingEasterEggNote, payload.easterEggNote);
+  }
+
+  function clearTaskCompleteCard() {
+    if (!els.taskCompleteCard) {
+      return;
+    }
+    els.taskCompleteCard.hidden = true;
+    fillText(els.taskCompleteProof, "");
+    fillText(els.taskCompleteWhy, "");
+    fillText(els.taskCompleteNext, "");
+  }
+
+  function renderTaskCompleteCard({ proof = "", why = "", next = "" } = {}) {
+    if (!els.taskCompleteCard) {
+      return;
+    }
+
+    fillText(els.taskCompleteProof, proof || "Good. That command moved the task forward.", { hideWhenEmpty: false });
+    fillText(els.taskCompleteWhy, why || "This result gave you evidence for the next decision.", { hideWhenEmpty: false });
+    fillText(els.taskCompleteNext, next || "Continue with the current task.", { hideWhenEmpty: false });
+    els.taskCompleteCard.hidden = false;
+  }
+
+  function closeBeginnerGuide(options = {}) {
+    if (!els.beginnerOnboardingCard) {
+      return;
+    }
+
+    const restoreFocus = options.restoreFocus !== false;
+    session.beginnerGuideOpen = false;
+    els.beginnerOnboardingCard.hidden = true;
+    els.beginnerOnboardingCard.setAttribute("aria-hidden", "true");
+    if (els.beginnerOnboardingOverlay) {
+      els.beginnerOnboardingOverlay.hidden = true;
+    }
+    document.body.classList.remove("beginner-onboarding-open");
+
+    if (restoreFocus && !session.ticketBriefingOpen) {
+      focusTerminalInputAtEnd();
+    }
+  }
+
+  function openBeginnerGuide(options = {}) {
+    if (!isBeginnerMode() || !els.beginnerOnboardingCard) {
+      return;
+    }
+
+    const force = Boolean(options.force);
+    const alreadySeen = readLocalFlag(beginnerGuideStorageKey());
+    if (!force && alreadySeen) {
+      session.beginnerGuideSeen = true;
+      return;
+    }
+
+    session.beginnerGuideSeen = true;
+    session.beginnerGuideOpen = true;
+    writeLocalFlag(beginnerGuideStorageKey(), true);
+    els.beginnerOnboardingCard.hidden = false;
+    els.beginnerOnboardingCard.setAttribute("aria-hidden", "false");
+    if (els.beginnerOnboardingOverlay) {
+      els.beginnerOnboardingOverlay.hidden = false;
+    }
+    document.body.classList.add("beginner-onboarding-open");
+
+    window.setTimeout(() => {
+      els.beginnerOnboardingStartBtn?.focus({ preventScroll: true });
+    }, 0);
   }
 
   function closeTicketBriefing(options = {}) {
@@ -1881,10 +2025,18 @@
   }
 
   function focusTerminalInputAtEnd() {
-    if (!els.terminalInput) return;
+    if (
+      !els.terminalInput
+      || session.ticketBriefingOpen
+      || session.beginnerGuideOpen
+      || document.body.classList.contains("command-sheet-open")
+      || document.body.classList.contains("terminal-mobile-menu-open")
+      || document.body.classList.contains("terminal-mobile-info-open")
+    ) return;
     const valueLength = els.terminalInput.value.length;
     scrollTerminal(true);
     syncMobileInputState(true);
+    mobileDebug("input focus");
     els.terminalInput.focus({ preventScroll: true });
     if (typeof els.terminalInput.setSelectionRange === "function") {
       els.terminalInput.setSelectionRange(valueLength, valueLength);
@@ -2067,9 +2219,20 @@
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const environmentLabel = scenarioEnvironmentLabel(scenario);
     const stageInfo = visibleStageInfo(scenario);
+    const beginnerMode = isBeginnerMode();
 
     syncMobileAppBarTitle();
     syncMobileAppBarActions();
+    document.body.classList.toggle("terminal-beginner-mode", beginnerMode);
+    if (els.mobileMenuCommandsBtn) {
+      els.mobileMenuCommandsBtn.textContent = beginnerMode ? "Command Help" : "Commands";
+    }
+    if (els.mobileMenuInfoBtn) {
+      els.mobileMenuInfoBtn.textContent = beginnerMode ? "Beginner Guide" : "Instructions";
+    }
+    if (els.mobileInfoOverlay?.querySelector("#terminalMobileInfoTitle")) {
+      els.mobileInfoOverlay.querySelector("#terminalMobileInfoTitle").textContent = beginnerMode ? "Beginner Guide" : "Instructions";
+    }
 
     els.scenarioCountBadge.textContent = challengePresentation
       ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
@@ -2107,6 +2270,14 @@
     }
     renderMachineContexts(scenario);
     els.stepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
+    if (els.beginnerCurrentTaskText) {
+      els.beginnerCurrentTaskText.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
+    }
+    if (els.beginnerTaskHelpText) {
+      els.beginnerTaskHelpText.textContent = beginnerMode
+        ? "Try typing a command. Not sure? Use Command Help."
+        : "Try typing a command. Use Hint if you need a stronger nudge.";
+    }
     els.progressSummary.textContent = stageInfo
       ? `${missionProgressText(scenario)} ${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`
       : `${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`;
@@ -2126,10 +2297,30 @@
     } else if (challengePresentation) {
       els.coachSignal.textContent = "Need help? Open Commands or use Hint.";
     } else {
-      els.coachSignal.textContent = "Need help? Open Commands or use Hint.";
+      els.coachSignal.textContent = beginnerMode
+        ? "Need help? Open Command Help, Hint, or Watch Walkthrough."
+        : "Need help? Open Commands or use Hint.";
     }
 
     els.mobileCoachSignal.textContent = els.coachSignal.textContent;
+    if (els.beginnerModeSummary) {
+      els.beginnerModeSummary.textContent = "Read the ticket, then type a command. Need help? Use Command Help, Hint, or Watch Walkthrough.";
+    }
+    if (els.beginnerHelpStripText) {
+      els.beginnerHelpStripText.textContent = "Not sure what to type? Tap Command Help, Hint, or Watch Walkthrough.";
+    }
+    if (els.commandSheetBtn) {
+      els.commandSheetBtn.textContent = beginnerMode ? "Command Help" : "Commands";
+    }
+    if (els.beginnerTaskStrip) {
+      els.beginnerTaskStrip.hidden = !beginnerMode;
+    }
+    if (els.beginnerHelpStrip) {
+      els.beginnerHelpStrip.hidden = !beginnerMode;
+    }
+    if (els.beginnerModeBanner) {
+      els.beginnerModeBanner.hidden = !beginnerMode;
+    }
 
     if (els.watchWalkthroughBtn) {
       const walkthroughReady = walkthroughAvailable(scenario);
@@ -2399,11 +2590,12 @@
       printCoachLine("Need help? Open Commands or use Hint.");
       return;
     }
-    printCoachLine("Need help? Open Commands or use Hint.");
+    printCoachLine(isBeginnerMode() ? "Need help? Open Command Help, Hint, or Watch Walkthrough." : "Need help? Open Commands or use Hint.");
   }
 
   function resetScenarioState() {
     closeTicketBriefing({ restoreFocus: false });
+    closeBeginnerGuide({ restoreFocus: false });
     session.state = StateManager.createState(currentScenario().environment);
     setCurrentLayer(currentScenario().layer || "application");
     session.stepIndex = 0;
@@ -2413,6 +2605,7 @@
     session.reviewStats = createReviewStats();
     session.ticketBriefingSeen = false;
     session.ticketBriefingOpen = false;
+    clearTaskCompleteCard();
   }
 
   function loadScenario(index, options = {}) {
@@ -2443,6 +2636,9 @@
     renderPanel();
     if (announce && !session.ticketBriefingSeen) {
       openTicketBriefing(currentScenario());
+    }
+    if (announce && isBeginnerMode()) {
+      openBeginnerGuide();
     }
     document.dispatchEvent(new CustomEvent("terminalcoach:scenariochange", {
       detail: {
@@ -5070,20 +5266,32 @@
       const nextText = String(step.nextObjective || nextStep?.objective || "Continue with the current mission objective.").trim();
       const realWorldText = String(step.realWorldNote || "").trim();
 
-      printLine("[Task Complete]", "success");
-      printCoachLine(`What you proved: ${proofText}`, "success");
-      if (explanationText && explanationText !== proofText) {
-        printCoachLine(`Command note: ${explanationText}`, "dim");
-      }
-      if (whyText) {
-        printCoachLine(`Why it matters: ${whyText}`, "dim");
-      }
-      if (realWorldText) {
-        printCoachLine(`Real-world note: ${realWorldText}`, "dim");
-      }
-      printCoachLine(`Next: ${nextText}`, "dim");
-      if (evaluation.coach) {
-        printCoachLine(evaluation.coach);
+      renderTaskCompleteCard({
+        proof: proofText,
+        why: [whyText, realWorldText].filter(Boolean).join(" "),
+        next: nextText
+      });
+
+      if (isBeginnerMode()) {
+        printLine("[Task Complete]", "success");
+        printCoachLine("Good. That moved the ticket forward.", "success");
+        printCoachLine("See Task Complete notes for what you proved.", "dim");
+      } else {
+        printLine("[Task Complete]", "success");
+        printCoachLine(`What you proved: ${proofText}`, "success");
+        if (explanationText && explanationText !== proofText) {
+          printCoachLine(`Command note: ${explanationText}`, "dim");
+        }
+        if (whyText) {
+          printCoachLine(`Why it matters: ${whyText}`, "dim");
+        }
+        if (realWorldText) {
+          printCoachLine(`Real-world note: ${realWorldText}`, "dim");
+        }
+        printCoachLine(`Next: ${nextText}`, "dim");
+        if (evaluation.coach) {
+          printCoachLine(evaluation.coach);
+        }
       }
       advanceStep(evaluation.advanceBy || 1);
       return;
@@ -5098,18 +5306,28 @@
     }
 
     if (evaluation.source === "exploration" || evaluation.classification === "exploration") {
-      printCoachLine("Useful context, but the task is still open.", "system");
+      printCoachLine(isBeginnerMode() ? "Useful context. The task is still open." : "Useful context, but the task is still open.", "system");
       if (evaluation.feedback) {
-        printCoachLine(evaluation.feedback, "dim");
+        printCoachLine(shortCoachCopy(evaluation.feedback, "Keep the current task in mind as you investigate."), "dim");
       }
     } else if (evaluation.source === "partial" || evaluation.classification === "inefficient") {
       printCoachLine("Close. You are in the right area, but not there yet.");
       if (evaluation.feedback) {
-        printCoachLine(evaluation.feedback, "dim");
+        printCoachLine(shortCoachCopy(evaluation.feedback, "Stay with the same command family and narrow the target."), "dim");
       }
     } else {
-      printCoachLine("That did not answer the current task yet. Try using the command panel or request a hint.", evaluation.classification === "invalid_command" ? "error" : "coach");
-      printCoachLine(progressiveWrongAttemptGuidance(step, session.attemptsForStep, currentScenario()), "dim");
+      printCoachLine(
+        isBeginnerMode()
+          ? "That command did not answer the current task."
+          : "That did not answer the current task yet. Try using the command panel or request a hint.",
+        evaluation.classification === "invalid_command" ? "error" : "coach"
+      );
+      printCoachLine(
+        isBeginnerMode()
+          ? progressiveWrongAttemptGuidance(step, session.attemptsForStep, currentScenario()).replace("Open Commands", "Open Command Help")
+          : progressiveWrongAttemptGuidance(step, session.attemptsForStep, currentScenario()),
+        "dim"
+      );
     }
 
     if (repeatedCommandMessage) {
@@ -5117,7 +5335,7 @@
     }
 
     if (evaluation.hint) {
-      printHintLine(`Hint ${Math.max(1, session.hintLevel + 1)} [${hintContextLabel()}]: ${evaluation.hint}`);
+      printHintLine(`Hint ${Math.max(1, session.hintLevel + 1)} [${hintContextLabel()}]: ${shortCoachCopy(evaluation.hint, evaluation.hint)}`);
     }
     if (execution.status === "syntax_error" || execution.status === "invalid_command") {
       const reference = getCommandReference(execution.raw);
@@ -5132,6 +5350,12 @@
     event.preventDefault();
     const rawInput = els.terminalInput.value.trim();
     if (!rawInput) return;
+
+    mobileDebug("command submitted");
+
+    if (session.beginnerGuideOpen) {
+      closeBeginnerGuide({ restoreFocus: false });
+    }
 
     if (session.ticketBriefingOpen) {
       closeTicketBriefing({ restoreFocus: false });
@@ -5174,7 +5398,11 @@
 
     renderPanel();
     persistSectionProgress();
-    if (document.activeElement === els.terminalInput) {
+    if (isMobileTerminalLayout() && !session.ticketBriefingOpen && !session.beginnerGuideOpen) {
+      window.requestAnimationFrame(() => {
+        focusTerminalInputAtEnd();
+      });
+    } else if (document.activeElement === els.terminalInput) {
       scheduleMobileTerminalReveal(0);
     }
   }
@@ -5193,9 +5421,14 @@
     }
 
     printWalkthroughLine("Demonstration mode. This will not complete the scenario or change your saved progress.");
-    printWalkthroughLine("We are going to investigate this task step by step.");
+    printWalkthroughLine(isBeginnerMode() ? "We are going to solve this like a junior support technician." : "We are going to investigate this task step by step.");
 
     entries.forEach((entry, index) => {
+      const step = currentScenario().steps?.[Math.min(session.stepIndex + index, currentScenario().steps.length - 1)];
+      if (isBeginnerMode() && step?.objective) {
+        printWalkthroughLine(`Step ${index + 1}: ${step.objective}`);
+        printWalkthroughLine(`Try command family: ${commandPanelCategoryLabel(currentScenario())} -> ${commandFamilyLabel(step, currentScenario())}`);
+      }
       if (entry.explanation) {
         printWalkthroughLine(entry.explanation);
       }
@@ -5297,6 +5530,33 @@
         closeTicketBriefing();
       });
     }
+    if (els.beginnerGuideBtn) {
+      els.beginnerGuideBtn.addEventListener("click", () => {
+        openBeginnerGuide({ force: true });
+      });
+    }
+    if (els.beginnerOnboardingStartBtn) {
+      els.beginnerOnboardingStartBtn.addEventListener("click", () => {
+        closeBeginnerGuide({ restoreFocus: false });
+        if (session.ticketBriefingOpen && els.ticketBriefingStartBtn) {
+          els.ticketBriefingStartBtn.focus({ preventScroll: true });
+        } else {
+          focusTerminalInputAtEnd();
+        }
+      });
+    }
+    if (els.beginnerOnboardingWalkthroughBtn) {
+      els.beginnerOnboardingWalkthroughBtn.addEventListener("click", () => {
+        closeBeginnerGuide({ restoreFocus: false });
+        closeTicketBriefing({ restoreFocus: false });
+        runWalkthrough();
+      });
+    }
+    if (els.beginnerOnboardingOverlay) {
+      els.beginnerOnboardingOverlay.addEventListener("click", () => {
+        closeBeginnerGuide();
+      });
+    }
     if (els.mobileContextToggleBtn) {
       els.mobileContextToggleBtn.addEventListener("click", () => {
         setMobileContextCollapsed(!session.mobileContextCollapsed);
@@ -5319,6 +5579,7 @@
 
       els.terminalInput.addEventListener("focus", () => {
         session.mobileBlurTimer = cancelScheduledTimeout(session.mobileBlurTimer);
+        mobileDebug("input focus");
         syncMobileInputState(true);
         syncMobileViewportMetrics();
         scheduleMobileTerminalReveal();
@@ -5335,6 +5596,7 @@
         session.mobileBlurTimer = window.setTimeout(() => {
           session.mobileBlurTimer = 0;
           if (document.activeElement !== els.terminalInput) {
+            mobileDebug("input blur");
             syncMobileInputState(false);
             syncMobileViewportMetrics();
           }
@@ -5383,18 +5645,23 @@
         return;
       }
 
+      if (session.beginnerGuideOpen) {
+        closeBeginnerGuide();
+        return;
+      }
+
       if (session.ticketBriefingOpen) {
         closeTicketBriefing();
         return;
       }
 
       if (document.body.classList.contains("terminal-mobile-info-open")) {
-        closeMobileInfo({ restoreFocus: true });
+        closeMobileInfo({ restoreFocus: true, focusTerminal: isBeginnerMode() });
         return;
       }
 
       if (document.body.classList.contains("terminal-mobile-menu-open")) {
-        closeMobileMenu({ restoreFocus: true });
+        closeMobileMenu({ restoreFocus: true, focusTerminal: isBeginnerMode() });
       }
     });
 
@@ -5422,6 +5689,14 @@
 
     window.addEventListener("netlab:profilemetachange", () => {
       renderSectionShell();
+    });
+
+    document.addEventListener("terminalcoach:commandsheet", (event) => {
+      const opening = Boolean(event.detail?.open);
+      mobileDebug(`command sheet ${opening ? "opened" : "closed"}`);
+      if (!opening && isBeginnerMode() && isMobileTerminalLayout()) {
+        window.setTimeout(() => focusTerminalInputAtEnd(), 60);
+      }
     });
   }
 

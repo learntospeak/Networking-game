@@ -497,6 +497,132 @@
   margin-top: 14px;
 }
 
+.beginner-mode-banner,
+.beginner-task-strip,
+.beginner-help-strip,
+.task-complete-card {
+  display: none;
+}
+
+.terminal-page.terminal-beginner-mode .beginner-mode-banner,
+.terminal-page.terminal-beginner-mode .beginner-task-strip,
+.terminal-page.terminal-beginner-mode .beginner-help-strip,
+.terminal-page.terminal-beginner-mode .task-complete-card:not([hidden]) {
+  display: block;
+}
+
+.beginner-mode-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin: 14px 20px 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(56, 189, 248, 0.26);
+  background: linear-gradient(180deg, rgba(8, 18, 31, 0.92) 0%, rgba(6, 13, 24, 0.96) 100%);
+}
+
+.beginner-mode-kicker,
+.beginner-task-kicker,
+.task-complete-kicker,
+.beginner-onboarding-kicker {
+  margin: 0 0 6px;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.beginner-mode-summary,
+.beginner-task-text,
+.beginner-task-help,
+.beginner-help-strip-copy,
+.task-complete-copy,
+.beginner-onboarding-copy {
+  margin: 0;
+  color: #dbe4ef;
+  line-height: 1.6;
+}
+
+.beginner-guide-btn,
+.beginner-secondary-btn {
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: rgba(8, 12, 18, 0.9);
+  color: #e2e8f0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.beginner-guide-btn:hover,
+.beginner-secondary-btn:hover {
+  border-color: #7b8796;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.beginner-guide-btn:focus-visible,
+.beginner-secondary-btn:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.36);
+  outline-offset: 2px;
+}
+
+.task-complete-card {
+  margin: 0 20px 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: linear-gradient(180deg, rgba(7, 18, 12, 0.92) 0%, rgba(8, 14, 12, 0.96) 100%);
+}
+
+.task-complete-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.task-complete-label {
+  margin: 0 0 6px;
+  color: #bbf7d0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.beginner-task-strip,
+.beginner-help-strip {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(71, 85, 105, 0.68);
+  background: rgba(7, 11, 16, 0.92);
+}
+
+.beginner-task-help {
+  margin-top: 6px;
+  color: #93c5fd;
+}
+
+.beginner-help-strip {
+  border-color: rgba(56, 189, 248, 0.24);
+  background: rgba(7, 14, 22, 0.94);
+}
+
+.terminal-page.terminal-beginner-mode .terminal-controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(3, minmax(0, max-content));
+}
+
+.terminal-page.terminal-beginner-mode #commandSheetBtn,
+.terminal-page.terminal-beginner-mode #hintBtn,
+.terminal-page.terminal-beginner-mode #watchWalkthroughBtn {
+  min-height: 46px;
+  font-weight: 800;
+}
+
 .terminal-controls button {
   min-height: 42px;
   margin: 0;
@@ -891,6 +1017,10 @@
   overflow: hidden;
 }
 
+.beginner-onboarding-open {
+  overflow: hidden;
+}
+
 .ticket-briefing-overlay {
   position: fixed;
   inset: 0;
@@ -902,6 +1032,73 @@
 .ticket-briefing-overlay[hidden],
 .ticket-briefing-card[hidden] {
   display: none !important;
+}
+
+.beginner-onboarding-overlay,
+.beginner-onboarding-card {
+  position: fixed;
+  inset: 0;
+}
+
+.beginner-onboarding-overlay {
+  z-index: 101;
+  background: rgba(2, 6, 12, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.beginner-onboarding-card[hidden],
+.beginner-onboarding-overlay[hidden] {
+  display: none !important;
+}
+
+.beginner-onboarding-card {
+  z-index: 102;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.beginner-onboarding-shell {
+  width: min(620px, 100%);
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(71, 85, 105, 0.82);
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.985) 0%, rgba(4, 8, 14, 0.995) 100%);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(56, 189, 248, 0.08);
+  pointer-events: auto;
+}
+
+.beginner-onboarding-shell h2 {
+  margin: 0 0 10px;
+  color: #f8fafc;
+  font-size: clamp(24px, 2.4vw, 30px);
+}
+
+.beginner-onboarding-steps,
+.beginner-onboarding-notes {
+  display: grid;
+  gap: 8px;
+}
+
+.beginner-onboarding-steps {
+  margin: 18px 0;
+  padding-left: 20px;
+  color: #e2e8f0;
+}
+
+.beginner-onboarding-notes {
+  margin: 0 0 18px;
+  color: #cbd5e1;
+}
+
+.beginner-onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .ticket-briefing-card {
@@ -1457,11 +1654,12 @@
 @media (max-width: 768px) {
   .terminal-page {
     --terminal-mobile-dock-space: 0px;
-    height: var(--terminal-mobile-viewport-height);
     min-height: var(--terminal-mobile-viewport-height);
-    max-height: var(--terminal-mobile-viewport-height);
+    height: auto;
+    max-height: none;
     padding: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior: none;
     scroll-padding-bottom: 0;
     touch-action: manipulation;
@@ -1470,16 +1668,15 @@
   .terminal-page .rack-room {
     max-width: 100%;
     display: flex;
-    height: 100%;
-    min-height: 0;
+    min-height: var(--terminal-mobile-viewport-height);
   }
 
   .terminal-shell {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
-    min-height: 0;
+    min-height: var(--terminal-mobile-viewport-height);
+    height: auto;
     padding: 0;
     border-radius: 0;
     border-left: 0;
@@ -1598,6 +1795,7 @@
     font-size: 12.5px;
     min-height: 0;
     scroll-padding-bottom: 34px;
+    overscroll-behavior-y: contain;
   }
 
   .layer-transition-banner {
@@ -1610,7 +1808,7 @@
     display: block;
     flex: 0 0 auto;
     gap: 0;
-    padding: 20px 12px calc(12px + env(safe-area-inset-bottom));
+    padding: 14px 12px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(71, 85, 105, 0.58);
     background: linear-gradient(180deg, rgba(6, 10, 14, 0.98) 0%, rgba(3, 7, 12, 1) 100%);
     box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.2);
@@ -1626,6 +1824,35 @@
 
   .terminal-controls {
     display: none;
+  }
+
+  .terminal-page.terminal-beginner-mode .terminal-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 10px;
+  }
+
+  .terminal-page.terminal-beginner-mode #previousScenarioBtn,
+  .terminal-page.terminal-beginner-mode #resetScenarioBtn,
+  .terminal-page.terminal-beginner-mode #nextScenarioBtn {
+    display: none;
+  }
+
+  .terminal-page.terminal-beginner-mode .beginner-task-strip,
+  .terminal-page.terminal-beginner-mode .beginner-help-strip {
+    display: block;
+  }
+
+  .beginner-mode-banner {
+    grid-template-columns: 1fr;
+    margin: 10px 12px 0;
+    padding: 12px 14px;
+  }
+
+  .task-complete-card {
+    margin: 0 12px 10px;
+    padding: 12px 14px;
   }
 
   .terminal-input-shell {
@@ -1645,6 +1872,7 @@
   .terminal-input {
     min-height: 44px;
     padding: 10px 12px;
+    font-size: 16px;
   }
 
   .terminal-run-btn {
@@ -1880,6 +2108,15 @@
     padding: 0;
   }
 
+  .beginner-onboarding-card {
+    padding: 10px;
+  }
+
+  .beginner-onboarding-shell {
+    padding: 18px 16px;
+    border-radius: 18px;
+  }
+
   .ticket-briefing-shell {
     max-height: calc(var(--terminal-mobile-viewport-height) - 20px);
     border-radius: 18px;
@@ -1901,6 +2138,15 @@
   }
 
   .ticket-briefing-start {
+    width: 100%;
+  }
+
+  .beginner-onboarding-actions {
+    flex-direction: column;
+  }
+
+  .beginner-guide-btn,
+  .beginner-secondary-btn {
     width: 100%;
   }
 

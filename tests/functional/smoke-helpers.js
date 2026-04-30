@@ -70,6 +70,12 @@ async function gotoAndStabilize(page, path) {
 }
 
 async function dismissTicketBriefingIfPresent(page) {
+  const beginnerStartButton = page.locator("#beginnerOnboardingStartBtn");
+  if (await beginnerStartButton.isVisible().catch(() => false)) {
+    await beginnerStartButton.click();
+    await page.waitForTimeout(150);
+  }
+
   const startButton = page.locator("#ticketBriefingStartBtn");
   if (await startButton.isVisible().catch(() => false)) {
     await startButton.click();

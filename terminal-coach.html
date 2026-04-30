@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260426mobile8">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260430beginner1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -17,7 +17,10 @@
     (() => {
       const params = new URLSearchParams(window.location.search);
       const requestedTrack = (params.get("track") || "").toLowerCase();
+      const requestedMode = (params.get("mode") || "").toLowerCase();
       const track = requestedTrack === "windows" ? "windows" : "linux";
+      const beginnerMode = requestedMode === "beginner"
+        || (track === "windows" && requestedMode !== "advanced" && requestedMode !== "standard");
 
       const trackConfig = {
         linux: {
@@ -44,6 +47,9 @@
 
       window.TerminalCoachConfig = {
         mode: "lesson",
+        uiMode: beginnerMode ? "beginner" : "standard",
+        isBeginnerMode: beginnerMode,
+        beginnerGuideStorageKey: `netlab:beginner-guide:${track}`,
         sectionId: track === "windows" ? "windows-terminal" : "linux-terminal",
         environmentCategory: active.environmentCategory,
         pageKicker: active.pageKicker,
@@ -56,8 +62,8 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260429micro1" defer></script>
-  <script src="./commandSheet.js?v=20260416c" defer></script>
+  <script src="./terminalEngine.js?v=20260430beginner1" defer></script>
+  <script src="./commandSheet.js?v=20260430beginner1" defer></script>
 </head>
 <body class="terminal-page">
   <div class="rack-room">
@@ -240,9 +246,33 @@
 
         <section class="lab-panel terminal-panel">
           <div id="layerTransitionBanner" class="layer-transition-banner" data-layer="network" hidden></div>
+          <div id="beginnerModeBanner" class="beginner-mode-banner" hidden>
+            <div class="beginner-mode-copy">
+              <p class="beginner-mode-kicker">Beginner Mode</p>
+              <p id="beginnerModeSummary" class="beginner-mode-summary">Read the ticket, then type a command. Need help? Use Command Help, Hint, or Watch Walkthrough.</p>
+            </div>
+            <button id="beginnerGuideBtn" class="beginner-guide-btn" type="button">Help / Beginner Guide</button>
+          </div>
           <div class="terminal-output-shell">
             <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
           </div>
+          <article id="taskCompleteCard" class="task-complete-card" hidden>
+            <p class="task-complete-kicker">Task Complete</p>
+            <div class="task-complete-grid">
+              <div class="task-complete-block">
+                <p class="task-complete-label">What You Proved</p>
+                <p id="taskCompleteProof" class="task-complete-copy"></p>
+              </div>
+              <div class="task-complete-block">
+                <p class="task-complete-label">Why It Matters</p>
+                <p id="taskCompleteWhy" class="task-complete-copy"></p>
+              </div>
+              <div class="task-complete-block">
+                <p class="task-complete-label">Next</p>
+                <p id="taskCompleteNext" class="task-complete-copy"></p>
+              </div>
+            </div>
+          </article>
           <div id="terminalInlineInputSlot" class="terminal-inline-input-slot"></div>
 
           <div class="terminal-mobile-dock">
@@ -263,6 +293,16 @@
             <div class="terminal-history-nav" aria-label="Terminal history shortcuts">
               <button id="terminalJumpTopBtn" class="terminal-history-btn terminal-history-btn-top" type="button">Top</button>
               <button id="terminalJumpLatestBtn" class="terminal-history-btn terminal-history-btn-latest" type="button">Latest</button>
+            </div>
+
+            <div id="beginnerTaskStrip" class="beginner-task-strip" hidden>
+              <p class="beginner-task-kicker">Current Task</p>
+              <p id="beginnerCurrentTaskText" class="beginner-task-text">Check the current scenario objective.</p>
+              <p id="beginnerTaskHelpText" class="beginner-task-help">Try typing a command. Not sure? Use Command Help.</p>
+            </div>
+
+            <div id="beginnerHelpStrip" class="beginner-help-strip" hidden>
+              <p id="beginnerHelpStripText" class="beginner-help-strip-copy">Not sure what to type? Tap Command Help, Hint, or Watch Walkthrough.</p>
             </div>
 
             <div class="trainer-controls terminal-controls">
@@ -345,6 +385,29 @@
           </div>
           <div class="ticket-briefing-actions">
             <button id="ticketBriefingStartBtn" class="ticket-briefing-start" type="button">Start Investigation</button>
+          </div>
+        </div>
+      </aside>
+
+      <div id="beginnerOnboardingOverlay" class="beginner-onboarding-overlay" hidden></div>
+      <aside id="beginnerOnboardingCard" class="beginner-onboarding-card" aria-hidden="true" aria-labelledby="beginnerOnboardingTitle" hidden>
+        <div class="beginner-onboarding-shell">
+          <p class="beginner-onboarding-kicker">Beginner Mode</p>
+          <h2 id="beginnerOnboardingTitle">Welcome to Beginner Terminal Lab</h2>
+          <p class="beginner-onboarding-copy">You will solve practice support tickets by typing commands into the terminal. If you are new, use Commands, Hint, or Watch Walkthrough.</p>
+          <ol class="beginner-onboarding-steps">
+            <li>Read the ticket.</li>
+            <li>Type a command in the terminal.</li>
+            <li>Use Commands, Hint, or Walkthrough if you get stuck.</li>
+          </ol>
+          <div class="beginner-onboarding-notes">
+            <p><strong>Commands</strong> = command examples</p>
+            <p><strong>Hint</strong> = tells you what to try next</p>
+            <p><strong>Walkthrough</strong> = shows a simulated example</p>
+          </div>
+          <div class="beginner-onboarding-actions">
+            <button id="beginnerOnboardingStartBtn" class="ticket-briefing-start" type="button">Start First Ticket</button>
+            <button id="beginnerOnboardingWalkthroughBtn" class="beginner-secondary-btn" type="button">Watch How It Works</button>
           </div>
         </div>
       </aside>

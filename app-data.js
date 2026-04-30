@@ -18,7 +18,7 @@
     },
     "windows-terminal": {
       label: "Windows Terminal Lab",
-      href: "./terminal-coach.html?track=windows"
+      href: "./terminal-coach.html?track=windows&mode=beginner"
     },
     "cisco-cli": {
       label: "Cisco CLI Lab",

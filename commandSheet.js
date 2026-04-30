@@ -34,7 +34,8 @@
     query: "",
     category: defaultCategory,
     expanded: new Set(),
-    activeTrigger: null
+    activeTrigger: null,
+    openedFromTerminalInput: false
   };
 
   function escapeHtml(value) {
@@ -153,10 +154,17 @@
 
   function openSheet(prefillQuery = "") {
     state.activeTrigger = document.activeElement;
+    state.openedFromTerminalInput = state.activeTrigger?.id === "terminalInput";
     document.body.classList.add("command-sheet-open");
     els.overlay.hidden = false;
     els.panel.setAttribute("aria-hidden", "false");
     els.openButtons.forEach((button) => button.setAttribute("aria-expanded", "true"));
+    document.dispatchEvent(new CustomEvent("terminalcoach:commandsheet", {
+      detail: {
+        open: true,
+        openedFromTerminalInput: state.openedFromTerminalInput
+      }
+    }));
 
     if (prefillQuery && !state.query) {
       state.query = prefillQuery;
@@ -175,6 +183,12 @@
     els.panel.setAttribute("aria-hidden", "true");
     els.overlay.hidden = true;
     els.openButtons.forEach((button) => button.setAttribute("aria-expanded", "false"));
+    document.dispatchEvent(new CustomEvent("terminalcoach:commandsheet", {
+      detail: {
+        open: false,
+        openedFromTerminalInput: state.openedFromTerminalInput
+      }
+    }));
 
     if (state.activeTrigger && typeof state.activeTrigger.focus === "function") {
       state.activeTrigger.focus();
