@@ -127,7 +127,10 @@
     terminalEntries: [],
     reviewStats: null,
     resumePromptVisible: false,
-    outputPinnedToLatest: true
+    outputPinnedToLatest: true,
+    debugScenarioKey: "",
+    debugStageKey: "",
+    debugReviewKey: ""
   };
   let savedProgressRecord = null;
   const mobilePanelRegistry = [];
@@ -844,6 +847,24 @@
     return scenarioStages(scenario).length > 0;
   }
 
+  function scenarioHasMissionCaseData(scenario = currentScenario()) {
+    if (!scenario) {
+      return false;
+    }
+
+    return Boolean(
+      scenarioHasStages(scenario)
+      || String(scenario.role || "").trim()
+      || String(scenario.difficulty || scenario.level || "").trim()
+      || String(scenario.estimatedTime || "").trim()
+      || String(scenario.scenarioType || "").trim()
+      || String(scenario.missionBriefing || "").trim()
+      || (Array.isArray(scenario.learningObjectives) && scenario.learningObjectives.length)
+      || (Array.isArray(scenario.successCriteria) && scenario.successCriteria.length)
+      || String(scenario.environmentNotes || "").trim()
+    );
+  }
+
   function totalStepsForScenario(scenario = currentScenario()) {
     return Array.isArray(scenario?.steps) ? scenario.steps.length : 0;
   }
@@ -995,6 +1016,19 @@
     element.textContent = text;
   }
 
+  function missionDebug(label, details = "") {
+    if (!window.console || typeof window.console.log !== "function") {
+      return;
+    }
+
+    if (details) {
+      console.log(`[MissionDebug] ${label}`, details);
+      return;
+    }
+
+    console.log(`[MissionDebug] ${label}`);
+  }
+
   function renderListItems(target, items = []) {
     if (!target) {
       return 0;
@@ -1018,10 +1052,16 @@
       return;
     }
 
-    const shouldShow = scenarioHasStages(scenario);
+    const shouldShow = scenarioHasMissionCaseData(scenario);
     els.missionCaseFileCard.hidden = !shouldShow;
     if (!shouldShow) {
       return;
+    }
+
+    const scenarioKey = `${scenario.id || scenario.title || "scenario"}:${stageInfo?.stage?.id || "nostage"}`;
+    if (session.debugScenarioKey !== scenarioKey) {
+      missionDebug("Rendering case file");
+      session.debugScenarioKey = scenarioKey;
     }
 
     fillText(els.missionCaseTitle, scenario.title, { hideWhenEmpty: false });
@@ -1085,6 +1125,15 @@
     }
 
     const stats = session.reviewStats || createReviewStats();
+    const hasScoringData = Boolean(
+      stats.totalSubmitted
+      || stats.successfulAccepted
+      || stats.partialCommands
+      || stats.incorrectCommands
+      || stats.explorationCommands
+      || stats.riskyActions.length
+      || stats.successfulStepObjectives.length
+    );
     const totalSubmitted = Math.max(1, stats.totalSubmitted);
     const expectedSteps = Math.max(1, totalStepsForScenario(scenario));
     const commandAccuracy = clampScore(((stats.successfulAccepted + (stats.partialCommands * 0.5) + (stats.explorationCommands * 0.35)) / totalSubmitted) * 100);
@@ -1101,10 +1150,12 @@
     const riskConfigured = Array.isArray(scenario.riskyCommands) && scenario.riskyCommands.length > 0;
     const riskScore = riskConfigured ? clampScore(100 - (stats.riskyActions.length * 30)) : null;
 
-    const scoredValues = [troubleshootingLogic, commandAccuracy, efficiency];
+    const scoredValues = hasScoringData ? [troubleshootingLogic, commandAccuracy, efficiency] : [];
     if (verificationScore !== null) scoredValues.push(verificationScore);
     if (riskScore !== null) scoredValues.push(riskScore);
-    const overallScore = clampScore(scoredValues.reduce((sum, value) => sum + value, 0) / scoredValues.length);
+    const overallScore = scoredValues.length
+      ? clampScore(scoredValues.reduce((sum, value) => sum + value, 0) / scoredValues.length)
+      : null;
 
     const strengths = [];
     const improvements = [];
@@ -1134,26 +1185,76 @@
       : "Good support and security work is not just about finding an answer. It is about using evidence, choosing safe actions, and proving the result.";
 
     els.missionReviewCard.hidden = !session.scenarioCompleted;
-    fillText(els.missionReviewOverall, `Overall: ${categorySummary(overallScore)}`, { hideWhenEmpty: false });
+    if (!session.scenarioCompleted) {
+      return;
+    }
 
-    fillText(els.reviewTroubleshootingScore, `${troubleshootingLogic}%`, { hideWhenEmpty: false });
-    fillText(els.reviewTroubleshootingFeedback, troubleshootingLogic >= 75 ? "You followed a mostly logical troubleshooting path." : "Your path reached the objective, but repeated incorrect attempts reduced the diagnostic quality.");
+    const reviewKey = `${scenario.id || scenario.title || "scenario"}:${session.scenarioCompleted}:${stats.totalSubmitted}`;
+    if (session.debugReviewKey !== reviewKey) {
+      missionDebug("Rendering mission review");
+      session.debugReviewKey = reviewKey;
+    }
 
-    fillText(els.reviewAccuracyScore, `${commandAccuracy}%`, { hideWhenEmpty: false });
-    fillText(els.reviewAccuracyFeedback, commandAccuracy >= 80 ? "Most submitted commands moved the task forward." : "Several submitted commands did not support the current objective.");
+    fillText(els.missionReviewOverall, `Overall: ${overallScore === null ? "Completed" : categorySummary(overallScore)}`, { hideWhenEmpty: false });
 
-    fillText(els.reviewEfficiencyScore, `${efficiency}%`, { hideWhenEmpty: false });
-    fillText(els.reviewEfficiencyFeedback, efficiency >= 75 ? "You completed the work with a reasonable command footprint." : "You completed the mission, but extra commands reduced efficiency.");
+    fillText(els.reviewTroubleshootingScore, hasScoringData ? `${troubleshootingLogic}%` : "Completed", { hideWhenEmpty: false });
+    fillText(els.reviewTroubleshootingFeedback, hasScoringData ? (troubleshootingLogic >= 75 ? "You followed a mostly logical troubleshooting path." : "Your path reached the objective, but repeated incorrect attempts reduced the diagnostic quality.") : "You completed the assigned mission flow.");
 
-    fillText(els.reviewVerificationScore, verificationScore === null ? "Not assessed" : verificationScore === 100 ? "Complete" : "Needs stronger closure", { hideWhenEmpty: false });
-    fillText(els.reviewVerificationFeedback, verificationScore === null ? "This scenario did not provide enough verification metadata to assess closure." : verificationScore === 100 ? "You confirmed the result before closing the task." : "The mission ended without a strong verification signal.");
+    fillText(els.reviewAccuracyScore, hasScoringData ? `${commandAccuracy}%` : "Not assessed", { hideWhenEmpty: false });
+    fillText(els.reviewAccuracyFeedback, hasScoringData ? (commandAccuracy >= 80 ? "Most submitted commands moved the task forward." : "Several submitted commands did not support the current objective.") : "Detailed command-attempt scoring was not available for this completion record.");
 
-    fillText(els.reviewRiskScore, riskScore === null ? "Not assessed" : stats.riskyActions.length ? "Coaching needed" : "Good", { hideWhenEmpty: false });
-    fillText(els.reviewRiskFeedback, riskScore === null ? "No scenario-specific risky command rules were defined." : stats.riskyActions.length ? stats.riskyActions.map((entry) => entry.reason).join(" ") : "No risky or destructive actions were detected.");
+    fillText(els.reviewEfficiencyScore, hasScoringData ? `${efficiency}%` : "Not assessed", { hideWhenEmpty: false });
+    fillText(els.reviewEfficiencyFeedback, hasScoringData ? (efficiency >= 75 ? "You completed the work with a reasonable command footprint." : "You completed the mission, but extra commands reduced efficiency.") : "Efficiency was not assessed for this completion record.");
+
+    fillText(els.reviewVerificationScore, verificationScore === null ? (session.scenarioCompleted ? "Complete" : "Not assessed") : verificationScore === 100 ? "Complete" : "Needs stronger closure", { hideWhenEmpty: false });
+    fillText(els.reviewVerificationFeedback, verificationScore === null ? (session.scenarioCompleted ? "The mission reached a completed state." : "This scenario did not provide enough verification metadata to assess closure.") : verificationScore === 100 ? "You confirmed the result before closing the task." : "The mission ended without a strong verification signal.");
+
+    fillText(els.reviewRiskScore, riskScore === null ? "No risky actions detected" : stats.riskyActions.length ? "Coaching needed" : "Good", { hideWhenEmpty: false });
+    fillText(els.reviewRiskFeedback, riskScore === null ? "No risky actions were detected during this mission." : stats.riskyActions.length ? stats.riskyActions.map((entry) => entry.reason).join(" ") : "No risky or destructive actions were detected.");
 
     renderListItems(els.missionReviewStrengths, strengths);
     renderListItems(els.missionReviewImprovements, improvements.length ? improvements : ["Keep using evidence-led sequencing and verification discipline."]);
     fillText(els.missionReviewTakeaway, takeaway, { hideWhenEmpty: false });
+  }
+
+  function renderStageUI(stageInfo = currentStageInfo(currentScenario()), scenario = currentScenario()) {
+    const stageTitleText = stageInfo ? `Current Stage: ${stageInfo.stage.title}` : "";
+    const stageBriefingText = stageInfo?.stage?.briefing || "";
+    const mobileStageTitleText = stageInfo ? `Stage ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}` : "";
+    const missionStageTitleText = stageInfo?.stage?.title || "";
+    const missionStageProgressText = stageInfo ? `Stage ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}` : "";
+    const missionTotalProgressText = stageInfo ? `Mission ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}` : "";
+
+    if (els.scenarioStageTitle) {
+      fillText(els.scenarioStageTitle, stageTitleText);
+    }
+    if (els.scenarioStageBriefing) {
+      fillText(els.scenarioStageBriefing, stageBriefingText);
+    }
+    if (els.mobileStageTitle) {
+      fillText(els.mobileStageTitle, mobileStageTitleText);
+    }
+    if (els.mobileStageBriefing) {
+      fillText(els.mobileStageBriefing, stageBriefingText);
+    }
+    if (els.missionCurrentStageTitle) {
+      fillText(els.missionCurrentStageTitle, missionStageTitleText);
+    }
+    if (els.missionCurrentStageBriefing) {
+      fillText(els.missionCurrentStageBriefing, stageBriefingText);
+    }
+    if (els.missionStageProgress) {
+      fillText(els.missionStageProgress, missionStageProgressText);
+    }
+    if (els.missionTotalProgress) {
+      fillText(els.missionTotalProgress, missionTotalProgressText);
+    }
+
+    const stageKey = `${scenario?.id || scenario?.title || "scenario"}:${stageInfo?.stage?.id || "nostage"}:${stageInfo?.stageStepIndex ?? -1}`;
+    if (session.debugStageKey !== stageKey) {
+      missionDebug("Rendering stage UI", stageInfo?.stage?.title || "none");
+      session.debugStageKey = stageKey;
+    }
   }
 
   function totalScenarios() {
@@ -1661,14 +1762,7 @@
       els.scenarioEnvironmentBadge.textContent = environmentLabel;
     }
     els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
-    if (els.scenarioStageTitle) {
-      els.scenarioStageTitle.hidden = !stageInfo;
-      els.scenarioStageTitle.textContent = stageInfo ? `Current Stage: ${stageInfo.stage.title}` : "";
-    }
-    if (els.scenarioStageBriefing) {
-      els.scenarioStageBriefing.hidden = !stageInfo || !stageInfo.stage.briefing;
-      els.scenarioStageBriefing.textContent = stageInfo?.stage.briefing || "";
-    }
+    renderStageUI(stageInfo, scenario);
     els.scenarioFlex.textContent = allowedApproachText(scenario);
     renderMissionCaseFile(scenario, stageInfo);
     renderMissionReview(scenario);
@@ -1686,14 +1780,6 @@
     els.mobileScenarioTitle.textContent = challengePresentation
       ? `${scenario.title} - Challenge ${session.scenarioIndex + 1}/${totalScenarios()}`
       : `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
-    if (els.mobileStageTitle) {
-      els.mobileStageTitle.hidden = !stageInfo;
-      els.mobileStageTitle.textContent = stageInfo ? `Stage ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}` : "";
-    }
-    if (els.mobileStageBriefing) {
-      els.mobileStageBriefing.hidden = !stageInfo || !stageInfo.stage.briefing;
-      els.mobileStageBriefing.textContent = stageInfo?.stage.briefing || "";
-    }
     els.mobileStepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
     if (els.mobileMachineContext) {
       els.mobileMachineContext.textContent = primaryMachineContextText(scenario);
@@ -1928,13 +2014,14 @@
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const machineSummary = machineContextSummary(scenario);
     const stageInfo = currentStageInfo(scenario);
+    missionDebug("Loading scenario", scenario.title || scenario.id);
+    missionDebug("Scenario has stages", Boolean(scenario.stages?.length));
 
     if (scenarioHasStages(scenario)) {
-      printLine("=== Mission Started ===", "mission");
+      printMissionLine(`Mission started: ${scenario.title}`);
       if (scenario.role) {
         printMissionLine(`Role: ${scenario.role}`);
       }
-      printMissionLine(`Scenario: ${scenario.title}`);
       printMissionLine(`Objective: ${scenarioObjectiveText(scenario)}`);
       printMissionLine(`Environment: ${shellLabel()} shell`);
     } else {
@@ -1951,6 +2038,7 @@
       printLine(`Context: ${scenario.scenarioIntro}`, "dim");
     }
     if (stageInfo) {
+      printStageLine(`${stageInfo.stage.title}: ${stageInfo.stage.briefing || "Stage active."}`);
       printLine(`--- Stage ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title} ---`, "stage");
       if (stageInfo.stage.briefing) {
         printStageLine(`Goal: ${stageInfo.stage.briefing}`);
