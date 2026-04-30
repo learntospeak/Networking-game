@@ -5,12 +5,15 @@
 }
 
 .terminal-page .rack-room {
+  width: 100%;
   max-width: 1580px;
+  margin-inline: auto;
 }
 
 .terminal-shell {
   width: 100%;
   max-width: none;
+  margin-inline: auto;
 }
 
 @supports (height: 100dvh) {
@@ -223,6 +226,8 @@
   display: grid;
   grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.45fr);
   gap: 24px;
+  align-items: start;
+  width: 100%;
 }
 
 .scenario-card {

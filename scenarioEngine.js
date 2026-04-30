@@ -42,6 +42,7 @@
       ],
       files: config.files || [],
       processes: config.processes || [],
+      networkConnections: config.networkConnections || [],
       targets: config.targets || commonTargets()
     };
   }
@@ -4595,6 +4596,203 @@
         step({ objective: "Terminate PID 3990.", hints: ["Use kill against the listed PID.", "Target 3990.", "Try `kill 3990`."], explanation: "Targeting the exact PID is what turns the filtered result into action.", accepts: [rawMatch(/^kill\s+3990$/i), rawMatch(/^kill\s+-9\s+3990$/i)] })
       ]
     }),
+    linuxScenario({
+      id: "linux-local-bind-investigation",
+      title: "Local Bind Service Investigation",
+      category: "Troubleshooting scenarios",
+      difficulty: "Intermediate",
+      ticketId: "LNX-214",
+      ticketTitle: "Service responds locally but not from the network",
+      reportedBy: "Operations Queue",
+      reportedTime: "11:05",
+      priority: "High",
+      affectedSystem: "Linux application host",
+      role: "Junior Linux Support Technician",
+      estimatedTime: "8-15 minutes",
+      scenarioType: "Troubleshooting",
+      missionBriefing: "An internal API appears down to users, but the host is still online. Your task is to confirm the working context, inspect the process and logs, identify why the service is not reachable from other systems, and write a short investigation note.",
+      summary: "Investigate a Linux service that is running but only listening on the loopback address.",
+      learningObjectives: [
+        "Use process, file, and socket evidence together during Linux troubleshooting",
+        "Separate 'service running' from 'service reachable'",
+        "Record the root cause in a short support note"
+      ],
+      successCriteria: [
+        "Confirm the application directory",
+        "Show the service process is present",
+        "Read the log and config evidence",
+        "Confirm the socket is bound only to 127.0.0.1",
+        "Write and verify a concise investigation note"
+      ],
+      environmentNotes: "This is a simulated Linux support host. You are not changing the service in this mission; you are proving why it is unreachable from elsewhere.",
+      verificationRequired: true,
+      verificationSteps: [
+        "Confirm the service process exists",
+        "Confirm the listening socket is bound to loopback only",
+        "Confirm the saved findings note matches the evidence"
+      ],
+      commandFocus: ["pwd", "cd", "ps", "grep", "cat", "netstat"],
+      walkthrough: [
+        {
+          command: "cd /srv/portal",
+          explanation: "Begin by moving into the application directory so you are working from the right evidence set.",
+          output: []
+        },
+        {
+          command: "ps | grep portal",
+          explanation: "Confirm the process exists before you assume the service is fully down.",
+          output: [
+            "  PID USER       %CPU %MEM COMMAND",
+            " 4240 student     3.4  0.8 portal-api | portal-api --config /srv/portal/config/portal.conf"
+          ]
+        },
+        {
+          command: "netstat -an | grep 8080",
+          explanation: "This shows whether the service is listening on an address other systems can reach or only on loopback.",
+          output: [
+            "TCP    127.0.0.1:8080         0.0.0.0:0              LISTEN"
+          ]
+        }
+      ],
+      environment: {
+        cwd: "/home/student",
+        directories: ["/srv/portal", "/srv/portal/config", "/srv/portal/logs"],
+        files: [
+          { path: "/srv/portal/config/portal.conf", content: "bind_address=127.0.0.1\nport=8080\n" },
+          { path: "/srv/portal/logs/app.log", content: "INFO portal-api starting\nWARN binding service to 127.0.0.1:8080\nINFO health checks local only\n" }
+        ],
+        processes: [
+          { pid: 4240, name: "portal-api", user: "student", cpu: "3.4", memory: "0.8", command: "portal-api --config /srv/portal/config/portal.conf" },
+          { pid: 4120, name: "bash", user: "student", cpu: "0.2", memory: "0.3", command: "-bash" }
+        ],
+        networkConnections: [
+          { proto: "TCP", localAddress: "127.0.0.1:8080", foreignAddress: "0.0.0.0:0", state: "LISTEN" },
+          { proto: "TCP", localAddress: "0.0.0.0:22", foreignAddress: "0.0.0.0:0", state: "LISTEN" }
+        ]
+      },
+      stages: [
+        {
+          id: "triage",
+          title: "Triage",
+          briefing: "Start by confirming your working context so you do not inspect the wrong service tree or note file.",
+          completionSummary: "You confirmed the starting Linux context and moved into the service directory safely.",
+          steps: [
+            step({
+              objective: "Confirm your current location on the Linux host.",
+              hints: ["Start with a context command.", "Open Commands -> Linux and look for the working-directory command.", "Try `pwd`."],
+              explanation: "This shows where the shell currently is before you move into the application tree.",
+              whyThisMatters: "Context mistakes are a common source of wasted effort during Linux investigations.",
+              successFeedback: "You confirmed the current shell location on the host.",
+              nextObjective: "Move into the portal service directory.",
+              realWorldNote: "Strong Linux operators always know where they are before they read files or assume a path.",
+              accepts: [commandMatch("pwd")]
+            }),
+            step({
+              objective: "Move into the portal service directory.",
+              hints: ["The service files live under /srv/portal.", "Change into the application directory before reviewing files.", "Try `cd /srv/portal`."],
+              explanation: "Moving into the service directory narrows the investigation to the right logs and configuration files.",
+              whyThisMatters: "Linux hosts often contain many services. The right directory keeps the evidence trail coherent.",
+              successFeedback: "You moved into the portal service directory.",
+              nextObjective: "Confirm the service process is still running.",
+              realWorldNote: "Directory context matters because support notes and runbooks often assume you are standing in the correct service tree.",
+              accepts: [cwdMatch("/srv/portal")]
+            })
+          ]
+        },
+        {
+          id: "investigation",
+          title: "Investigation",
+          briefing: "Determine whether the service is actually stopped or whether the symptom is happening at a different layer.",
+          completionSummary: "You proved the process exists, which means the incident is more specific than 'service is down'.",
+          steps: [
+            step({
+              objective: "List processes and isolate the portal service.",
+              hints: ["Use the process list and a text filter together.", "Open Commands -> Linux and combine the process listing with grep.", "Try `ps | grep portal`."],
+              explanation: "This confirms whether the service process is present before you assume a startup failure.",
+              whyThisMatters: "A running process does not prove the application is healthy, but it changes the kind of failure you are looking for.",
+              successFeedback: "You proved the portal service process is present.",
+              nextObjective: "Check the application log for service clues.",
+              realWorldNote: "This is how you separate a dead service from a living service with the wrong behavior.",
+              accepts: [rawMatch(/^ps\s*\|\s*grep\s+portal$/i)]
+            })
+          ]
+        },
+        {
+          id: "evidence",
+          title: "Evidence Gathering",
+          briefing: "Use logs, configuration, and socket state together so you can explain the failure path clearly.",
+          completionSummary: "You collected the log, config, and socket evidence needed to explain why the service appears down from the network.",
+          steps: [
+            step({
+              objective: "Read the application log.",
+              hints: ["The log is under /srv/portal/logs/app.log.", "Read the service log before you guess at configuration.", "Try `cat /srv/portal/logs/app.log`."],
+              explanation: "Logs often tell you what the service thought it was doing when it started.",
+              whyThisMatters: "A log entry can turn a vague outage report into a specific technical hypothesis.",
+              successFeedback: "You reviewed the application log and found a clue about the bind address.",
+              nextObjective: "Read the portal configuration file.",
+              realWorldNote: "Logs often point you toward the right config file or startup option faster than random inspection does.",
+              accepts: [rawMatch(/^cat\s+\/srv\/portal\/logs\/app\.log$/i), rawMatch(/^cat\s+logs\/app\.log$/i)]
+            }),
+            step({
+              objective: "Read the portal configuration file.",
+              hints: ["The config file is /srv/portal/config/portal.conf.", "Read the configuration after the log clue.", "Try `cat /srv/portal/config/portal.conf`."],
+              explanation: "This confirms whether the service configuration matches the behavior hinted at by the log.",
+              whyThisMatters: "A log warning is stronger when the configuration file independently supports the same conclusion.",
+              successFeedback: "You confirmed the service is configured to bind to 127.0.0.1.",
+              nextObjective: "Check the listening socket for the service port.",
+              realWorldNote: "Configuration evidence is what lets you explain not only what happened, but why it happened.",
+              accepts: [rawMatch(/^cat\s+\/srv\/portal\/config\/portal\.conf$/i), rawMatch(/^cat\s+config\/portal\.conf$/i)]
+            }),
+            step({
+              objective: "Check the listening socket for port 8080.",
+              hints: ["Use a socket listing command and filter for 8080.", "Open Commands -> Linux and look for netstat.", "Try `netstat -an | grep 8080`."],
+              explanation: "Socket state confirms whether the service is listening on a reachable address or only on loopback.",
+              whyThisMatters: "This is the evidence that connects the running process to the real user symptom.",
+              successFeedback: "You proved the service listens only on 127.0.0.1:8080.",
+              nextObjective: "Write a short findings note for the next technician.",
+              realWorldNote: "A service can be perfectly alive and still unreachable to users if it binds only to loopback.",
+              accepts: [rawMatch(/^netstat\s+-an\s*\|\s*grep\s+8080$/i)]
+            })
+          ]
+        },
+        {
+          id: "conclusion",
+          title: "Conclusion",
+          briefing: "Record the root cause clearly so the next action is justified and easy to hand off.",
+          completionSummary: "You turned the terminal evidence into a concise support conclusion.",
+          steps: [
+            step({
+              objective: "Save a findings note that explains the loopback bind problem.",
+              hints: ["Use echo with output redirection.", "Save the note to /home/student/portal-findings.txt.", "Try `echo Service is running but bound only to 127.0.0.1:8080 > /home/student/portal-findings.txt`."],
+              explanation: "A support note should state the proven cause, not just list raw commands that were run.",
+              whyThisMatters: "Another technician or application owner should be able to pick up the case without rerunning the whole investigation.",
+              successFeedback: "You saved a concise findings note that matches the evidence.",
+              nextObjective: "Verify the note was written correctly.",
+              realWorldNote: "Good notes reduce duplicate effort and make escalation cleaner.",
+              accepts: [rawMatch(/^echo\s+Service is running but bound only to 127\.0\.0\.1:8080\s*>\s*\/home\/student\/portal-findings\.txt$/i)]
+            })
+          ]
+        },
+        {
+          id: "verification",
+          title: "Verification",
+          briefing: "Verify the saved note before you close your part of the ticket.",
+          completionSummary: "You verified the support note rather than assuming the handoff artifact was correct.",
+          steps: [
+            step({
+              objective: "Read the saved portal findings note.",
+              hints: ["Use the Linux file-reading command.", "Open the note you just created.", "Try `cat /home/student/portal-findings.txt`."],
+              explanation: "Verification applies to the handoff note as well as to the technical state you observed earlier.",
+              whyThisMatters: "If the note is wrong or incomplete, the next queue loses the benefit of your investigation.",
+              successFeedback: "You verified the saved findings note before handing the ticket on.",
+              nextObjective: "Continue to the next mission when you are ready.",
+              realWorldNote: "Verifying your own handoff note is a small habit that prevents a surprising amount of rework.",
+              accepts: [rawMatch(/^cat\s+\/home\/student\/portal-findings\.txt$/i)]
+            })
+          ]
+        }
+      ]
+    }),
     cmdScenario({
       id: "cmd-updater-stop",
       title: "CMD Updater Stop",
@@ -4742,6 +4940,193 @@
                   feedback: "The workspace is already confirmed. The next step is to read the incident note itself."
                 }
               ]
+            })
+          ]
+        }
+      ]
+    }),
+    windowsLessonScenario({
+      id: "win-dns-escalation-ticket",
+      title: "DNS Escalation Review",
+      category: "Troubleshooting scenarios",
+      difficulty: "Intermediate",
+      ticketId: "WIN-214",
+      ticketTitle: "User can reach IPs but not internal hostname",
+      reportedBy: "Helpdesk Queue",
+      reportedTime: "10:26",
+      priority: "High",
+      affectedSystem: "Windows workstation",
+      role: "Junior Support Technician",
+      estimatedTime: "8-15 minutes",
+      scenarioType: "Troubleshooting",
+      missionBriefing: "A user reports they can reach an internal server by IP address but cannot use the expected hostname. Your job is to confirm local configuration, test gateway reachability, isolate whether the failure is DNS or routing, and leave a clear ticket note before escalation.",
+      summary: "Work through local Windows network checks, prove the hostname failure path, and record a concise diagnosis.",
+      learningObjectives: [
+        "Confirm local Windows network configuration before chasing the wider network",
+        "Separate gateway reachability from hostname resolution",
+        "Leave a short technician note that explains what the evidence supports"
+      ],
+      successCriteria: [
+        "Confirm IP, gateway, and DNS configuration",
+        "Prove the gateway responds",
+        "Show the hostname lookup fails while the target IP remains reachable",
+        "Record the DNS-focused conclusion in a ticket note"
+      ],
+      environmentNotes: "This is a simulated Windows support environment. The goal is to prove whether the reported fault belongs to DNS, routing, or the target service before you escalate.",
+      verificationRequired: true,
+      verificationSteps: [
+        "Confirm the default gateway responds",
+        "Confirm the target IP is reachable",
+        "Confirm the saved ticket note matches the evidence"
+      ],
+      commandFocus: ["ipconfig", "ping", "nslookup", "route print", "type"],
+      walkthrough: [
+        {
+          command: "ipconfig /all",
+          explanation: "Start with the workstation itself. Before you assume DNS is broken, confirm the machine actually has an address, gateway, and DNS server configured.",
+          output: [
+            "Windows IP Configuration",
+            "",
+            "Ethernet adapter Ethernet0:",
+            "   IPv4 Address. . . . . . . . . . . : 192.168.56.25",
+            "   Subnet Mask . . . . . . . . . . . : 255.255.255.0",
+            "   Default Gateway . . . . . . . . . : 192.168.56.1",
+            "   DNS Servers . . . . . . . . . . . : 192.168.56.1"
+          ]
+        },
+        {
+          command: "ping 192.168.56.1",
+          explanation: "Now prove the workstation can at least reach the default gateway. That tells you the machine is not completely isolated from the local network.",
+          output: [
+            "Pinging 192.168.56.1 [192.168.56.1] with 32 bytes of data:",
+            "Reply from 192.168.56.1: bytes=32 time<1ms TTL=128"
+          ]
+        },
+        {
+          command: "nslookup intranet.lab",
+          explanation: "This is the key separation point. If the hostname fails while gateway and IP tests succeed, DNS becomes the leading suspect.",
+          output: [
+            "Server:  192.168.56.1",
+            "Address: 192.168.56.1",
+            "",
+            "*** 192.168.56.1 can't find intranet.lab: Non-existent domain"
+          ]
+        }
+      ],
+      environment: {
+        cwd: "C:/Lab/Reports",
+        files: [
+          { path: "C:/Lab/Reports/dns-ticket-template.txt", content: "User can browse by IP but not by hostname. Capture evidence before escalation.\n" }
+        ]
+      },
+      stages: [
+        {
+          id: "triage",
+          title: "Triage",
+          briefing: "Confirm the workstation has a usable local network configuration before you assume the wider problem belongs to DNS or the server.",
+          completionSummary: "You confirmed the workstation configuration and ruled out obvious local misconfiguration.",
+          steps: [
+            step({
+              objective: "Review the full Windows IP configuration.",
+              hints: ["Check local network configuration first.", "Open Commands and look for the Windows IP configuration command.", "Try `ipconfig /all`."],
+              explanation: "This shows the workstation IP address, subnet mask, default gateway, and DNS server settings.",
+              whyThisMatters: "A user report about a hostname problem is not enough by itself. You still need to prove the workstation has a valid network baseline.",
+              successFeedback: "You confirmed the workstation has a local IP configuration to work from.",
+              nextObjective: "Test whether the workstation can reach the default gateway.",
+              realWorldNote: "Good support work starts at the endpoint. If the local network settings are wrong, every later DNS or service test becomes misleading.",
+              accepts: [rawMatch(/^ipconfig\s+\/all$/i), rawMatch(/^ipconfig$/i)]
+            })
+          ]
+        },
+        {
+          id: "gateway-check",
+          title: "Investigation",
+          briefing: "Prove the workstation can talk to the local network before you blame DNS.",
+          completionSummary: "You established that the workstation is not completely isolated from its gateway.",
+          steps: [
+            step({
+              objective: "Test reachability to the default gateway.",
+              hints: ["The gateway is 192.168.56.1.", "Use a simple reachability test against the gateway.", "Try `ping 192.168.56.1`."],
+              explanation: "A successful gateway ping proves the workstation can communicate beyond itself on the local segment.",
+              whyThisMatters: "This rules out total local isolation, but it still does not prove DNS or the target application is healthy.",
+              successFeedback: "You proved the workstation can reach the default gateway.",
+              nextObjective: "Test the reported hostname directly.",
+              realWorldNote: "A reachable gateway is often the line between a local NIC problem and a higher-layer name or service problem.",
+              accepts: [rawMatch(/^ping\s+192\.168\.56\.1$/i)]
+            })
+          ]
+        },
+        {
+          id: "dns-evidence",
+          title: "Evidence Gathering",
+          briefing: "Now isolate the reported hostname failure directly so you know whether the problem belongs to DNS or to general connectivity.",
+          completionSummary: "You gathered the direct hostname evidence needed to treat DNS as the leading issue.",
+          steps: [
+            step({
+              objective: "Test the internal hostname lookup.",
+              hints: ["The reported hostname is intranet.lab.", "Use the DNS lookup command from Commands -> Windows CMD.", "Try `nslookup intranet.lab`."],
+              explanation: "A failed lookup here shows the problem is happening at the name-resolution step rather than at the first local network hop.",
+              whyThisMatters: "This is the point where you stop saying 'the internet is broken' and start saying what exact part of the path is failing.",
+              successFeedback: "You showed that the internal hostname does not resolve.",
+              nextObjective: "Confirm the route and the target IP path are still viable.",
+              realWorldNote: "Support escalations are much stronger when they include the exact hostname that failed, not just a generic complaint about access.",
+              accepts: [rawMatch(/^nslookup\s+intranet\.lab$/i)]
+            }),
+            step({
+              objective: "Review the route table for the local network path.",
+              hints: ["You are checking whether the workstation still has a normal route to the local subnet.", "Use the Windows route display command.", "Try `route print`."],
+              explanation: "This confirms the workstation still has a default route and local-subnet route consistent with the current network.",
+              whyThisMatters: "If the routing table were broken, the hostname failure might be a distraction instead of the root issue.",
+              successFeedback: "You confirmed the workstation route table still points traffic toward the expected gateway.",
+              nextObjective: "Confirm the target IP remains reachable even though the hostname fails.",
+              realWorldNote: "This is how you avoid blaming DNS when the machine may actually have no route to the target network at all.",
+              accepts: [rawMatch(/^route\s+print$/i)]
+            }),
+            step({
+              objective: "Test the target service IP directly.",
+              hints: ["The service IP is 192.168.56.20.", "Use a direct reachability test against the server IP.", "Try `ping 192.168.56.20`."],
+              explanation: "If the IP responds while the hostname still fails, the evidence strongly favors DNS rather than routing or total service loss.",
+              whyThisMatters: "This separates 'cannot find the server by name' from 'cannot reach the server at all'.",
+              successFeedback: "You proved the target IP remains reachable even though the hostname fails.",
+              nextObjective: "Write the ticket note so the escalation is evidence-led.",
+              realWorldNote: "This is the kind of split test that keeps tickets from bouncing between network and DNS teams without useful evidence.",
+              accepts: [rawMatch(/^ping\s+192\.168\.56\.20$/i)]
+            })
+          ]
+        },
+        {
+          id: "ticket-note",
+          title: "Ticket Close Note",
+          briefing: "Leave a short technician note that explains what the evidence supports before you pass the issue on.",
+          completionSummary: "You recorded the diagnosis clearly enough for another technician or resolver team to pick it up.",
+          steps: [
+            step({
+              objective: "Save a short ticket note that identifies DNS as the failing layer.",
+              hints: ["Use echo with output redirection.", "Write the note into C:\\Lab\\Reports\\dns-findings.txt.", "Try `echo DNS failure isolated while gateway and target IP remain reachable > C:\\Lab\\Reports\\dns-findings.txt`."],
+              explanation: "A short ticket note turns your terminal evidence into something another technician can act on without repeating the whole investigation.",
+              whyThisMatters: "Support work does not end with a private conclusion. The next person needs a defensible handoff.",
+              successFeedback: "You recorded the evidence-led DNS conclusion in the ticket note.",
+              nextObjective: "Verify the note was saved correctly.",
+              realWorldNote: "A precise note saves time for the next queue and shows that you separated the failing layer before escalating.",
+              accepts: [rawMatch(/^echo\s+DNS failure isolated while gateway and target IP remain reachable\s*>\s*C:\\Lab\\Reports\\dns-findings\.txt$/i)]
+            })
+          ]
+        },
+        {
+          id: "verification",
+          title: "Verification",
+          briefing: "Verify the saved note matches the investigation result before you close the ticket handoff.",
+          completionSummary: "You verified the handoff note instead of assuming it was saved correctly.",
+          steps: [
+            step({
+              objective: "Read the saved DNS findings note.",
+              hints: ["Use the Windows file-reading command.", "Open the saved ticket note you just created.", "Try `type C:\\Lab\\Reports\\dns-findings.txt`."],
+              explanation: "Verification includes checking the artifact you created for the next queue, not just the live command output from earlier steps.",
+              whyThisMatters: "A saved note is only useful if it actually says what the investigation proved.",
+              successFeedback: "You verified the saved technician note before closing the handoff.",
+              nextObjective: "Proceed to the next mission when you are ready.",
+              realWorldNote: "Verification is not only for systems. It also applies to notes, exports, and evidence you expect another person to rely on.",
+              accepts: [rawMatch(/^type\s+C:\\Lab\\Reports\\dns-findings\.txt$/i), rawMatch(/^type\s+dns-findings\.txt$/i)]
             })
           ]
         }
@@ -6744,6 +7129,199 @@
             rawMatch(/^(EHLO|HELO)\s+\S+$/i, { connectionType: "smtp" })
           ]
         })
+      ]
+    }),
+    challengeScenario({
+      id: "challenge-suspicious-access-review",
+      title: "Challenge Lab 3: Suspicious Access Review",
+      level: "Intermediate",
+      difficulty: "Intermediate",
+      layer: "application",
+      layers: ["application", "network"],
+      ticketId: "CYB-342",
+      ticketTitle: "Investigate unusual listener and login activity",
+      reportedBy: "SOC Triage Queue",
+      reportedTime: "14:18",
+      priority: "High",
+      affectedSystem: "Linux server under review",
+      role: "Junior Security Analyst",
+      estimatedTime: "8-15 minutes",
+      scenarioType: "Security Investigation",
+      missionBriefing: "A review ticket flags unusual login failures and an unfamiliar listening port on a Linux server. Confirm your context, inspect process and socket evidence, review the authentication log, and write a short conclusion based on what the terminal proves.",
+      learningObjectives: [
+        "Confirm analyst context before collecting evidence",
+        "Correlate process, socket, and log evidence during an investigation",
+        "Write a short evidence-led conclusion instead of guessing at impact"
+      ],
+      successCriteria: [
+        "Confirm the current analyst identity",
+        "Identify the suspicious process",
+        "Confirm the unexpected listening port",
+        "Review failed-authentication evidence",
+        "Record and verify a short conclusion"
+      ],
+      environmentNotes: "This is a controlled challenge environment. The goal is not to remediate the host, but to justify a defensible conclusion from the available evidence.",
+      verificationRequired: true,
+      verificationSteps: [
+        "Confirm the suspicious listening port",
+        "Confirm the authentication log contains the failed-login evidence",
+        "Confirm the saved conclusion note reflects the evidence"
+      ],
+      commandFocus: ["whoami", "ps", "grep", "netstat", "cat", "echo"],
+      challengeObjective: "Investigate the unusual listening service and login evidence, then leave a concise analyst conclusion without relying on step-by-step prompts.",
+      successConditions: [
+        "Confirm who is collecting the evidence",
+        "Tie a process to the suspicious port",
+        "Show failed authentication evidence in the log",
+        "Write a short analyst conclusion"
+      ],
+      allowedApproaches: [
+        "Start with analyst context, then move to process or socket evidence.",
+        "Use grep to narrow logs or process output instead of reading everything blindly.",
+        "End with a clear written conclusion rather than a pile of raw output."
+      ],
+      walkthrough: [
+        {
+          command: "whoami",
+          explanation: "Begin by confirming the analyst context so you know which host and identity are collecting the evidence.",
+          output: ["student"]
+        },
+        {
+          command: "ps | grep sshd",
+          explanation: "Check whether a suspicious or unusual SSH-related process is present before you interpret the open port by itself.",
+          output: [
+            "  PID USER       %CPU %MEM COMMAND",
+            " 2222 student     4.8  0.7 sshd-wrapper | sshd -D -p 2222"
+          ]
+        },
+        {
+          command: "netstat -an | grep 2222",
+          explanation: "Now confirm the listener is active and tied to the suspicious port that triggered the review.",
+          output: [
+            "TCP    0.0.0.0:2222          0.0.0.0:0              LISTEN"
+          ]
+        }
+      ],
+      environment: {
+        cwd: "/home/student/incidents",
+        directories: ["/home/student/incidents", "/home/student/incidents/notes", "/var/log"],
+        files: [
+          { path: "/var/log/auth.log", content: "Apr 17 14:02:11 lab sshd[2222]: Failed password for invalid user backup from 198.51.100.24 port 51120 ssh2\nApr 17 14:02:19 lab sshd[2222]: Failed password for invalid user backup from 198.51.100.24 port 51120 ssh2\nApr 17 14:03:08 lab sshd[2222]: Accepted password for trainee from 192.168.56.25 port 50111 ssh2\n" }
+        ],
+        processes: [
+          { pid: 2222, name: "sshd-wrapper", user: "student", cpu: "4.8", memory: "0.7", command: "sshd -D -p 2222" },
+          { pid: 1188, name: "bash", user: "student", cpu: "0.2", memory: "0.3", command: "-bash" }
+        ],
+        networkConnections: [
+          { proto: "TCP", localAddress: "0.0.0.0:2222", foreignAddress: "0.0.0.0:0", state: "LISTEN", pid: 2222 },
+          { proto: "TCP", localAddress: "0.0.0.0:22", foreignAddress: "0.0.0.0:0", state: "LISTEN", pid: 1044 }
+        ]
+      },
+      machineContexts: [
+        { label: "Analyst Box", role: "Linux Terminal", detail: "/home/student/incidents" },
+        { label: "Linux Server", role: "Investigation Target", detail: "Auth log and process evidence available locally" }
+      ],
+      stages: [
+        {
+          id: "triage",
+          title: "Triage",
+          briefing: "Confirm who you are and where you are collecting evidence from before you interpret the incident data.",
+          completionSummary: "You established the analyst context before widening the investigation.",
+          steps: [
+            step({
+              objective: "Confirm the current analyst identity.",
+              hints: ["Start with an identity/context command.", "Open Commands -> Linux and look for the current-user command.", "Try `whoami`."],
+              explanation: "This confirms which user context is collecting the evidence.",
+              whyThisMatters: "In security work, evidence is only useful if you know which host and user collected it.",
+              successFeedback: "You confirmed the current analyst identity before investigating further.",
+              nextObjective: "Find the process tied to the suspicious service.",
+              realWorldNote: "Analysts who skip context checks lose track of which shell, host, or privilege level generated the evidence.",
+              accepts: [commandMatch("whoami")]
+            })
+          ]
+        },
+        {
+          id: "investigation",
+          title: "Investigation",
+          briefing: "Tie the suspicious service to a real process before you interpret the port by itself.",
+          completionSummary: "You linked the unusual service to a specific running process.",
+          steps: [
+            step({
+              objective: "Find the SSH-related process tied to the review ticket.",
+              hints: ["Use the process list and a text filter.", "Look for an SSH-related process in Commands -> Linux.", "Try `ps | grep sshd`."],
+              explanation: "This shows whether the unexpected listener belongs to an active SSH-related process.",
+              whyThisMatters: "A listening port matters more once you can connect it to a real process name and PID.",
+              successFeedback: "You identified the process behind the suspicious service.",
+              nextObjective: "Confirm the listening socket on port 2222.",
+              realWorldNote: "Process evidence is what turns a vague socket concern into something another analyst can validate.",
+              accepts: [rawMatch(/^ps\s*\|\s*grep\s+sshd$/i)]
+            })
+          ]
+        },
+        {
+          id: "evidence",
+          title: "Evidence Gathering",
+          briefing: "Now gather the network and log evidence that explains why this process triggered attention.",
+          completionSummary: "You collected the socket and authentication evidence needed for a defensible conclusion.",
+          steps: [
+            step({
+              objective: "Confirm the service is listening on port 2222.",
+              hints: ["Use a socket listing command and filter for 2222.", "Open Commands -> Linux and look for netstat.", "Try `netstat -an | grep 2222`."],
+              explanation: "This shows whether the suspicious service is actively listening and reachable from the network.",
+              whyThisMatters: "A process name alone is not enough. The live socket tells you whether the service is actually exposed.",
+              successFeedback: "You confirmed that a service is listening on port 2222.",
+              nextObjective: "Review failed-authentication evidence in the auth log.",
+              realWorldNote: "Socket evidence is one of the fastest ways to connect a process to real exposure risk.",
+              accepts: [rawMatch(/^netstat\s+-an\s*\|\s*grep\s+2222$/i)]
+            }),
+            step({
+              objective: "Review failed-authentication entries in the auth log.",
+              hints: ["Use grep against /var/log/auth.log.", "Look for failed authentication attempts.", "Try `grep Failed /var/log/auth.log`."],
+              explanation: "This narrows the log to the failed authentication entries that explain why the ticket was raised.",
+              whyThisMatters: "Log evidence tells you whether the suspicious service is also associated with the reported authentication activity.",
+              successFeedback: "You confirmed failed-login evidence in the authentication log.",
+              nextObjective: "Write a concise analyst conclusion.",
+              realWorldNote: "A small filtered log excerpt is often more useful than pasting an entire auth log into a ticket.",
+              accepts: [rawMatch(/^grep\s+Failed\s+\/var\/log\/auth\.log$/i), rawMatch(/^cat\s+\/var\/log\/auth\.log\s*\|\s*grep\s+Failed$/i)]
+            })
+          ]
+        },
+        {
+          id: "conclusion",
+          title: "Conclusion",
+          briefing: "Write a short analyst note that states what the evidence supports, not what you merely suspect.",
+          completionSummary: "You translated the raw evidence into a concise investigation conclusion.",
+          steps: [
+            step({
+              objective: "Save a short conclusion note in /home/student/incidents/notes/access-review.txt.",
+              hints: ["Use echo with output redirection.", "Save the note in the notes folder.", "Try `echo Suspicious listener on port 2222 with repeated failed logins confirmed > /home/student/incidents/notes/access-review.txt`."],
+              explanation: "A short conclusion note is how you turn terminal output into something the next analyst or queue can act on.",
+              whyThisMatters: "Security investigations need conclusions that are brief, defensible, and tied to evidence.",
+              successFeedback: "You saved a concise analyst conclusion.",
+              nextObjective: "Verify the saved conclusion note.",
+              realWorldNote: "A clean analyst note is often the difference between a useful escalation and a noisy one.",
+              accepts: [rawMatch(/^echo\s+Suspicious listener on port 2222 with repeated failed logins confirmed\s*>\s*\/home\/student\/incidents\/notes\/access-review\.txt$/i)]
+            })
+          ]
+        },
+        {
+          id: "verification",
+          title: "Verification",
+          briefing: "Verify the note before you close your part of the case.",
+          completionSummary: "You verified the saved analyst note before handing the case on.",
+          steps: [
+            step({
+              objective: "Read the saved analyst conclusion note.",
+              hints: ["Use the Linux file-reading command.", "Open the saved note in the incidents notes folder.", "Try `cat /home/student/incidents/notes/access-review.txt`."],
+              explanation: "Verification applies to the investigation note as much as it does to the live evidence.",
+              whyThisMatters: "A saved note only helps the next person if it actually reflects the evidence you gathered.",
+              successFeedback: "You verified the saved analyst conclusion note.",
+              nextObjective: "Move to the next challenge when you are ready.",
+              realWorldNote: "Analysts who verify their notes leave cleaner handoffs and reduce repeat triage.",
+              accepts: [rawMatch(/^cat\s+\/home\/student\/incidents\/notes\/access-review\.txt$/i)]
+            })
+          ]
+        }
       ]
     }),
     challengeScenario({
