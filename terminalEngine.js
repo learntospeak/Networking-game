@@ -767,9 +767,9 @@
 
     if (els.terminalMobileControlMount) {
       [
+        els.terminalControls,
         els.beginnerTaskStrip,
-        els.beginnerHelpStrip,
-        els.terminalControls
+        els.beginnerHelpStrip
       ].filter(Boolean).forEach((node) => {
         if (node.parentElement !== els.terminalMobileControlMount) {
           els.terminalMobileControlMount.appendChild(node);

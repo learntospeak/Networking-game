@@ -1809,6 +1809,7 @@
   .terminal-output-shell {
     flex: 1 1 auto;
     min-height: 0;
+    order: 2;
   }
 
   .terminal-output {
@@ -1830,11 +1831,26 @@
   .terminal-mobile-dock {
     display: block;
     flex: 0 0 auto;
+    order: 3;
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
     gap: 0;
     padding: 14px 12px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(71, 85, 105, 0.58);
     background: linear-gradient(180deg, rgba(6, 10, 14, 0.98) 0%, rgba(3, 7, 12, 1) 100%);
     box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .beginner-mode-banner {
+    display: none !important;
+  }
+
+  .task-complete-card {
+    order: 4;
+    margin: 0 12px 10px;
+    max-height: 180px;
+    overflow-y: auto;
   }
 
   .terminal-mobile-context {
