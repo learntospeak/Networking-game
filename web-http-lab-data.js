@@ -1,23 +1,1618 @@
 (function () {
-  window.WebHttpFlowData = {
-    scenarios: [
-      {
-        id: "http-page",
-        name: "HTTP Page Request",
-        label: "HTTP Flow",
-        note: "Readable page request",
-        subtitle: "Ask the server for /profile with a plain HTTP request.",
-        summary:
-          "HTTP works like another network request. The browser asks for /profile, the request crosses the path in readable form, the server returns 200 OK, and the browser loads the page.",
-        devices: {
-          pc: { label: "Browser", meta: "User opens http://learn.lab/profile", icon: "fa-desktop" },
-          switch: { label: "Switch", meta: "Local forwarding path", icon: "fa-network-wired" },
-          router: { label: "Router", meta: "Path to the web server", icon: "fa-route" },
-          server: { label: "Web Server", meta: "Returns the profile page", icon: "fa-server" }
+  const lessons = [
+    {
+      id: "http-request-basics",
+      title: "HTTP Request Basics",
+      category: "HTTP Fundamentals",
+      difficulty: "Beginner",
+      learningObjectives: [
+        "See a browser ask for a page.",
+        "Read one request part at a time.",
+        "Read the server result."
+      ],
+      scenarioIntro:
+        "One request. One part at a time.",
+      explanation:
+        "Watch the visual. Tap the right part.",
+      recommendedNextLesson: "inspecting-headers-responses",
+      interactiveSteps: [
+        {
+          id: "http-basics-flow",
+          title: "Browser to Server",
+          prompt: "Watch the flow.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Start with the browser."],
+          successCondition: "See the basic browser to server path.",
+          feedback: "Good. The browser starts the request.",
+          explanation: "Your browser asks a server for a page.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Starting point"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body:
+                "<html>\n  <h1>Profile</h1>\n  <p>Welcome back.</p>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "The session already exists."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "flow",
+            labels: ["Browser", "Request", "Server", "Response"],
+            stageIndex: 0,
+            defaultExplainKey: "flow"
+          },
+          focusExplain: {
+            "flow": "Your browser asks a server for a page."
+          },
+          interaction: {
+            type: "focus-continue",
+            buttonLabel: "Next"
+          }
         },
-        steps: [
-          {
-            prompt: "A user opens http://learn.lab/profile. What happens first?",
+        {
+          id: "http-basics-get",
+          title: "GET",
+          prompt: "Tap GET.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap GET."],
+          successCondition: "Tap GET in the request line.",
+          feedback: "Nice - GET asks for data.",
+          explanation: "GET = ask for data.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Request built"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            lineParts: ["method", "path"],
+            headerParts: [],
+            defaultExplainKey: "get"
+          },
+          focusExplain: {
+            "get": "GET = ask for data."
+          },
+          focusWrong: {
+            "path": "Close - /profile is the page name."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "get"
+          }
+        },
+        {
+          id: "http-basics-path",
+          title: "/profile",
+          prompt: "Tap /profile.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap /profile."],
+          successCondition: "Tap the page path in the request line.",
+          feedback: "Nice - /profile is the page.",
+          explanation: "This is the page you want.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Packet ready"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            lineParts: ["method", "path"],
+            headerParts: [],
+            defaultExplainKey: "path"
+          },
+          focusExplain: {
+            "path": "This is the page you want."
+          },
+          focusWrong: {
+            "get": "Close - GET is the action word."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "path"
+          }
+        },
+        {
+          id: "http-basics-host",
+          title: "Host",
+          prompt: "Tap Host.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Host."],
+          successCondition: "Tap the Host header.",
+          feedback: "Nice - Host points to the site.",
+          explanation: "Host = which website.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Packet in transit"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            lineParts: ["method", "path"],
+            headerParts: ["host"],
+            defaultExplainKey: "host"
+          },
+          focusExplain: {
+            "host": "Host = which website."
+          },
+          focusWrong: {
+            "get": "Close - GET is the action word.",
+            "path": "Close - /profile is the page name."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "host"
+          }
+        },
+        {
+          id: "http-basics-response",
+          title: "200 OK",
+          prompt: "Tap 200 OK.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap 200 OK."],
+          successCondition: "Tap the response status.",
+          feedback: "Nice - 200 means it worked.",
+          explanation: "200 = it worked.",
+          workspace: {
+            browser: {
+              title: "Example Profile",
+              url: "https://example.com/profile",
+              note: "Server answered"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "example.com" },
+                { name: "Cookie", value: "session=abc123" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "abc123", scope: "example.com", purpose: "Saved session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "abc123",
+              note: "Saved session."
+            },
+            cache: {
+              status: "Not shown",
+              note: "Cache is not the focus here."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "The path is clear."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            lineParts: ["status"],
+            headerParts: [],
+            defaultExplainKey: "response-code"
+          },
+          focusExplain: {
+            "response-code": "200 = it worked."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "response-code"
+          }
+        }
+      ]
+    },
+    {
+      id: "inspecting-headers-responses",
+      title: "HTTP Headers",
+      category: "Headers & Metadata",
+      difficulty: "Beginner",
+      learningObjectives: [
+        "See what the main headers tell you.",
+        "Read Host, Cookie, User-Agent, Content-Type, Set-Cookie, and Cache-Control one at a time.",
+        "Tap one header, then move to the next step."
+      ],
+      scenarioIntro:
+        "Small headers. One meaning at a time.",
+      explanation:
+        "Look at one header. Read one short meaning.",
+      recommendedNextLesson: "cookies-session-basics",
+      interactiveSteps: [
+        {
+          id: "headers-host",
+          title: "Host",
+          prompt: "Tap Host.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Host."],
+          successCondition: "Tap the website name.",
+          feedback: "Good. Host means which website.",
+          explanation: "Host = which website.",
+          workspace: {
+            browser: {
+              title: "Spruce Helpdesk",
+              url: "https://helpdesk.spruce.lab/tickets/142",
+              note: "Signed-in helpdesk view"
+            },
+            request: {
+              method: "GET",
+              path: "/tickets/142",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "helpdesk.spruce.lab" },
+                { name: "Cookie", value: "theme=forest; session=sp-41ac2" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "last_ticket=142; Path=/; HttpOnly" },
+                { name: "Cache-Control", value: "private, max-age=60" }
+              ],
+              body:
+                "<html>\n  <h1>Ticket #142</h1>\n  <p>Status: awaiting review</p>\n</html>"
+            },
+            cookies: [
+              { name: "theme", value: "forest", scope: "helpdesk.spruce.lab", purpose: "Preference" },
+              { name: "session", value: "sp-41ac2", scope: "helpdesk.spruce.lab", purpose: "Signed-in state" },
+              { name: "last_ticket", value: "142", scope: "helpdesk.spruce.lab", purpose: "Recent ticket shortcut" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "sp-41ac2",
+              note: "The browser already has a session cookie for the portal."
+            },
+            cache: {
+              status: "Private cache allowed",
+              note: "The response can be cached privately by the browser for 60 seconds."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this inspection lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "host",
+            lineParts: [],
+            headerParts: ["host"],
+            interactiveParts: ["host"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "host"
+          }
+        },
+        {
+          id: "headers-cookie",
+          title: "Cookie",
+          prompt: "Tap Cookie.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Cookie."],
+          successCondition: "Tap the saved state header.",
+          feedback: "Good. Cookie means saved login info.",
+          explanation: "Cookie = saved login info.",
+          workspace: {
+            browser: {
+              title: "Spruce Helpdesk",
+              url: "https://helpdesk.spruce.lab/tickets/142",
+              note: "Signed-in helpdesk view"
+            },
+            request: {
+              method: "GET",
+              path: "/tickets/142",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "helpdesk.spruce.lab" },
+                { name: "Cookie", value: "theme=forest; session=sp-41ac2" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "last_ticket=142; Path=/; HttpOnly" },
+                { name: "Cache-Control", value: "private, max-age=60" }
+              ],
+              body:
+                "<html>\n  <h1>Ticket #142</h1>\n  <p>Status: awaiting review</p>\n</html>"
+            },
+            cookies: [
+              { name: "theme", value: "forest", scope: "helpdesk.spruce.lab", purpose: "Preference" },
+              { name: "session", value: "sp-41ac2", scope: "helpdesk.spruce.lab", purpose: "Signed-in state" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "sp-41ac2",
+              note: "A session cookie is already being sent in the request."
+            },
+            cache: {
+              status: "Cache metadata present",
+              note: "Cache-Control appears in the response and affects reuse."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "This lesson is about reading metadata rather than intercepting it."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "cookie",
+            lineParts: [],
+            headerParts: ["cookie"],
+            interactiveParts: ["cookie"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "cookie"
+          }
+        },
+        {
+          id: "headers-user-agent",
+          title: "User-Agent",
+          prompt: "Tap User-Agent.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap User-Agent."],
+          successCondition: "Tap the browser identity header.",
+          feedback: "Right. User-Agent means which browser.",
+          explanation: "User-Agent = which browser.",
+          workspace: {
+            browser: {
+              title: "Spruce Helpdesk",
+              url: "https://helpdesk.spruce.lab/tickets/142",
+              note: "Signed-in helpdesk view"
+            },
+            request: {
+              method: "GET",
+              path: "/tickets/142",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "helpdesk.spruce.lab" },
+                { name: "Cookie", value: "theme=forest; session=sp-41ac2" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "last_ticket=142; Path=/; HttpOnly" },
+                { name: "Cache-Control", value: "private, max-age=60" }
+              ],
+              body:
+                "<html>\n  <h1>Ticket #142</h1>\n  <p>Status: awaiting review</p>\n</html>"
+            },
+            cookies: [
+              { name: "theme", value: "forest", scope: "helpdesk.spruce.lab", purpose: "Preference" },
+              { name: "session", value: "sp-41ac2", scope: "helpdesk.spruce.lab", purpose: "Signed-in state" },
+              { name: "last_ticket", value: "142", scope: "helpdesk.spruce.lab", purpose: "Recent ticket shortcut" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "sp-41ac2",
+              note: "The browser already has a session cookie for the portal."
+            },
+            cache: {
+              status: "Private cache allowed",
+              note: "The response can be cached privately by the browser for 60 seconds."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this inspection lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "user-agent",
+            lineParts: [],
+            headerParts: ["user-agent"],
+            interactiveParts: ["user-agent"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "user-agent"
+          }
+        },
+        {
+          id: "headers-content-type",
+          title: "Content-Type",
+          prompt: "Tap Content-Type.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Content-Type."],
+          successCondition: "Tap the body type header.",
+          feedback: "Good. Content-Type means what kind of content.",
+          explanation: "Content-Type = what kind of content.",
+          workspace: {
+            browser: {
+              title: "Spruce Helpdesk",
+              url: "https://helpdesk.spruce.lab/tickets/142",
+              note: "Signed-in helpdesk view"
+            },
+            request: {
+              method: "GET",
+              path: "/tickets/142",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "helpdesk.spruce.lab" },
+                { name: "Cookie", value: "theme=forest; session=sp-41ac2" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "last_ticket=142; Path=/; HttpOnly" },
+                { name: "Cache-Control", value: "private, max-age=60" }
+              ],
+              body:
+                "<html>\n  <h1>Ticket #142</h1>\n  <p>Status: awaiting review</p>\n</html>"
+            },
+            cookies: [
+              { name: "theme", value: "forest", scope: "helpdesk.spruce.lab", purpose: "Preference" },
+              { name: "session", value: "sp-41ac2", scope: "helpdesk.spruce.lab", purpose: "Signed-in state" },
+              { name: "last_ticket", value: "142", scope: "helpdesk.spruce.lab", purpose: "Recent ticket shortcut" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "sp-41ac2",
+              note: "The browser already has a session cookie for the portal."
+            },
+            cache: {
+              status: "Private cache allowed",
+              note: "The response can be cached privately by the browser for 60 seconds."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this inspection lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            mode: "get",
+            defaultExplainKey: "content-type",
+            lineParts: [],
+            headerParts: ["content-type"],
+            interactiveParts: ["content-type"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "content-type"
+          }
+        },
+        {
+          id: "headers-set-cookie",
+          title: "Set-Cookie",
+          prompt: "Tap Set-Cookie.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Set-Cookie."],
+          successCondition: "Tap the new cookie header.",
+          feedback: "Right. Set-Cookie tells the browser to save one.",
+          explanation: "Set-Cookie = save a new cookie.",
+          workspace: {
+            browser: {
+              title: "Spruce Helpdesk",
+              url: "https://helpdesk.spruce.lab/tickets/142",
+              note: "Signed-in helpdesk view"
+            },
+            request: {
+              method: "GET",
+              path: "/tickets/142",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "helpdesk.spruce.lab" },
+                { name: "Cookie", value: "theme=forest; session=sp-41ac2" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "last_ticket=142; Path=/; HttpOnly" },
+                { name: "Cache-Control", value: "private, max-age=60" }
+              ],
+              body:
+                "<html>\n  <h1>Ticket #142</h1>\n  <p>Status: awaiting review</p>\n</html>"
+            },
+            cookies: [
+              { name: "theme", value: "forest", scope: "helpdesk.spruce.lab", purpose: "Preference" },
+              { name: "session", value: "sp-41ac2", scope: "helpdesk.spruce.lab", purpose: "Signed-in state" },
+              { name: "last_ticket", value: "142", scope: "helpdesk.spruce.lab", purpose: "Recent ticket shortcut" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "sp-41ac2",
+              note: "The browser already has a session cookie for the portal."
+            },
+            cache: {
+              status: "Private cache allowed",
+              note: "The response can be cached privately by the browser for 60 seconds."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this inspection lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            mode: "get",
+            defaultExplainKey: "set-cookie",
+            lineParts: [],
+            headerParts: ["set-cookie"],
+            interactiveParts: ["set-cookie"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "set-cookie"
+          }
+        },
+        {
+          id: "headers-cache-control",
+          title: "Cache-Control",
+          prompt: "Tap Cache-Control.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Cache-Control."],
+          successCondition: "Tap the cache rule header.",
+          feedback: "Good. Cache-Control means reuse rules.",
+          explanation: "Cache-Control = reuse rules.",
+          workspace: {
+            browser: {
+              title: "Spruce Helpdesk",
+              url: "https://helpdesk.spruce.lab/tickets/142",
+              note: "Signed-in helpdesk view"
+            },
+            request: {
+              method: "GET",
+              path: "/tickets/142",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "helpdesk.spruce.lab" },
+                { name: "Cookie", value: "theme=forest; session=sp-41ac2" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "last_ticket=142; Path=/; HttpOnly" },
+                { name: "Cache-Control", value: "private, max-age=60" }
+              ],
+              body:
+                "<html>\n  <h1>Ticket #142</h1>\n  <p>Status: awaiting review</p>\n</html>"
+            },
+            cookies: [
+              { name: "theme", value: "forest", scope: "helpdesk.spruce.lab", purpose: "Preference" },
+              { name: "session", value: "sp-41ac2", scope: "helpdesk.spruce.lab", purpose: "Signed-in state" },
+              { name: "last_ticket", value: "142", scope: "helpdesk.spruce.lab", purpose: "Recent ticket shortcut" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "sp-41ac2",
+              note: "The browser already has a session cookie for the portal."
+            },
+            cache: {
+              status: "Private cache allowed",
+              note: "The response can be cached privately by the browser for 60 seconds."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this inspection lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            mode: "get",
+            defaultExplainKey: "cache-control",
+            lineParts: [],
+            headerParts: ["cache-control"],
+            interactiveParts: ["cache-control"]
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "cache-control"
+          }
+        }
+      ]
+    },
+    {
+      id: "cookies-session-basics",
+      title: "Cookies and Sessions",
+      category: "Cookies & State",
+      difficulty: "Beginner",
+      learningObjectives: [
+        "See one cookie come in and go back out.",
+        "Learn what a session cookie looks like.",
+        "Tell a session cookie from a preference cookie."
+      ],
+      scenarioIntro:
+        "One cookie arrives. One cookie goes back.",
+      explanation:
+        "Watch the cookie loop first.",
+      recommendedNextLesson: "session-handling-risk",
+      interactiveSteps: [
+        {
+          id: "cookie-set-cookie",
+          title: "Set-Cookie",
+          prompt: "Tap Set-Cookie.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Set-Cookie."],
+          successCondition: "Tap the cookie instruction.",
+          feedback: "Good. The server says save this cookie.",
+          explanation: "Set-Cookie = save this cookie.",
+          workspace: {
+            browser: {
+              title: "Fable Member Portal",
+              url: "https://portal.fable.lab/welcome",
+              note: "First page load"
+            },
+            request: {
+              method: "GET",
+              path: "/welcome",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "portal.fable.lab" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" },
+                { name: "Set-Cookie", value: "PHPSESSID=pl-8841aa; Path=/; HttpOnly" }
+              ],
+              body:
+                "<html>\n  <h1>Welcome</h1>\n  <p>Your member tools are loading.</p>\n</html>"
+            },
+            cookies: [
+              { name: "PHPSESSID", value: "pl-8841aa", scope: "portal.fable.lab", purpose: "Session identifier" }
+            ],
+            session: {
+              state: "Session created",
+              id: "pl-8841aa",
+              note: "The server has issued a new session identifier."
+            },
+            cache: {
+              status: "Normal page response",
+              note: "The main focus here is stored cookie state rather than caching."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            mode: "get",
+            defaultExplainKey: "set-cookie",
+            lineParts: [],
+            headerParts: ["set-cookie"],
+            interactiveParts: ["set-cookie"]
+          },
+          focusExplain: {
+            "set-cookie": "Set-Cookie = save this cookie."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "set-cookie"
+          }
+        },
+        {
+          id: "cookie-send-back",
+          title: "Cookie",
+          prompt: "Tap Cookie.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap Cookie."],
+          successCondition: "Tap the cookie header.",
+          feedback: "Good. The browser sends it back.",
+          explanation: "Cookie = browser sends it back.",
+          workspace: {
+            browser: {
+              title: "Fable Member Portal",
+              url: "https://portal.fable.lab/dashboard",
+              note: "Next request"
+            },
+            request: {
+              method: "GET",
+              path: "/dashboard",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "portal.fable.lab" },
+                { name: "Cookie", value: "PHPSESSID=pl-8841aa; theme=violet" },
+                { name: "User-Agent", value: "LabBrowser/5.1 (Student Edition)" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body:
+                "<html>\n  <h1>Member Dashboard</h1>\n  <p>Session recognised.</p>\n</html>"
+            },
+            cookies: [
+              { name: "PHPSESSID", value: "pl-8841aa", scope: "portal.fable.lab", purpose: "Session identifier" },
+              { name: "theme", value: "violet", scope: "portal.fable.lab", purpose: "Preference" }
+            ],
+            session: {
+              state: "Session recognised",
+              id: "pl-8841aa",
+              note: "The server can look up member state using the session identifier."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step is about where the browser sends stored cookies."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "request",
+            mode: "get",
+            defaultExplainKey: "cookie",
+            lineParts: [],
+            headerParts: ["cookie"],
+            interactiveParts: ["cookie"]
+          },
+          focusExplain: {
+            "cookie": "Cookie = browser sends it back."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "cookie"
+          }
+        },
+        {
+          id: "cookie-session-id",
+          title: "PHPSESSID",
+          prompt: "Tap PHPSESSID.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap PHPSESSID."],
+          successCondition: "Tap the session cookie.",
+          feedback: "Right. This one is the session id.",
+          explanation: "PHPSESSID = session id.",
+          workspace: {
+            browser: {
+              title: "Fable Member Portal",
+              url: "https://portal.fable.lab/dashboard",
+              note: "Stored cookies"
+            },
+            request: {
+              method: "GET",
+              path: "/dashboard",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "portal.fable.lab" },
+                { name: "Cookie", value: "PHPSESSID=pl-8841aa; theme=violet; lang=en" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body:
+                "<html>\n  <h1>Member Dashboard</h1>\n  <p>Theme: violet</p>\n</html>"
+            },
+            cookies: [
+              { name: "PHPSESSID", value: "pl-8841aa", scope: "portal.fable.lab", purpose: "Session identifier" },
+              { name: "theme", value: "violet", scope: "portal.fable.lab", purpose: "Preference" },
+              { name: "lang", value: "en", scope: "portal.fable.lab", purpose: "Language choice" }
+            ],
+            session: {
+              state: "Session recognised",
+              id: "pl-8841aa",
+              note: "The server uses this identifier to find the current member state."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "Cookies are the main topic in this step."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "terms",
+            items: [
+              { label: "PHPSESSID=pl-8841aa", key: "session-cookie", variant: "term" }
+            ],
+            interactiveParts: ["session-cookie"],
+            defaultExplainKey: "session-cookie"
+          },
+          focusExplain: {
+            "session-cookie": "PHPSESSID = session id."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "session-cookie"
+          }
+        },
+        {
+          id: "cookie-preference",
+          title: "theme",
+          prompt: "Tap theme.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap theme."],
+          successCondition: "Tap the preference cookie.",
+          feedback: "Good. This one is just a setting.",
+          explanation: "theme = saved setting.",
+          workspace: {
+            browser: {
+              title: "Fable Member Portal",
+              url: "https://portal.fable.lab/dashboard",
+              note: "Stored cookies"
+            },
+            request: {
+              method: "GET",
+              path: "/dashboard",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "portal.fable.lab" },
+                { name: "Cookie", value: "PHPSESSID=pl-8841aa; theme=violet; lang=en" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body:
+                "<html>\n  <h1>Member Dashboard</h1>\n  <p>Theme: violet</p>\n</html>"
+            },
+            cookies: [
+              { name: "PHPSESSID", value: "pl-8841aa", scope: "portal.fable.lab", purpose: "Session identifier" },
+              { name: "theme", value: "violet", scope: "portal.fable.lab", purpose: "Preference" },
+              { name: "lang", value: "en", scope: "portal.fable.lab", purpose: "Language choice" }
+            ],
+            session: {
+              state: "Session recognised",
+              id: "pl-8841aa",
+              note: "The server uses the session id, not the theme value."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "Cookies are the main topic in this step."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "No crawl tree is displayed in this lesson.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "terms",
+            items: [
+              { label: "theme=violet", key: "preference-cookie", variant: "term" }
+            ],
+            interactiveParts: ["preference-cookie"],
+            defaultExplainKey: "preference-cookie"
+          },
+          focusExplain: {
+            "preference-cookie": "theme = saved setting."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "preference-cookie"
+          }
+        }
+      ]
+    },
+
+    {
+      id: "session-handling-risk",
+      title: "Session Rotation",
+      category: "Session Security",
+      difficulty: "Beginner",
+      learningObjectives: [
+        "See the token before login and after login.",
+        "Notice what an old token does later.",
+        "Keep one safe rule: rotate and expire."
+      ],
+      scenarioIntro:
+        "One token before login. One new token after login.",
+      explanation:
+        "Watch the token change.",
+      recommendedNextLesson: "proxy-interception-fundamentals",
+      interactiveSteps: [
+        {
+          id: "session-guest-token",
+          title: "Guest Token",
+          prompt: "Tap the guest token.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap the guest token."],
+          successCondition: "Tap the old token.",
+          feedback: "Good. This is the token before login.",
+          explanation: "Guest token = before login.",
+          workspace: {
+            browser: {
+              title: "Beacon Ops Dashboard",
+              url: "https://ops.beacon.lab/login",
+              note: "Before login"
+            },
+            request: {
+              method: "GET",
+              path: "/login",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "ops.beacon.lab" },
+                { name: "Cookie", value: "session=guest-31aa" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Login</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "guest-31aa", scope: "ops.beacon.lab", purpose: "Guest session" }
+            ],
+            session: {
+              state: "Guest",
+              id: "guest-31aa",
+              note: "The browser starts with a guest session."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step only shows the old token."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "terms",
+            items: [
+              { label: "session=guest-31aa", key: "guest-token", variant: "term" }
+            ],
+            interactiveParts: ["guest-token"],
+            defaultExplainKey: "guest-token"
+          },
+          focusExplain: {
+            "guest-token": "Guest token = before login."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "guest-token"
+          }
+        },
+        {
+          id: "session-auth-token",
+          title: "New Token",
+          prompt: "Tap the new token.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap the new token."],
+          successCondition: "Tap the new token after login.",
+          feedback: "Right. Login gets a new token.",
+          explanation: "New token = signed-in session.",
+          workspace: {
+            browser: {
+              title: "Beacon Ops Dashboard",
+              url: "https://ops.beacon.lab/login",
+              note: "Login finished"
+            },
+            request: {
+              method: "POST",
+              path: "/login",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "ops.beacon.lab" },
+                { name: "Cookie", value: "session=guest-31aa" },
+                { name: "Content-Type", value: "application/x-www-form-urlencoded" }
+              ],
+              body: "username=maya&password=demo-lab-value"
+            },
+            response: {
+              statusCode: 302,
+              statusText: "Found",
+              headers: [
+                { name: "Location", value: "/dashboard" },
+                { name: "Set-Cookie", value: "session=auth-93c7d1; Path=/; HttpOnly; Secure" }
+              ],
+              body: ""
+            },
+            cookies: [
+              { name: "session", value: "auth-93c7d1", scope: "ops.beacon.lab", purpose: "Authenticated session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "auth-93c7d1",
+              note: "The server issued a new session token."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step only shows the new token."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "terms",
+            items: [
+              { label: "session=auth-93c7d1", key: "auth-token", variant: "term" }
+            ],
+            interactiveParts: ["auth-token"],
+            defaultExplainKey: "auth-token"
+          },
+          focusExplain: {
+            "auth-token": "New token = signed-in session."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "auth-token"
+          }
+        },
+        {
+          id: "session-old-token-fails",
+          title: "302 Found",
+          prompt: "Tap 302 Found.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap 302 Found."],
+          successCondition: "Tap the redirect code.",
+          feedback: "Yes. The old token goes back to login.",
+          explanation: "302 = back to login.",
+          workspace: {
+            browser: {
+              title: "Beacon Ops Dashboard",
+              url: "https://ops.beacon.lab/dashboard",
+              note: "Old token used again"
+            },
+            request: {
+              method: "GET",
+              path: "/dashboard",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "ops.beacon.lab" },
+                { name: "Cookie", value: "session=guest-31aa" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 302,
+              statusText: "Found",
+              headers: [
+                { name: "Location", value: "/login" },
+                { name: "Cache-Control", value: "no-store" }
+              ],
+              body: ""
+            },
+            cookies: [
+              { name: "session", value: "guest-31aa", scope: "ops.beacon.lab", purpose: "Old guest session" }
+            ],
+            session: {
+              state: "Guest",
+              id: "guest-31aa",
+              note: "The server treats the old token as guest state."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step is about the old token result."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "response",
+            mode: "get",
+            defaultExplainKey: "response-code",
+            lineParts: ["status"],
+            interactiveParts: ["status"]
+          },
+          focusExplain: {
+            "response-code": "302 = back to login."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "response-code"
+          }
+        },
+        {
+          id: "session-safe-rule",
+          title: "Safe Rule",
+          prompt: "Tap the safe rule.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Tap the safe rule."],
+          successCondition: "Tap the safe rule.",
+          feedback: "Good. Make a new token and end the old one.",
+          explanation: "Safe rule: rotate and expire.",
+          workspace: {
+            browser: {
+              title: "Beacon Ops Dashboard",
+              url: "https://ops.beacon.lab/dashboard",
+              note: "Safe session rule"
+            },
+            request: {
+              method: "GET",
+              path: "/dashboard",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "ops.beacon.lab" },
+                { name: "Cookie", value: "session=auth-93c7d1" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Cache-Control", value: "no-store" },
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Dashboard</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "auth-93c7d1", scope: "ops.beacon.lab", purpose: "Authenticated session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "auth-93c7d1",
+              note: "The new token stays valid. The old one should not."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step keeps one simple rule."
+            },
+            proxy: {
+              status: "Pass-through",
+              note: "No interception is active during this lesson."
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "terms",
+            items: [
+              { label: "Rotate + expire old token", key: "rotate-expire", variant: "term" }
+            ],
+            interactiveParts: ["rotate-expire"],
+            defaultExplainKey: "rotate-expire"
+          },
+          focusExplain: {
+            "rotate-expire": "Safe rule: rotate and expire."
+          },
+          interaction: {
+            type: "focus-discover",
+            buttonLabel: "Next",
+            targetKey: "rotate-expire"
+          }
+        }
+      ]
+    },
+    {
+      id: "proxy-interception-fundamentals",
+      title: "Proxy Flow",
+      category: "Proxy & Interception",
+      difficulty: "Beginner",
+      learningObjectives: [
+        "See where the proxy sits.",
+        "Watch one request pause there.",
+        "Forward it and get one response."
+      ],
+      scenarioIntro:
+        "The proxy sits in the middle.",
+      explanation:
+        "Turn it on. Pause one request. Forward it.",
+      recommendedNextLesson: "request-modification-challenge",
+      interactiveSteps: [
+        {
+          id: "proxy-flow",
+          title: "Proxy",
+          prompt: "Watch the flow.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Follow the middle box."],
+          successCondition: "See where the proxy sits.",
+          feedback: "Good. The proxy sits between both sides.",
+          explanation: "A proxy sits between browser and server.",
+          workspace: {
+            browser: {
+              title: "Lumen Proxy Playground",
+              url: "https://proxy.lumen.lab/profile",
+              note: "Simple proxy path"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "proxy.lumen.lab" },
+                { name: "Cookie", value: "session=lu-2001" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "lu-2001", scope: "proxy.lumen.lab", purpose: "Lab session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "lu-2001",
+              note: "The lesson starts with a simple page load."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step only shows the path."
+            },
+            proxy: {
+              status: "Between both sides",
+              note: "The proxy is the middle step.",
+              interceptEnabled: false,
+              requestPaused: false
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "flow",
+            stageIndex: 1,
+            labels: ["Browser", "Proxy", "Server", "Response"],
+            mode: "get"
+          },
+          interaction: {
+            type: "focus-continue",
+            buttonLabel: "Next"
+          }
+        },
+        {
+          id: "proxy-intercept-on",
+          title: "Intercept ON",
+          prompt: "Pick the setting that stops the next request.",
+          acceptedAnswers: [],
+          acceptedActions: [],
+          hints: ["Pick the setting that stops the next request."],
+          successCondition: "Pick the setting that pauses the next request.",
+          feedback: "Nice - the next request will stop here.",
+          explanation: "ON = next request stops here.",
+          workspace: {
+            browser: {
+              title: "Lumen Proxy Playground",
+              url: "https://proxy.lumen.lab/profile",
+              note: "Ready to pause the next request"
+            },
+            request: {
+              method: "GET",
+              path: "/profile",
+              version: "HTTP/1.1",
+              headers: [
+                { name: "Host", value: "proxy.lumen.lab" },
+                { name: "Cookie", value: "session=lu-2001" }
+              ],
+              body: ""
+            },
+            response: {
+              statusCode: 200,
+              statusText: "OK",
+              headers: [
+                { name: "Content-Type", value: "text/html; charset=utf-8" }
+              ],
+              body: "<html>\n  <h1>Profile</h1>\n</html>"
+            },
+            cookies: [
+              { name: "session", value: "lu-2001", scope: "proxy.lumen.lab", purpose: "Lab session" }
+            ],
+            session: {
+              state: "Signed in",
+              id: "lu-2001",
+              note: "The user is ready to send one request."
+            },
+            cache: {
+              status: "Not the focus",
+              note: "This step only shows the intercept switch."
+            },
+            proxy: {
+              status: "Intercept on",
+              note: "The next request will pause at the proxy.",
+              interceptEnabled: true,
+              requestPaused: false
+            },
+            discoverability: {
+              summary: "Not used in this step.",
+              tree: []
+            }
+          },
+          focusVisual: {
+            type: "compare",
+            defaultExplainKey: "intercept-off",
             options: [
               {
                 label: "The browser decides it needs the /profile page",
