@@ -1846,10 +1846,13 @@
     min-height: 0;
     height: 0;
     order: 2;
+    overflow: hidden;
   }
 
   .terminal-output {
+    flex: 1 1 auto;
     height: 100%;
+    max-height: 100%;
     padding: 14px;
     padding-bottom: 34px;
     font-size: 12.5px;
@@ -1869,9 +1872,8 @@
     flex: 0 0 auto;
     flex-shrink: 0;
     order: 3;
-    position: sticky;
-    bottom: 0;
-    z-index: 4;
+    position: relative;
+    z-index: 2;
     gap: 0;
     padding: 14px 12px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(71, 85, 105, 0.58);
