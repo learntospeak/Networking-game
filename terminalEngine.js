@@ -390,6 +390,10 @@
 
     const challengeSelectionMode = shouldPreviewMobileSelection();
     const showStartBtn = Boolean(pageConfig.autoStart === false);
+    const startLabel = challengeSelectionMode ? "Start" : "Restart";
+    const startTargetLabel = challengeSelectionMode
+      ? (scenarioUsesChallengePresentation(currentScenario()) ? "selected challenge" : "selected mission")
+      : (scenarioUsesChallengePresentation(currentScenario()) ? "current challenge" : "current mission");
 
     els.mobilePrevBtn.setAttribute("aria-label", challengeSelectionMode ? "Previous challenge" : "Previous lesson");
     els.mobileNextBtn.setAttribute("aria-label", challengeSelectionMode ? "Next challenge" : "Next lesson");
@@ -397,12 +401,12 @@
 
     if (els.mobileStartBtn) {
       els.mobileStartBtn.hidden = !showStartBtn;
-      els.mobileStartBtn.textContent = challengeSelectionMode ? "\u25b6" : "\u21bb";
+      els.mobileStartBtn.textContent = startLabel;
       els.mobileStartBtn.setAttribute(
         "aria-label",
-        challengeSelectionMode ? "Start selected challenge" : "Restart current challenge"
+        `${startLabel} ${startTargetLabel}`
       );
-      els.mobileStartBtn.title = challengeSelectionMode ? "Start selected challenge" : "Restart current challenge";
+      els.mobileStartBtn.title = `${startLabel} ${startTargetLabel}`;
     }
   }
 
@@ -3159,8 +3163,12 @@
     if (announce) {
       announceScenario();
     } else if (pageConfig.initialMessage) {
-      if (scenarioUsesChallengePresentation(currentScenario()) && isMobileTerminalLayout()) {
-        printLine("Use the header arrows to choose a challenge, then press start to begin.", "coach");
+      if (pageConfig.autoStart === false) {
+        if (isMobileTerminalLayout()) {
+          printLine("Use the left and right arrows above to choose a mission, then tap Start.", "coach");
+        } else {
+          printLine("Use Previous and Next to choose a mission, then select Start Challenge.", "coach");
+        }
       } else {
         printLine(pageConfig.initialMessage, "coach");
       }
