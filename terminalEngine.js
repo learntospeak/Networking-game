@@ -359,7 +359,20 @@
   }
 
   function shouldPreviewMobileSelection() {
-    return Boolean(pageConfig.autoStart === false && !session.scenarioStarted);
+    return !session.scenarioStarted;
+  }
+
+  function previewStartMessage(scenario = currentScenario()) {
+    const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    if (isMobileTerminalLayout()) {
+      return challengePresentation
+        ? "Use the left and right arrows above to choose a challenge, then tap Start."
+        : "Use the left and right arrows above to choose a mission, then tap Start.";
+    }
+
+    return challengePresentation
+      ? "Use Previous and Next to choose a challenge, then start it when you're ready."
+      : "Use Previous and Next to choose a mission, then start it when you're ready.";
   }
 
   function navigateScenarioBy(delta) {
@@ -389,9 +402,10 @@
     }
 
     const challengeSelectionMode = shouldPreviewMobileSelection();
-    const showStartBtn = Boolean(pageConfig.autoStart === false);
-    const startLabel = challengeSelectionMode ? "Start" : "Restart";
-    const startTargetLabel = challengeSelectionMode
+    const showStartBtn = Boolean(!session.scenarioStarted || pageConfig.autoStart === false);
+    const startPreviewMode = !session.scenarioStarted;
+    const startLabel = startPreviewMode ? "Start" : "Restart";
+    const startTargetLabel = startPreviewMode
       ? (scenarioUsesChallengePresentation(currentScenario()) ? "selected challenge" : "selected mission")
       : (scenarioUsesChallengePresentation(currentScenario()) ? "current challenge" : "current mission");
 
@@ -3163,12 +3177,8 @@
     if (announce) {
       announceScenario();
     } else if (pageConfig.initialMessage) {
-      if (pageConfig.autoStart === false) {
-        if (isMobileTerminalLayout()) {
-          printLine("Use the left and right arrows above to choose a mission, then tap Start.", "coach");
-        } else {
-          printLine("Use Previous and Next to choose a mission, then select Start Challenge.", "coach");
-        }
+      if (!announce) {
+        printLine(previewStartMessage(currentScenario()), "coach");
       } else {
         printLine(pageConfig.initialMessage, "coach");
       }
