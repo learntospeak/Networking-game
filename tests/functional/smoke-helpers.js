@@ -232,6 +232,7 @@ async function runWalkthroughDemo(page, options = {}) {
   const secondCounter = ((await page.locator("#walkthroughStepCounter").textContent()) || "").trim();
   const secondTitle = ((await page.locator("#walkthroughTitle").textContent()) || "").trim();
   const secondGoal = ((await page.locator("#walkthroughGoal").textContent()) || "").trim();
+  await page.locator("#walkthroughTryBtn").scrollIntoViewIfNeeded();
   await page.locator("#walkthroughTryBtn").click();
   await expect(page.locator("#walkthroughCard")).toBeHidden();
   const after = await getTerminalSnapshot(page);

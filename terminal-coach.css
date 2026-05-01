@@ -663,6 +663,8 @@
   max-height: min(76vh, 680px);
   margin: 0 auto;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   padding: 18px 18px 20px;
   border-radius: 22px;
   border: 1px solid rgba(56, 189, 248, 0.24);
@@ -722,6 +724,12 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 16px;
+  position: sticky;
+  bottom: -20px;
+  padding-top: 12px;
+  padding-bottom: 2px;
+  background:
+    linear-gradient(180deg, rgba(7, 12, 18, 0) 0%, rgba(7, 12, 18, 0.88) 24%, rgba(7, 12, 18, 0.98) 100%);
 }
 
 .walkthrough-close {

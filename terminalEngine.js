@@ -1424,6 +1424,20 @@
       }
     ]);
 
+    const guidedReplayCandidates = [
+      { entries: customStepWalkthrough, source: "step", custom: true, fallback: false },
+      { entries: customStageWalkthrough, source: "stage", custom: true, fallback: false },
+      { entries: customScenarioWalkthrough, source: "scenario", custom: true, fallback: false },
+      { entries: customLevelWalkthrough, source: "level", custom: true, fallback: false }
+    ];
+
+    if (isBeginnerMode()) {
+      const guidedReplay = guidedReplayCandidates.find((candidate) => candidate.entries.length > 1);
+      if (guidedReplay) {
+        return guidedReplay;
+      }
+    }
+
     if (customStepWalkthrough.length) {
       return { entries: customStepWalkthrough, source: "step", custom: true, fallback: false };
     }
@@ -6293,6 +6307,22 @@
     return true;
   }
 
+  function previewSavedProgress(record) {
+    const state = record?.state || {};
+    const savedScenarioId = String(state.scenarioId || "");
+    const fallbackIndex = Number.isInteger(state.scenarioIndex) ? state.scenarioIndex : Number(state.scenarioIndex) || 0;
+    const stepIndex = Math.max(0, Number(state.stepIndex) || 0);
+    const loaded = savedScenarioId ? previewScenarioById(savedScenarioId) : false;
+
+    if (!loaded) {
+      previewScenario(fallbackIndex);
+    }
+
+    session.stepIndex = Math.min(stepIndex, Math.max(0, currentScenario().steps.length - 1));
+    renderPanel();
+    renderSectionShell();
+  }
+
   window.TerminalEngine = {
     getScenarios: () => session.scenarios.slice(),
     getCurrentScenario: () => currentScenario(),
@@ -6330,6 +6360,11 @@
 
     if (NetlabApp?.getLaunchAction()) {
       NetlabApp.clearLaunchAction();
+    }
+
+    if (savedProgressRecord && session.resumePromptVisible) {
+      previewSavedProgress(savedProgressRecord);
+      return;
     }
 
     if (pageConfig.autoStart === false) {
