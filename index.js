@@ -96,8 +96,7 @@
 
     const stats = NetlabApp.getDashboardStats();
     els.quickStats.innerHTML = [
-      renderHeroStat("Coins", stats.coins),
-      renderHeroStat("Labs Started", stats.startedSections),
+      renderHeroStat("Labs In Progress", stats.startedSections),
       renderHeroStat("Items Complete", stats.completedItems)
     ].join("");
   }
@@ -141,9 +140,7 @@
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges hub-account-badges\">",
-      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "No account required" : "Cloud sync active") + "</span>",
-      "  <span class=\"status-badge\">" + escapeHtml(NetlabApp.getProgressStorageLabel()) + "</span>",
-      "  <span class=\"status-badge\">" + escapeHtml("Coins: " + NetlabApp.getCoinsTotal()) + "</span>",
+      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(isGuest ? "Local progress" : "Cloud sync active") + "</span>",
       "</div>",
       view.notice ? "<div class=\"app-shell-banner app-shell-banner-" + escapeHtml(view.noticeTone || "info") + "\">" + escapeHtml(view.notice) + "</div>" : "",
       view.error ? "<div class=\"app-shell-banner app-shell-banner-error\">" + escapeHtml(view.error) + "</div>" : "",
@@ -370,20 +367,14 @@
       "  <div>",
       "    <p class=\"app-shell-kicker\">Continue</p>",
       "    <h2>Continue Where You Left Off</h2>",
-      "    <p class=\"app-shell-copy\">Last worked on: " + escapeHtml(lastProgress.sectionLabel + " - " + lastProgress.currentItemLabel) + "</p>",
+      "    <p class=\"app-shell-copy\">" + escapeHtml(lastProgress.sectionLabel + " - " + lastProgress.currentItemLabel) + " · " + escapeHtml(completion) + "</p>",
       "  </div>",
-      "</div>",
-      "<div class=\"app-shell-badges\">",
-      "  <span class=\"status-badge status-badge-blue\">" + escapeHtml(completion) + "</span>",
-      "  <span class=\"status-badge\">" + escapeHtml(profile.label) + "</span>",
-      (lastProgress.summaryText ? "  <span class=\"status-badge\">" + escapeHtml(lastProgress.summaryText) + "</span>" : ""),
       "</div>",
       "<div class=\"app-shell-actions\">",
       "  <a class=\"app-action-link\" href=\"" + escapeHtml(NetlabApp.buildSectionUrl(lastProgress.sectionId, "resume")) + "\">Resume</a>",
       "  <button id=\"startOverLastBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
-      "  <button id=\"resetActiveProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
-      "<p class=\"app-shell-note\">" + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
+      "<p class=\"app-shell-note\">" + escapeHtml(profile.label + " · " + NetlabApp.getProfileStorageNote()) + "</p>"
     ].join("");
 
     const startOverBtn = document.getElementById("startOverLastBtn");
@@ -393,24 +384,6 @@
         window.location.href = NetlabApp.buildSectionUrl(lastProgress.sectionId, "start");
       });
     }
-
-    bindResetOnly();
-  }
-
-  function bindResetOnly() {
-    const resetBtn = document.getElementById("resetActiveProgressBtn");
-    if (!resetBtn) {
-      return;
-    }
-
-    resetBtn.addEventListener("click", function () {
-      if (!window.confirm("Clear all saved progress for the current profile?")) {
-        return;
-      }
-
-      NetlabApp.clearActiveProfileProgress();
-      renderAll();
-    });
   }
 
   function renderCardProgress() {
@@ -427,18 +400,28 @@
       }
 
       if (!progress) {
-        slot.textContent = "No saved progress yet.";
+        slot.textContent = "Not Started";
         return;
       }
 
-      const parts = ["Last worked on: " + progress.currentItemLabel];
-      parts.push(formatCompletion(progress));
-      if (progress.summaryText) {
-        parts.push(progress.summaryText);
-      }
-
-      slot.textContent = parts.join(" | ");
+      slot.textContent = deriveProgressStatus(progress);
     });
+  }
+
+  function deriveProgressStatus(progress) {
+    if (!progress) {
+      return "Not Started";
+    }
+
+    if (progress.totalCount && progress.completedCount >= progress.totalCount) {
+      return "Complete";
+    }
+
+    if (progress.completedCount > 0 || (progress.currentItemLabel && progress.currentItemLabel !== "Not started")) {
+      return "In Progress";
+    }
+
+    return "Not Started";
   }
 
   function formatCompletion(progress) {

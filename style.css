@@ -850,7 +850,7 @@ button::before {
 
 .hub-hero-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 18px;
 }
@@ -881,7 +881,7 @@ button::before {
 
 .hub-account-panel {
   min-height: 0;
-  padding: 16px 18px;
+  padding: 14px 16px;
   text-align: left;
 }
 
@@ -930,6 +930,29 @@ button::before {
   margin-top: 0;
   margin-bottom: 18px;
   text-align: left;
+  padding: 14px 16px;
+}
+
+.roadmap-preview-panel {
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+.roadmap-preview-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  background: rgba(6, 10, 16, 0.7);
+}
+
+.roadmap-preview-copy {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
 }
 
 .auth-confirm-shell {
@@ -1133,7 +1156,7 @@ button::before {
   position: relative;
   display: grid;
   gap: 8px;
-  min-height: 172px;
+  min-height: 156px;
   padding: 18px 18px 18px 46px;
   border-radius: 18px;
   border: 1px solid #334155;
@@ -1147,7 +1170,7 @@ button::before {
 }
 
 .learning-path-card-featured {
-  min-height: 196px;
+  min-height: 176px;
   grid-column: span 2;
 }
 
@@ -1189,12 +1212,19 @@ button::before {
 .learning-path-copy {
   color: #dbe4f0;
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .learning-path-status {
   margin-top: auto;
-  color: #cbd5e1;
-  font-size: 13px;
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   line-height: 1.5;
 }
 
@@ -2679,6 +2709,11 @@ h3 {
   .hub-account-panel,
   .hub-resume-panel {
     text-align: left;
+  }
+
+  .roadmap-preview-card {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   #practiceSection,

@@ -224,8 +224,8 @@
 
 .terminal-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.45fr);
-  gap: 24px;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
   width: 100%;
 }
@@ -348,7 +348,7 @@
 
 .scenario-support-grid {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .support-card {
@@ -367,6 +367,85 @@
   margin: 0;
   line-height: 1.65;
   overflow-wrap: anywhere;
+}
+
+.support-card-primary {
+  border-color: rgba(56, 189, 248, 0.24);
+  background: linear-gradient(180deg, rgba(8, 16, 28, 0.94) 0%, rgba(10, 18, 30, 0.98) 100%);
+}
+
+.support-disclosure {
+  padding: 0;
+  overflow: hidden;
+}
+
+.support-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.support-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.support-disclosure-title,
+.support-disclosure-meta {
+  display: block;
+}
+
+.support-disclosure-title {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.support-disclosure-meta {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.support-disclosure-summary::after {
+  content: "+";
+  color: #7dd3fc;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.support-disclosure[open] .support-disclosure-summary {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.72);
+}
+
+.support-disclosure[open] .support-disclosure-summary::after {
+  content: "−";
+}
+
+.support-disclosure-body {
+  padding: 14px 16px 16px;
+}
+
+.support-disclosure-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.support-disclosure-label {
+  margin: 0 0 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .beginner-roadmap-panel {
@@ -554,9 +633,7 @@
   display: none;
 }
 
-.terminal-page.terminal-beginner-mode .beginner-mode-banner,
-.terminal-page.terminal-beginner-mode .beginner-task-strip,
-.terminal-page.terminal-beginner-mode .beginner-help-strip {
+.terminal-page.terminal-beginner-mode .beginner-mode-banner {
   display: block;
 }
 
@@ -811,25 +888,6 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.beginner-task-strip,
-.beginner-help-strip {
-  margin-bottom: 0;
-  padding: 8px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(71, 85, 105, 0.68);
-  background: rgba(7, 11, 16, 0.92);
-}
-
-.beginner-task-help {
-  margin-top: 6px;
-  color: #93c5fd;
-}
-
-.beginner-help-strip {
-  border-color: rgba(56, 189, 248, 0.24);
-  background: rgba(7, 14, 22, 0.94);
 }
 
 .terminal-page.terminal-beginner-mode .terminal-controls {
@@ -1511,6 +1569,10 @@
   justify-content: flex-end;
   padding-top: 22px;
   padding-bottom: 22px;
+  position: sticky;
+  bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 12, 18, 0) 0%, rgba(8, 12, 18, 0.92) 18%, rgba(4, 8, 14, 0.995) 100%);
 }
 
 .command-sheet-overlay {

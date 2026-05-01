@@ -101,8 +101,8 @@
       <section class="lab-panel terminal-meta-panel">
         <div class="mode-panel-head">
           <div>
-            <h2>Scenario Progress</h2>
-            <p class="panel-copy">This trainer keeps environment state, accepts multiple valid workflows, and coaches you through mistakes instead of collapsing into multiple choice.</p>
+            <h2>Current Progress</h2>
+            <p class="panel-copy">Track your current ticket, shell context, and progress through the mission.</p>
           </div>
           <div class="status-cluster">
             <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
@@ -130,8 +130,12 @@
           </div>
 
           <div class="scenario-support-grid">
-            <article id="missionCaseFileCard" class="support-card mission-case-file-card" hidden>
-              <h3>Mission Case File</h3>
+            <details id="missionCaseFileCard" class="support-card support-disclosure mission-case-file-card" hidden>
+              <summary class="support-disclosure-summary">
+                <span class="support-disclosure-title">Ticket Details</span>
+                <span class="support-disclosure-meta">View case file</span>
+              </summary>
+              <div class="support-disclosure-body">
               <p id="missionCaseTitle" class="mission-case-title"></p>
               <div id="missionCaseMeta" class="mission-case-meta" hidden>
                 <span id="missionCaseRole" class="scenario-mini-badge" hidden></span>
@@ -165,20 +169,26 @@
                 <p id="missionStageProgress" class="mission-case-copy"></p>
                 <p id="missionTotalProgress" class="mission-case-copy"></p>
               </div>
-            </article>
+              </div>
+            </details>
 
-            <article class="support-card">
-              <h3>Environment Context</h3>
+            <details id="environmentContextCard" class="support-card support-disclosure">
+              <summary class="support-disclosure-summary">
+                <span class="support-disclosure-title">Environment</span>
+                <span class="support-disclosure-meta">Show context</span>
+              </summary>
+              <div class="support-disclosure-body">
               <p id="environmentSummary">Linux Terminal learning. Commands stay inside one Linux shell unless a lesson explicitly says otherwise.</p>
               <ul id="machineContextList" class="machine-context-list"></ul>
-            </article>
+              </div>
+            </details>
 
-            <article class="support-card">
+            <article id="currentTaskCard" class="support-card support-card-primary">
               <h3>Current Task</h3>
               <p id="stepObjective">Identify your working directory before you move deeper into the host.</p>
             </article>
 
-            <article id="beginnerLabCard" class="support-card" hidden>
+            <article id="beginnerLabCard" class="support-card support-card-primary" hidden>
               <h3>Beginner Terminal Lab</h3>
               <p id="beginnerLabCurrentLevel">Level 1: Terminal Orientation</p>
               <p id="beginnerLabCurrentMission">Mission: Incident Folder Triage</p>
@@ -186,24 +196,32 @@
               <p id="beginnerLabProgressText">Level progress: 0/1 missions complete.</p>
             </article>
 
-            <article class="support-card">
-              <h3>Mentor Signal</h3>
+            <details id="helpNotesCard" class="support-card support-disclosure">
+              <summary class="support-disclosure-summary">
+                <span class="support-disclosure-title">Help Notes</span>
+                <span class="support-disclosure-meta">Hints and guidance</span>
+              </summary>
+              <div class="support-disclosure-body support-disclosure-stack">
+              <p class="support-disclosure-label">Mentor Signal</p>
               <p id="coachSignal">Strong operators confirm context before they touch files, processes, or services.</p>
-            </article>
-
-            <article class="support-card">
-              <h3>Hint Ladder</h3>
+              <p class="support-disclosure-label">Hint Ladder</p>
               <ol id="hintLadder" class="hint-ladder">
                 <li>Vague</li>
                 <li>Directional</li>
                 <li>Near answer</li>
               </ol>
-            </article>
+              </div>
+            </details>
 
-            <article class="support-card">
-              <h3>Progress</h3>
+            <details id="progressCard" class="support-card support-disclosure">
+              <summary class="support-disclosure-summary">
+                <span class="support-disclosure-title">Progress</span>
+                <span class="support-disclosure-meta">Detailed progress</span>
+              </summary>
+              <div class="support-disclosure-body">
               <p id="progressSummary">0 scenarios completed in this session.</p>
-            </article>
+              </div>
+            </details>
 
             <article id="missionReviewCard" class="support-card mission-review-card" hidden>
               <h3>Mission Review</h3>

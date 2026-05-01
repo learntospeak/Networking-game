@@ -77,6 +77,8 @@
     beginnerLabCurrentMission: document.getElementById("beginnerLabCurrentMission"),
     beginnerLabCurrentTask: document.getElementById("beginnerLabCurrentTask"),
     beginnerLabProgressText: document.getElementById("beginnerLabProgressText"),
+    currentTaskCard: document.getElementById("currentTaskCard"),
+    progressCard: document.getElementById("progressCard"),
     ticketBriefingOverlay: document.getElementById("ticketBriefingOverlay"),
     ticketBriefingCard: document.getElementById("ticketBriefingCard"),
     ticketBriefingTitle: document.getElementById("ticketBriefingTitle"),
@@ -1788,6 +1790,7 @@
 
     const beginnerTrack = isBeginnerRoadmapTrack();
     const level = currentBeginnerLevel();
+    const stageInfo = visibleStageInfo(scenario);
     els.beginnerLabCard.hidden = !(beginnerTrack && level && scenario && step);
     if (els.beginnerLabCard.hidden) {
       return;
@@ -1798,7 +1801,13 @@
     const levelIndexNumber = beginnerLevelIndex(level.id) + 1;
     fillText(els.beginnerLabCurrentLevel, `Current Lab Level: ${level.title}`, { hideWhenEmpty: false });
     fillText(els.beginnerLabCurrentMission, `Mission: ${scenario.title}`, { hideWhenEmpty: false });
-    fillText(els.beginnerLabCurrentTask, `Current Task: ${step.objective}`, { hideWhenEmpty: false });
+    fillText(
+      els.beginnerLabCurrentTask,
+      stageInfo
+        ? `Current Task: ${step.objective} · Mission Section ${stageInfo.stageIndex + 1} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}`
+        : `Current Task: ${step.objective}`,
+      { hideWhenEmpty: false }
+    );
     fillText(
       els.beginnerLabProgressText,
       `Level progress: ${completedMissions}/${scenarios.length} missions complete · Level ${levelIndexNumber} of ${beginnerLevelRoadmap("windows").length}`,
@@ -2751,6 +2760,12 @@
     if (els.commandSheetBtn) {
       els.commandSheetBtn.textContent = beginnerMode ? "Command Help" : "Commands";
     }
+    if (els.currentTaskCard) {
+      els.currentTaskCard.hidden = beginnerTrack;
+    }
+    if (els.progressCard) {
+      els.progressCard.hidden = beginnerTrack;
+    }
     if (els.beginnerTaskStrip) {
       els.beginnerTaskStrip.hidden = !beginnerMode;
     }
@@ -2923,6 +2938,8 @@
 
     const recommended = recommendedBeginnerLevel();
     const currentLevel = currentBeginnerLevel();
+    const currentLevelTitle = currentLevel?.title || "Level 1: Terminal Orientation";
+    const recommendedTitle = recommended?.title || currentLevelTitle;
     const cards = levels.map((level) => {
       const scenarios = levelScenarios(level);
       const missionCount = scenarios.length;
@@ -2963,10 +2980,18 @@
       `    <div>`,
       `      <p class="app-shell-kicker">Beginner Terminal Lab</p>`,
       `      <h3>Level Roadmap</h3>`,
-      `      <p class="mission-case-copy">Start with beginner-friendly Windows tickets, then move forward one level at a time. Use Recommended Next if you want the clearest path.</p>`,
+      `      <p class="mission-case-copy">Current level: ${escapeHtml(currentLevelTitle)}. Recommended next: ${escapeHtml(recommendedTitle)}.</p>`,
       `    </div>`,
       `  </div>`,
-      `  <div class="beginner-roadmap-grid">${cards}</div>`,
+      `  <details id="beginnerRoadmapDisclosure" class="support-disclosure beginner-roadmap-disclosure">`,
+      `    <summary class="support-disclosure-summary">`,
+      `      <span class="support-disclosure-title">View Beginner Roadmap</span>`,
+      `      <span class="support-disclosure-meta">Choose a level</span>`,
+      `    </summary>`,
+      `    <div class="support-disclosure-body">`,
+      `      <div class="beginner-roadmap-grid">${cards}</div>`,
+      `    </div>`,
+      `  </details>`,
       `</section>`
     ].join("");
   }
@@ -2996,6 +3021,18 @@
       : "./index.html#hubAccountPanel";
     const accountLabel = profile.isGuest ? "Sign In to Sync" : "Manage Account";
 
+    const beginnerBadges = [
+      "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
+      (currentLevel ? "  <span class=\"status-badge status-badge-blue\">" + escapeHtml("Current Level: " + currentLevel.title) + "</span>" : ""),
+      (recommendedLevel ? "  <span class=\"status-badge environment-badge\">" + escapeHtml("Recommended Next: " + recommendedLevel.title) + "</span>" : "")
+    ].filter(Boolean).join("");
+    const standardBadges = [
+      "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
+      "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
+      "  <span class=\"status-badge\">Coins: " + escapeHtml(NetlabApp.getCoinsTotal()) + "</span>",
+      "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>"
+    ].join("");
+
     els.appSectionShell.innerHTML = [
       "<div class=\"app-shell-head\">",
       "  <div>",
@@ -3006,17 +3043,12 @@
           ? "Saved progress is available for this beginner lab. Resume the exact level, mission, and task you were working on, or choose another level."
           : "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning.")
         : (beginnerTrack
-          ? "Profile: " + profile.label + ". This beginner lab saves your current level, mission, mission section, and live terminal state so you can return to the right task later."
+          ? "This beginner lab saves your current level, mission, mission section, and live terminal state so you can return to the right task later."
           : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.")) + "</p>",
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges\">",
-      "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
-      "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
-      "  <span class=\"status-badge\">Coins: " + escapeHtml(NetlabApp.getCoinsTotal()) + "</span>",
-      (beginnerTrack && currentLevel ? "  <span class=\"status-badge\">" + escapeHtml("Current Level: " + currentLevel.title) + "</span>" : ""),
-      (beginnerTrack && recommendedLevel ? "  <span class=\"status-badge environment-badge\">" + escapeHtml("Recommended Next: " + recommendedLevel.title) + "</span>" : ""),
-      "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>",
+      beginnerTrack ? beginnerBadges : standardBadges,
       "</div>",
       "<div class=\"app-shell-actions\">",
       (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
@@ -3026,7 +3058,9 @@
       "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
-      "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>",
+      "<p class=\"app-shell-note\">" + escapeHtml(beginnerTrack
+        ? "Last active: " + lastItem + ". Reset Progress clears all saved lab progress for the current profile. " + NetlabApp.getProfileStorageNote()
+        : "Reset Progress clears all saved lab progress for the current profile. " + NetlabApp.getProfileStorageNote()) + "</p>",
       (beginnerTrack ? renderBeginnerRoadmapMarkup() : "")
     ].join("");
 
@@ -3050,6 +3084,10 @@
 
     if (chooseLevelBtn) {
       chooseLevelBtn.addEventListener("click", () => {
+        const roadmapDisclosure = document.getElementById("beginnerRoadmapDisclosure");
+        if (roadmapDisclosure) {
+          roadmapDisclosure.open = true;
+        }
         document.getElementById("beginnerRoadmapPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
