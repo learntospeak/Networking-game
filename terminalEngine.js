@@ -72,6 +72,11 @@
     missionReviewStrengths: document.getElementById("missionReviewStrengths"),
     missionReviewImprovements: document.getElementById("missionReviewImprovements"),
     missionReviewTakeaway: document.getElementById("missionReviewTakeaway"),
+    beginnerLabCard: document.getElementById("beginnerLabCard"),
+    beginnerLabCurrentLevel: document.getElementById("beginnerLabCurrentLevel"),
+    beginnerLabCurrentMission: document.getElementById("beginnerLabCurrentMission"),
+    beginnerLabCurrentTask: document.getElementById("beginnerLabCurrentTask"),
+    beginnerLabProgressText: document.getElementById("beginnerLabProgressText"),
     ticketBriefingOverlay: document.getElementById("ticketBriefingOverlay"),
     ticketBriefingCard: document.getElementById("ticketBriefingCard"),
     ticketBriefingTitle: document.getElementById("ticketBriefingTitle"),
@@ -119,6 +124,8 @@
     beginnerHelpStrip: document.getElementById("beginnerHelpStrip"),
     beginnerHelpStripText: document.getElementById("beginnerHelpStripText"),
     taskCompleteCard: document.getElementById("taskCompleteCard"),
+    taskCompleteOverlay: document.getElementById("taskCompleteOverlay"),
+    taskCompleteCloseBtn: document.getElementById("taskCompleteCloseBtn"),
     taskCompleteProof: document.getElementById("taskCompleteProof"),
     taskCompleteWhy: document.getElementById("taskCompleteWhy"),
     taskCompleteNext: document.getElementById("taskCompleteNext"),
@@ -132,6 +139,18 @@
     mobileCoachSignal: document.getElementById("mobileCoachSignal"),
     mobileContextToggleBtn: document.getElementById("mobileContextToggleBtn"),
     terminalOutput: document.getElementById("terminalOutput"),
+    walkthroughOverlay: document.getElementById("walkthroughOverlay"),
+    walkthroughCard: document.getElementById("walkthroughCard"),
+    walkthroughTitle: document.getElementById("walkthroughTitle"),
+    walkthroughStepCounter: document.getElementById("walkthroughStepCounter"),
+    walkthroughGoal: document.getElementById("walkthroughGoal"),
+    walkthroughCommand: document.getElementById("walkthroughCommand"),
+    walkthroughOutput: document.getElementById("walkthroughOutput"),
+    walkthroughExplanation: document.getElementById("walkthroughExplanation"),
+    walkthroughPrevBtn: document.getElementById("walkthroughPrevBtn"),
+    walkthroughNextBtn: document.getElementById("walkthroughNextBtn"),
+    walkthroughTryBtn: document.getElementById("walkthroughTryBtn"),
+    walkthroughCloseBtn: document.getElementById("walkthroughCloseBtn"),
     terminalJumpTopBtn: document.getElementById("terminalJumpTopBtn"),
     terminalJumpLatestBtn: document.getElementById("terminalJumpLatestBtn"),
     terminalControls: document.querySelector(".terminal-controls"),
@@ -185,7 +204,15 @@
     ticketBriefingSeen: false,
     ticketBriefingOpen: false,
     beginnerGuideSeen: false,
-    beginnerGuideOpen: false
+    beginnerGuideOpen: false,
+    taskCompleteOpen: false,
+    walkthroughActive: false,
+    walkthroughStepIndex: 0,
+    walkthroughSteps: [],
+    walkthroughTaskIndex: 0,
+    walkthroughSource: "",
+    walkthroughLevelId: "",
+    beginnerRoadmapExpanded: true
   };
   let savedProgressRecord = null;
   const mobilePanelRegistry = [];
@@ -921,7 +948,11 @@
     const source = Array.isArray(ScenarioEngine.scenarios) ? ScenarioEngine.scenarios : [];
     let filtered = source;
 
-    if (typeof pageConfig.scenarioFilter === "function") {
+    if (isBeginnerRoadmapTrack()) {
+      const allowedIds = beginnerScenarioIds();
+      const beginnerOnly = source.filter((scenario) => allowedIds.includes(scenario.id));
+      filtered = beginnerOnly.sort((left, right) => allowedIds.indexOf(left.id) - allowedIds.indexOf(right.id));
+    } else if (typeof pageConfig.scenarioFilter === "function") {
       filtered = source.filter((scenario) => pageConfig.scenarioFilter(scenario));
     } else if (pageConfig.mode === "challenge") {
       filtered = source.filter((scenario) => scenario.mode === "challenge");
@@ -952,7 +983,85 @@
     return "linux-terminal";
   }
 
+  function beginnerLevelRoadmap(track = pageConfig.environmentCategory || "windows") {
+    const levels = ScenarioEngine?.beginnerLabLevels?.[track];
+    return Array.isArray(levels) ? levels.slice() : [];
+  }
+
+  function isBeginnerRoadmapTrack() {
+    return isBeginnerMode() && currentSectionId() === "windows-terminal";
+  }
+
+  function beginnerScenarioIds() {
+    const ids = [];
+    beginnerLevelRoadmap("windows").forEach((level) => {
+      (Array.isArray(level.scenarioIds) ? level.scenarioIds : []).forEach((id) => {
+        if (id && !ids.includes(id)) {
+          ids.push(id);
+        }
+      });
+    });
+    return ids;
+  }
+
+  function currentBeginnerLevel() {
+    const scenario = currentScenario();
+    if (!scenario) {
+      return null;
+    }
+    const levels = beginnerLevelRoadmap("windows");
+    return levels.find((level) => level.id === scenario.beginnerLabLevelId || (level.scenarioIds || []).includes(scenario.id)) || null;
+  }
+
+  function beginnerLevelIndex(levelId) {
+    return beginnerLevelRoadmap("windows").findIndex((level) => level.id === levelId);
+  }
+
+  function levelScenarios(level) {
+    if (!level) {
+      return [];
+    }
+    const ids = Array.isArray(level.scenarioIds) ? level.scenarioIds : [];
+    return ids.map((id) => session.scenarios.find((scenario) => scenario.id === id)).filter(Boolean);
+  }
+
+  function completedScenarioCountForLevel(level) {
+    return levelScenarios(level).filter((scenario) => session.completedScenarioIds.has(scenario.id)).length;
+  }
+
+  function totalTaskCountForLevel(level) {
+    return levelScenarios(level).reduce((sum, scenario) => sum + totalStepsForScenario(scenario), 0);
+  }
+
+  function levelStatus(level) {
+    const scenarios = levelScenarios(level);
+    if (!scenarios.length) {
+      return "Coming Soon";
+    }
+    const completed = completedScenarioCountForLevel(level);
+    if (completed >= scenarios.length) {
+      return "Complete";
+    }
+    const hasCurrent = scenarios.some((scenario) => scenario.id === currentScenario()?.id);
+    if (hasCurrent || completed > 0) {
+      return "In Progress";
+    }
+    return "Not Started";
+  }
+
+  function recommendedBeginnerLevel() {
+    const levels = beginnerLevelRoadmap("windows");
+    return levels.find((level) => levelStatus(level) !== "Complete" && levelScenarios(level).length) || levels.find((level) => levelScenarios(level).length) || null;
+  }
+
+  function recommendedBeginnerScenario(level = recommendedBeginnerLevel()) {
+    return levelScenarios(level).find((scenario) => !session.completedScenarioIds.has(scenario.id)) || levelScenarios(level)[0] || null;
+  }
+
   function sectionLabel() {
+    if (isBeginnerRoadmapTrack()) {
+      return "Beginner Terminal Lab";
+    }
     return pageConfig.pageKicker || pageConfig.pageTitle || scenarioEnvironmentLabel(currentScenario());
   }
 
@@ -1247,12 +1356,18 @@
         const objective = String(entry.objective || "").trim();
         const whereToLook = String(entry.whereToLook || "").trim();
         const howToThink = String(entry.howToThink || "").trim();
+        const title = String(entry.title || "").trim();
+        const goal = String(entry.goal || entry.objective || "").trim();
+        const prompt = String(entry.prompt || "").trim();
 
-        if (!command && !explanation && !why && !objective && !whereToLook && !howToThink) {
+        if (!command && !explanation && !why && !objective && !whereToLook && !howToThink && !title && !goal) {
           return null;
         }
 
         return {
+          title,
+          goal,
+          prompt,
           command,
           output,
           explanation,
@@ -1275,6 +1390,9 @@
     const why = String(step?.whyThisMatters || "").trim();
 
     const entry = {
+      title: "Guided Task Walkthrough",
+      goal: objective,
+      prompt: getPromptLabel(),
       objective: `Current task: ${objective}`,
       howToThink: "Look at the current task first, then choose a command that proves one thing clearly.",
       whereToLook: `Open ${isBeginnerMode() ? "Command Help" : "Commands"} -> ${category} and look for ${commandFamily}.`,
@@ -1290,9 +1408,11 @@
 
   function walkthroughPayload(scenario = currentScenario(), step = currentStep(), stepIndex = session.stepIndex) {
     const stageInfo = currentStageInfo(scenario, stepIndex);
+    const level = currentBeginnerLevel();
     const customStepWalkthrough = normalizeWalkthroughEntries(step?.walkthrough);
     const customStageWalkthrough = normalizeWalkthroughEntries(stageInfo?.stage?.walkthrough);
     const customScenarioWalkthrough = normalizeWalkthroughEntries(scenario?.walkthrough);
+    const customLevelWalkthrough = normalizeWalkthroughEntries(level?.walkthrough);
     const customStepDemo = normalizeWalkthroughEntries([
       {
         command: step?.demoCommand,
@@ -1316,6 +1436,10 @@
       return { entries: customScenarioWalkthrough, source: "scenario", custom: true, fallback: false };
     }
 
+    if (customLevelWalkthrough.length) {
+      return { entries: customLevelWalkthrough, source: "level", custom: true, fallback: false };
+    }
+
     if (customStepDemo.length) {
       return { entries: customStepDemo, source: "step-demo", custom: true, fallback: false };
     }
@@ -1329,6 +1453,107 @@
 
   function walkthroughAvailable(scenario = currentScenario()) {
     return walkthroughPayload(scenario).entries.length > 0;
+  }
+
+  function walkthroughPrompt(entry = {}, scenario = currentScenario()) {
+    if (entry.prompt) {
+      return entry.prompt;
+    }
+
+    const category = scenario?.shell;
+    if (category === "cmd") return "C:\\Users\\student>";
+    if (category === "cisco") return "Router>";
+    if (scenarioUsesChallengePresentation(scenario)) return "analyst@lab:~$";
+    return "student@lab:~$";
+  }
+
+  function closeWalkthrough(options = {}) {
+    if (!els.walkthroughCard) {
+      return;
+    }
+
+    const restoreFocus = options.restoreFocus !== false;
+    session.walkthroughActive = false;
+    session.walkthroughStepIndex = 0;
+    session.walkthroughSteps = [];
+    session.walkthroughSource = "";
+    els.walkthroughCard.hidden = true;
+    els.walkthroughCard.setAttribute("aria-hidden", "true");
+    if (els.walkthroughOverlay) {
+      els.walkthroughOverlay.hidden = true;
+    }
+    document.body.classList.remove("walkthrough-open");
+
+    if (restoreFocus) {
+      focusTerminalInputAtEnd();
+    }
+  }
+
+  function renderWalkthroughStep() {
+    if (!session.walkthroughActive || !els.walkthroughCard) {
+      return;
+    }
+
+    const entry = session.walkthroughSteps[session.walkthroughStepIndex];
+    if (!entry) {
+      closeWalkthrough();
+      return;
+    }
+
+    const total = session.walkthroughSteps.length;
+    const displayIndex = session.walkthroughStepIndex + 1;
+    fillText(els.walkthroughTitle, entry.title || `Walkthrough Step ${displayIndex}`, { hideWhenEmpty: false });
+    fillText(els.walkthroughStepCounter, `Walkthrough Step ${displayIndex} of ${total}`, { hideWhenEmpty: false });
+    fillText(
+      els.walkthroughGoal,
+      entry.goal || entry.objective || "Follow the demo and compare it with the current task.",
+      { hideWhenEmpty: false }
+    );
+    if (els.walkthroughCommand) {
+      const prompt = walkthroughPrompt(entry);
+      const commandText = entry.command ? `${prompt} ${entry.command}` : prompt;
+      els.walkthroughCommand.textContent = commandText;
+    }
+    if (els.walkthroughOutput) {
+      const outputText = normalizeDemoOutput(entry.output).join("\n") || "No output shown for this step.";
+      els.walkthroughOutput.textContent = outputText;
+    }
+    fillText(
+      els.walkthroughExplanation,
+      entry.explanation || entry.why || entry.howToThink || "Use this step as a model, then try the same idea yourself.",
+      { hideWhenEmpty: false }
+    );
+
+    if (els.walkthroughPrevBtn) {
+      els.walkthroughPrevBtn.disabled = session.walkthroughStepIndex <= 0;
+    }
+    if (els.walkthroughNextBtn) {
+      const lastStep = session.walkthroughStepIndex >= total - 1;
+      els.walkthroughNextBtn.textContent = lastStep ? "Finish Walkthrough" : "Next Walkthrough Step";
+    }
+  }
+
+  function openWalkthrough(entries, options = {}) {
+    if (!els.walkthroughCard || !entries.length) {
+      return;
+    }
+
+    session.walkthroughActive = true;
+    session.walkthroughSteps = entries;
+    session.walkthroughStepIndex = Math.max(0, Math.min(Number(options.startIndex) || 0, entries.length - 1));
+    session.walkthroughTaskIndex = session.stepIndex;
+    session.walkthroughSource = String(options.source || "");
+    session.walkthroughLevelId = currentBeginnerLevel()?.id || "";
+    els.walkthroughCard.hidden = false;
+    els.walkthroughCard.setAttribute("aria-hidden", "false");
+    if (els.walkthroughOverlay) {
+      els.walkthroughOverlay.hidden = false;
+    }
+    document.body.classList.add("walkthrough-open");
+    renderWalkthroughStep();
+    window.setTimeout(() => {
+      els.walkthroughNextBtn?.focus({ preventScroll: true });
+    }, 0);
   }
 
   function walkthroughHintText(step = currentStep(), level = session.hintLevel + 1, scenario = currentScenario()) {
@@ -1524,6 +1749,31 @@
     );
   }
 
+  function renderBeginnerLabCard(scenario = currentScenario(), step = currentStep()) {
+    if (!els.beginnerLabCard) {
+      return;
+    }
+
+    const beginnerTrack = isBeginnerRoadmapTrack();
+    const level = currentBeginnerLevel();
+    els.beginnerLabCard.hidden = !(beginnerTrack && level && scenario && step);
+    if (els.beginnerLabCard.hidden) {
+      return;
+    }
+
+    const scenarios = levelScenarios(level);
+    const completedMissions = completedScenarioCountForLevel(level);
+    const levelIndexNumber = beginnerLevelIndex(level.id) + 1;
+    fillText(els.beginnerLabCurrentLevel, `Current Lab Level: ${level.title}`, { hideWhenEmpty: false });
+    fillText(els.beginnerLabCurrentMission, `Mission: ${scenario.title}`, { hideWhenEmpty: false });
+    fillText(els.beginnerLabCurrentTask, `Current Task: ${step.objective}`, { hideWhenEmpty: false });
+    fillText(
+      els.beginnerLabProgressText,
+      `Level progress: ${completedMissions}/${scenarios.length} missions complete · Level ${levelIndexNumber} of ${beginnerLevelRoadmap("windows").length}`,
+      { hideWhenEmpty: false }
+    );
+  }
+
   function ticketBriefingPayload(scenario = currentScenario()) {
     if (!scenario) {
       return null;
@@ -1587,10 +1837,29 @@
     if (!els.taskCompleteCard) {
       return;
     }
+    session.taskCompleteOpen = false;
     els.taskCompleteCard.hidden = true;
+    els.taskCompleteCard.setAttribute("aria-hidden", "true");
+    if (els.taskCompleteOverlay) {
+      els.taskCompleteOverlay.hidden = true;
+    }
+    document.body.classList.remove("task-complete-open");
     fillText(els.taskCompleteProof, "");
     fillText(els.taskCompleteWhy, "");
     fillText(els.taskCompleteNext, "");
+  }
+
+  function closeTaskCompleteCard(options = {}) {
+    if (!els.taskCompleteCard) {
+      return;
+    }
+
+    const restoreFocus = options.restoreFocus !== false;
+    clearTaskCompleteCard();
+
+    if (restoreFocus && !session.ticketBriefingOpen && !session.beginnerGuideOpen) {
+      focusTerminalInputAtEnd();
+    }
   }
 
   function renderTaskCompleteCard({ proof = "", why = "", next = "" } = {}) {
@@ -1601,7 +1870,16 @@
     fillText(els.taskCompleteProof, proof || "Good. That command moved the task forward.", { hideWhenEmpty: false });
     fillText(els.taskCompleteWhy, why || "This result gave you evidence for the next decision.", { hideWhenEmpty: false });
     fillText(els.taskCompleteNext, next || "Continue with the current task.", { hideWhenEmpty: false });
+    session.taskCompleteOpen = true;
     els.taskCompleteCard.hidden = false;
+    els.taskCompleteCard.setAttribute("aria-hidden", "false");
+    if (els.taskCompleteOverlay) {
+      els.taskCompleteOverlay.hidden = false;
+    }
+    document.body.classList.add("task-complete-open");
+    window.setTimeout(() => {
+      els.taskCompleteCloseBtn?.focus({ preventScroll: true });
+    }, 0);
   }
 
   function closeBeginnerGuide(options = {}) {
@@ -1796,12 +2074,21 @@
   }
 
   function renderStageUI(stageInfo = visibleStageInfo(currentScenario()), scenario = currentScenario()) {
-    const stageTitleText = stageInfo ? `Current Stage: ${stageInfo.stage.title}` : "";
+    const beginnerTrack = isBeginnerRoadmapTrack();
+    const stageTitleText = stageInfo
+      ? `${beginnerTrack ? "Current Mission Section" : "Current Stage"}: ${stageInfo.stage.title}`
+      : "";
     const stageBriefingText = stageInfo?.stage?.briefing || "";
-    const mobileStageTitleText = stageInfo ? `Stage ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}` : "";
+    const mobileStageTitleText = stageInfo
+      ? `${beginnerTrack ? "Mission Section" : "Stage"} ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}`
+      : "";
     const missionStageTitleText = stageInfo?.stage?.title || "";
-    const missionStageProgressText = stageInfo ? `Stage ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}` : "";
-    const missionTotalProgressText = stageInfo ? `Mission ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}` : "";
+    const missionStageProgressText = stageInfo
+      ? `${beginnerTrack ? "Mission Section" : "Stage"} ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}`
+      : "";
+    const missionTotalProgressText = stageInfo
+      ? `${beginnerTrack ? "Mission Task" : "Mission"} ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}`
+      : "";
 
     if (els.scenarioStageTitle) {
       fillText(els.scenarioStageTitle, stageTitleText);
@@ -2322,6 +2609,9 @@
     const environmentLabel = scenarioEnvironmentLabel(scenario);
     const stageInfo = visibleStageInfo(scenario);
     const beginnerMode = isBeginnerMode();
+    const beginnerTrack = isBeginnerRoadmapTrack();
+    const level = currentBeginnerLevel();
+    const levelNumber = level ? beginnerLevelIndex(level.id) + 1 : 0;
 
     syncMobileAppBarTitle();
     syncMobileAppBarActions();
@@ -2338,15 +2628,19 @@
 
     els.scenarioCountBadge.textContent = challengePresentation
       ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
-      : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
+      : beginnerTrack && level
+        ? `Level ${levelNumber} · Mission ${scenario.title}`
+        : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
     if (challengePresentation) {
       els.stepCountBadge.textContent = stageInfo
         ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Mission ${stageInfo.missionStepIndex + 1} / ${stageInfo.missionStepCount}`
         : "Challenge Active";
     } else {
-      els.stepCountBadge.textContent = stageInfo
-        ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
-        : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
+      els.stepCountBadge.textContent = beginnerTrack && stageInfo
+        ? `Mission Section ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
+        : stageInfo
+          ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
+          : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
     }
     if (els.environmentBadge) {
       els.environmentBadge.textContent = environmentLabel;
@@ -2358,13 +2652,16 @@
 
     els.scenarioCategory.textContent = scenario.category;
     els.scenarioTitle.textContent = scenario.title;
-    els.scenarioLevel.textContent = challengePresentation ? (scenario.difficulty || scenario.level) : scenario.level;
+    els.scenarioLevel.textContent = beginnerTrack && level
+      ? `${level.title} · ${scenario.level || scenario.difficulty || "Beginner"}`
+      : (challengePresentation ? (scenario.difficulty || scenario.level) : scenario.level);
     if (els.scenarioEnvironmentBadge) {
       els.scenarioEnvironmentBadge.textContent = environmentLabel;
     }
     els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
     renderStageUI(stageInfo, scenario);
     els.scenarioFlex.textContent = allowedApproachText(scenario);
+    renderBeginnerLabCard(scenario, step);
     renderMissionCaseFile(scenario, stageInfo);
     renderMissionReview(scenario);
     if (els.environmentSummary) {
@@ -2381,14 +2678,22 @@
         : "Try typing a command. Use Hint if you need a stronger nudge.";
     }
     els.progressSummary.textContent = stageInfo
-      ? `${missionProgressText(scenario)} ${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`
+      ? `${beginnerTrack && level ? `${level.title}. ` : ""}${missionProgressText(scenario)} ${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`
       : `${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`;
     if (els.mobileEnvironmentBadge) {
       els.mobileEnvironmentBadge.textContent = environmentLabel;
     }
     els.mobileScenarioTitle.textContent = challengePresentation
       ? `${scenario.title} - Challenge ${session.scenarioIndex + 1}/${totalScenarios()}`
-      : `${scenario.title} - Task ${session.stepIndex + 1}/${scenario.steps.length}`;
+      : `Mission: ${scenario.title}`;
+    if (beginnerTrack && level && els.mobileStageTitle) {
+      els.mobileStageTitle.hidden = false;
+      els.mobileStageTitle.textContent = `Level ${levelNumber}: ${level.title.replace(/^Level\s+\d+:\s*/i, "")}`;
+    }
+    if (beginnerTrack && stageInfo && els.mobileStageBriefing) {
+      els.mobileStageBriefing.hidden = false;
+      els.mobileStageBriefing.textContent = `Mission Section ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title}`;
+    }
     els.mobileStepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
     if (els.mobileMachineContext) {
       els.mobileMachineContext.textContent = primaryMachineContextText(scenario);
@@ -2447,12 +2752,21 @@
     const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const stageInfo = visibleStageInfo(scenario);
+    const level = currentBeginnerLevel();
 
     // Terminal tracks are stateful, so resume stores both the selected scenario and the mutated shell state.
     return {
+      track: pageConfig.environmentCategory || scenario.environmentCategory || "",
+      mode: pageConfig.uiMode || (isBeginnerMode() ? "beginner" : "standard"),
       scenarioId: scenario.id,
       scenarioIndex: session.scenarioIndex,
       stepIndex: session.stepIndex,
+      missionSectionId: stageInfo?.stage?.id || "",
+      missionSectionIndex: stageInfo?.stageIndex ?? -1,
+      beginnerLevelId: level?.id || scenario.beginnerLabLevelId || "",
+      beginnerLevelIndex: level ? beginnerLevelIndex(level.id) : -1,
+      beginnerLevelTitle: level?.title || "",
+      beginnerCompletedLevelIds: beginnerLevelRoadmap("windows").filter((entry) => levelStatus(entry) === "Complete").map((entry) => entry.id),
       completedScenarioIds: Array.from(session.completedScenarioIds),
       attemptsForStep: session.attemptsForStep,
       hintLevel: session.hintLevel,
@@ -2465,10 +2779,11 @@
       terminalEntries: NetlabApp ? NetlabApp.clone(session.terminalEntries) : session.terminalEntries.slice(),
       reviewStats: NetlabApp ? NetlabApp.clone(session.reviewStats) : cloneReviewStats(session.reviewStats),
       ticketBriefingSeen: session.ticketBriefingSeen,
+      walkthroughActive: false,
       runtimeState: StateManager.clone(session.state),
       currentItemLabel: challengePresentation
         ? scenario.title
-        : `${scenario.title}${stageInfo ? ` - ${stageInfo.stage.title}` : ""} - ${step.objective}`
+        : `${level ? `${level.title} - ` : ""}${scenario.title}${stageInfo ? ` - ${stageInfo.stage.title}` : ""} - ${step.objective}`
     };
   }
 
@@ -2484,13 +2799,14 @@
       ? `${session.completedScenarioIds.size}/${totalScenarios()} challenges completed`
       : `${session.completedScenarioIds.size}/${totalScenarios()} scenarios completed`;
     const stageInfo = currentStageInfo(scenario);
+    const level = currentBeginnerLevel();
 
     savedProgressRecord = NetlabApp.saveSectionProgress(currentSectionId(), {
       sectionLabel: sectionLabel(),
       currentItemId: scenario.id,
       currentItemLabel: challengePresentation
         ? scenario.title
-        : `${scenario.title}${stageInfo ? ` - ${stageInfo.stage.title}` : ""} - ${step.objective}`,
+        : `${level ? `${level.title} - ` : ""}${scenario.title}${stageInfo ? ` - ${stageInfo.stage.title}` : ""} - ${step.objective}`,
       completedCount: session.completedScenarioIds.size,
       totalCount: totalScenarios(),
       summaryText: summaryText,
@@ -2526,8 +2842,15 @@
     session.reviewStats = snapshot.reviewStats ? (NetlabApp ? NetlabApp.clone(snapshot.reviewStats) : cloneReviewStats(snapshot.reviewStats)) : createReviewStats();
     session.ticketBriefingSeen = Boolean(snapshot.ticketBriefingSeen);
     session.ticketBriefingOpen = false;
+    session.walkthroughActive = false;
+    session.walkthroughStepIndex = 0;
+    session.walkthroughSteps = [];
+    session.walkthroughTaskIndex = Number(snapshot.stepIndex) || 0;
+    session.walkthroughLevelId = String(snapshot.beginnerLevelId || "");
 
     closeTicketBriefing({ restoreFocus: false });
+    closeTaskCompleteCard({ restoreFocus: false });
+    closeWalkthrough({ restoreFocus: false });
     restoreTerminalEntries(snapshot.terminalEntries || []);
     if (!session.terminalEntries.length) {
       if (session.scenarioStarted) {
@@ -2555,6 +2878,67 @@
     return true;
   }
 
+  function beginnerResumeHeading(record) {
+    const levelTitle = record?.state?.beginnerLevelTitle || currentBeginnerLevel()?.title || "Beginner Terminal Lab";
+    return `Resume ${levelTitle}?`;
+  }
+
+  function renderBeginnerRoadmapMarkup() {
+    const levels = beginnerLevelRoadmap("windows");
+    if (!levels.length) {
+      return "";
+    }
+
+    const recommended = recommendedBeginnerLevel();
+    const currentLevel = currentBeginnerLevel();
+    const cards = levels.map((level) => {
+      const scenarios = levelScenarios(level);
+      const missionCount = scenarios.length;
+      const taskCount = totalTaskCountForLevel(level);
+      const status = levelStatus(level);
+      const isCurrent = currentLevel?.id === level.id;
+      const isRecommended = recommended?.id === level.id && status !== "Complete";
+      const firstScenarioId = scenarios[0]?.id || "";
+      const completed = completedScenarioCountForLevel(level);
+      const levelIndex = beginnerLevelIndex(level.id) + 1;
+      const skills = (Array.isArray(level.skills) ? level.skills : []).slice(0, 5).map((skill) => `<span class="scenario-mini-badge">${escapeHtml(skill)}</span>`).join("");
+      const actionButton = missionCount
+        ? `<button class="app-action-btn beginner-level-launch-btn" type="button" data-level-id="${escapeHtml(level.id)}" data-scenario-id="${escapeHtml(firstScenarioId)}">${escapeHtml(isCurrent ? "Resume Level" : "Start Level")}</button>`
+        : `<button class="app-action-btn app-action-btn-muted" type="button" disabled>Coming Soon</button>`;
+
+      return [
+        `<article class="support-card beginner-level-card${isCurrent ? " is-current" : ""}${isRecommended ? " is-recommended" : ""}" data-level-id="${escapeHtml(level.id)}">`,
+        `  <div class="beginner-level-head">`,
+        `    <div>`,
+        `      <p class="mission-case-label">Level ${levelIndex}</p>`,
+        `      <h3>${escapeHtml(level.title)}</h3>`,
+        `    </div>`,
+        `    <span class="status-badge${status === "Complete" ? " environment-badge" : status === "In Progress" ? " status-badge-blue" : ""}">${escapeHtml(status)}</span>`,
+        `  </div>`,
+        `  <p class="mission-case-copy">${escapeHtml(level.description || "")}</p>`,
+        `  <p class="mission-case-copy">Estimated time: ${escapeHtml(level.estimatedTime || "Flexible")}</p>`,
+        `  <p class="mission-case-copy">Missions: ${missionCount} · Tasks: ${taskCount} · Completed: ${completed}/${missionCount || 0}</p>`,
+        isRecommended ? `  <p class="mission-case-copy beginner-level-recommend">Recommended Next</p>` : "",
+        skills ? `  <div class="mission-case-meta">${skills}</div>` : "",
+        `  <div class="app-shell-actions beginner-level-actions">${actionButton}</div>`,
+        `</article>`
+      ].join("");
+    }).join("");
+
+    return [
+      `<section id="beginnerRoadmapPanel" class="support-card beginner-roadmap-panel">`,
+      `  <div class="beginner-roadmap-head">`,
+      `    <div>`,
+      `      <p class="app-shell-kicker">Beginner Terminal Lab</p>`,
+      `      <h3>Level Roadmap</h3>`,
+      `      <p class="mission-case-copy">Start with beginner-friendly Windows tickets, then move forward one level at a time. Use Recommended Next if you want the clearest path.</p>`,
+      `    </div>`,
+      `  </div>`,
+      `  <div class="beginner-roadmap-grid">${cards}</div>`,
+      `</section>`
+    ].join("");
+  }
+
   function renderSectionShell() {
     if (!els.appSectionShell || !NetlabApp || !session.scenarios.length) {
       return;
@@ -2565,6 +2949,12 @@
     const activeStep = currentStep();
     const record = savedProgressRecord || NetlabApp.getSectionProgress(currentSectionId());
     const showResume = Boolean(record && session.resumePromptVisible);
+    const beginnerTrack = isBeginnerRoadmapTrack();
+    const currentLevel = currentBeginnerLevel();
+    const recommendedLevel = recommendedBeginnerLevel();
+    const resumeHeading = beginnerTrack && showResume
+      ? beginnerResumeHeading(record)
+      : `Resume ${sectionLabel()}`;
     const completionText = record && showResume
       ? `${record.completedCount}/${record.totalCount || totalScenarios()}`
       : `${session.completedScenarioIds.size}/${totalScenarios()}`;
@@ -2578,30 +2968,39 @@
       "<div class=\"app-shell-head\">",
       "  <div>",
       "    <p class=\"app-shell-kicker\">Progress</p>",
-      "    <h2>Resume " + escapeHtml(sectionLabel()) + "</h2>",
+      "    <h2>" + escapeHtml(resumeHeading) + "</h2>",
       "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
-        ? "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning."
-        : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.") + "</p>",
+        ? (beginnerTrack
+          ? "Saved progress is available for this beginner lab. Resume the exact level, mission, and task you were working on, or choose another level."
+          : "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning.")
+        : (beginnerTrack
+          ? "Profile: " + profile.label + ". This beginner lab saves your current level, mission, mission section, and live terminal state so you can return to the right task later."
+          : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.")) + "</p>",
       "  </div>",
       "</div>",
       "<div class=\"app-shell-badges\">",
       "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
       "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
       "  <span class=\"status-badge\">Coins: " + escapeHtml(NetlabApp.getCoinsTotal()) + "</span>",
+      (beginnerTrack && currentLevel ? "  <span class=\"status-badge\">" + escapeHtml("Current Level: " + currentLevel.title) + "</span>" : ""),
+      (beginnerTrack && recommendedLevel ? "  <span class=\"status-badge environment-badge\">" + escapeHtml("Recommended Next: " + recommendedLevel.title) + "</span>" : ""),
       "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>",
       "</div>",
       "<div class=\"app-shell-actions\">",
       (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
       "  <a class=\"app-action-link\" href=\"" + escapeHtml(accountHref) + "\">" + escapeHtml(accountLabel) + "</a>",
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
+      (beginnerTrack ? "  <button id=\"chooseLevelBtn\" class=\"app-action-btn\" type=\"button\">Choose Level</button>" : ""),
       "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
-      "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
+      "<p class=\"app-shell-note\">Reset Progress clears all saved lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>",
+      (beginnerTrack ? renderBeginnerRoadmapMarkup() : "")
     ].join("");
 
     const resumeBtn = document.getElementById("resumeSectionBtn");
     const startOverBtn = document.getElementById("startOverSectionBtn");
+    const chooseLevelBtn = document.getElementById("chooseLevelBtn");
     const toggleSoundBtn = document.getElementById("toggleSoundBtn");
     const resetProgressBtn = document.getElementById("resetProgressBtn");
 
@@ -2614,6 +3013,12 @@
     if (startOverBtn) {
       startOverBtn.addEventListener("click", () => {
         window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
+      });
+    }
+
+    if (chooseLevelBtn) {
+      chooseLevelBtn.addEventListener("click", () => {
+        document.getElementById("beginnerRoadmapPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
 
@@ -2634,6 +3039,16 @@
         window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
       });
     }
+
+    els.appSectionShell.querySelectorAll(".beginner-level-launch-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        const scenarioId = button.getAttribute("data-scenario-id");
+        if (!scenarioId) {
+          return;
+        }
+        loadScenarioById(scenarioId);
+      });
+    });
   }
 
   function escapeHtml(value) {
@@ -2651,6 +3066,7 @@
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const machineSummary = machineContextSummary(scenario);
     const stageInfo = currentStageInfo(scenario);
+    const beginnerTrack = isBeginnerRoadmapTrack();
     missionDebug("Loading scenario", scenario.title || scenario.id);
     missionDebug("Scenario has stages", Boolean(scenario.stages?.length));
 
@@ -2675,8 +3091,8 @@
       printLine(`Context: ${scenario.scenarioIntro}`, "dim");
     }
     if (stageInfo) {
-      printStageLine(`${stageInfo.stage.title}: ${stageInfo.stage.briefing || "Stage active."}`);
-      printLine(`--- Stage ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title} ---`, "stage");
+      printStageLine(`${stageInfo.stage.title}: ${stageInfo.stage.briefing || (beginnerTrack ? "Mission section active." : "Stage active.")}`);
+      printLine(`--- ${beginnerTrack ? "Mission Section" : "Stage"} ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title} ---`, "stage");
       if (stageInfo.stage.briefing) {
         printStageLine(`Goal: ${stageInfo.stage.briefing}`);
       }
@@ -2768,6 +3184,7 @@
     const scenario = currentScenario();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const finalStageInfo = currentStageInfo(scenario);
+    const beginnerTrack = isBeginnerRoadmapTrack();
     const firstCompletion = !session.completedScenarioIds.has(scenario.id);
     const completionCoins = NetlabApp?.coinsForDifficulty
       ? NetlabApp.coinsForDifficulty(scenario.difficulty, challengePresentation ? 10 : 5)
@@ -2776,7 +3193,7 @@
     session.completedScenarioIds.add(scenario.id);
     session.scenarioCompleted = true;
     if (finalStageInfo?.stage?.completionSummary) {
-      printStageLine(`Stage Complete: ${finalStageInfo.stage.title}`);
+      printStageLine(`${beginnerTrack ? "Section Complete" : "Stage Complete"}: ${finalStageInfo.stage.title}`);
       printStageLine(finalStageInfo.stage.completionSummary);
     }
     if (scenarioHasStages(scenario)) {
@@ -2812,6 +3229,7 @@
   function advanceStep(count = 1) {
     const scenario = currentScenario();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const beginnerTrack = isBeginnerRoadmapTrack();
     const skipCount = Math.max(1, Number(count) || 1);
     const completedStepNumber = Math.min(scenario.steps.length, session.stepIndex + skipCount);
     const previousStageInfo = currentStageInfo(scenario);
@@ -2845,11 +3263,11 @@
     const nextStageInfo = currentStageInfo(scenario);
     if (previousStageInfo && nextStageInfo && previousStageInfo.stage.id !== nextStageInfo.stage.id) {
       if (previousStageInfo.stage.completionSummary) {
-        printStageLine(`Stage Complete: ${previousStageInfo.stage.title}`);
+        printStageLine(`${beginnerTrack ? "Section Complete" : "Stage Complete"}: ${previousStageInfo.stage.title}`);
         printStageLine(previousStageInfo.stage.completionSummary);
       }
-      printLine(`--- Stage ${nextStageInfo.stageIndex + 1}: ${nextStageInfo.stage.title} ---`, "stage");
-      printStageLine(`Next Stage: ${nextStageInfo.stage.title}`);
+      printLine(`--- ${beginnerTrack ? "Mission Section" : "Stage"} ${nextStageInfo.stageIndex + 1}: ${nextStageInfo.stage.title} ---`, "stage");
+      printStageLine(`Next ${beginnerTrack ? "Section" : "Stage"}: ${nextStageInfo.stage.title}`);
       if (nextStageInfo.stage.briefing) {
         printStageLine(`Goal: ${nextStageInfo.stage.briefing}`);
       }
@@ -5463,6 +5881,10 @@
       closeTicketBriefing({ restoreFocus: false });
     }
 
+    if (session.walkthroughActive) {
+      closeWalkthrough({ restoreFocus: false });
+    }
+
     if (!session.scenarioStarted) {
       els.terminalInput.value = "";
       printLine("Start the selected challenge before issuing commands.", "coach");
@@ -5525,48 +5947,11 @@
     console.log("[WalkthroughDebug] using custom walkthrough", Boolean(payload.custom));
     console.log("[WalkthroughDebug] using fallback walkthrough", Boolean(payload.fallback));
     if (!entries.length) {
-      printWalkthroughLine("No safe walkthrough is available for this scenario yet.");
+      printCoachLine("No safe walkthrough is available for this scenario yet.");
       return;
     }
 
-    printWalkthroughLine("Demonstration mode. This will not complete the scenario or change your saved progress.");
-    printWalkthroughLine(isBeginnerMode() ? "We are going to solve this like a junior support technician." : "We are going to investigate this task step by step.");
-
-    entries.forEach((entry, index) => {
-      const scenarioStep = currentScenario().steps?.[Math.min(session.stepIndex + index, currentScenario().steps.length - 1)];
-      const activeObjective = entry.objective || scenarioStep?.objective || step?.objective;
-      if (activeObjective) {
-        printWalkthroughLine(`Current task: ${activeObjective}`);
-      }
-      if (entry.howToThink) {
-        printWalkthroughLine(`How to think: ${entry.howToThink}`);
-      }
-      if (entry.whereToLook) {
-        printWalkthroughLine(`Where to look: ${entry.whereToLook}`);
-      } else if (isBeginnerMode() && scenarioStep?.objective) {
-        printWalkthroughLine(`Where to look: ${commandPanelCategoryLabel(currentScenario())} -> ${commandFamilyLabel(scenarioStep, currentScenario())}`);
-      }
-      if (entry.explanation) {
-        printWalkthroughLine(entry.explanation);
-      }
-      if (entry.command) {
-        printTaggedLine("Demo Command", `${getPromptLabel()} ${entry.command}`, "walkthrough");
-        const outputLines = normalizeDemoOutput(entry.output);
-        if (outputLines.length) {
-          printLines(outputLines, "walkthrough");
-        }
-      }
-      if (entry.why) {
-        printTaggedLine("Why", entry.why, "walkthrough");
-      }
-      if (index < entries.length - 1) {
-        printWalkthroughLine("Next, use that result to guide the following check.");
-      }
-      printTaggedLine("Now Try", entry.nowTry || (entry.command ? `Type ${entry.command} yourself.` : "Now try the task yourself."), "walkthrough");
-    });
-
-    printWalkthroughLine("Now try it yourself.");
-    focusTerminalInputAtEnd();
+    openWalkthrough(entries, { source: payload.source, startIndex: 0 });
     renderPanel();
   }
 
@@ -5621,6 +6006,15 @@
   }
 
   function bindEvents() {
+    if (!els.terminalForm || !els.terminalInput) {
+      console.error("[TerminalDebug] terminal form/input missing");
+    } else if (els.terminalForm.offsetParent === null || els.terminalInput.offsetParent === null) {
+      console.warn("[TerminalDebug] terminal form may be hidden", {
+        formHidden: els.terminalForm.offsetParent === null,
+        inputHidden: els.terminalInput.offsetParent === null
+      });
+    }
+
     if (els.terminalForm) {
       els.terminalForm.addEventListener("submit", runSubmittedCommand);
     }
@@ -5631,6 +6025,43 @@
       els.watchWalkthroughBtn.addEventListener("click", runWalkthrough);
     } else {
       console.warn("[WalkthroughDebug] no walkthrough button found");
+    }
+    if (els.walkthroughPrevBtn) {
+      els.walkthroughPrevBtn.addEventListener("click", () => {
+        if (!session.walkthroughActive) {
+          return;
+        }
+        session.walkthroughStepIndex = Math.max(0, session.walkthroughStepIndex - 1);
+        renderWalkthroughStep();
+      });
+    }
+    if (els.walkthroughNextBtn) {
+      els.walkthroughNextBtn.addEventListener("click", () => {
+        if (!session.walkthroughActive) {
+          return;
+        }
+        if (session.walkthroughStepIndex >= session.walkthroughSteps.length - 1) {
+          closeWalkthrough();
+          return;
+        }
+        session.walkthroughStepIndex += 1;
+        renderWalkthroughStep();
+      });
+    }
+    if (els.walkthroughTryBtn) {
+      els.walkthroughTryBtn.addEventListener("click", () => {
+        closeWalkthrough();
+      });
+    }
+    if (els.walkthroughCloseBtn) {
+      els.walkthroughCloseBtn.addEventListener("click", () => {
+        closeWalkthrough();
+      });
+    }
+    if (els.walkthroughOverlay) {
+      els.walkthroughOverlay.addEventListener("click", () => {
+        closeWalkthrough();
+      });
     }
     if (els.previousScenarioBtn) {
       els.previousScenarioBtn.addEventListener("click", previousScenario);
@@ -5681,6 +6112,18 @@
     if (els.beginnerOnboardingOverlay) {
       els.beginnerOnboardingOverlay.addEventListener("click", () => {
         closeBeginnerGuide();
+      });
+    }
+
+    if (els.taskCompleteCloseBtn) {
+      els.taskCompleteCloseBtn.addEventListener("click", () => {
+        closeTaskCompleteCard();
+      });
+    }
+
+    if (els.taskCompleteOverlay) {
+      els.taskCompleteOverlay.addEventListener("click", () => {
+        closeTaskCompleteCard();
       });
     }
     if (els.mobileContextToggleBtn) {
@@ -5768,6 +6211,16 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") {
+        return;
+      }
+
+      if (session.taskCompleteOpen) {
+        closeTaskCompleteCard();
+        return;
+      }
+
+      if (session.walkthroughActive) {
+        closeWalkthrough();
         return;
       }
 

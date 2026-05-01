@@ -104,40 +104,47 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   observePage(page, report);
   await gotoAndStabilize(page, report.url);
 
+  pushCheck(report, "beginner roadmap exists", await page.locator("#beginnerRoadmapPanel").isVisible(), "#beginnerRoadmapPanel visible");
+  pushCheck(report, "level 1 appears", /Level 1/i.test((await readText(page, "#beginnerRoadmapPanel")).trim()), await readText(page, "#beginnerRoadmapPanel"));
+  pushCheck(report, "current beginner lab card exists", await page.locator("#beginnerLabCard").isVisible(), "#beginnerLabCard visible");
+  pushCheck(report, "current lab level text visible", /Current Lab Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), await readText(page, "#beginnerLabCurrentLevel"));
+
   await expect(page.locator("#watchWalkthroughBtn")).toBeVisible();
   const walkthroughResult = await runWalkthroughDemo(page, { resetBefore: true });
   pushCheck(report, "walkthrough button present", true, "#watchWalkthroughBtn visible");
-  pushCheck(report, "walkthrough appends demo output", walkthroughResult.walkthroughVisible, walkthroughResult.delta.map((line) => line.text).slice(-8).join(" | "));
+  pushCheck(report, "walkthrough opens", walkthroughResult.walkthroughVisible, `${walkthroughResult.firstCounter} | ${walkthroughResult.firstTitle}`);
+  pushCheck(report, "walkthrough shows only step 1 first", walkthroughResult.firstStepVisible, `${walkthroughResult.firstCounter} | ${walkthroughResult.firstTitle} | ${walkthroughResult.firstGoal}`);
+  pushCheck(report, "walkthrough next shows step 2", walkthroughResult.secondStepVisible, `${walkthroughResult.secondCounter} | ${walkthroughResult.secondTitle} | ${walkthroughResult.secondGoal}`);
   pushCheck(report, "walkthrough does not advance step", !walkthroughResult.progressed, `${walkthroughResult.before.stepBadge} -> ${walkthroughResult.after.stepBadge}`);
   pushCheck(report, "walkthrough does not complete scenario", !walkthroughResult.completed, walkthroughResult.delta.map((line) => line.text).slice(-8).join(" | "));
-  pushCheck(report, "terminal input remains enabled after walkthrough", await page.locator("#terminalInput").isEnabled(), "terminal input enabled");
+  pushCheck(report, "terminal input remains enabled after walkthrough", walkthroughResult.inputEnabledAfterTry, "terminal input enabled");
 
   await runTerminalTrackTest(page, report, [
     "dir",
-    "cd",
-    "ipconfig",
-    "ipconfig /all",
-    "ping 192.168.1.1",
-    "tracert 8.8.8.8",
-    "netstat -an",
-    "whoami",
-    "hostname"
+    "cd Incidents",
+    "dir",
+    "cd notes",
+    "dir"
   ], { resetBefore: true });
 
-  for (const command of ["IPCONFIG /ALL", "  ipconfig /all  ", "ipconfig   /all"]) {
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
+  pushCheck(report, "resume prompt appears after reload", /Resume Level/i.test((await readText(page, "#appSectionShell")).trim()) || await page.locator("#resumeSectionBtn").isVisible().catch(() => false), await readText(page, "#appSectionShell"));
+  if (await page.locator("#resumeSectionBtn").isVisible().catch(() => false)) {
+    await page.locator("#resumeSectionBtn").click();
+    await page.waitForTimeout(200);
+    pushCheck(report, "resume restores current task context", /Current Lab Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), `${await readText(page, "#beginnerLabCurrentLevel")} | ${await readText(page, "#beginnerLabCurrentTask")}`);
+  }
+
+  for (const command of ["DIR", "  dir  ", "cd   Incidents"]) {
     const result = await runTerminalCommand(page, command, { resetBefore: true });
     report.commandResults.push(result);
   }
 
-  for (const command of ["asdfgh", "ipconfig nonsense", "ping"]) {
+  for (const command of ["asdfgh", "cd nowhere", "type mystery.txt"]) {
     const result = await runTerminalCommand(page, command, { resetBefore: true });
     report.commandResults.push(result);
     recordInvalidCommandOutcome(report, "Windows", result);
-  }
-
-  const ipconfigVariants = report.commandResults.filter((item) => /ipconfig/i.test(item.command));
-  if (ipconfigVariants.some((item) => item.command === "ipconfig /all" && item.accepted) && ipconfigVariants.some((item) => item.command !== "ipconfig /all" && !item.accepted)) {
-    pushWarning(report, "Possible strict matching on Windows ipconfig variations.");
   }
 
   await finalizeTerminalReport(page, report, testInfo);

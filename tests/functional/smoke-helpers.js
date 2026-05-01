@@ -83,6 +83,14 @@ async function dismissTicketBriefingIfPresent(page) {
   }
 }
 
+async function dismissTaskCompleteIfPresent(page) {
+  const continueButton = page.locator("#taskCompleteCloseBtn");
+  if (await continueButton.isVisible().catch(() => false)) {
+    await continueButton.click();
+    await page.waitForTimeout(150);
+  }
+}
+
 async function checkNoHorizontalOverflow(page) {
   return page.evaluate(() => {
     const root = document.documentElement;
@@ -144,18 +152,22 @@ async function resetTerminalScenario(page) {
   const reset = page.locator("#resetScenarioBtn");
   if (await reset.isVisible()) {
     await dismissTicketBriefingIfPresent(page);
+    await dismissTaskCompleteIfPresent(page);
     await reset.click();
     await page.waitForTimeout(250);
     await dismissTicketBriefingIfPresent(page);
+    await dismissTaskCompleteIfPresent(page);
   }
 }
 
 async function startChallengeIfNeeded(page) {
   const startButton = page.locator("#startChallengeBtn");
   if (await startButton.isVisible()) {
+    await dismissTaskCompleteIfPresent(page);
     await startButton.click();
     await page.waitForTimeout(250);
     await dismissTicketBriefingIfPresent(page);
+    await dismissTaskCompleteIfPresent(page);
   }
 }
 
@@ -169,6 +181,7 @@ async function runTerminalCommand(page, command, options = {}) {
   }
 
   await dismissTicketBriefingIfPresent(page);
+  await dismissTaskCompleteIfPresent(page);
 
   const before = await getTerminalSnapshot(page);
   const input = page.locator("#terminalInput");
@@ -202,14 +215,25 @@ async function runWalkthroughDemo(page, options = {}) {
   }
 
   await dismissTicketBriefingIfPresent(page);
+  await dismissTaskCompleteIfPresent(page);
 
   const before = await getTerminalSnapshot(page);
   const walkthroughButton = page.locator("#watchWalkthroughBtn");
   await expect(walkthroughButton).toBeVisible();
   await expect(walkthroughButton).toBeEnabled();
   await walkthroughButton.click();
-  await waitForTerminalMutation(page, before.lineCount, "watch walkthrough");
+  await expect(page.locator("#walkthroughCard")).toBeVisible();
   await page.waitForTimeout(150);
+  const firstCounter = ((await page.locator("#walkthroughStepCounter").textContent()) || "").trim();
+  const firstTitle = ((await page.locator("#walkthroughTitle").textContent()) || "").trim();
+  const firstGoal = ((await page.locator("#walkthroughGoal").textContent()) || "").trim();
+  await page.locator("#walkthroughNextBtn").click();
+  await page.waitForTimeout(150);
+  const secondCounter = ((await page.locator("#walkthroughStepCounter").textContent()) || "").trim();
+  const secondTitle = ((await page.locator("#walkthroughTitle").textContent()) || "").trim();
+  const secondGoal = ((await page.locator("#walkthroughGoal").textContent()) || "").trim();
+  await page.locator("#walkthroughTryBtn").click();
+  await expect(page.locator("#walkthroughCard")).toBeHidden();
   const after = await getTerminalSnapshot(page);
   const delta = after.lines.slice(before.lineCount);
 
@@ -219,7 +243,16 @@ async function runWalkthroughDemo(page, options = {}) {
     delta,
     progressed: after.stepBadge !== before.stepBadge || after.scenarioTitle !== before.scenarioTitle || delta.some((line) => /scenario complete/i.test(line.text)),
     completed: delta.some((line) => /\[task complete\]|\[review\]|\[mission complete\]/i.test(line.text)),
-    walkthroughVisible: delta.some((line) => /\[walkthrough\]|\[demo command\]|\[why\]|\[now try\]/i.test(line.text))
+    walkthroughVisible: true,
+    firstStepVisible: /Step 1/i.test(firstCounter) || /Step 1/i.test(firstTitle),
+    secondStepVisible: /Step 2/i.test(secondCounter) || /Step 2/i.test(secondTitle),
+    firstCounter,
+    firstTitle,
+    firstGoal,
+    secondCounter,
+    secondTitle,
+    secondGoal,
+    inputEnabledAfterTry: await page.locator("#terminalInput").isEnabled()
   };
 }
 

@@ -2915,6 +2915,9 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      beginnerTrack: config.beginnerTrack || "",
+      beginnerLabLevelId: config.beginnerLabLevelId || "",
+      beginnerLabMissionLabel: config.beginnerLabMissionLabel || "",
       walkthrough: config.walkthrough || [],
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
@@ -2977,6 +2980,9 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      beginnerTrack: config.beginnerTrack || "",
+      beginnerLabLevelId: config.beginnerLabLevelId || "",
+      beginnerLabMissionLabel: config.beginnerLabMissionLabel || "",
       walkthrough: config.walkthrough || [],
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
@@ -3039,6 +3045,9 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      beginnerTrack: config.beginnerTrack || "",
+      beginnerLabLevelId: config.beginnerLabLevelId || "",
+      beginnerLabMissionLabel: config.beginnerLabMissionLabel || "",
       walkthrough: config.walkthrough || [],
       stages: config.stages || [],
       environmentCategory: contextMeta.environmentCategory,
@@ -4820,6 +4829,9 @@
       title: "Incident Folder Triage",
       category: "Files and navigation",
       difficulty: "Beginner",
+      beginnerTrack: "windows-beginner",
+      beginnerLabLevelId: "level-1-terminal-orientation",
+      beginnerLabMissionLabel: "Mission 1: Incident Folder Triage",
       role: "Junior Support Technician",
       ticketId: "WIN-102",
       ticketTitle: "Incident folder requires initial workstation triage",
@@ -4834,106 +4846,144 @@
       ],
       userReport: "The ticket notes say a service issue is being escalated, but the workstation side of the evidence has not been reviewed yet.",
       knownFacts: [
-        "The analyst workstation is already in the incident workspace",
-        "A triage note is present in the current folder",
-        "A deeper notes folder also exists for later review"
+        "The analyst workstation starts at C:\\Lab",
+        "An Incidents folder exists in the current workspace",
+        "A notes folder exists somewhere inside the case structure"
       ],
       constraints: [
-        "Do not assume the written note matches the real fault until you read it",
-        "Use the current workspace before jumping to other folders",
-        "Base the next technical action on the case note, not on guesswork"
+        "Do not guess the full path before you inspect the current folder",
+        "Use CMD navigation and folder listings to discover where the notes live",
+        "Confirm each move before you go deeper"
       ],
       estimatedTime: "5-8 minutes",
-      scenarioType: "Incident Triage",
-      escalationNote: "If the note points to a service fault, capture the workstation-side evidence before escalating to server or network teams.",
-      easterEggNote: "The ticket summary says 'internet broken'. Classic.",
-      missionBriefing: "You have been handed a Windows workstation incident folder. Before changing anything, confirm the current workspace, identify the note location, and read the triage note so you understand the reported service issue.",
-      summary: "Review the Windows incident folder, confirm the visible artifacts, and read the case note before any deeper troubleshooting begins.",
+      scenarioType: "Terminal Orientation",
+      escalationNote: "This is an orientation ticket. The goal is to prove folder discovery and navigation habits before deeper troubleshooting begins.",
+      easterEggNote: "A sticky note on the monitor says: 'Do not guess paths. Future you will complain.'",
+      missionBriefing: "A support ticket has been staged on a Windows practice workstation. Your first job is not to guess where the evidence lives. Start from the current folder, list what is there, move into the incident folder you discover, and keep confirming your location as you go.",
+      summary: "Use Windows CMD to discover the incident folder structure step by step instead of guessing hidden paths.",
       walkthrough: [
         {
+          title: "Step 1: List the current folder",
+          goal: "See which folders are available before you guess a path.",
+          prompt: "C:\\Lab>",
           command: "dir",
-          explanation: "Start by listing the current incident folder. Before you change paths or open files, confirm what evidence is already in front of you.",
+          explanation: "Start by listing the current workspace. Before you move anywhere, confirm what evidence is already in front of you.",
           output: [
             " Volume in drive C is OS",
-            " Directory of C:\\Lab\\Incident",
-            "04/17/2026  08:20 AM    <DIR>          Notes",
-            "04/17/2026  08:22 AM                33 triage.txt"
+            " Directory of C:\\Lab",
+            "04/17/2026  08:20 AM    <DIR>          Incidents",
+            "04/17/2026  08:22 AM    <DIR>          Reports"
           ]
         },
         {
-          command: "type triage.txt",
-          explanation: "Now read the triage note. A good junior technician confirms the written symptom before assuming which system or service is at fault.",
+          title: "Step 2: Enter the incident folder",
+          goal: "Move into the folder that likely contains the case material.",
+          prompt: "C:\\Lab>",
+          command: "cd Incidents",
+          explanation: "Now that you have evidence of an Incidents folder, move into it directly instead of guessing a deeper path.",
           output: [
-            "Review startup items and case notes."
+            "C:\\Lab\\Incidents>"
+          ]
+        },
+        {
+          title: "Step 3: Inspect the incident folder",
+          goal: "Check what is inside Incidents before you guess the next folder.",
+          prompt: "C:\\Lab\\Incidents>",
+          command: "dir",
+          explanation: "List the incident folder itself. This is how you discover that the notes folder is one level deeper.",
+          output: [
+            " Volume in drive C is OS",
+            " Directory of C:\\Lab\\Incidents",
+            "04/17/2026  08:26 AM    <DIR>          notes",
+            "04/17/2026  08:27 AM                41 queue.txt"
+          ]
+        },
+        {
+          title: "Step 4: Enter the notes folder",
+          goal: "Move into the notes folder you just discovered.",
+          prompt: "C:\\Lab\\Incidents>",
+          command: "cd notes",
+          explanation: "The folder listing already proved notes exists here, so now you can move into it with confidence.",
+          output: [
+            "C:\\Lab\\Incidents\\notes>"
+          ]
+        },
+        {
+          title: "Step 5: Verify the notes folder contents",
+          goal: "Confirm you are in the right place and can see the ticket files.",
+          prompt: "C:\\Lab\\Incidents\\notes>",
+          command: "dir",
+          explanation: "A final listing confirms you reached the expected folder and can now work with the actual note files.",
+          output: [
+            " Volume in drive C is OS",
+            " Directory of C:\\Lab\\Incidents\\notes",
+            "04/17/2026  08:28 AM                55 service.txt",
+            "04/17/2026  08:28 AM                42 triage.txt"
           ]
         }
       ],
       learningObjectives: [
-        "Start from the current Windows workspace before navigating elsewhere",
-        "Use folder listings to identify the relevant evidence",
-        "Read the case note before deciding on next technical actions"
+        "Use the visible workspace before guessing a path",
+        "List folders to discover where evidence lives",
+        "Move one level at a time and confirm each change"
       ],
       successCriteria: [
-        "List the incident folder",
-        "Identify the triage note",
-        "Read the note and confirm the reported issue"
+        "List the current folder and discover Incidents",
+        "Move into Incidents and inspect it",
+        "Discover notes and move into it",
+        "Verify the final folder contents"
       ],
-      environmentNotes: "This scenario simulates a Windows support workstation and focuses on evidence-led triage, not on immediate remediation.",
+      environmentNotes: "This scenario simulates a Windows support workstation and focuses on beginner folder discovery. You are learning how to inspect first and navigate second.",
       verificationRequired: true,
-      verificationSteps: ["type triage.txt"],
-      objective: "Review the incident workspace so you can see where the case notes live, then confirm the written incident note.",
-      scenarioIntro: "You are on the Windows analyst workstation at C:\\Lab\\Incident. Start by listing the current folder so the learner sees the immediate Windows context before changing anything.",
-      commandFocus: ["dir", "type"],
-      acceptedCommands: ["dir", "dir C:\\Lab\\Incident", "type triage.txt"],
-      simulatedOutput: [" Directory of C:\\Lab\\Incident", "Notes", "triage.txt", "Review startup items and case notes."],
-      successCondition: "List the incident folder and then read the triage note before moving deeper into the case.",
-      feedbackText: "The learner confirmed the visible workspace and read the note before guessing at the service issue.",
+      verificationSteps: ["Confirm the notes folder is visible from inside Incidents", "Confirm the prompt changes as you move into notes", "Confirm the notes folder contents are visible"],
+      objective: "Use CMD to discover where the incident notes live, then move into the correct notes folder without guessing the path in advance.",
+      scenarioIntro: "You are on the Windows analyst workstation at C:\\Lab. Start by listing the current folder so you can discover the incident path instead of memorising it.",
+      commandFocus: ["dir", "cd"],
+      acceptedCommands: ["dir", "cd Incidents", "cd notes"],
+      simulatedOutput: [" Directory of C:\\Lab", "Incidents", " Directory of C:\\Lab\\Incidents", "notes", " Directory of C:\\Lab\\Incidents\\notes"],
+      successCondition: "Discover the Incidents folder, move into it, discover notes, and confirm the final notes folder contents.",
+      feedbackText: "The learner used folder discovery instead of guessing the path.",
       environment: {
-        cwd: "C:/Lab/Incident",
-        directories: ["C:/Lab/Incident/Notes"],
+        cwd: "C:/Lab",
+        directories: ["C:/Lab/Incidents", "C:/Lab/Incidents/notes", "C:/Lab/Reports"],
         files: [
-          { path: "C:/Lab/Incident/triage.txt", content: "Review startup items and case notes.\n" },
-          { path: "C:/Lab/Incident/Notes/service.txt", content: "Spooler restarts are failing.\n" }
+          { path: "C:/Lab/Incidents/queue.txt", content: "Open the incident notes folder before you assume where the case file lives.\n" },
+          { path: "C:/Lab/Incidents/notes/service.txt", content: "Spooler restarts are failing.\n" },
+          { path: "C:/Lab/Incidents/notes/triage.txt", content: "User reported the printer queue is stuck.\n" }
         ]
       },
       stages: [
         {
-          id: "workspace-review",
-          title: "Workspace Review",
-          briefing: "Confirm the current incident workspace before you navigate or change anything.",
-          completionSummary: "You established the current Windows workspace and identified the key incident artifacts.",
+          id: "orientation",
+          title: "Orientation",
+          briefing: "Learn to inspect the current folder before you guess where the ticket files are stored.",
+          completionSummary: "You used a folder listing to discover the incident folder instead of guessing a deeper path.",
           steps: [
             step({
-              objective: "List the current incident folder in CMD.",
-              hints: ["Start with the Windows directory listing command.", "You only need the current folder view first.", "Try `dir`."],
-              explanation: "Beginner Windows workflows should start with a local listing so the learner sees the current folder before moving.",
-              whyThisMatters: "Support work is easier when you confirm what is already in front of you before you navigate away from it.",
-              successFeedback: "You listed the incident workspace.",
-              nextObjective: "Read the triage note in the current folder so the reported symptom is confirmed before deeper troubleshooting begins.",
-              realWorldNote: "Support queues often attach the next clue to the case folder itself. Missing that note can send a technician down the wrong path.",
+              objective: "List the current folder contents.",
+              hints: ["You are trying to see which folders are available first.", "Open Command Help and look for the Windows command that lists files and folders.", "Try `dir`."],
+              explanation: "dir lists the files and folders in the current location.",
+              whyThisMatters: "Good technicians inspect the environment before moving or changing files.",
+              successFeedback: "You discovered the available folders instead of guessing a hidden path.",
+              nextObjective: "Move into the Incidents folder you discovered.",
+              realWorldNote: "Listing first keeps you anchored to evidence instead of memory.",
               walkthrough: [
                 {
-                  objective: "List the folders and files in the current incident workspace.",
-                  howToThink: "Do not guess where the next clue is. First inspect the folder you are already standing in.",
+                  title: "Step 1: List the current folder",
+                  goal: "See what folders are available before you guess a path.",
+                  objective: "List the folders and files in the current workspace.",
+                  howToThink: "Do not guess where notes is. First inspect the folder you are already standing in.",
                   whereToLook: "Open Command Help -> Windows CMD and look for the command that lists files and folders.",
                   command: "dir",
                   output: [
                     " Volume in drive C is OS",
-                    " Directory of C:\\Lab\\Incident",
-                    "04/17/2026  08:20 AM    <DIR>          Notes",
-                    "04/17/2026  08:22 AM                33 triage.txt"
+                    " Directory of C:\\Lab",
+                    "04/17/2026  08:20 AM    <DIR>          Incidents",
+                    "04/17/2026  08:22 AM    <DIR>          Reports"
                   ],
-                  explanation: "Start by listing what is in front of you. That lets you discover the note file and the deeper Notes folder without guessing.",
+                  explanation: "dir shows the folders and files in the current location. This lets you discover Incidents instead of guessing.",
                   whyThisMatters: "A good junior technician confirms the visible evidence first instead of jumping to a path from memory.",
                   nowTry: "Type dir yourself."
-                },
-                {
-                  objective: "Notice the next useful evidence in the folder listing.",
-                  howToThink: "The listing tells you there are two useful items here: a triage note in the current folder and a deeper Notes folder for later review.",
-                  whereToLook: "Stay with the current listing before you decide which item to inspect next.",
-                  explanation: "For this ticket, read the triage note first. The Notes folder can be explored later after the written symptom is confirmed.",
-                  whyThisMatters: "This is the same habit you would use in a real ticket: inspect what exists, then choose the smallest next step that answers the current question.",
-                  nowTry: "Next, read triage.txt."
                 }
               ],
               accepts: [commandMatch("dir")]
@@ -4941,52 +4991,138 @@
           ]
         },
         {
-          id: "case-note-confirmation",
-          title: "Case Note Confirmation",
-          briefing: "Read the incident note so your next actions are based on the written report, not on assumptions.",
-          completionSummary: "You confirmed the written note before progressing to deeper troubleshooting.",
+          id: "enter-incident-folder",
+          title: "Enter the incident folder",
+          briefing: "Move into the folder you discovered so you can inspect its contents one level at a time.",
+          completionSummary: "You entered the incident folder deliberately instead of jumping to a guessed nested path.",
           steps: [
             step({
-              objective: "Read the triage note in the current incident folder.",
-              hints: ["Use the Windows file-reading command.", "The note file is triage.txt in the current folder.", "Try `type triage.txt`."],
-              explanation: "Reading the note first keeps the investigation aligned with what was actually reported.",
-              whyThisMatters: "Good technicians confirm the written symptom before they jump into diagnosis or remediation.",
-              successFeedback: "You reviewed the triage note.",
-              nextObjective: "Use the written note to decide whether the next stage should focus on services, logs, or access checks.",
-              realWorldNote: "A short ticket note rarely proves the cause by itself, but it does tell you which symptom the next command needs to test.",
+              objective: "Move into the Incidents folder.",
+              hints: ["You already proved that Incidents exists.", "Use the Windows change-directory command on the folder you discovered.", "Try `cd Incidents`."],
+              explanation: "cd changes the current folder so the prompt and subsequent listings come from the correct location.",
+              whyThisMatters: "Navigation should be based on evidence from the previous command, not on a guessed full path.",
+              successFeedback: "You moved into the Incidents folder you discovered.",
+              nextObjective: "List the contents of Incidents.",
+              realWorldNote: "Moving one level at a time makes it easier to catch a wrong path before it becomes confusing.",
               walkthrough: [
                 {
-                  objective: "Read the incident note in the current folder.",
-                  howToThink: "Once you know which file contains the written report, read it before you start browsing other folders.",
-                  whereToLook: "Open Command Help -> Windows CMD and look for the file-reading command.",
-                  command: "type triage.txt",
+                  title: "Step 2: Enter Incidents",
+                  goal: "Move into the folder that likely contains the ticket material.",
+                  objective: "Move into the Incidents folder.",
+                  howToThink: "Use the folder name you just discovered. Do not guess a deeper path yet.",
+                  whereToLook: "Open Command Help -> Windows CMD and look for the change-directory command.",
+                  command: "cd Incidents",
                   output: [
-                    "Review startup items and case notes."
+                    "C:\\Lab\\Incidents>"
                   ],
-                  explanation: "type opens the note directly from the current folder, so you can confirm what the ticket actually says.",
-                  whyThisMatters: "The written symptom guides the next diagnostic command. It does not prove the cause, but it keeps the investigation anchored to the ticket.",
-                  nowTry: "Type type triage.txt yourself."
-                },
-                {
-                  objective: "Plan the follow-up evidence path.",
-                  howToThink: "The note points toward startup items and deeper case notes. That tells you where the next stage of investigation should go.",
-                  whereToLook: "If you need more context later, you can inspect the Notes folder shown by the earlier dir output.",
-                  explanation: "A careful technician reads the ticket note first, then decides whether to move into the deeper notes folder or another troubleshooting area.",
-                  whyThisMatters: "You are learning a sequence here: inspect the workspace, read the note, then move deeper only after the current clue is understood.",
-                  nowTry: "Use the ticket note to decide the next command family."
+                  explanation: "The prompt changes when you enter a folder. That is your first confirmation that the command worked.",
+                  whyThisMatters: "The prompt is part of your evidence. It tells you where the next command will run.",
+                  nowTry: "Type cd Incidents yourself."
                 }
               ],
               accepts: [
-                rawMatch(/^type\s+triage\.txt$/i),
-                rawMatch(/^type\s+C:\\Lab\\Incident\\triage\.txt$/i)
-              ],
-              partials: [
-                {
-                  match: commandMatch("dir"),
-                  classification: "inefficient",
-                  feedback: "The workspace is already confirmed. The next step is to read the incident note itself."
-                }
+                cwdMatch("C:/Lab/Incidents")
               ]
+            })
+          ]
+        },
+        {
+          id: "discover-notes-folder",
+          title: "Discover the notes folder",
+          briefing: "Inspect the incident folder before you assume what is inside it.",
+          completionSummary: "You discovered the notes folder from the folder listing instead of guessing the nested structure.",
+          steps: [
+            step({
+              objective: "List the contents of the Incidents folder.",
+              hints: ["You are trying to see what is inside Incidents.", "Use the Windows directory listing command again in the new location.", "Try `dir`."],
+              explanation: "A fresh listing in the current folder shows the next available folders and files.",
+              whyThisMatters: "The right command does not change, but the meaning changes because you are now in a different folder.",
+              successFeedback: "You inspected the incident folder and discovered the notes folder.",
+              nextObjective: "Move into the notes folder.",
+              realWorldNote: "Repeating a context command in a new folder is not wasted effort. It is how you build a reliable path step by step.",
+              walkthrough: [
+                {
+                  title: "Step 3: Inspect the incident folder",
+                  goal: "Check what is inside Incidents before you guess the next folder.",
+                  objective: "List the contents of the Incidents folder.",
+                  howToThink: "You are in a new location now, so list this folder before you decide where to go next.",
+                  whereToLook: "Use the same Windows CMD listing command again.",
+                  command: "dir",
+                  output: [
+                    " Volume in drive C is OS",
+                    " Directory of C:\\Lab\\Incidents",
+                    "04/17/2026  08:26 AM    <DIR>          notes",
+                    "04/17/2026  08:27 AM                41 queue.txt"
+                  ],
+                  explanation: "This second listing shows you that notes exists inside Incidents.",
+                  whyThisMatters: "This is how you discover nested paths safely instead of memorising them.",
+                  nowTry: "Type dir yourself."
+                }
+              ],
+              accepts: [commandMatch("dir")]
+            })
+          ]
+        },
+        {
+          id: "enter-notes-and-verify",
+          title: "Enter notes and verify",
+          briefing: "Move into the notes folder you discovered and confirm you reached the correct location.",
+          completionSummary: "You reached the notes folder and verified the final working location.",
+          steps: [
+            step({
+              objective: "Move into the notes folder.",
+              hints: ["You already proved that notes exists here.", "Use the Windows change-directory command on notes.", "Try `cd notes`."],
+              explanation: "Use the folder name from the listing you just saw.",
+              whyThisMatters: "This is the habit we want: observe, decide, move, and confirm.",
+              successFeedback: "You moved into the notes folder.",
+              nextObjective: "List the notes folder contents to verify the location.",
+              realWorldNote: "A prompt change is good evidence, but a final listing removes doubt before you continue.",
+              walkthrough: [
+                {
+                  title: "Step 4: Enter notes",
+                  goal: "Move into the notes folder you just discovered.",
+                  objective: "Move into the notes folder.",
+                  howToThink: "Now you have evidence that notes exists here, so you can move into it confidently.",
+                  whereToLook: "Open Command Help -> Windows CMD and use the change-directory command again.",
+                  command: "cd notes",
+                  output: [
+                    "C:\\Lab\\Incidents\\notes>"
+                  ],
+                  explanation: "The prompt changed again. That confirms you are now inside notes.",
+                  whyThisMatters: "Prompt changes are part of the evidence trail in terminal work.",
+                  nowTry: "Type cd notes yourself."
+                }
+              ],
+              accepts: [cwdMatch("C:/Lab/Incidents/notes")]
+            }),
+            step({
+              objective: "List the notes folder contents.",
+              hints: ["Verify the folder you entered by listing it.", "Use the same Windows directory listing command one more time.", "Try `dir`."],
+              explanation: "A final listing confirms you reached the intended folder and can now see the ticket files.",
+              whyThisMatters: "Verification matters even for navigation. You should know you are in the right place before reading or changing files.",
+              successFeedback: "You verified the notes folder contents.",
+              nextObjective: "Now try the same discovery habits in the next mission.",
+              realWorldNote: "Strong beginners do not just reach the right folder. They prove they reached it.",
+              walkthrough: [
+                {
+                  title: "Step 5: Verify the notes folder",
+                  goal: "Confirm you are in the right place before you continue.",
+                  objective: "List the notes folder contents.",
+                  howToThink: "A final listing removes any doubt about where you are and what files are available next.",
+                  whereToLook: "Use the Windows CMD listing command in the current folder.",
+                  command: "dir",
+                  output: [
+                    " Volume in drive C is OS",
+                    " Directory of C:\\Lab\\Incidents\\notes",
+                    "04/17/2026  08:28 AM                55 service.txt",
+                    "04/17/2026  08:28 AM                42 triage.txt"
+                  ],
+                  explanation: "You can now see the notes files directly. That confirms you reached the intended folder.",
+                  whyThisMatters: "Now try the same steps yourself.",
+                  nowTry: "Type dir yourself."
+                }
+              ],
+              accepts: [commandMatch("dir")]
             })
           ]
         }
@@ -7504,6 +7640,115 @@
     "Scale difficulty by reducing scaffolding gradually, not by reintroducing hidden knowledge or path memorisation."
   ];
 
+  const beginnerLabLevels = {
+    windows: [
+      {
+        id: "level-1-terminal-orientation",
+        title: "Level 1: Terminal Orientation",
+        description: "Learn where to type commands, how to read the prompt, and how to move through a ticket one step at a time.",
+        estimatedTime: "5-10 minutes",
+        skills: ["terminal input", "Run button", "Command Help", "Hint", "Walkthrough", "dir", "cd"],
+        scenarioIds: ["win-dir-incident-triage"],
+        unlocksAfter: null,
+        walkthrough: [
+          {
+            title: "Step 1: Read the ticket and current task",
+            goal: "Know what you are trying to prove before you type anything.",
+            explanation: "Start by reading the mission and the current task. This tells you what kind of command will actually help.",
+            nowTry: "Then use Command Help, Hint, or type a command yourself."
+          },
+          {
+            title: "Step 2: Use Command Help when you are unsure",
+            goal: "Find the command family before you guess.",
+            explanation: "Command Help gives you examples. It is there to help you recognise the right Windows CMD command family.",
+            nowTry: "Open Command Help and look for a command that matches the task."
+          }
+        ]
+      },
+      {
+        id: "level-2-folder-navigation",
+        title: "Level 2: Folder Navigation",
+        description: "Practice moving through Windows folders deliberately instead of jumping to guessed paths.",
+        estimatedTime: "6-10 minutes",
+        skills: ["cd", "dir", "folder navigation", "prompt awareness"],
+        scenarioIds: ["win-cd-notes-folder", "win-tree-toolbox-map"],
+        unlocksAfter: "level-1-terminal-orientation"
+      },
+      {
+        id: "level-3-reading-files-and-notes",
+        title: "Level 3: Reading Files and Notes",
+        description: "Use Windows commands to inspect ticket notes and long text safely before acting.",
+        estimatedTime: "8-12 minutes",
+        skills: ["type", "more", "reading notes"],
+        scenarioIds: ["win-type-more-audit-log", "win-attrib-hidden-plan"],
+        unlocksAfter: "level-2-folder-navigation"
+      },
+      {
+        id: "level-4-basic-system-checks",
+        title: "Level 4: Basic System Checks",
+        description: "Confirm who the machine is, who you are, and what environment you are working in.",
+        estimatedTime: "8-12 minutes",
+        skills: ["hostname", "whoami", "systeminfo", "date", "time", "set"],
+        scenarioIds: ["win-host-and-user-identity", "win-build-snapshot", "win-set-and-echo-lab-role"],
+        unlocksAfter: "level-3-reading-files-and-notes"
+      },
+      {
+        id: "level-5-network-configuration",
+        title: "Level 5: Network Configuration",
+        description: "Learn how to inspect local adapter, IP, and hardware network details from Windows CMD.",
+        estimatedTime: "6-10 minutes",
+        skills: ["ipconfig", "getmac", "adapter review"],
+        scenarioIds: ["win-ipconfig-and-getmac-audit"],
+        unlocksAfter: "level-4-basic-system-checks"
+      },
+      {
+        id: "level-6-connectivity-checks",
+        title: "Level 6: Connectivity Checks",
+        description: "Practice basic reachability tests and understand what they do and do not prove.",
+        estimatedTime: "8-12 minutes",
+        skills: ["ping", "tracert", "pathping"],
+        scenarioIds: ["win-ping-fileserver", "win-tracert-and-pathping-web-lab"],
+        unlocksAfter: "level-5-network-configuration"
+      },
+      {
+        id: "level-7-dns-troubleshooting",
+        title: "Level 7: DNS Troubleshooting",
+        description: "Separate name resolution problems from basic IP reachability problems.",
+        estimatedTime: "8-12 minutes",
+        skills: ["nslookup", "hostname vs IP", "DNS evidence"],
+        scenarioIds: ["win-nslookup-fileserver"],
+        unlocksAfter: "level-6-connectivity-checks"
+      },
+      {
+        id: "level-8-service-and-port-checks",
+        title: "Level 8: Service and Port Checks",
+        description: "Inspect sockets and service state before assuming an application is fully down.",
+        estimatedTime: "8-12 minutes",
+        skills: ["netstat", "sc query", "tasklist"],
+        scenarioIds: ["win-netstat-connection-audit", "win-sc-query-spooler"],
+        unlocksAfter: "level-7-dns-troubleshooting"
+      },
+      {
+        id: "level-9-shares-and-access",
+        title: "Level 9: Shares and Access",
+        description: "Review Windows share and mapping workflows that show how access issues surface in support tickets.",
+        estimatedTime: "8-12 minutes",
+        skills: ["net share", "net use", "share access"],
+        scenarioIds: ["win-net-share-audit", "win-net-use-map-tools"],
+        unlocksAfter: "level-8-service-and-port-checks"
+      },
+      {
+        id: "level-10-beginner-capstone-ticket",
+        title: "Level 10: Beginner Capstone Ticket",
+        description: "Combine Windows network checks and ticket-note habits in a longer troubleshooting mission.",
+        estimatedTime: "10-15 minutes",
+        skills: ["ipconfig", "ping", "nslookup", "route print", "verification"],
+        scenarioIds: ["win-dns-escalation-ticket"],
+        unlocksAfter: "level-9-shares-and-access"
+      }
+    ]
+  };
+
   const scenarioStructure = {
     id: "string",
     title: "string",
@@ -7590,6 +7835,7 @@
 
   window.ScenarioEngine = {
     scenarios,
+    beginnerLabLevels,
     exampleScenarios: refinedExampleScenarios.slice(0, 15),
     scenarioStructure,
     scalingGuidance,

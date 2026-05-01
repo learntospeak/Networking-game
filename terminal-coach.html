@@ -178,6 +178,14 @@
               <p id="stepObjective">Identify your working directory before you move deeper into the host.</p>
             </article>
 
+            <article id="beginnerLabCard" class="support-card" hidden>
+              <h3>Beginner Terminal Lab</h3>
+              <p id="beginnerLabCurrentLevel">Level 1: Terminal Orientation</p>
+              <p id="beginnerLabCurrentMission">Mission: Incident Folder Triage</p>
+              <p id="beginnerLabCurrentTask">Task: List the current folder contents.</p>
+              <p id="beginnerLabProgressText">Level progress: 0/1 missions complete.</p>
+            </article>
+
             <article class="support-card">
               <h3>Mentor Signal</h3>
               <p id="coachSignal">Strong operators confirm context before they touch files, processes, or services.</p>
@@ -256,8 +264,46 @@
           <div class="terminal-output-shell">
             <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
           </div>
-          <article id="taskCompleteCard" class="task-complete-card" hidden>
-            <p class="task-complete-kicker">Task Complete</p>
+          <div id="walkthroughOverlay" class="walkthrough-overlay" hidden></div>
+          <aside id="walkthroughCard" class="walkthrough-card" aria-hidden="true" aria-labelledby="walkthroughTitle" hidden>
+            <div class="walkthrough-shell">
+              <div class="walkthrough-head">
+                <div>
+                  <p class="walkthrough-kicker">Watch Walkthrough</p>
+                  <h2 id="walkthroughTitle">Step 1</h2>
+                  <p id="walkthroughStepCounter" class="walkthrough-step-counter">Walkthrough Step 1 of 1</p>
+                </div>
+                <button id="walkthroughCloseBtn" class="walkthrough-close" type="button" aria-label="Close walkthrough">Stop Walkthrough</button>
+              </div>
+              <div class="walkthrough-block">
+                <p class="walkthrough-label">Goal</p>
+                <p id="walkthroughGoal" class="walkthrough-copy"></p>
+              </div>
+              <div class="walkthrough-block">
+                <p class="walkthrough-label">Demo Command</p>
+                <pre id="walkthroughCommand" class="walkthrough-code"></pre>
+              </div>
+              <div class="walkthrough-block">
+                <p class="walkthrough-label">Demo Output</p>
+                <pre id="walkthroughOutput" class="walkthrough-code"></pre>
+              </div>
+              <div class="walkthrough-block">
+                <p class="walkthrough-label">What This Shows</p>
+                <p id="walkthroughExplanation" class="walkthrough-copy"></p>
+              </div>
+              <div class="walkthrough-actions">
+                <button id="walkthroughPrevBtn" class="beginner-secondary-btn" type="button">Previous Walkthrough Step</button>
+                <button id="walkthroughNextBtn" class="ticket-briefing-start" type="button">Next Walkthrough Step</button>
+                <button id="walkthroughTryBtn" class="beginner-secondary-btn" type="button">Try It Yourself</button>
+              </div>
+            </div>
+          </aside>
+          <div id="taskCompleteOverlay" class="task-complete-overlay" hidden></div>
+          <article id="taskCompleteCard" class="task-complete-card" aria-hidden="true" aria-labelledby="taskCompleteTitle" hidden>
+            <div class="task-complete-head">
+              <p id="taskCompleteTitle" class="task-complete-kicker">Task Complete</p>
+              <button id="taskCompleteCloseBtn" class="task-complete-close" type="button" aria-label="Close task complete notes">Continue</button>
+            </div>
             <div class="task-complete-grid">
               <div class="task-complete-block">
                 <p class="task-complete-label">What You Proved</p>
