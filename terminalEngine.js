@@ -3120,6 +3120,7 @@
     const beginnerTrack = isBeginnerRoadmapTrack();
     const level = currentBeginnerLevel();
     const levelNumber = level ? beginnerLevelIndex(level.id) + 1 : 0;
+    const desktopBeginnerTrack = beginnerTrack && !isMobileTerminalLayout();
 
     syncMobileAppBarTitle();
     syncMobileAppBarActions();
@@ -3184,7 +3185,7 @@
     }
     if (els.beginnerTaskHelpText) {
       els.beginnerTaskHelpText.textContent = beginnerMode
-        ? "Try typing a command. Not sure? Use Command Help."
+        ? "Use Command Help or Hint if you get stuck."
         : "Try typing a command. Use Hint if you need a stronger nudge.";
     }
     els.progressSummary.textContent = stageInfo
@@ -3229,6 +3230,12 @@
     if (els.commandSheetBtn) {
       els.commandSheetBtn.textContent = beginnerMode ? "Command Help" : "Commands";
     }
+    if (els.appSectionShell) {
+      els.appSectionShell.hidden = Boolean(desktopBeginnerTrack && session.scenarioStarted);
+    }
+    if (els.terminalMetaPanel) {
+      els.terminalMetaPanel.hidden = Boolean(desktopBeginnerTrack && session.scenarioStarted);
+    }
     if (els.currentTaskCard) {
       els.currentTaskCard.hidden = beginnerTrack;
     }
@@ -3239,7 +3246,7 @@
       els.beginnerTaskStrip.hidden = !beginnerMode;
     }
     if (els.beginnerHelpStrip) {
-      els.beginnerHelpStrip.hidden = !beginnerMode;
+      els.beginnerHelpStrip.hidden = true;
     }
     if (els.beginnerModeBanner) {
       els.beginnerModeBanner.hidden = !beginnerMode;
@@ -3601,13 +3608,18 @@
 
   function announceScenario() {
     const scenario = currentScenario();
-    const step = currentStep();
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
     const machineSummary = machineContextSummary(scenario);
     const stageInfo = currentStageInfo(scenario);
     const beginnerTrack = isBeginnerRoadmapTrack();
     missionDebug("Loading scenario", scenario.title || scenario.id);
     missionDebug("Scenario has stages", Boolean(scenario.stages?.length));
+
+    if (beginnerTrack && isBeginnerMode() && !challengePresentation) {
+      printMissionLine("Ticket loaded. Start by reading the current task.");
+      printCoachLine("Need help? Use Command Help, Hint, or Watch Walkthrough.");
+      return;
+    }
 
     if (scenarioHasStages(scenario)) {
       printMissionLine(`Mission started: ${scenario.title}`);

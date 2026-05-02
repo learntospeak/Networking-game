@@ -811,6 +811,14 @@
   line-height: 1.6;
 }
 
+.beginner-task-strip,
+.beginner-help-strip {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(8, 16, 28, 0.88);
+}
+
 .beginner-guide-btn,
 .beginner-secondary-btn {
   min-height: 38px;
@@ -2100,15 +2108,15 @@
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-layout {
-    grid-template-columns: minmax(280px, 312px) minmax(0, 1fr);
-    gap: 18px;
-    max-width: 1280px;
+    grid-template-columns: minmax(248px, 284px) minmax(0, 1fr);
+    gap: 20px;
+    max-width: 1320px;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-header,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-section-shell,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-meta-panel {
-    max-width: 1280px;
+    max-width: 1320px;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card {
@@ -2130,10 +2138,20 @@
     margin-bottom: 8px;
   }
 
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-stage-title,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-stage-briefing {
+    display: none;
+  }
+
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-meta-panel .panel-copy,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode #environmentBadge,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode #shellBadge,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode #currentLayerBadge {
+    display: none;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #beginnerLabCurrentTask,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #beginnerLabProgressText {
     display: none;
   }
 
@@ -2155,6 +2173,62 @@
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .beginner-mode-banner {
     margin: 8px 16px 0;
     padding: 10px 12px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 16px 16px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot .beginner-task-strip,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot .terminal-controls,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot .terminal-input-shell {
+    grid-column: 1;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot .beginner-help-strip {
+    display: none !important;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .beginner-task-strip {
+    display: grid;
+    gap: 4px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .beginner-task-help {
+    display: none;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls button {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 10px 9px 28px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: normal;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls button::before {
+    left: 9px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-input-shell {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-run-btn {
+    min-width: 92px;
   }
 }
 
