@@ -6,13 +6,13 @@
 
 .terminal-page .rack-room {
   width: 100%;
-  max-width: 1580px;
+  max-width: 1480px;
   margin-inline: auto;
 }
 
 .terminal-shell {
   width: 100%;
-  max-width: none;
+  max-width: 1440px;
   margin-inline: auto;
 }
 
@@ -25,7 +25,7 @@
 .terminal-subbrand {
   margin-top: 4px;
   color: #64748b;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -34,8 +34,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 28px;
-  margin-bottom: 28px;
+  gap: 24px;
+  margin-bottom: 22px;
 }
 
 .terminal-kicker {
@@ -49,10 +49,10 @@
 
 .terminal-intro {
   margin: 0;
-  max-width: 880px;
+  max-width: 62ch;
   color: #cbd5e1;
   font-size: clamp(15px, 1.45vw, 16px);
-  line-height: 1.7;
+  line-height: 1.55;
 }
 
 .terminal-nav-link {
@@ -219,13 +219,13 @@
 }
 
 .terminal-meta-panel {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .terminal-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(290px, 330px) minmax(0, 1fr);
+  gap: 18px;
   align-items: start;
   width: 100%;
 }
@@ -1944,6 +1944,75 @@
   .terminal-meta-panel,
   .terminal-layout {
     margin-inline: auto;
+  }
+
+  .terminal-header,
+  .app-section-shell,
+  .terminal-meta-panel,
+  .terminal-layout {
+    max-width: 1360px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-shell {
+    max-width: 1380px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-layout {
+    grid-template-columns: minmax(280px, 312px) minmax(0, 1fr);
+    gap: 18px;
+    max-width: 1280px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-header,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-section-shell,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-meta-panel {
+    max-width: 1280px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-category,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-meta-row,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-flex {
+    display: none;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-title {
+    margin-bottom: 6px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-level {
+    margin-bottom: 8px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-meta-panel .panel-copy,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #environmentBadge,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #shellBadge,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #currentLayerBadge {
+    display: none;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-shell-copy {
+    max-width: 54ch;
+    line-height: 1.5;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-shell-note {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .support-card,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .support-card-primary {
+    padding: 14px 16px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .beginner-mode-banner {
+    margin: 8px 16px 0;
+    padding: 10px 12px;
   }
 }
 

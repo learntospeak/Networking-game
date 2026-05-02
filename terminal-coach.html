@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260430beginner1">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260502coach2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -36,7 +36,7 @@
           environmentCategory: "windows",
           pageKicker: "Windows Terminal Learning",
           pageTitle: "Windows Terminal Coach",
-          pageIntro: "Practice Windows CMD workflows in a dedicated track so new learners are not forced to translate Linux syntax mid-lesson.",
+          pageIntro: "Start with guided Windows CMD tickets, then build toward practical troubleshooting.",
           initialMessage: "Windows terminal lessons loaded. This track stays inside CMD unless a scenario explicitly says otherwise.",
           commandSheetDefaultCategory: "Windows CMD",
           commandSheetCategories: ["Windows CMD"]
@@ -62,8 +62,8 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260430beginner1" defer></script>
-  <script src="./commandSheet.js?v=20260430beginner1" defer></script>
+  <script src="./terminalEngine.js?v=20260502coach2" defer></script>
+  <script src="./commandSheet.js?v=20260502coach2" defer></script>
 </head>
 <body class="terminal-page">
   <div class="rack-room">
@@ -71,7 +71,7 @@
       <div class="router-top">
         <div>
           <div class="router-brand">NET-LAB TERMINAL COACH</div>
-          <div class="terminal-subbrand">Typed workflows, adaptive coaching, and stateful command practice</div>
+          <div class="terminal-subbrand">Guided tickets and practical terminal practice</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -87,10 +87,10 @@
           <h1 id="terminalPageTitle">Linux Terminal Coach</h1>
           <p id="terminalPageIntro" class="terminal-intro">Practice Linux-first workflows with one shell context at a time. Windows commands stay out of view unless a lesson is explicitly built to compare environments.</p>
           <nav class="environment-route-nav" aria-label="Learning paths">
-            <a id="linuxTrackLink" class="environment-route-link" href="./terminal-coach.html?track=linux">Linux Terminal Learning</a>
-            <a id="windowsTrackLink" class="environment-route-link" href="./terminal-coach.html?track=windows">Windows Terminal Learning</a>
-            <a id="ciscoTrackLink" class="environment-route-link" href="./cisco-cli-lab.html">Cisco CLI Lab</a>
-            <a id="challengeTrackLink" class="environment-route-link" href="./challenge-mode.html">Cyber Challenge Mode</a>
+            <a id="linuxTrackLink" class="environment-route-link" href="./terminal-coach.html?track=linux">Linux Lab</a>
+            <a id="windowsTrackLink" class="environment-route-link" href="./terminal-coach.html?track=windows">Windows Lab</a>
+            <a id="ciscoTrackLink" class="environment-route-link" href="./cisco-cli-lab.html">Cisco CLI</a>
+            <a id="challengeTrackLink" class="environment-route-link" href="./challenge-mode.html">Cyber Mode</a>
           </nav>
         </div>
         <a class="terminal-nav-link" href="./index.html">Back to Main App</a>
@@ -101,8 +101,8 @@
       <section class="lab-panel terminal-meta-panel">
         <div class="mode-panel-head">
           <div>
-            <h2>Current Progress</h2>
-            <p class="panel-copy">Track your current ticket, shell context, and progress through the mission.</p>
+            <h2>Session</h2>
+            <p class="panel-copy">Current ticket and task status.</p>
           </div>
           <div class="status-cluster">
             <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
@@ -189,7 +189,7 @@
             </article>
 
             <article id="beginnerLabCard" class="support-card support-card-primary" hidden>
-              <h3>Beginner Terminal Lab</h3>
+              <h3>Current Mission</h3>
               <p id="beginnerLabCurrentLevel">Level 1: Terminal Orientation</p>
               <p id="beginnerLabCurrentMission">Mission: Incident Folder Triage</p>
               <p id="beginnerLabCurrentTask">Task: List the current folder contents.</p>

@@ -1799,18 +1799,18 @@
     const scenarios = levelScenarios(level);
     const completedMissions = completedScenarioCountForLevel(level);
     const levelIndexNumber = beginnerLevelIndex(level.id) + 1;
-    fillText(els.beginnerLabCurrentLevel, `Current Lab Level: ${level.title}`, { hideWhenEmpty: false });
+    fillText(els.beginnerLabCurrentLevel, `${level.title}`, { hideWhenEmpty: false });
     fillText(els.beginnerLabCurrentMission, `Mission: ${scenario.title}`, { hideWhenEmpty: false });
     fillText(
       els.beginnerLabCurrentTask,
       stageInfo
-        ? `Current Task: ${step.objective} · Mission Section ${stageInfo.stageIndex + 1} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}`
-        : `Current Task: ${step.objective}`,
+        ? `Task: ${step.objective} · Section ${stageInfo.stageIndex + 1} · ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}`
+        : `Task: ${step.objective}`,
       { hideWhenEmpty: false }
     );
     fillText(
       els.beginnerLabProgressText,
-      `Level progress: ${completedMissions}/${scenarios.length} missions complete · Level ${levelIndexNumber} of ${beginnerLevelRoadmap("windows").length}`,
+      `Progress: ${completedMissions}/${scenarios.length} missions complete · Level ${levelIndexNumber}/${beginnerLevelRoadmap("windows").length}`,
       { hideWhenEmpty: false }
     );
   }
@@ -2670,7 +2670,7 @@
     els.scenarioCountBadge.textContent = challengePresentation
       ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
       : beginnerTrack && level
-        ? `Level ${levelNumber} · Mission ${scenario.title}`
+        ? `Level ${levelNumber}`
         : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
     if (challengePresentation) {
       els.stepCountBadge.textContent = stageInfo
@@ -2678,7 +2678,7 @@
         : "Challenge Active";
     } else {
       els.stepCountBadge.textContent = beginnerTrack && stageInfo
-        ? `Mission Section ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
+        ? `Section ${stageInfo.stageIndex + 1}/${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}`
         : stageInfo
           ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
           : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
@@ -2694,7 +2694,7 @@
     els.scenarioCategory.textContent = scenario.category;
     els.scenarioTitle.textContent = scenario.title;
     els.scenarioLevel.textContent = beginnerTrack && level
-      ? `${level.title} · ${scenario.level || scenario.difficulty || "Beginner"}`
+      ? `${scenario.level || scenario.difficulty || "Beginner"}`
       : (challengePresentation ? (scenario.difficulty || scenario.level) : scenario.level);
     if (els.scenarioEnvironmentBadge) {
       els.scenarioEnvironmentBadge.textContent = environmentLabel;
@@ -2702,6 +2702,7 @@
     els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
     renderStageUI(stageInfo, scenario);
     els.scenarioFlex.textContent = allowedApproachText(scenario);
+    els.scenarioFlex.hidden = Boolean(beginnerTrack);
     renderBeginnerLabCard(scenario, step);
     renderMissionCaseFile(scenario, stageInfo);
     renderMissionReview(scenario);
@@ -2719,8 +2720,8 @@
         : "Try typing a command. Use Hint if you need a stronger nudge.";
     }
     els.progressSummary.textContent = stageInfo
-      ? `${beginnerTrack && level ? `${level.title}. ` : ""}${missionProgressText(scenario)} ${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`
-      : `${session.completedScenarioIds.size} ${challengePresentation ? "challenges" : "scenarios"} completed in this session.`;
+      ? `${beginnerTrack && level ? `${level.title}. ` : ""}${missionProgressText(scenario)} ${session.completedScenarioIds.size} completed this session.`
+      : `${session.completedScenarioIds.size} completed this session.`;
     if (els.mobileEnvironmentBadge) {
       els.mobileEnvironmentBadge.textContent = environmentLabel;
     }
@@ -2741,21 +2742,21 @@
     }
 
     if (session.scenarioCompleted) {
-      els.coachSignal.textContent = "Scenario complete. Move to the next scenario or reset this one and run it cleaner.";
+      els.coachSignal.textContent = "Mission complete. Move on or reset for a cleaner run.";
     } else if (challengePresentation) {
       els.coachSignal.textContent = "Need help? Open Commands or use Hint.";
     } else {
       els.coachSignal.textContent = beginnerMode
-        ? "Need help? Open Command Help, Hint, or Watch Walkthrough."
+        ? "Need help? Use Command Help, Hint, or Watch Walkthrough."
         : "Need help? Open Commands or use Hint.";
     }
 
     els.mobileCoachSignal.textContent = els.coachSignal.textContent;
     if (els.beginnerModeSummary) {
-      els.beginnerModeSummary.textContent = "Read the ticket, then type a command. Need help? Use Command Help, Hint, or Watch Walkthrough.";
+      els.beginnerModeSummary.textContent = "Read the ticket. Type a command. Use help if you get stuck.";
     }
     if (els.beginnerHelpStripText) {
-      els.beginnerHelpStripText.textContent = "Not sure what to type? Tap Command Help, Hint, or Watch Walkthrough.";
+      els.beginnerHelpStripText.textContent = "Need help? Use Command Help, Hint, or Walkthrough.";
     }
     if (els.commandSheetBtn) {
       els.commandSheetBtn.textContent = beginnerMode ? "Command Help" : "Commands";
@@ -2980,7 +2981,7 @@
       `    <div>`,
       `      <p class="app-shell-kicker">Beginner Terminal Lab</p>`,
       `      <h3>Level Roadmap</h3>`,
-      `      <p class="mission-case-copy">Current level: ${escapeHtml(currentLevelTitle)}. Recommended next: ${escapeHtml(recommendedTitle)}.</p>`,
+      `      <p class="mission-case-copy">Current: ${escapeHtml(currentLevelTitle)} · Next: ${escapeHtml(recommendedTitle)}</p>`,
       `    </div>`,
       `  </div>`,
       `  <details id="beginnerRoadmapDisclosure" class="support-disclosure beginner-roadmap-disclosure">`,
@@ -3009,8 +3010,8 @@
     const beginnerTrack = isBeginnerRoadmapTrack();
     const currentLevel = currentBeginnerLevel();
     const recommendedLevel = recommendedBeginnerLevel();
-    const resumeHeading = beginnerTrack && showResume
-      ? beginnerResumeHeading(record)
+    const resumeHeading = beginnerTrack
+      ? (showResume ? beginnerResumeHeading(record) : "Beginner Terminal Lab")
       : `Resume ${sectionLabel()}`;
     const completionText = record && showResume
       ? `${record.completedCount}/${record.totalCount || totalScenarios()}`
@@ -3040,10 +3041,10 @@
       "    <h2>" + escapeHtml(resumeHeading) + "</h2>",
       "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
         ? (beginnerTrack
-          ? "Saved progress is available for this beginner lab. Resume the exact level, mission, and task you were working on, or choose another level."
+          ? "Resume your saved level, mission, and task, or choose another level."
           : "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning.")
         : (beginnerTrack
-          ? "This beginner lab saves your current level, mission, mission section, and live terminal state so you can return to the right task later."
+          ? "Choose a level, or continue with the recommended mission."
           : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.")) + "</p>",
       "  </div>",
       "</div>",
@@ -3059,7 +3060,7 @@
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
       "</div>",
       "<p class=\"app-shell-note\">" + escapeHtml(beginnerTrack
-        ? "Last active: " + lastItem + ". Reset Progress clears all saved lab progress for the current profile. " + NetlabApp.getProfileStorageNote()
+        ? "Last active: " + lastItem + ". Reset Progress clears saved beginner lab progress. " + NetlabApp.getProfileStorageNote()
         : "Reset Progress clears all saved lab progress for the current profile. " + NetlabApp.getProfileStorageNote()) + "</p>",
       (beginnerTrack ? renderBeginnerRoadmapMarkup() : "")
     ].join("");
