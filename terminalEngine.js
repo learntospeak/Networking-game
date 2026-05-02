@@ -39,6 +39,8 @@
     scenarioStageBriefing: document.getElementById("scenarioStageBriefing"),
     scenarioFlex: document.getElementById("scenarioFlex"),
     missionCaseFileCard: document.getElementById("missionCaseFileCard"),
+    missionCaseSummaryTitle: document.getElementById("missionCaseSummaryTitle"),
+    missionCaseSummaryMeta: document.getElementById("missionCaseSummaryMeta"),
     missionCaseTitle: document.getElementById("missionCaseTitle"),
     missionCaseMeta: document.getElementById("missionCaseMeta"),
     missionCaseRole: document.getElementById("missionCaseRole"),
@@ -59,8 +61,10 @@
     missionEnvironmentText: document.getElementById("missionEnvironmentText"),
     missionCurrentStageTitle: document.getElementById("missionCurrentStageTitle"),
     missionCurrentStageBriefing: document.getElementById("missionCurrentStageBriefing"),
+    missionCurrentStageLabel: document.getElementById("missionCurrentStageLabel"),
     missionStageProgress: document.getElementById("missionStageProgress"),
     missionTotalProgress: document.getElementById("missionTotalProgress"),
+    missionProgressLabel: document.getElementById("missionProgressLabel"),
     missionReviewCard: document.getElementById("missionReviewCard"),
     missionReviewOverall: document.getElementById("missionReviewOverall"),
     reviewTroubleshootingScore: document.getElementById("reviewTroubleshootingScore"),
@@ -77,20 +81,26 @@
     missionReviewImprovements: document.getElementById("missionReviewImprovements"),
     missionReviewTakeaway: document.getElementById("missionReviewTakeaway"),
     beginnerLabCard: document.getElementById("beginnerLabCard"),
+    beginnerLabHeading: document.getElementById("beginnerLabHeading"),
     beginnerLabCurrentLevel: document.getElementById("beginnerLabCurrentLevel"),
     beginnerLabCurrentMission: document.getElementById("beginnerLabCurrentMission"),
     beginnerLabCurrentTask: document.getElementById("beginnerLabCurrentTask"),
     beginnerLabProgressText: document.getElementById("beginnerLabProgressText"),
     beginnerVisualGuideCard: document.getElementById("beginnerVisualGuideCard"),
+    beginnerVisualGuideHeading: document.getElementById("beginnerVisualGuideHeading"),
     beginnerVisualCurrentPath: document.getElementById("beginnerVisualCurrentPath"),
     beginnerCommandMeaningMap: document.getElementById("beginnerCommandMeaningMap"),
     beginnerFolderGuideMap: document.getElementById("beginnerFolderGuideMap"),
     currentTaskCard: document.getElementById("currentTaskCard"),
+    environmentContextTitle: document.getElementById("environmentContextTitle"),
+    environmentContextMeta: document.getElementById("environmentContextMeta"),
     progressCard: document.getElementById("progressCard"),
     ticketBriefingOverlay: document.getElementById("ticketBriefingOverlay"),
     ticketBriefingCard: document.getElementById("ticketBriefingCard"),
+    ticketBriefingKicker: document.getElementById("ticketBriefingKicker"),
     ticketBriefingTitle: document.getElementById("ticketBriefingTitle"),
     ticketBriefingCloseBtn: document.getElementById("ticketBriefingCloseBtn"),
+    ticketBriefingMeta: document.querySelector("#ticketBriefingCard .ticket-briefing-meta"),
     ticketBriefingId: document.getElementById("ticketBriefingId"),
     ticketBriefingPriority: document.getElementById("ticketBriefingPriority"),
     ticketBriefingReportedBy: document.getElementById("ticketBriefingReportedBy"),
@@ -130,14 +140,21 @@
     environmentSummary: document.getElementById("environmentSummary"),
     machineContextList: document.getElementById("machineContextList") || document.getElementById("challengeContextList"),
     stepObjective: document.getElementById("stepObjective"),
+    helpNotesTitle: document.getElementById("helpNotesTitle"),
+    helpNotesMeta: document.getElementById("helpNotesMeta"),
+    coachSignalLabel: document.getElementById("coachSignalLabel"),
     coachSignal: document.getElementById("coachSignal"),
+    hintLadderLabel: document.getElementById("hintLadderLabel"),
     hintLadder: document.getElementById("hintLadder"),
+    progressCardTitle: document.getElementById("progressCardTitle"),
+    progressCardMeta: document.getElementById("progressCardMeta"),
     progressSummary: document.getElementById("progressSummary"),
     layerTransitionBanner: document.getElementById("layerTransitionBanner"),
     beginnerModeBanner: document.getElementById("beginnerModeBanner"),
     beginnerModeSummary: document.getElementById("beginnerModeSummary"),
     beginnerGuideBtn: document.getElementById("beginnerGuideBtn"),
     beginnerTaskStrip: document.getElementById("beginnerTaskStrip"),
+    beginnerTaskStripLabel: document.getElementById("beginnerTaskStripLabel"),
     beginnerCurrentTaskText: document.getElementById("beginnerCurrentTaskText"),
     beginnerTaskHelpText: document.getElementById("beginnerTaskHelpText"),
     beginnerHelpStrip: document.getElementById("beginnerHelpStrip"),
@@ -386,15 +403,20 @@
 
   function previewStartMessage(scenario = currentScenario()) {
     const challengePresentation = scenarioUsesChallengePresentation(scenario);
+    const beginnerProblem = isBeginnerMode() && beginnerScenarioTicketMode(scenario);
     if (isMobileTerminalLayout()) {
       return challengePresentation
         ? "Use the left and right arrows above to choose a challenge, then tap Start."
-        : "Use the left and right arrows above to choose a mission, then tap Start.";
+        : beginnerProblem
+          ? "Use the left and right arrows above to choose a problem, then tap Start."
+          : "Use the left and right arrows above to choose a mission, then tap Start.";
     }
 
     return challengePresentation
       ? "Use Previous and Next to choose a challenge, then start it when you're ready."
-      : "Use Previous and Next to choose a mission, then start it when you're ready.";
+      : beginnerProblem
+        ? "Use Previous and Next to choose a problem, then start it when you're ready."
+        : "Use Previous and Next to choose a mission, then start it when you're ready.";
   }
 
   function navigateScenarioBy(delta) {
@@ -1235,7 +1257,7 @@
 
   function beginnerTicketPayload(scenario = currentScenario(), step = currentStep()) {
     const custom = scenario?.beginnerTicket || {};
-    const objective = step?.objective || scenarioObjectiveText(scenario) || "the current ticket task";
+    const objective = step?.objective || scenarioObjectiveText(scenario) || "the current task";
     const firstHint = Array.isArray(step?.hints) ? step.hints.find((hint) => String(hint || "").trim()) : "";
 
     return {
@@ -1244,16 +1266,16 @@
         || scenario?.userReport
         || scenario?.summary
         || scenario?.scenarioIntro
-        || `The ticket is about ${scenario?.title || "this mission"}.`,
-        "The ticket gives you a beginner support task to investigate."
+        || `The problem is about ${scenario?.title || "this task"}.`,
+        "The problem gives you a simple task to solve."
       ),
       meaning: normalizedScenarioText(
         custom.meaning
         || scenario?.summary
         || scenario?.missionBriefing
         || scenario?.objective
-        || `Your job is to use the terminal to work through ${objective}.`,
-        "Your job is to use the terminal to find the right evidence."
+        || `Use the terminal to work through ${objective}.`,
+        "Use the terminal to find the right clue."
       ),
       tryFirst: normalizedScenarioText(
         custom.tryFirst
@@ -1267,14 +1289,14 @@
   function defaultVisualCommandMap(scenario = currentScenario()) {
     if (scenario?.shell === "cmd") {
       return [
-        { command: "dir", icon: "👀", meaning: "look inside this folder" },
-        { command: "cd", icon: "🚶", meaning: "move into a folder" }
+        { command: "dir", icon: "👀", meaning: "Look inside" },
+        { command: "cd", icon: "🚶", meaning: "Move here" }
       ];
     }
 
     return [
-      { command: "ls", icon: "👀", meaning: "look inside this folder" },
-      { command: "cd", icon: "🚶", meaning: "move into a folder" }
+      { command: "ls", icon: "👀", meaning: "Look inside" },
+      { command: "cd", icon: "🚶", meaning: "Move here" }
     ];
   }
 
@@ -1461,7 +1483,7 @@
       rows.push(
         `<div class="folder-guide-row folder-guide-row-hint" style="--folder-depth:${depth + 1}">`
         + `<span class="folder-guide-branch">•</span>`
-        + `<span class="folder-guide-name">Use ${escapeHtml(listCommand)} here to reveal the folders in this location.</span>`
+        + `<span class="folder-guide-name">Try ${escapeHtml(listCommand)} here to look inside.</span>`
         + `</div>`
       );
     }
@@ -1478,8 +1500,23 @@
       ? commandMap.filter((entry) => String(entry?.command || "").trim() && String(entry?.meaning || "").trim())
       : [];
 
-    target.hidden = entries.length === 0;
-    target.innerHTML = entries.map((entry) => (
+    const normalizedEntries = entries.map((entry) => {
+      const rawMeaning = String(entry.meaning || "").trim();
+      let meaning = rawMeaning;
+      if (/^look inside this folder$/i.test(rawMeaning)) {
+        meaning = "Look inside";
+      } else if (/^move into a folder$/i.test(rawMeaning)) {
+        meaning = "Move here";
+      }
+
+      return {
+        ...entry,
+        meaning
+      };
+    });
+
+    target.hidden = normalizedEntries.length === 0;
+    target.innerHTML = normalizedEntries.map((entry) => (
       `<div class="beginner-command-chip">`
       + `<span class="beginner-command-chip-title">${escapeHtml(entry.icon || "")} ${escapeHtml(entry.command)}</span>`
       + `<span class="beginner-command-chip-copy">${escapeHtml(entry.meaning)}</span>`
@@ -1509,6 +1546,10 @@
     const stageInfo = currentStageInfo(scenario);
     if (!stageInfo) {
       return "";
+    }
+
+    if (isBeginnerRoadmapTrack()) {
+      return `Progress: ${completedStepCount}/${stageInfo.missionStepCount} tasks done. You are on ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}.`;
     }
 
     return `Mission progress: ${completedStepCount}/${stageInfo.missionStepCount} tasks complete. Current stage: ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}.`;
@@ -1854,8 +1895,8 @@
 
     const total = session.walkthroughSteps.length;
     const displayIndex = session.walkthroughStepIndex + 1;
-    fillText(els.walkthroughTitle, entry.title || `Walkthrough Step ${displayIndex}`, { hideWhenEmpty: false });
-    fillText(els.walkthroughStepCounter, `Walkthrough Step ${displayIndex} of ${total}`, { hideWhenEmpty: false });
+    fillText(els.walkthroughTitle, entry.title || `Step ${displayIndex}`, { hideWhenEmpty: false });
+    fillText(els.walkthroughStepCounter, `Step ${displayIndex} of ${total}`, { hideWhenEmpty: false });
     fillText(
       els.walkthroughGoal,
       entry.goal || entry.objective || "Follow the demo and compare it with the current task.",
@@ -1887,7 +1928,7 @@
     }
     if (els.walkthroughNextBtn) {
       const lastStep = session.walkthroughStepIndex >= total - 1;
-      els.walkthroughNextBtn.textContent = lastStep ? "Finish Walkthrough" : "Next Walkthrough Step";
+      els.walkthroughNextBtn.textContent = lastStep ? "Finish" : "Next step";
     }
   }
 
@@ -1923,16 +1964,16 @@
     const coachHint = CoachEngine.getHint(step, Math.max(0, Math.min(2, level)), session.state);
 
     if (level <= 0) {
-      return `You need to prove: ${objective} Open ${helpLabel} -> ${category} and look for ${commandFamily}.`;
+      return `You need to find out: ${objective} Open ${helpLabel} -> ${category} and look for ${commandFamily}.`;
     }
 
     if (level === 1) {
-      return `You need to prove: ${objective} Open ${helpLabel} -> ${category} and look for ${commandFamily}.`;
+      return `You need to find out: ${objective} Open ${helpLabel} -> ${category} and look for ${commandFamily}.`;
     }
 
     if (level === 2) {
       return command
-        ? `The command you likely need is ${command}.`
+        ? `You probably need ${command}.`
         : `Open ${helpLabel} -> ${category}. The command family you need is ${commandFamily}.`;
     }
 
@@ -1945,7 +1986,7 @@
 
   function progressiveWrongAttemptGuidance(step = currentStep(), attempts = session.attemptsForStep, scenario = currentScenario()) {
     if (attempts <= 1) {
-      return isBeginnerMode() ? "Need help? Open Command Help, Hint, or Watch Walkthrough." : "Need help? Open Commands or use Hint.";
+      return isBeginnerMode() ? "Not sure? Use Command Help, Hint, or Walkthrough." : "Need help? Open Commands or use Hint.";
     }
 
     if (attempts === 2) {
@@ -1956,7 +1997,7 @@
       return `${isBeginnerMode() ? "Open Command Help" : "Open Commands"} and look for ${recommendedCommandFamily(scenario)}.`;
     }
 
-    return "Use Hint for a stronger nudge, or watch the walkthrough and then try it yourself.";
+      return "Use Hint for a stronger clue, or open Walkthrough.";
   }
 
   function repeatedCommandCoaching(rawInput) {
@@ -2054,6 +2095,7 @@
     }
 
     const scenarioKey = `${scenario.id || scenario.title || "scenario"}:${stageInfo?.stage?.id || "nostage"}`;
+    const beginnerTrack = isBeginnerRoadmapTrack();
     if (session.debugScenarioKey !== scenarioKey) {
       missionDebug("Rendering case file");
       session.debugScenarioKey = scenarioKey;
@@ -2085,6 +2127,9 @@
       fillText(els.missionBeginnerHappened, beginnerTicket.happened, { hideWhenEmpty: false });
       fillText(els.missionBeginnerMeaning, beginnerTicket.meaning, { hideWhenEmpty: false });
       fillText(els.missionBeginnerTryFirst, beginnerTicket.tryFirst, { hideWhenEmpty: false });
+      if (els.missionCaseMeta) {
+        els.missionCaseMeta.hidden = true;
+      }
       if (els.missionBriefingBlock) {
         els.missionBriefingBlock.hidden = true;
       }
@@ -2123,11 +2168,11 @@
     fillText(els.missionCurrentStageBriefing, stageInfo?.stage?.briefing || "");
     fillText(
       els.missionStageProgress,
-      stageInfo ? `Stage ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}` : ""
+      stageInfo ? `${beginnerTrack ? "Part" : "Stage"} ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}` : ""
     );
     fillText(
       els.missionTotalProgress,
-      stageInfo ? `Mission ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}` : ""
+      stageInfo ? `${beginnerTrack ? "Step" : "Mission"} ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}` : ""
     );
   }
 
@@ -2148,17 +2193,17 @@
     const completedMissions = completedScenarioCountForLevel(level);
     const levelIndexNumber = beginnerLevelIndex(level.id) + 1;
     fillText(els.beginnerLabCurrentLevel, `${level.title}`, { hideWhenEmpty: false });
-    fillText(els.beginnerLabCurrentMission, `Mission: ${scenario.title}`, { hideWhenEmpty: false });
+    fillText(els.beginnerLabCurrentMission, `Problem: ${scenario.title}`, { hideWhenEmpty: false });
     fillText(
       els.beginnerLabCurrentTask,
       stageInfo
-        ? `Task: ${step.objective} · Section ${stageInfo.stageIndex + 1} · ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}`
-        : `Task: ${step.objective}`,
+        ? `Try this: ${step.objective}`
+        : `Try this: ${step.objective}`,
       { hideWhenEmpty: false }
     );
     fillText(
       els.beginnerLabProgressText,
-      `Progress: ${completedMissions}/${scenarios.length} missions complete · Level ${levelIndexNumber}/${beginnerLevelRoadmap("windows").length}`,
+      `Progress: ${completedMissions}/${scenarios.length} done · Level ${levelIndexNumber}/${beginnerLevelRoadmap("windows").length}`,
       { hideWhenEmpty: false }
     );
   }
@@ -2278,6 +2323,7 @@
     }
 
     if (simplifiedBeginnerTicket) {
+      fillText(els.ticketBriefingTitle, scenario.title || payload.title || "Problem", { hideWhenEmpty: false });
       const beginnerTicket = beginnerTicketPayload(scenario, currentStep());
       fillText(els.ticketBriefingBeginnerHappened, beginnerTicket.happened, { hideWhenEmpty: false });
       fillText(els.ticketBriefingBeginnerMeaning, beginnerTicket.meaning, { hideWhenEmpty: false });
@@ -2286,11 +2332,23 @@
       if (els.ticketBriefingReportedTime) {
         els.ticketBriefingReportedTime.hidden = true;
       }
+      if (els.ticketBriefingId) {
+        els.ticketBriefingId.hidden = true;
+      }
+      if (els.ticketBriefingPriority) {
+        els.ticketBriefingPriority.hidden = true;
+      }
+      if (els.ticketBriefingReportedBy) {
+        els.ticketBriefingReportedBy.hidden = true;
+      }
       if (els.ticketBriefingRole) {
         els.ticketBriefingRole.hidden = true;
       }
       if (els.ticketBriefingEstimatedTime) {
         els.ticketBriefingEstimatedTime.hidden = true;
+      }
+      if (els.ticketBriefingMeta) {
+        els.ticketBriefingMeta.hidden = true;
       }
 
       const snapshot = folderGuideSnapshot(scenario);
@@ -2316,7 +2374,7 @@
         els.ticketBriefingMoreToggleBlock.hidden = advancedBlocks.length === 0;
       }
       if (els.ticketBriefingMoreBtn) {
-        els.ticketBriefingMoreBtn.textContent = showAdvanced ? "Hide ticket details" : "More ticket details";
+        els.ticketBriefingMoreBtn.textContent = showAdvanced ? "Hide details" : "More details";
         els.ticketBriefingMoreBtn.setAttribute("aria-expanded", showAdvanced ? "true" : "false");
       }
       return;
@@ -2324,6 +2382,16 @@
 
     if (els.ticketBriefingVisualBlock) {
       els.ticketBriefingVisualBlock.hidden = true;
+    }
+    if (els.ticketBriefingMeta) {
+      els.ticketBriefingMeta.hidden = ![
+        els.ticketBriefingId,
+        els.ticketBriefingPriority,
+        els.ticketBriefingReportedBy,
+        els.ticketBriefingReportedTime,
+        els.ticketBriefingRole,
+        els.ticketBriefingEstimatedTime
+      ].some((item) => item && !item.hidden);
     }
     if (els.ticketBriefingCommandMap) {
       els.ticketBriefingCommandMap.hidden = true;
@@ -2335,6 +2403,10 @@
     }
     if (els.ticketBriefingMoreToggleBlock) {
       els.ticketBriefingMoreToggleBlock.hidden = true;
+    }
+    if (els.ticketBriefingMoreBtn) {
+      els.ticketBriefingMoreBtn.textContent = "More ticket details";
+      els.ticketBriefingMoreBtn.setAttribute("aria-expanded", "false");
     }
     ticketBriefingAdvancedBlocks().forEach((block) => {
       block.hidden = Boolean(naturalHiddenState.get(block));
@@ -2584,18 +2656,18 @@
   function renderStageUI(stageInfo = visibleStageInfo(currentScenario()), scenario = currentScenario()) {
     const beginnerTrack = isBeginnerRoadmapTrack();
     const stageTitleText = stageInfo
-      ? `${beginnerTrack ? "Current Mission Section" : "Current Stage"}: ${stageInfo.stage.title}`
+      ? `${beginnerTrack ? "Where you are now" : "Current Stage"}: ${stageInfo.stage.title}`
       : "";
     const stageBriefingText = stageInfo?.stage?.briefing || "";
     const mobileStageTitleText = stageInfo
-      ? `${beginnerTrack ? "Mission Section" : "Stage"} ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}: ${stageInfo.stage.title}`
+      ? `${beginnerTrack ? "Where you are now" : "Stage"}${beginnerTrack ? "" : ` ${stageInfo.stageIndex + 1}/${stageInfo.stageCount}`}: ${stageInfo.stage.title}`
       : "";
     const missionStageTitleText = stageInfo?.stage?.title || "";
     const missionStageProgressText = stageInfo
-      ? `${beginnerTrack ? "Mission Section" : "Stage"} ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}`
+      ? `${beginnerTrack ? "Part" : "Stage"} ${stageInfo.stageIndex + 1} of ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} of ${stageInfo.stageStepCount}`
       : "";
     const missionTotalProgressText = stageInfo
-      ? `${beginnerTrack ? "Mission Task" : "Mission"} ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}`
+      ? `${beginnerTrack ? "Step" : "Mission"} ${stageInfo.missionStepIndex + 1} of ${stageInfo.missionStepCount}`
       : "";
 
     if (els.scenarioStageTitle) {
@@ -3110,6 +3182,69 @@
     });
   }
 
+  function setElementText(element, text) {
+    if (!element) {
+      return;
+    }
+
+    element.textContent = String(text || "");
+  }
+
+  function applyBeginnerDisplayLabels(scenario = currentScenario(), stageInfo = visibleStageInfo(scenario), step = currentStep()) {
+    const beginnerTicket = beginnerScenarioTicketMode(scenario);
+    const beginnerTrack = isBeginnerRoadmapTrack();
+
+    setElementText(els.missionCaseSummaryTitle, beginnerTicket ? "More details" : "Ticket Details");
+    setElementText(els.missionCaseSummaryMeta, beginnerTicket ? "Open" : "View case file");
+    setElementText(els.environmentContextTitle, beginnerTicket ? "Computer info" : "Environment");
+    setElementText(els.environmentContextMeta, beginnerTicket ? "Open" : "Show context");
+    setElementText(els.helpNotesTitle, beginnerTicket ? "Help" : "Help Notes");
+    setElementText(els.helpNotesMeta, beginnerTicket ? "Open" : "Hints and guidance");
+    setElementText(els.coachSignalLabel, beginnerTicket ? "Help" : "Mentor Signal");
+    setElementText(els.hintLadderLabel, beginnerTicket ? "Hint steps" : "Hint Ladder");
+    setElementText(els.progressCardTitle, "Progress");
+    setElementText(els.progressCardMeta, beginnerTicket ? "Open" : "Detailed progress");
+    setElementText(els.beginnerLabHeading, beginnerTrack ? "Where you are" : "Current Mission");
+    setElementText(els.beginnerVisualGuideHeading, beginnerTicket ? "Look here" : "Visual Guide");
+    setElementText(els.beginnerTaskStripLabel, beginnerTicket ? "Try this" : "Current Task");
+    setElementText(els.missionCurrentStageLabel, beginnerTrack ? "Where you are now" : "Current Stage");
+    setElementText(els.missionProgressLabel, "Progress");
+    setElementText(els.ticketBriefingKicker, beginnerTicket ? "Problem" : "Assigned Ticket");
+    setElementText(els.beginnerGuideBtn, beginnerTicket ? "Help" : "Help / Beginner Guide");
+    setElementText(els.watchWalkthroughBtn, beginnerTicket ? "Walkthrough" : "Watch Walkthrough");
+    if (els.ticketBriefingStartBtn) {
+      els.ticketBriefingStartBtn.textContent = beginnerTicket ? "Start" : "Start Investigation";
+    }
+    if (els.ticketBriefingMoreBtn && !session.beginnerTicketDetailsOpen) {
+      els.ticketBriefingMoreBtn.textContent = beginnerTicket ? "More details" : "More ticket details";
+    }
+    if (els.beginnerModeSummary) {
+      els.beginnerModeSummary.textContent = beginnerTicket
+        ? "Read the problem. Then type a command."
+        : "Read the task. Then type a command.";
+    }
+    if (els.beginnerTaskHelpText) {
+      els.beginnerTaskHelpText.textContent = beginnerTicket
+        ? "Not sure? Use Command Help, Hint, or Walkthrough."
+        : "Use Command Help or Hint if you get stuck.";
+    }
+    if (els.beginnerHelpStripText) {
+      els.beginnerHelpStripText.textContent = "Not sure? Use Command Help, Hint, or Walkthrough.";
+    }
+    if (els.mobileScenarioTitle && beginnerTrack) {
+      els.mobileScenarioTitle.textContent = `Problem: ${scenario.title}`;
+    }
+    if (els.mobileStageBriefing && beginnerTrack && stageInfo) {
+      els.mobileStageBriefing.textContent = `Where you are now: ${stageInfo.stage.title}`;
+    }
+    if (els.beginnerLabCurrentMission && beginnerTrack) {
+      els.beginnerLabCurrentMission.textContent = `Problem: ${scenario.title}`;
+    }
+    if (els.beginnerLabCurrentTask && beginnerTrack && step) {
+      els.beginnerLabCurrentTask.textContent = `Try this: ${step.objective}`;
+    }
+  }
+
   function renderPanel() {
     const scenario = currentScenario();
     const step = currentStep();
@@ -3121,6 +3256,7 @@
     const level = currentBeginnerLevel();
     const levelNumber = level ? beginnerLevelIndex(level.id) + 1 : 0;
     const desktopBeginnerTrack = beginnerTrack && !isMobileTerminalLayout();
+    const beginnerTicket = beginnerScenarioTicketMode(scenario);
 
     syncMobileAppBarTitle();
     syncMobileAppBarActions();
@@ -3146,7 +3282,7 @@
         : "Challenge Active";
     } else {
       els.stepCountBadge.textContent = beginnerTrack && stageInfo
-        ? `Section ${stageInfo.stageIndex + 1}/${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}`
+        ? `Part ${stageInfo.stageIndex + 1}/${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}`
         : stageInfo
           ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1} / ${stageInfo.stageStepCount}`
           : `Task ${session.stepIndex + 1} / ${scenario.steps.length}`;
@@ -3167,7 +3303,9 @@
     if (els.scenarioEnvironmentBadge) {
       els.scenarioEnvironmentBadge.textContent = environmentLabel;
     }
-    els.scenarioObjective.textContent = scenarioObjectiveText(scenario);
+    els.scenarioObjective.textContent = beginnerTicket
+      ? beginnerTicketPayload(scenario, step).meaning
+      : scenarioObjectiveText(scenario);
     renderStageUI(stageInfo, scenario);
     els.scenarioFlex.textContent = allowedApproachText(scenario);
     els.scenarioFlex.hidden = Boolean(beginnerTrack);
@@ -3183,27 +3321,28 @@
     if (els.beginnerCurrentTaskText) {
       els.beginnerCurrentTaskText.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
     }
-    if (els.beginnerTaskHelpText) {
-      els.beginnerTaskHelpText.textContent = beginnerMode
-        ? "Use Command Help or Hint if you get stuck."
-        : "Try typing a command. Use Hint if you need a stronger nudge.";
-    }
     els.progressSummary.textContent = stageInfo
-      ? `${beginnerTrack && level ? `${level.title}. ` : ""}${missionProgressText(scenario)} ${session.completedScenarioIds.size} completed this session.`
-      : `${session.completedScenarioIds.size} completed this session.`;
+      ? beginnerTrack && level
+        ? `${level.title}. ${missionProgressText(scenario)}`
+        : `${missionProgressText(scenario)} ${session.completedScenarioIds.size} completed this session.`
+      : beginnerTrack && level
+        ? `${level.title}. ${completedScenarioCountForLevel(level)}/${levelScenarios(level).length} done.`
+        : `${session.completedScenarioIds.size} completed this session.`;
     if (els.mobileEnvironmentBadge) {
       els.mobileEnvironmentBadge.textContent = environmentLabel;
     }
     els.mobileScenarioTitle.textContent = challengePresentation
       ? `${scenario.title} - Challenge ${session.scenarioIndex + 1}/${totalScenarios()}`
-      : `Mission: ${scenario.title}`;
+      : beginnerTrack
+        ? `Problem: ${scenario.title}`
+        : `Mission: ${scenario.title}`;
     if (beginnerTrack && level && els.mobileStageTitle) {
       els.mobileStageTitle.hidden = false;
       els.mobileStageTitle.textContent = `Level ${levelNumber}: ${level.title.replace(/^Level\s+\d+:\s*/i, "")}`;
     }
     if (beginnerTrack && stageInfo && els.mobileStageBriefing) {
       els.mobileStageBriefing.hidden = false;
-      els.mobileStageBriefing.textContent = `Mission Section ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title}`;
+      els.mobileStageBriefing.textContent = `Where you are now: ${stageInfo.stage.title}`;
     }
     els.mobileStepObjective.textContent = challengePresentation ? challengeTaskText(scenario) : step.objective;
     if (els.mobileMachineContext) {
@@ -3211,25 +3350,20 @@
     }
 
     if (session.scenarioCompleted) {
-      els.coachSignal.textContent = "Mission complete. Move on or reset for a cleaner run.";
+      els.coachSignal.textContent = beginnerTicket ? "All done. Move on or reset." : "Mission complete. Move on or reset for a cleaner run.";
     } else if (challengePresentation) {
       els.coachSignal.textContent = "Need help? Open Commands or use Hint.";
     } else {
       els.coachSignal.textContent = beginnerMode
-        ? "Need help? Use Command Help, Hint, or Watch Walkthrough."
+        ? "Not sure? Use Command Help, Hint, or Walkthrough."
         : "Need help? Open Commands or use Hint.";
     }
 
     els.mobileCoachSignal.textContent = els.coachSignal.textContent;
-    if (els.beginnerModeSummary) {
-      els.beginnerModeSummary.textContent = "Read the ticket. Type a command. Use help if you get stuck.";
-    }
-    if (els.beginnerHelpStripText) {
-      els.beginnerHelpStripText.textContent = "Need help? Use Command Help, Hint, or Walkthrough.";
-    }
     if (els.commandSheetBtn) {
       els.commandSheetBtn.textContent = beginnerMode ? "Command Help" : "Commands";
     }
+    applyBeginnerDisplayLabels(scenario, stageInfo, step);
     if (els.appSectionShell) {
       els.appSectionShell.hidden = Boolean(desktopBeginnerTrack && session.scenarioStarted);
     }
@@ -3256,7 +3390,7 @@
       const walkthroughReady = walkthroughAvailable(scenario);
       els.watchWalkthroughBtn.disabled = !walkthroughReady || !session.scenarioStarted;
       els.watchWalkthroughBtn.title = !session.scenarioStarted
-        ? "Start the scenario first."
+        ? (beginnerTicket ? "Start the problem first." : "Start the scenario first.")
         : walkthroughReady
           ? "Watch a short demonstration without changing your progress."
           : "No safe walkthrough is available for this scenario yet.";
@@ -3442,7 +3576,7 @@
         `  </div>`,
         `  <p class="mission-case-copy">${escapeHtml(level.description || "")}</p>`,
         `  <p class="mission-case-copy">Estimated time: ${escapeHtml(level.estimatedTime || "Flexible")}</p>`,
-        `  <p class="mission-case-copy">Missions: ${missionCount} · Tasks: ${taskCount} · Completed: ${completed}/${missionCount || 0}</p>`,
+        `  <p class="mission-case-copy">Problems: ${missionCount} · Tasks: ${taskCount} · Done: ${completed}/${missionCount || 0}</p>`,
         isRecommended ? `  <p class="mission-case-copy beginner-level-recommend">Recommended Next</p>` : "",
         skills ? `  <div class="mission-case-meta">${skills}</div>` : "",
         `  <div class="app-shell-actions beginner-level-actions">${actionButton}</div>`,
@@ -3516,10 +3650,10 @@
       "    <h2>" + escapeHtml(resumeHeading) + "</h2>",
       "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
         ? (beginnerTrack
-          ? "Resume your saved level, mission, and task, or choose another level."
+          ? "Resume your saved level, problem, and task, or choose another level."
           : "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning.")
         : (beginnerTrack
-          ? "Choose a level, or continue with the recommended mission."
+          ? "Choose a level, or continue with the recommended problem."
           : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.")) + "</p>",
       "  </div>",
       "</div>",
@@ -3612,12 +3746,13 @@
     const machineSummary = machineContextSummary(scenario);
     const stageInfo = currentStageInfo(scenario);
     const beginnerTrack = isBeginnerRoadmapTrack();
+    const beginnerTicket = beginnerScenarioTicketMode(scenario);
     missionDebug("Loading scenario", scenario.title || scenario.id);
     missionDebug("Scenario has stages", Boolean(scenario.stages?.length));
 
     if (beginnerTrack && isBeginnerMode() && !challengePresentation) {
-      printMissionLine("Ticket loaded. Start by reading the current task.");
-      printCoachLine("Need help? Use Command Help, Hint, or Watch Walkthrough.");
+      printMissionLine(beginnerTicket ? "Problem loaded." : "Lesson loaded.");
+      printCoachLine("Try the current task.");
       return;
     }
 
@@ -3643,7 +3778,7 @@
     }
     if (stageInfo) {
       printStageLine(`${stageInfo.stage.title}: ${stageInfo.stage.briefing || (beginnerTrack ? "Mission section active." : "Stage active.")}`);
-      printLine(`--- ${beginnerTrack ? "Mission Section" : "Stage"} ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title} ---`, "stage");
+      printLine(`--- ${beginnerTrack ? "Part" : "Stage"} ${stageInfo.stageIndex + 1}: ${stageInfo.stage.title} ---`, "stage");
       if (stageInfo.stage.briefing) {
         printStageLine(`Goal: ${stageInfo.stage.briefing}`);
       }
@@ -3659,7 +3794,7 @@
       printCoachLine("Need help? Open Commands or use Hint.");
       return;
     }
-    printCoachLine(isBeginnerMode() ? "Need help? Open Command Help, Hint, or Watch Walkthrough." : "Need help? Open Commands or use Hint.");
+    printCoachLine(isBeginnerMode() ? "Need help? Use Command Help, Hint, or Walkthrough." : "Need help? Open Commands or use Hint.");
   }
 
   function resetScenarioState() {
@@ -3750,8 +3885,8 @@
     }
     if (scenarioHasStages(scenario)) {
       printLine("=== Mission Complete ===", "review");
-      printReviewLine("You resolved the incident path and completed the mission objectives.");
-      printReviewLine("Open the Mission Review panel to see your performance breakdown.");
+      printReviewLine(beginnerTrack ? "You finished the problem." : "You resolved the incident path and completed the mission objectives.");
+      printReviewLine(beginnerTrack ? "Open the review panel to see how you did." : "Open the Mission Review panel to see your performance breakdown.");
     } else {
       printReviewLine("Scenario complete. You reached the objective with live command input.");
     }
@@ -3818,8 +3953,8 @@
         printStageLine(`${beginnerTrack ? "Section Complete" : "Stage Complete"}: ${previousStageInfo.stage.title}`);
         printStageLine(previousStageInfo.stage.completionSummary);
       }
-      printLine(`--- ${beginnerTrack ? "Mission Section" : "Stage"} ${nextStageInfo.stageIndex + 1}: ${nextStageInfo.stage.title} ---`, "stage");
-      printStageLine(`Next ${beginnerTrack ? "Section" : "Stage"}: ${nextStageInfo.stage.title}`);
+      printLine(`--- ${beginnerTrack ? "Part" : "Stage"} ${nextStageInfo.stageIndex + 1}: ${nextStageInfo.stage.title} ---`, "stage");
+      printStageLine(`Next ${beginnerTrack ? "part" : "stage"}: ${nextStageInfo.stage.title}`);
       if (nextStageInfo.stage.briefing) {
         printStageLine(`Goal: ${nextStageInfo.stage.briefing}`);
       }
@@ -3833,7 +3968,7 @@
     if (currentStep().context) {
       printLine(`Context: ${currentStep().context}`, "dim");
     }
-    printCoachLine(`Next objective: ${currentStep().objective}`);
+    printCoachLine(`${beginnerTrack ? "Next step" : "Next objective"}: ${currentStep().objective}`);
     renderPanel();
     persistSectionProgress();
   }
@@ -6335,7 +6470,7 @@
       const proofText = String(step.successFeedback || "Good. That command moved the investigation forward.").trim();
       const explanationText = String(step.explanation || "").trim();
       const whyText = String(step.whyThisMatters || step.completionSummary || "").trim();
-      const nextText = String(step.nextObjective || nextStep?.objective || "Continue with the current mission objective.").trim();
+      const nextText = String(step.nextObjective || nextStep?.objective || "Continue with the current task.").trim();
       const realWorldText = String(step.realWorldNote || "").trim();
 
       renderTaskCompleteCard({
@@ -6345,9 +6480,7 @@
       });
 
       if (isBeginnerMode()) {
-        printLine("[Task Complete]", "success");
-        printCoachLine("Good. That moved the ticket forward.", "success");
-        printCoachLine("See Task Complete notes for what you proved.", "dim");
+        printCoachLine("Task complete. See the note.", "success");
       } else {
         printLine("[Task Complete]", "success");
         printCoachLine(`What you proved: ${proofText}`, "success");
@@ -6383,7 +6516,7 @@
         printCoachLine(shortCoachCopy(evaluation.feedback, "Keep the current task in mind as you investigate."), "dim");
       }
     } else if (evaluation.source === "partial" || evaluation.classification === "inefficient") {
-      printCoachLine("Close. You are in the right area, but not there yet.");
+      printCoachLine(isBeginnerMode() ? "Close. Not there yet." : "Close. You are in the right area, but not there yet.");
       if (evaluation.feedback) {
         printCoachLine(shortCoachCopy(evaluation.feedback, "Stay with the same command family and narrow the target."), "dim");
       }
@@ -6439,7 +6572,7 @@
 
     if (!session.scenarioStarted) {
       els.terminalInput.value = "";
-      printLine("Start the selected challenge before issuing commands.", "coach");
+      printLine(isBeginnerMode() ? "Pick a problem and press Start first." : "Start the selected challenge before issuing commands.", "coach");
       renderPanel();
       return;
     }
@@ -6486,7 +6619,7 @@
   function runWalkthrough() {
     console.log("[WalkthroughDebug] button clicked");
     if (!session.scenarioStarted) {
-      printLine("Start the selected challenge before watching a walkthrough.", "coach");
+      printLine(isBeginnerMode() ? "Start the problem first." : "Start the selected challenge before watching a walkthrough.", "coach");
       return;
     }
 
@@ -6509,12 +6642,12 @@
 
   function showHint() {
     if (!session.scenarioStarted) {
-      printLine("Start the selected challenge before requesting hints.", "coach");
+      printLine(isBeginnerMode() ? "Start the problem first." : "Start the selected challenge before requesting hints.", "coach");
       return;
     }
 
     if (session.scenarioCompleted) {
-      printLine("This scenario is already complete. Move on or reset it for a cleaner run.", "coach");
+      printLine(isBeginnerMode() ? "This problem is already done. Move on or reset it." : "This scenario is already complete. Move on or reset it for a cleaner run.", "coach");
       return;
     }
 

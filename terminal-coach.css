@@ -2233,6 +2233,14 @@
     left: 8px;
   }
 
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #previousScenarioBtn,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #resetScenarioBtn,
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #nextScenarioBtn {
+    min-height: 36px;
+    font-size: 10px;
+    opacity: 0.88;
+  }
+
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-input-shell {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 8px;

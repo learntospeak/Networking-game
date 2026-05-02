@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260502beginnerticket2">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260502beginnerwording1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -36,7 +36,7 @@
           environmentCategory: "windows",
           pageKicker: "Windows Terminal Learning",
           pageTitle: "Windows Terminal Coach",
-          pageIntro: "Start with guided Windows CMD tickets, then build toward practical troubleshooting.",
+          pageIntro: "Start with simple Windows CMD problems, then build toward troubleshooting.",
           initialMessage: "Windows terminal lessons loaded. This track stays inside CMD unless a scenario explicitly says otherwise.",
           commandSheetDefaultCategory: "Windows CMD",
           commandSheetCategories: ["Windows CMD"]
@@ -62,7 +62,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260502beginnerticket1" defer></script>
+  <script src="./terminalEngine.js?v=20260502beginnerwording1" defer></script>
   <script src="./commandSheet.js?v=20260502coach2" defer></script>
 </head>
 <body class="terminal-page">
@@ -71,7 +71,7 @@
       <div class="router-top">
         <div>
           <div class="router-brand">NET-LAB TERMINAL COACH</div>
-          <div class="terminal-subbrand">Guided tickets and practical terminal practice</div>
+          <div class="terminal-subbrand">Guided problems and practical terminal practice</div>
         </div>
         <div class="router-leds" aria-hidden="true">
           <span class="led led-green led-blink"></span>
@@ -102,7 +102,7 @@
         <div class="mode-panel-head">
           <div>
             <h2>Session</h2>
-            <p class="panel-copy">Current ticket and task status.</p>
+            <p class="panel-copy">Current problem and task.</p>
           </div>
           <div class="status-cluster">
             <div id="scenarioCountBadge" class="status-badge status-badge-blue">Scenario 1 / 50+</div>
@@ -132,8 +132,8 @@
           <div class="scenario-support-grid">
             <details id="missionCaseFileCard" class="support-card support-disclosure mission-case-file-card" hidden>
               <summary class="support-disclosure-summary">
-                <span class="support-disclosure-title">Ticket Details</span>
-                <span class="support-disclosure-meta">View case file</span>
+                <span id="missionCaseSummaryTitle" class="support-disclosure-title">Ticket Details</span>
+                <span id="missionCaseSummaryMeta" class="support-disclosure-meta">View case file</span>
               </summary>
               <div class="support-disclosure-body">
               <p id="missionCaseTitle" class="mission-case-title"></p>
@@ -145,15 +145,15 @@
               </div>
               <div id="missionBeginnerTicketBlock" class="mission-case-block mission-case-beginner-block" hidden>
                 <div class="mission-case-beginner-section">
-                  <p class="mission-case-label">What Happened?</p>
+                  <p class="mission-case-label">Problem</p>
                   <p id="missionBeginnerHappened" class="mission-case-copy"></p>
                 </div>
                 <div class="mission-case-beginner-section">
-                  <p class="mission-case-label">What This Means</p>
+                  <p class="mission-case-label">What it means</p>
                   <p id="missionBeginnerMeaning" class="mission-case-copy"></p>
                 </div>
                 <div class="mission-case-beginner-section">
-                  <p class="mission-case-label">Try First</p>
+                  <p class="mission-case-label">Do this first</p>
                   <p id="missionBeginnerTryFirst" class="mission-case-copy"></p>
                 </div>
               </div>
@@ -174,12 +174,12 @@
                 <p id="missionEnvironmentText" class="mission-case-copy"></p>
               </div>
               <div class="mission-case-block mission-case-stage-block">
-                <p class="mission-case-label">Current Stage</p>
+                <p id="missionCurrentStageLabel" class="mission-case-label">Current Stage</p>
                 <p id="missionCurrentStageTitle" class="mission-case-copy"></p>
                 <p id="missionCurrentStageBriefing" class="mission-case-copy" hidden></p>
               </div>
               <div class="mission-case-block mission-case-progress-block">
-                <p class="mission-case-label">Progress</p>
+                <p id="missionProgressLabel" class="mission-case-label">Progress</p>
                 <p id="missionStageProgress" class="mission-case-copy"></p>
                 <p id="missionTotalProgress" class="mission-case-copy"></p>
               </div>
@@ -188,8 +188,8 @@
 
             <details id="environmentContextCard" class="support-card support-disclosure">
               <summary class="support-disclosure-summary">
-                <span class="support-disclosure-title">Environment</span>
-                <span class="support-disclosure-meta">Show context</span>
+                <span id="environmentContextTitle" class="support-disclosure-title">Environment</span>
+                <span id="environmentContextMeta" class="support-disclosure-meta">Show context</span>
               </summary>
               <div class="support-disclosure-body">
               <p id="environmentSummary">Linux Terminal learning. Commands stay inside one Linux shell unless a lesson explicitly says otherwise.</p>
@@ -203,15 +203,15 @@
             </article>
 
             <article id="beginnerLabCard" class="support-card support-card-primary" hidden>
-              <h3>Current Mission</h3>
+              <h3 id="beginnerLabHeading">Where you are</h3>
               <p id="beginnerLabCurrentLevel">Level 1: Terminal Orientation</p>
-              <p id="beginnerLabCurrentMission">Mission: Incident Folder Triage</p>
-              <p id="beginnerLabCurrentTask">Task: List the current folder contents.</p>
+              <p id="beginnerLabCurrentMission">Problem: Incident Folder Triage</p>
+              <p id="beginnerLabCurrentTask">Try this: List the current folder contents.</p>
               <p id="beginnerLabProgressText">Level progress: 0/1 missions complete.</p>
             </article>
 
             <article id="beginnerVisualGuideCard" class="support-card support-card-primary beginner-visual-guide-card" hidden>
-              <h3>Visual Guide</h3>
+              <h3 id="beginnerVisualGuideHeading">Look here</h3>
               <p id="beginnerVisualCurrentPath" class="beginner-visual-current"></p>
               <div id="beginnerCommandMeaningMap" class="beginner-command-meaning-map" hidden></div>
               <div id="beginnerFolderGuideMap" class="beginner-folder-guide-map" hidden></div>
@@ -219,13 +219,13 @@
 
             <details id="helpNotesCard" class="support-card support-disclosure">
               <summary class="support-disclosure-summary">
-                <span class="support-disclosure-title">Help Notes</span>
-                <span class="support-disclosure-meta">Hints and guidance</span>
+                <span id="helpNotesTitle" class="support-disclosure-title">Help Notes</span>
+                <span id="helpNotesMeta" class="support-disclosure-meta">Hints and guidance</span>
               </summary>
               <div class="support-disclosure-body support-disclosure-stack">
-              <p class="support-disclosure-label">Mentor Signal</p>
+              <p id="coachSignalLabel" class="support-disclosure-label">Mentor Signal</p>
               <p id="coachSignal">Strong operators confirm context before they touch files, processes, or services.</p>
-              <p class="support-disclosure-label">Hint Ladder</p>
+              <p id="hintLadderLabel" class="support-disclosure-label">Hint Ladder</p>
               <ol id="hintLadder" class="hint-ladder">
                 <li>Vague</li>
                 <li>Directional</li>
@@ -236,8 +236,8 @@
 
             <details id="progressCard" class="support-card support-disclosure">
               <summary class="support-disclosure-summary">
-                <span class="support-disclosure-title">Progress</span>
-                <span class="support-disclosure-meta">Detailed progress</span>
+                <span id="progressCardTitle" class="support-disclosure-title">Progress</span>
+                <span id="progressCardMeta" class="support-disclosure-meta">Detailed progress</span>
               </summary>
               <div class="support-disclosure-body">
               <p id="progressSummary">0 scenarios completed in this session.</p>
@@ -296,9 +296,9 @@
           <div id="beginnerModeBanner" class="beginner-mode-banner" hidden>
             <div class="beginner-mode-copy">
               <p class="beginner-mode-kicker">Beginner Mode</p>
-              <p id="beginnerModeSummary" class="beginner-mode-summary">Read the ticket, then type a command. Need help? Use Command Help, Hint, or Watch Walkthrough.</p>
+              <p id="beginnerModeSummary" class="beginner-mode-summary">Read the problem. Then type a command.</p>
             </div>
-            <button id="beginnerGuideBtn" class="beginner-guide-btn" type="button">Help / Beginner Guide</button>
+            <button id="beginnerGuideBtn" class="beginner-guide-btn" type="button">Help</button>
           </div>
           <div class="terminal-output-shell">
             <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
@@ -308,11 +308,11 @@
             <div class="walkthrough-shell">
               <div class="walkthrough-head">
                 <div>
-                  <p class="walkthrough-kicker">Watch Walkthrough</p>
+                  <p class="walkthrough-kicker">Show me</p>
                   <h2 id="walkthroughTitle">Step 1</h2>
-                  <p id="walkthroughStepCounter" class="walkthrough-step-counter">Walkthrough Step 1 of 1</p>
+                  <p id="walkthroughStepCounter" class="walkthrough-step-counter">Step 1 of 1</p>
                 </div>
-                <button id="walkthroughCloseBtn" class="walkthrough-close" type="button" aria-label="Close walkthrough">Stop Walkthrough</button>
+                <button id="walkthroughCloseBtn" class="walkthrough-close" type="button" aria-label="Close walkthrough">Close</button>
               </div>
               <div class="walkthrough-block">
                 <p class="walkthrough-label">Goal</p>
@@ -331,12 +331,12 @@
                 <p id="walkthroughExplanation" class="walkthrough-copy"></p>
               </div>
               <div id="walkthroughVisualBlock" class="walkthrough-block" hidden>
-                <p class="walkthrough-label">Visual Guide</p>
+                <p class="walkthrough-label">Look here</p>
                 <div id="walkthroughFolderGuideMap" class="beginner-folder-guide-map walkthrough-folder-guide-map" hidden></div>
               </div>
               <div class="walkthrough-actions">
-                <button id="walkthroughPrevBtn" class="beginner-secondary-btn" type="button">Previous Walkthrough Step</button>
-                <button id="walkthroughNextBtn" class="ticket-briefing-start" type="button">Next Walkthrough Step</button>
+                <button id="walkthroughPrevBtn" class="beginner-secondary-btn" type="button">Previous</button>
+                <button id="walkthroughNextBtn" class="ticket-briefing-start" type="button">Next step</button>
                 <button id="walkthroughTryBtn" class="beginner-secondary-btn" type="button">Try It Yourself</button>
               </div>
             </div>
@@ -385,19 +385,19 @@
             </div>
 
             <div id="beginnerTaskStrip" class="beginner-task-strip" hidden>
-              <p class="beginner-task-kicker">Current Task</p>
+              <p id="beginnerTaskStripLabel" class="beginner-task-kicker">Try this</p>
               <p id="beginnerCurrentTaskText" class="beginner-task-text">Check the current scenario objective.</p>
-              <p id="beginnerTaskHelpText" class="beginner-task-help">Try typing a command. Not sure? Use Command Help.</p>
+              <p id="beginnerTaskHelpText" class="beginner-task-help">Not sure? Use Command Help, Hint, or Walkthrough.</p>
             </div>
 
             <div id="beginnerHelpStrip" class="beginner-help-strip" hidden>
-              <p id="beginnerHelpStripText" class="beginner-help-strip-copy">Not sure what to type? Tap Command Help, Hint, or Watch Walkthrough.</p>
+              <p id="beginnerHelpStripText" class="beginner-help-strip-copy">Not sure? Use Command Help, Hint, or Walkthrough.</p>
             </div>
 
             <div class="trainer-controls terminal-controls">
               <button id="commandSheetBtn" type="button" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet">Commands</button>
               <button id="hintBtn" type="button">Hint</button>
-              <button id="watchWalkthroughBtn" type="button">Watch Walkthrough</button>
+              <button id="watchWalkthroughBtn" type="button">Walkthrough</button>
               <button id="previousScenarioBtn" type="button" aria-label="Previous scenario">Previous</button>
               <button id="resetScenarioBtn" type="button" aria-label="Reset current scenario">Reset</button>
               <button id="nextScenarioBtn" type="button" aria-label="Next scenario">Next</button>
@@ -420,8 +420,8 @@
         <div class="ticket-briefing-shell">
           <div class="ticket-briefing-head">
             <div>
-              <p class="ticket-briefing-kicker">Assigned Ticket</p>
-              <h2 id="ticketBriefingTitle">Mission Ticket</h2>
+              <p id="ticketBriefingKicker" class="ticket-briefing-kicker">Problem</p>
+              <h2 id="ticketBriefingTitle">Problem</h2>
             </div>
             <button id="ticketBriefingCloseBtn" class="ticket-briefing-close" type="button" aria-label="Close ticket briefing">Close</button>
           </div>
@@ -435,25 +435,25 @@
           </div>
           <div id="ticketBriefingBeginnerBlock" class="ticket-briefing-block beginner-ticket-briefing" hidden>
             <div class="beginner-ticket-section">
-              <p class="ticket-briefing-label">What Happened?</p>
+              <p class="ticket-briefing-label">Problem</p>
               <p id="ticketBriefingBeginnerHappened" class="ticket-briefing-copy"></p>
             </div>
             <div class="beginner-ticket-section">
-              <p class="ticket-briefing-label">What This Means</p>
+              <p class="ticket-briefing-label">What it means</p>
               <p id="ticketBriefingBeginnerMeaning" class="ticket-briefing-copy"></p>
             </div>
             <div class="beginner-ticket-section">
-              <p class="ticket-briefing-label">Try First</p>
+              <p class="ticket-briefing-label">Do this first</p>
               <p id="ticketBriefingBeginnerTryFirst" class="ticket-briefing-copy"></p>
             </div>
           </div>
           <div id="ticketBriefingVisualBlock" class="ticket-briefing-block" hidden>
-            <p class="ticket-briefing-label">Show Me Visually</p>
+            <p class="ticket-briefing-label">Show me</p>
             <div id="ticketBriefingCommandMap" class="beginner-command-meaning-map" hidden></div>
             <div id="ticketBriefingFolderGuideMap" class="beginner-folder-guide-map" hidden></div>
           </div>
           <div id="ticketBriefingMoreToggleBlock" class="ticket-briefing-block ticket-briefing-more-toggle" hidden>
-            <button id="ticketBriefingMoreBtn" class="beginner-secondary-btn" type="button" aria-expanded="false">More ticket details</button>
+            <button id="ticketBriefingMoreBtn" class="beginner-secondary-btn" type="button" aria-expanded="false">More details</button>
           </div>
           <div id="ticketBriefingAffectedBlock" class="ticket-briefing-block" hidden>
             <p class="ticket-briefing-label">Affected System</p>
@@ -496,7 +496,7 @@
             <p id="ticketBriefingEasterEggNote" class="ticket-briefing-copy"></p>
           </div>
           <div class="ticket-briefing-actions">
-            <button id="ticketBriefingStartBtn" class="ticket-briefing-start" type="button">Start Investigation</button>
+            <button id="ticketBriefingStartBtn" class="ticket-briefing-start" type="button">Start</button>
           </div>
         </div>
       </aside>
@@ -506,20 +506,20 @@
         <div class="beginner-onboarding-shell">
           <p class="beginner-onboarding-kicker">Beginner Mode</p>
           <h2 id="beginnerOnboardingTitle">Welcome to Beginner Terminal Lab</h2>
-          <p class="beginner-onboarding-copy">You will solve practice support tickets by typing commands into the terminal. If you are new, use Commands, Hint, or Watch Walkthrough.</p>
+          <p class="beginner-onboarding-copy">You will solve simple computer problems by typing commands into the terminal. If you get stuck, use Command Help, Hint, or Walkthrough.</p>
           <ol class="beginner-onboarding-steps">
-            <li>Read the ticket.</li>
+            <li>Read the problem.</li>
             <li>Type a command in the terminal.</li>
-            <li>Use Commands, Hint, or Walkthrough if you get stuck.</li>
+            <li>Use Command Help, Hint, or Walkthrough if you get stuck.</li>
           </ol>
           <div class="beginner-onboarding-notes">
-            <p><strong>Commands</strong> = command examples</p>
+            <p><strong>Command Help</strong> = command examples</p>
             <p><strong>Hint</strong> = tells you what to try next</p>
             <p><strong>Walkthrough</strong> = shows a simulated example</p>
           </div>
           <div class="beginner-onboarding-actions">
-            <button id="beginnerOnboardingStartBtn" class="ticket-briefing-start" type="button">Start First Ticket</button>
-            <button id="beginnerOnboardingWalkthroughBtn" class="beginner-secondary-btn" type="button">Watch How It Works</button>
+            <button id="beginnerOnboardingStartBtn" class="ticket-briefing-start" type="button">Start First Problem</button>
+            <button id="beginnerOnboardingWalkthroughBtn" class="beginner-secondary-btn" type="button">Show Me</button>
           </div>
         </div>
       </aside>
