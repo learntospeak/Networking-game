@@ -787,7 +787,7 @@ button::before {
 
 .hub-page-top {
   display: grid;
-  grid-template-columns: minmax(0, 1.9fr) minmax(280px, 0.95fr);
+  grid-template-columns: 1fr;
   gap: 18px;
   align-items: start;
   margin-bottom: 18px;
@@ -846,6 +846,23 @@ button::before {
 
 .hub-hero-action-primary {
   border-color: rgba(34, 197, 94, 0.34);
+}
+
+.hub-hero-secondary-row {
+  margin: 12px 0 0;
+}
+
+.hub-hero-secondary-link {
+  color: #93c5fd;
+  font-size: 14px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.hub-hero-secondary-link:hover,
+.hub-hero-secondary-link:focus-visible {
+  color: #bfdbfe;
+  text-decoration: underline;
 }
 
 .hub-hero-stats {
@@ -931,28 +948,6 @@ button::before {
   margin-bottom: 18px;
   text-align: left;
   padding: 14px 16px;
-}
-
-.roadmap-preview-panel {
-  border-color: rgba(56, 189, 248, 0.2);
-}
-
-.roadmap-preview-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: 14px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(71, 85, 105, 0.72);
-  background: rgba(6, 10, 16, 0.7);
-}
-
-.roadmap-preview-copy {
-  margin: 0;
-  color: #cbd5e1;
-  line-height: 1.6;
 }
 
 .auth-confirm-shell {
@@ -1170,8 +1165,8 @@ button::before {
 }
 
 .learning-path-card-featured {
-  min-height: 176px;
-  grid-column: span 2;
+  min-height: 168px;
+  grid-column: span 1;
 }
 
 .learning-path-card-reference {
@@ -1213,9 +1208,15 @@ button::before {
   color: #dbe4f0;
   line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.learning-path-note {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .learning-path-status {
@@ -2709,11 +2710,6 @@ h3 {
   .hub-account-panel,
   .hub-resume-panel {
     text-align: left;
-  }
-
-  .roadmap-preview-card {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   #practiceSection,

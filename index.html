@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Troubleshooting Lab</title>
-  <link rel="stylesheet" href="./style.css?v=20260429micro1">
+  <link rel="stylesheet" href="./style.css?v=20260502home2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -28,23 +28,16 @@
       <section class="hub-page-top">
         <section class="hub-hero-panel">
           <p class="hub-hero-kicker">Terminal Tickets First</p>
-          <h2>Practise real terminal troubleshooting tickets in your browser.</h2>
-          <p class="hub-hero-copy">Start with beginner-friendly Windows CMD tickets, then build toward Linux, Cisco CLI, and cyber investigation workflows. Supporting HTTP, ARP, and subnetting labs remain available as references.</p>
-          <div class="hub-hero-badges">
-            <span class="status-badge status-badge-blue">Beginner-friendly</span>
-            <span class="status-badge">Ticket-based labs</span>
-          </div>
+          <h2>Practise terminal troubleshooting in your browser.</h2>
+          <p class="hub-hero-copy">Start with guided Windows CMD tickets, then move into Linux, Cisco CLI, and cyber investigation labs when you are ready.</p>
           <div class="hub-hero-actions">
             <a class="app-action-btn hub-hero-action-primary" href="./terminal-coach.html?track=windows&amp;mode=beginner">Start Beginner Terminal Lab</a>
-            <a class="app-action-btn app-action-btn-muted" href="./terminal-coach.html?track=windows&amp;mode=beginner">Windows CMD Practice</a>
-            <a class="app-action-btn app-action-btn-muted" href="./terminal-coach.html?track=linux">Linux Terminal Practice</a>
-            <a class="app-action-btn app-action-btn-muted" href="./cisco-cli-lab.html">Cisco CLI Lab</a>
-            <a class="app-action-btn app-action-btn-muted" href="./challenge-mode.html">Cyber Challenge Mode</a>
           </div>
+          <p class="hub-hero-secondary-row">
+            <a class="hub-hero-secondary-link" href="#learningPathsPanel">Already know the basics? Choose another lab below.</a>
+          </p>
           <div id="hubQuickStats" class="hub-hero-stats"></div>
         </section>
-
-        <section id="hubAccountPanel" class="hub-section-panel app-shell-panel hub-account-panel"></section>
       </section>
 
       <section id="hubResumePanel" class="hub-section-panel app-shell-panel hub-resume-panel"></section>
@@ -53,88 +46,73 @@
         <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">
           <div class="learning-paths-head">
             <h3>Terminal Labs</h3>
-            <p>These are the main product path. Start with a ticket-driven terminal mission, then branch into Windows, Linux, Cisco, or challenge workflows as needed.</p>
+            <p>Start with the beginner path, then branch into Linux, Cisco, or cyber investigation practice.</p>
           </div>
 
           <div class="learning-path-grid learning-path-grid-terminal">
             <a class="learning-path-card learning-path-card-featured learning-path-card-windows" data-section-id="windows-terminal" href="./terminal-coach.html?track=windows&amp;mode=beginner">
               <span class="learning-path-kicker">Recommended Entry</span>
               <span class="learning-path-title">Beginner Terminal Lab</span>
-              <span class="learning-path-copy">Start with Windows CMD tickets that teach practical investigation habits before you move into the other tracks.</span>
-              <span class="learning-path-status" data-progress-slot="windows-terminal">Not Started</span>
-            </a>
-
-            <a class="learning-path-card learning-path-card-windows" data-section-id="windows-terminal" href="./terminal-coach.html?track=windows&amp;mode=beginner">
-              <span class="learning-path-kicker">Windows</span>
-              <span class="learning-path-title">Windows CMD Practice</span>
-              <span class="learning-path-copy">CMD-first tickets covering file paths, process checks, and practical troubleshooting.</span>
+              <span class="learning-path-copy">Start here. Learn terminal basics through guided tickets, walkthroughs, and practical tasks.</span>
+              <span class="learning-path-note">Starts with Windows CMD basics, then builds toward real troubleshooting. Includes level roadmap and guided walkthroughs.</span>
               <span class="learning-path-status" data-progress-slot="windows-terminal">Not Started</span>
             </a>
 
             <a class="learning-path-card learning-path-card-linux" data-section-id="linux-terminal" href="./terminal-coach.html?track=linux">
               <span class="learning-path-kicker">Linux</span>
               <span class="learning-path-title">Linux Terminal Lab</span>
-              <span class="learning-path-copy">Linux missions covering shell context, service logs, and filesystem troubleshooting.</span>
+              <span class="learning-path-copy">Practise Linux commands, files, logs, and service checks.</span>
               <span class="learning-path-status" data-progress-slot="linux-terminal">Not Started</span>
             </a>
 
             <a class="learning-path-card learning-path-card-cisco" data-section-id="cisco-cli" href="./cisco-cli-lab.html">
               <span class="learning-path-kicker">Cisco</span>
               <span class="learning-path-title">Cisco CLI Lab</span>
-              <span class="learning-path-copy">Router CLI practice with configuration, verification, and recovery workflows.</span>
+              <span class="learning-path-copy">Practise router CLI basics, verification, and simple recovery workflows.</span>
               <span class="learning-path-status" data-progress-slot="cisco-cli">Not Started</span>
             </a>
 
             <a class="learning-path-card learning-path-card-challenge" data-section-id="cyber-challenge" href="./challenge-mode.html">
               <span class="learning-path-kicker">Cyber</span>
               <span class="learning-path-title">Cyber Challenge Mode</span>
-              <span class="learning-path-copy">Evidence-driven investigation practice with analyst-style terminal workflows.</span>
+              <span class="learning-path-copy">Investigate evidence, users, processes, and suspicious activity.</span>
               <span class="learning-path-status" data-progress-slot="cyber-challenge">Not Started</span>
             </a>
-          </div>
-        </section>
-
-        <section class="learning-paths-panel learning-hub-panel roadmap-preview-panel">
-          <div class="learning-paths-head">
-            <h3>Beginner Roadmap</h3>
-            <p>The full level roadmap lives inside Beginner Terminal Lab. Open it when you want to choose a level or see the recommended next mission.</p>
-          </div>
-          <div class="roadmap-preview-card">
-            <p class="roadmap-preview-copy">Start with Level 1, then use the in-lab roadmap to move forward one level at a time.</p>
-            <a class="app-action-btn" href="./terminal-coach.html?track=windows&amp;mode=beginner">View Beginner Roadmap</a>
           </div>
         </section>
 
         <section class="learning-paths-panel learning-hub-panel reference-labs-panel">
           <div class="learning-paths-head">
             <h3>Supporting Concepts</h3>
-            <p>Use these as secondary reference labs alongside terminal practice. They stay available, but they are no longer the main product path.</p>
+            <p>Reference labs for subnetting, HTTP, and ARP when you need extra context.</p>
           </div>
 
           <div class="learning-path-grid learning-path-grid-reference">
             <a class="learning-path-card learning-path-card-reference learning-path-card-subnetting" data-section-id="subnetting-lab" href="./subnetting-lab.html">
               <span class="learning-path-kicker">Reference Lab</span>
               <span class="learning-path-title">Subnetting Lab</span>
-              <span class="learning-path-copy">CIDR, masks, ranges, host counts, and exam-style subnet drills for supporting network investigations.</span>
+              <span class="learning-path-copy">CIDR, masks, ranges, and subnet drills for quick reference.</span>
               <span class="learning-path-status" data-progress-slot="subnetting-lab">Not Started</span>
             </a>
 
             <a class="learning-path-card learning-path-card-reference learning-path-card-web" data-section-id="web-http-lab" href="./web-http-lab.html">
               <span class="learning-path-kicker">HTTP Reference Lab</span>
               <span class="learning-path-title">HTTP Reference Lab</span>
-              <span class="learning-path-copy">Request and response flow, sessions, cookies, caching, proxies, and browser-side context to support terminal investigations.</span>
+              <span class="learning-path-copy">Request, response, session, and proxy basics for extra context.</span>
               <span class="learning-path-status" data-progress-slot="web-http-lab">Not Started</span>
             </a>
 
             <a class="learning-path-card learning-path-card-reference learning-path-card-protocol" data-section-id="protocol-lab" href="./protocol-merge.html">
               <span class="learning-path-kicker">ARP Reference</span>
               <span class="learning-path-title">ARP Reference</span>
-              <span class="learning-path-copy">Protocol flow and ARP-focused reference views for visual reinforcement after ticket-based terminal practice.</span>
+              <span class="learning-path-copy">ARP and protocol flow reference for visual reinforcement.</span>
               <span class="learning-path-status" data-progress-slot="protocol-lab">Not Started</span>
             </a>
           </div>
         </section>
       </section>
+
+      <section id="hubAccountPanel" class="hub-section-panel app-shell-panel hub-account-panel"></section>
 
       <div class="router-ports" aria-hidden="true">
         <div class="port connected"><span class="cable"></span></div>
