@@ -227,6 +227,8 @@ async function runWalkthroughDemo(page, options = {}) {
   const firstCounter = ((await page.locator("#walkthroughStepCounter").textContent()) || "").trim();
   const firstTitle = ((await page.locator("#walkthroughTitle").textContent()) || "").trim();
   const firstGoal = ((await page.locator("#walkthroughGoal").textContent()) || "").trim();
+  const walkthroughVisualVisible = await page.locator("#walkthroughVisualBlock").isVisible().catch(() => false);
+  const walkthroughVisualText = ((await page.locator("#walkthroughFolderGuideMap").textContent().catch(() => "")) || "").trim();
   await page.locator("#walkthroughNextBtn").click();
   await page.waitForTimeout(150);
   const secondCounter = ((await page.locator("#walkthroughStepCounter").textContent()) || "").trim();
@@ -250,6 +252,8 @@ async function runWalkthroughDemo(page, options = {}) {
     firstCounter,
     firstTitle,
     firstGoal,
+    walkthroughVisualVisible,
+    walkthroughVisualText,
     secondCounter,
     secondTitle,
     secondGoal,

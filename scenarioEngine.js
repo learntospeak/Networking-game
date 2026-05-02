@@ -2915,6 +2915,8 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      beginnerTicket: config.beginnerTicket || null,
+      visualGuide: config.visualGuide || null,
       beginnerTrack: config.beginnerTrack || "",
       beginnerLabLevelId: config.beginnerLabLevelId || "",
       beginnerLabMissionLabel: config.beginnerLabMissionLabel || "",
@@ -2980,6 +2982,8 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      beginnerTicket: config.beginnerTicket || null,
+      visualGuide: config.visualGuide || null,
       beginnerTrack: config.beginnerTrack || "",
       beginnerLabLevelId: config.beginnerLabLevelId || "",
       beginnerLabMissionLabel: config.beginnerLabMissionLabel || "",
@@ -3045,6 +3049,8 @@
       tags: config.tags || [],
       skills: config.skills || [],
       summary: config.summary || "",
+      beginnerTicket: config.beginnerTicket || null,
+      visualGuide: config.visualGuide || null,
       beginnerTrack: config.beginnerTrack || "",
       beginnerLabLevelId: config.beginnerLabLevelId || "",
       beginnerLabMissionLabel: config.beginnerLabMissionLabel || "",
@@ -4861,6 +4867,20 @@
       easterEggNote: "A sticky note on the monitor says: 'Do not guess paths. Future you will complain.'",
       missionBriefing: "A support ticket has been staged on a Windows practice workstation. Your first job is not to guess where the evidence lives. Start from the current folder, list what is there, move into the incident folder you discover, and keep confirming your location as you go.",
       summary: "Use Windows CMD to discover the incident folder structure step by step instead of guessing hidden paths.",
+      beginnerTicket: {
+        happened: "The ticket says the incident notes have not been found yet.",
+        meaning: "The notes are somewhere in the lab folders. Your job is to discover the right folder one step at a time.",
+        tryFirst: "Look at the folders you can already see before you guess where to go."
+      },
+      visualGuide: {
+        type: "folder-map",
+        root: "C:/Lab",
+        relevantPaths: ["C:/Lab/Incidents", "C:/Lab/Incidents/notes"],
+        commandMap: [
+          { command: "dir", icon: "👀", meaning: "look inside this folder" },
+          { command: "cd", icon: "🚶", meaning: "move into a folder" }
+        ]
+      },
       walkthrough: [
         {
           title: "Step 1: List the current folder",

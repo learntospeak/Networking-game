@@ -45,6 +45,10 @@
     missionCaseDifficulty: document.getElementById("missionCaseDifficulty"),
     missionCaseEstimatedTime: document.getElementById("missionCaseEstimatedTime"),
     missionCaseType: document.getElementById("missionCaseType"),
+    missionBeginnerTicketBlock: document.getElementById("missionBeginnerTicketBlock"),
+    missionBeginnerHappened: document.getElementById("missionBeginnerHappened"),
+    missionBeginnerMeaning: document.getElementById("missionBeginnerMeaning"),
+    missionBeginnerTryFirst: document.getElementById("missionBeginnerTryFirst"),
     missionBriefingBlock: document.getElementById("missionBriefingBlock"),
     missionBriefingText: document.getElementById("missionBriefingText"),
     missionObjectivesBlock: document.getElementById("missionObjectivesBlock"),
@@ -77,6 +81,10 @@
     beginnerLabCurrentMission: document.getElementById("beginnerLabCurrentMission"),
     beginnerLabCurrentTask: document.getElementById("beginnerLabCurrentTask"),
     beginnerLabProgressText: document.getElementById("beginnerLabProgressText"),
+    beginnerVisualGuideCard: document.getElementById("beginnerVisualGuideCard"),
+    beginnerVisualCurrentPath: document.getElementById("beginnerVisualCurrentPath"),
+    beginnerCommandMeaningMap: document.getElementById("beginnerCommandMeaningMap"),
+    beginnerFolderGuideMap: document.getElementById("beginnerFolderGuideMap"),
     currentTaskCard: document.getElementById("currentTaskCard"),
     progressCard: document.getElementById("progressCard"),
     ticketBriefingOverlay: document.getElementById("ticketBriefingOverlay"),
@@ -89,6 +97,15 @@
     ticketBriefingReportedTime: document.getElementById("ticketBriefingReportedTime"),
     ticketBriefingRole: document.getElementById("ticketBriefingRole"),
     ticketBriefingEstimatedTime: document.getElementById("ticketBriefingEstimatedTime"),
+    ticketBriefingBeginnerBlock: document.getElementById("ticketBriefingBeginnerBlock"),
+    ticketBriefingBeginnerHappened: document.getElementById("ticketBriefingBeginnerHappened"),
+    ticketBriefingBeginnerMeaning: document.getElementById("ticketBriefingBeginnerMeaning"),
+    ticketBriefingBeginnerTryFirst: document.getElementById("ticketBriefingBeginnerTryFirst"),
+    ticketBriefingVisualBlock: document.getElementById("ticketBriefingVisualBlock"),
+    ticketBriefingCommandMap: document.getElementById("ticketBriefingCommandMap"),
+    ticketBriefingFolderGuideMap: document.getElementById("ticketBriefingFolderGuideMap"),
+    ticketBriefingMoreToggleBlock: document.getElementById("ticketBriefingMoreToggleBlock"),
+    ticketBriefingMoreBtn: document.getElementById("ticketBriefingMoreBtn"),
     ticketBriefingAffectedBlock: document.getElementById("ticketBriefingAffectedBlock"),
     ticketBriefingAffectedSystem: document.getElementById("ticketBriefingAffectedSystem"),
     ticketBriefingSummaryBlock: document.getElementById("ticketBriefingSummaryBlock"),
@@ -149,6 +166,8 @@
     walkthroughCommand: document.getElementById("walkthroughCommand"),
     walkthroughOutput: document.getElementById("walkthroughOutput"),
     walkthroughExplanation: document.getElementById("walkthroughExplanation"),
+    walkthroughVisualBlock: document.getElementById("walkthroughVisualBlock"),
+    walkthroughFolderGuideMap: document.getElementById("walkthroughFolderGuideMap"),
     walkthroughPrevBtn: document.getElementById("walkthroughPrevBtn"),
     walkthroughNextBtn: document.getElementById("walkthroughNextBtn"),
     walkthroughTryBtn: document.getElementById("walkthroughTryBtn"),
@@ -214,6 +233,7 @@
     walkthroughTaskIndex: 0,
     walkthroughSource: "",
     walkthroughLevelId: "",
+    beginnerTicketDetailsOpen: false,
     beginnerRoadmapExpanded: true
   };
   let savedProgressRecord = null;
@@ -1194,6 +1214,297 @@
     };
   }
 
+  function normalizedScenarioText(value, fallback = "") {
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    if (!text) {
+      return fallback;
+    }
+
+    const sentences = text.match(/[^.!?]+[.!?]?/g) || [text];
+    const compact = sentences.slice(0, 2).join(" ").trim();
+    return compact.length > 180 ? `${compact.slice(0, 177).trimEnd()}…` : compact;
+  }
+
+  function beginnerScenarioTicketMode(scenario = currentScenario()) {
+    if (!scenario || !isBeginnerMode() || scenarioUsesChallengePresentation(scenario)) {
+      return false;
+    }
+
+    return String(scenario.difficulty || scenario.level || "").trim().toLowerCase() === "beginner";
+  }
+
+  function beginnerTicketPayload(scenario = currentScenario(), step = currentStep()) {
+    const custom = scenario?.beginnerTicket || {};
+    const objective = step?.objective || scenarioObjectiveText(scenario) || "the current ticket task";
+    const firstHint = Array.isArray(step?.hints) ? step.hints.find((hint) => String(hint || "").trim()) : "";
+
+    return {
+      happened: normalizedScenarioText(
+        custom.happened
+        || scenario?.userReport
+        || scenario?.summary
+        || scenario?.scenarioIntro
+        || `The ticket is about ${scenario?.title || "this mission"}.`,
+        "The ticket gives you a beginner support task to investigate."
+      ),
+      meaning: normalizedScenarioText(
+        custom.meaning
+        || scenario?.summary
+        || scenario?.missionBriefing
+        || scenario?.objective
+        || `Your job is to use the terminal to work through ${objective}.`,
+        "Your job is to use the terminal to find the right evidence."
+      ),
+      tryFirst: normalizedScenarioText(
+        custom.tryFirst
+        || firstHint
+        || `Start with this task: ${objective}`,
+        "Start with the current task and use Command Help if you need it."
+      )
+    };
+  }
+
+  function defaultVisualCommandMap(scenario = currentScenario()) {
+    if (scenario?.shell === "cmd") {
+      return [
+        { command: "dir", icon: "👀", meaning: "look inside this folder" },
+        { command: "cd", icon: "🚶", meaning: "move into a folder" }
+      ];
+    }
+
+    return [
+      { command: "ls", icon: "👀", meaning: "look inside this folder" },
+      { command: "cd", icon: "🚶", meaning: "move into a folder" }
+    ];
+  }
+
+  function visualGuideConfig(scenario = currentScenario()) {
+    if (!scenario) {
+      return null;
+    }
+
+    const custom = scenario.visualGuide;
+    if (custom && custom.type === "folder-map") {
+      return {
+        type: "folder-map",
+        root: custom.root || scenario.environment?.cwd || "",
+        relevantPaths: Array.isArray(custom.relevantPaths) ? custom.relevantPaths : [],
+        commandMap: Array.isArray(custom.commandMap) && custom.commandMap.length ? custom.commandMap : defaultVisualCommandMap(scenario)
+      };
+    }
+
+    if (!beginnerScenarioTicketMode(scenario)) {
+      return null;
+    }
+
+    const focus = Array.isArray(scenario.commandFocus)
+      ? scenario.commandFocus.map((item) => String(item || "").trim().toLowerCase())
+      : [];
+
+    if (!focus.some((item) => item === "dir" || item === "cd" || item === "ls" || item === "pwd")) {
+      return null;
+    }
+
+    return {
+      type: "folder-map",
+      root: scenario.environment?.cwd || "",
+      relevantPaths: [],
+      commandMap: defaultVisualCommandMap(scenario)
+    };
+  }
+
+  function normalizedPathKey(path) {
+    return String(path || "").replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+  }
+
+  function pathEquals(left, right) {
+    return normalizedPathKey(left) === normalizedPathKey(right);
+  }
+
+  function pathIsWithin(root, candidate) {
+    const normalizedRoot = normalizedPathKey(root);
+    const normalizedCandidate = normalizedPathKey(candidate);
+    return normalizedCandidate === normalizedRoot || normalizedCandidate.startsWith(`${normalizedRoot}/`);
+  }
+
+  function pathIsAncestor(path, candidate) {
+    const normalizedPath = normalizedPathKey(path);
+    const normalizedCandidate = normalizedPathKey(candidate);
+    return normalizedCandidate.startsWith(`${normalizedPath}/`);
+  }
+
+  function createVisualGuideState(scenario = currentScenario()) {
+    return StateManager.createState(scenario.environment);
+  }
+
+  function extractSimpleCommandArgument(rawCommand, commandName) {
+    const text = String(rawCommand || "").trim();
+    return text.replace(new RegExp(`^${commandName}\\b`, "i"), "").trim();
+  }
+
+  function collectFolderGuideState(scenario = currentScenario(), commands = []) {
+    const state = createVisualGuideState(scenario);
+    const listedDirectories = new Set();
+
+    commands.forEach((rawCommand) => {
+      const text = String(rawCommand || "").trim();
+      if (!text) {
+        return;
+      }
+
+      if (/^(dir|ls)\b/i.test(text)) {
+        const commandName = /^dir\b/i.test(text) ? "dir" : "ls";
+        const targetArg = extractSimpleCommandArgument(text, commandName);
+        const target = targetArg || state.cwd;
+        const node = StateManager.getNode(state, target);
+        if (node?.type === "dir") {
+          listedDirectories.add(normalizedPathKey(StateManager.normalizePath(state, target)));
+        }
+        return;
+      }
+
+      if (/^cd\b/i.test(text)) {
+        let targetArg = extractSimpleCommandArgument(text, "cd");
+        if (!targetArg) {
+          return;
+        }
+        targetArg = targetArg.replace(/^\/d\b/i, "").trim();
+        if (!targetArg) {
+          return;
+        }
+        StateManager.changeDirectory(state, targetArg);
+      }
+    });
+
+    return { state, listedDirectories };
+  }
+
+  function folderGuideSnapshot(scenario = currentScenario(), commands = session.reviewStats?.submittedCommands || []) {
+    const config = visualGuideConfig(scenario);
+    if (!config) {
+      return null;
+    }
+
+    const { state, listedDirectories } = collectFolderGuideState(scenario, commands);
+    const rootPath = StateManager.normalizePath(state, config.root || scenario.environment?.cwd || state.cwd);
+    const currentPath = StateManager.normalizePath(state, state.cwd);
+
+    return {
+      state,
+      rootPath,
+      currentPath,
+      listedDirectories,
+      relevantPathKeys: new Set((config.relevantPaths || []).map((path) => normalizedPathKey(StateManager.normalizePath(state, path)))),
+      commandMap: config.commandMap || defaultVisualCommandMap(scenario)
+    };
+  }
+
+  function walkthroughFolderGuideSnapshot(scenario = currentScenario()) {
+    if (!session.walkthroughActive || !session.walkthroughSteps.length) {
+      return null;
+    }
+
+    const commands = session.walkthroughSteps
+      .slice(0, session.walkthroughStepIndex + 1)
+      .map((entry) => String(entry?.command || "").trim())
+      .filter(Boolean);
+
+    return folderGuideSnapshot(scenario, commands);
+  }
+
+  function displayGuidePath(state, path) {
+    return StateManager.displayPath(state, path);
+  }
+
+  function folderGuideLabel(state, path, rootPath) {
+    const display = displayGuidePath(state, path);
+    if (pathEquals(path, rootPath)) {
+      return display;
+    }
+
+    const parts = String(display || "").replace(/[\\\/]+$/, "").split(/[\\\/]/).filter(Boolean);
+    return parts[parts.length - 1] || display;
+  }
+
+  function folderGuideRows(snapshot, parentPath, depth = 0) {
+    const state = snapshot.state;
+    const pathKey = normalizedPathKey(parentPath);
+    const childDirectories = StateManager.listChildren(state, parentPath, true)
+      .filter((node) => node.type === "dir" && pathIsWithin(snapshot.rootPath, node.path));
+    const listedHere = snapshot.listedDirectories.has(pathKey);
+    const onCurrentTrail = pathEquals(parentPath, snapshot.currentPath) || pathIsAncestor(parentPath, snapshot.currentPath);
+    const isCurrent = pathEquals(parentPath, snapshot.currentPath);
+    const isRelevant = snapshot.relevantPathKeys.has(pathKey);
+    const badges = [];
+
+    if (isCurrent) {
+      badges.push(`<span class="folder-guide-badge folder-guide-badge-current">you are here</span>`);
+    } else if (isRelevant) {
+      badges.push(`<span class="folder-guide-badge folder-guide-badge-relevant">relevant</span>`);
+    }
+
+    const rows = [
+      `<div class="folder-guide-row${isCurrent ? " is-current" : ""}${isRelevant ? " is-relevant" : ""}" style="--folder-depth:${depth}">`
+      + `<span class="folder-guide-branch">${depth === 0 ? "📁" : "↳"}</span>`
+      + `<span class="folder-guide-name">${escapeHtml(folderGuideLabel(state, parentPath, snapshot.rootPath))}</span>`
+      + `${badges.join("")}`
+      + `</div>`
+    ];
+
+    const shouldShowChildren = listedHere || onCurrentTrail;
+    if (shouldShowChildren) {
+      childDirectories.forEach((child) => {
+        rows.push(...folderGuideRows(snapshot, child.path, depth + 1));
+      });
+    } else if (childDirectories.length && isCurrent) {
+      const listCommand = snapshot.commandMap?.[0]?.command || "dir";
+      rows.push(
+        `<div class="folder-guide-row folder-guide-row-hint" style="--folder-depth:${depth + 1}">`
+        + `<span class="folder-guide-branch">•</span>`
+        + `<span class="folder-guide-name">Use ${escapeHtml(listCommand)} here to reveal the folders in this location.</span>`
+        + `</div>`
+      );
+    }
+
+    return rows;
+  }
+
+  function renderCommandMeaningMap(target, commandMap = []) {
+    if (!target) {
+      return;
+    }
+
+    const entries = Array.isArray(commandMap)
+      ? commandMap.filter((entry) => String(entry?.command || "").trim() && String(entry?.meaning || "").trim())
+      : [];
+
+    target.hidden = entries.length === 0;
+    target.innerHTML = entries.map((entry) => (
+      `<div class="beginner-command-chip">`
+      + `<span class="beginner-command-chip-title">${escapeHtml(entry.icon || "")} ${escapeHtml(entry.command)}</span>`
+      + `<span class="beginner-command-chip-copy">${escapeHtml(entry.meaning)}</span>`
+      + `</div>`
+    )).join("");
+  }
+
+  function renderFolderGuideMap(target, scenario = currentScenario(), snapshot = folderGuideSnapshot(scenario)) {
+    if (!target) {
+      return false;
+    }
+
+    if (!snapshot) {
+      target.hidden = true;
+      target.innerHTML = "";
+      return false;
+    }
+
+    target.hidden = false;
+    target.innerHTML =
+      `<p class="folder-guide-current">📍 You are here: ${escapeHtml(displayGuidePath(snapshot.state, snapshot.currentPath))}</p>`
+      + `<div class="folder-guide-tree">${folderGuideRows(snapshot, snapshot.rootPath).join("")}</div>`;
+    return true;
+  }
+
   function missionProgressText(scenario = currentScenario(), completedStepCount = session.stepIndex) {
     const stageInfo = currentStageInfo(scenario);
     if (!stageInfo) {
@@ -1516,6 +1827,13 @@
     if (els.walkthroughOverlay) {
       els.walkthroughOverlay.hidden = true;
     }
+    if (els.walkthroughVisualBlock) {
+      els.walkthroughVisualBlock.hidden = true;
+    }
+    if (els.walkthroughFolderGuideMap) {
+      els.walkthroughFolderGuideMap.hidden = true;
+      els.walkthroughFolderGuideMap.innerHTML = "";
+    }
     document.body.classList.remove("walkthrough-open");
 
     if (restoreFocus) {
@@ -1557,6 +1875,12 @@
       entry.explanation || entry.why || entry.howToThink || "Use this step as a model, then try the same idea yourself.",
       { hideWhenEmpty: false }
     );
+
+    const walkthroughSnapshot = walkthroughFolderGuideSnapshot(currentScenario());
+    if (els.walkthroughVisualBlock) {
+      els.walkthroughVisualBlock.hidden = !walkthroughSnapshot;
+    }
+    renderFolderGuideMap(els.walkthroughFolderGuideMap, currentScenario(), walkthroughSnapshot);
 
     if (els.walkthroughPrevBtn) {
       els.walkthroughPrevBtn.disabled = session.walkthroughStepIndex <= 0;
@@ -1751,24 +2075,48 @@
       els.missionCaseMeta.hidden = !(role || difficulty || estimatedTime || scenarioType);
     }
 
-    fillText(els.missionBriefingText, scenario.missionBriefing || "");
-    if (els.missionBriefingBlock) {
-      els.missionBriefingBlock.hidden = !String(scenario.missionBriefing || "").trim();
+    const simplifiedBeginnerTicket = beginnerScenarioTicketMode(scenario);
+    if (els.missionBeginnerTicketBlock) {
+      els.missionBeginnerTicketBlock.hidden = !simplifiedBeginnerTicket;
     }
 
-    const objectiveCount = renderListItems(els.missionObjectivesList, scenario.learningObjectives);
-    if (els.missionObjectivesBlock) {
-      els.missionObjectivesBlock.hidden = objectiveCount === 0;
-    }
+    if (simplifiedBeginnerTicket) {
+      const beginnerTicket = beginnerTicketPayload(scenario, currentStep());
+      fillText(els.missionBeginnerHappened, beginnerTicket.happened, { hideWhenEmpty: false });
+      fillText(els.missionBeginnerMeaning, beginnerTicket.meaning, { hideWhenEmpty: false });
+      fillText(els.missionBeginnerTryFirst, beginnerTicket.tryFirst, { hideWhenEmpty: false });
+      if (els.missionBriefingBlock) {
+        els.missionBriefingBlock.hidden = true;
+      }
+      if (els.missionObjectivesBlock) {
+        els.missionObjectivesBlock.hidden = true;
+      }
+      if (els.missionSuccessBlock) {
+        els.missionSuccessBlock.hidden = true;
+      }
+      if (els.missionEnvironmentBlock) {
+        els.missionEnvironmentBlock.hidden = true;
+      }
+    } else {
+      fillText(els.missionBriefingText, scenario.missionBriefing || "");
+      if (els.missionBriefingBlock) {
+        els.missionBriefingBlock.hidden = !String(scenario.missionBriefing || "").trim();
+      }
 
-    const successCount = renderListItems(els.missionSuccessList, scenario.successCriteria);
-    if (els.missionSuccessBlock) {
-      els.missionSuccessBlock.hidden = successCount === 0;
-    }
+      const objectiveCount = renderListItems(els.missionObjectivesList, scenario.learningObjectives);
+      if (els.missionObjectivesBlock) {
+        els.missionObjectivesBlock.hidden = objectiveCount === 0;
+      }
 
-    fillText(els.missionEnvironmentText, scenario.environmentNotes || "");
-    if (els.missionEnvironmentBlock) {
-      els.missionEnvironmentBlock.hidden = !String(scenario.environmentNotes || "").trim();
+      const successCount = renderListItems(els.missionSuccessList, scenario.successCriteria);
+      if (els.missionSuccessBlock) {
+        els.missionSuccessBlock.hidden = successCount === 0;
+      }
+
+      fillText(els.missionEnvironmentText, scenario.environmentNotes || "");
+      if (els.missionEnvironmentBlock) {
+        els.missionEnvironmentBlock.hidden = !String(scenario.environmentNotes || "").trim();
+      }
     }
 
     fillText(els.missionCurrentStageTitle, stageInfo ? `${stageInfo.stage.title}` : "");
@@ -1815,6 +2163,40 @@
     );
   }
 
+  function renderBeginnerVisualGuide(scenario = currentScenario()) {
+    if (!els.beginnerVisualGuideCard) {
+      return;
+    }
+
+    const showGuide = beginnerScenarioTicketMode(scenario) && Boolean(visualGuideConfig(scenario));
+    els.beginnerVisualGuideCard.hidden = !showGuide;
+    if (!showGuide) {
+      if (els.beginnerVisualCurrentPath) {
+        els.beginnerVisualCurrentPath.textContent = "";
+      }
+      if (els.beginnerCommandMeaningMap) {
+        els.beginnerCommandMeaningMap.hidden = true;
+        els.beginnerCommandMeaningMap.innerHTML = "";
+      }
+      if (els.beginnerFolderGuideMap) {
+        els.beginnerFolderGuideMap.hidden = true;
+        els.beginnerFolderGuideMap.innerHTML = "";
+      }
+      return;
+    }
+
+    const snapshot = folderGuideSnapshot(scenario);
+    if (els.beginnerVisualCurrentPath) {
+      fillText(
+        els.beginnerVisualCurrentPath,
+        snapshot ? `You are here: ${displayGuidePath(snapshot.state, snapshot.currentPath)}` : "",
+        { hideWhenEmpty: false }
+      );
+    }
+    renderCommandMeaningMap(els.beginnerCommandMeaningMap, snapshot?.commandMap || visualGuideConfig(scenario)?.commandMap || []);
+    renderFolderGuideMap(els.beginnerFolderGuideMap, scenario, snapshot);
+  }
+
   function ticketBriefingPayload(scenario = currentScenario()) {
     if (!scenario) {
       return null;
@@ -1845,6 +2227,21 @@
     };
   }
 
+  function ticketBriefingAdvancedBlocks() {
+    return [
+      els.ticketBriefingAffectedBlock,
+      els.ticketBriefingSummaryBlock,
+      els.ticketBriefingUserReportBlock,
+      els.ticketBriefingSymptomsBlock,
+      els.ticketBriefingKnownFactsBlock,
+      els.ticketBriefingObjectiveBlock,
+      els.ticketBriefingConstraintsBlock,
+      els.ticketBriefingTagsBlock,
+      els.ticketBriefingEscalationBlock,
+      els.ticketBriefingEasterEggBlock
+    ].filter(Boolean);
+  }
+
   function renderTicketBriefing(scenario = currentScenario()) {
     if (!els.ticketBriefingCard) {
       return;
@@ -1872,6 +2269,76 @@
     fillBlock(els.ticketBriefingTagsBlock, els.ticketBriefingTags, payload.tags.join(" | "));
     fillBlock(els.ticketBriefingEscalationBlock, els.ticketBriefingEscalationNote, payload.escalationNote);
     fillBlock(els.ticketBriefingEasterEggBlock, els.ticketBriefingEasterEggNote, payload.easterEggNote);
+
+    const naturalHiddenState = new Map(ticketBriefingAdvancedBlocks().map((block) => [block, Boolean(block.hidden)]));
+    const simplifiedBeginnerTicket = beginnerScenarioTicketMode(scenario);
+
+    if (els.ticketBriefingBeginnerBlock) {
+      els.ticketBriefingBeginnerBlock.hidden = !simplifiedBeginnerTicket;
+    }
+
+    if (simplifiedBeginnerTicket) {
+      const beginnerTicket = beginnerTicketPayload(scenario, currentStep());
+      fillText(els.ticketBriefingBeginnerHappened, beginnerTicket.happened, { hideWhenEmpty: false });
+      fillText(els.ticketBriefingBeginnerMeaning, beginnerTicket.meaning, { hideWhenEmpty: false });
+      fillText(els.ticketBriefingBeginnerTryFirst, beginnerTicket.tryFirst, { hideWhenEmpty: false });
+
+      if (els.ticketBriefingReportedTime) {
+        els.ticketBriefingReportedTime.hidden = true;
+      }
+      if (els.ticketBriefingRole) {
+        els.ticketBriefingRole.hidden = true;
+      }
+      if (els.ticketBriefingEstimatedTime) {
+        els.ticketBriefingEstimatedTime.hidden = true;
+      }
+
+      const snapshot = folderGuideSnapshot(scenario);
+      const hasVisualGuide = Boolean(snapshot);
+      if (els.ticketBriefingVisualBlock) {
+        els.ticketBriefingVisualBlock.hidden = !hasVisualGuide;
+      }
+      renderCommandMeaningMap(els.ticketBriefingCommandMap, snapshot?.commandMap || visualGuideConfig(scenario)?.commandMap || []);
+      renderFolderGuideMap(els.ticketBriefingFolderGuideMap, scenario, snapshot);
+
+      const advancedBlocks = ticketBriefingAdvancedBlocks().filter((block) => !naturalHiddenState.get(block));
+      const showAdvanced = session.beginnerTicketDetailsOpen;
+      advancedBlocks.forEach((block) => {
+        block.hidden = !showAdvanced;
+      });
+      ticketBriefingAdvancedBlocks().forEach((block) => {
+        if (!advancedBlocks.includes(block)) {
+          block.hidden = true;
+        }
+      });
+
+      if (els.ticketBriefingMoreToggleBlock) {
+        els.ticketBriefingMoreToggleBlock.hidden = advancedBlocks.length === 0;
+      }
+      if (els.ticketBriefingMoreBtn) {
+        els.ticketBriefingMoreBtn.textContent = showAdvanced ? "Hide ticket details" : "More ticket details";
+        els.ticketBriefingMoreBtn.setAttribute("aria-expanded", showAdvanced ? "true" : "false");
+      }
+      return;
+    }
+
+    if (els.ticketBriefingVisualBlock) {
+      els.ticketBriefingVisualBlock.hidden = true;
+    }
+    if (els.ticketBriefingCommandMap) {
+      els.ticketBriefingCommandMap.hidden = true;
+      els.ticketBriefingCommandMap.innerHTML = "";
+    }
+    if (els.ticketBriefingFolderGuideMap) {
+      els.ticketBriefingFolderGuideMap.hidden = true;
+      els.ticketBriefingFolderGuideMap.innerHTML = "";
+    }
+    if (els.ticketBriefingMoreToggleBlock) {
+      els.ticketBriefingMoreToggleBlock.hidden = true;
+    }
+    ticketBriefingAdvancedBlocks().forEach((block) => {
+      block.hidden = Boolean(naturalHiddenState.get(block));
+    });
   }
 
   function clearTaskCompleteCard() {
@@ -2704,6 +3171,7 @@
     els.scenarioFlex.textContent = allowedApproachText(scenario);
     els.scenarioFlex.hidden = Boolean(beginnerTrack);
     renderBeginnerLabCard(scenario, step);
+    renderBeginnerVisualGuide(scenario);
     renderMissionCaseFile(scenario, stageInfo);
     renderMissionReview(scenario);
     if (els.environmentSummary) {
@@ -3194,6 +3662,7 @@
     session.reviewStats = createReviewStats();
     session.ticketBriefingSeen = false;
     session.ticketBriefingOpen = false;
+    session.beginnerTicketDetailsOpen = false;
     clearTaskCompleteCard();
   }
 
@@ -6142,6 +6611,12 @@
     }
     if (els.nextScenarioBtn) {
       els.nextScenarioBtn.addEventListener("click", nextScenario);
+    }
+    if (els.ticketBriefingMoreBtn) {
+      els.ticketBriefingMoreBtn.addEventListener("click", () => {
+        session.beginnerTicketDetailsOpen = !session.beginnerTicketDetailsOpen;
+        renderTicketBriefing(currentScenario());
+      });
     }
     if (els.ticketBriefingStartBtn) {
       els.ticketBriefingStartBtn.addEventListener("click", () => {

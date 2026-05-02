@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260502coach2">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260502beginnerticket2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
   <script src="./commandsData.js?v=20260419d" defer></script>
   <script src="./stateManager.js?v=20260425cmd1" defer></script>
   <script src="./coachEngine.js?v=20260425cmd1" defer></script>
-  <script src="./scenarioEngine.js?v=20260425cmd1" defer></script>
+  <script src="./scenarioEngine.js?v=20260502beginnerticket1" defer></script>
   <script>
     (() => {
       const params = new URLSearchParams(window.location.search);
@@ -62,7 +62,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260502coach2" defer></script>
+  <script src="./terminalEngine.js?v=20260502beginnerticket1" defer></script>
   <script src="./commandSheet.js?v=20260502coach2" defer></script>
 </head>
 <body class="terminal-page">
@@ -143,6 +143,20 @@
                 <span id="missionCaseEstimatedTime" class="scenario-mini-badge" hidden></span>
                 <span id="missionCaseType" class="scenario-mini-badge" hidden></span>
               </div>
+              <div id="missionBeginnerTicketBlock" class="mission-case-block mission-case-beginner-block" hidden>
+                <div class="mission-case-beginner-section">
+                  <p class="mission-case-label">What Happened?</p>
+                  <p id="missionBeginnerHappened" class="mission-case-copy"></p>
+                </div>
+                <div class="mission-case-beginner-section">
+                  <p class="mission-case-label">What This Means</p>
+                  <p id="missionBeginnerMeaning" class="mission-case-copy"></p>
+                </div>
+                <div class="mission-case-beginner-section">
+                  <p class="mission-case-label">Try First</p>
+                  <p id="missionBeginnerTryFirst" class="mission-case-copy"></p>
+                </div>
+              </div>
               <div id="missionBriefingBlock" class="mission-case-block" hidden>
                 <p class="mission-case-label">Mission Briefing</p>
                 <p id="missionBriefingText" class="mission-case-copy"></p>
@@ -194,6 +208,13 @@
               <p id="beginnerLabCurrentMission">Mission: Incident Folder Triage</p>
               <p id="beginnerLabCurrentTask">Task: List the current folder contents.</p>
               <p id="beginnerLabProgressText">Level progress: 0/1 missions complete.</p>
+            </article>
+
+            <article id="beginnerVisualGuideCard" class="support-card support-card-primary beginner-visual-guide-card" hidden>
+              <h3>Visual Guide</h3>
+              <p id="beginnerVisualCurrentPath" class="beginner-visual-current"></p>
+              <div id="beginnerCommandMeaningMap" class="beginner-command-meaning-map" hidden></div>
+              <div id="beginnerFolderGuideMap" class="beginner-folder-guide-map" hidden></div>
             </article>
 
             <details id="helpNotesCard" class="support-card support-disclosure">
@@ -309,6 +330,10 @@
                 <p class="walkthrough-label">What This Shows</p>
                 <p id="walkthroughExplanation" class="walkthrough-copy"></p>
               </div>
+              <div id="walkthroughVisualBlock" class="walkthrough-block" hidden>
+                <p class="walkthrough-label">Visual Guide</p>
+                <div id="walkthroughFolderGuideMap" class="beginner-folder-guide-map walkthrough-folder-guide-map" hidden></div>
+              </div>
               <div class="walkthrough-actions">
                 <button id="walkthroughPrevBtn" class="beginner-secondary-btn" type="button">Previous Walkthrough Step</button>
                 <button id="walkthroughNextBtn" class="ticket-briefing-start" type="button">Next Walkthrough Step</button>
@@ -407,6 +432,28 @@
             <span id="ticketBriefingReportedTime" class="scenario-mini-badge" hidden></span>
             <span id="ticketBriefingRole" class="scenario-mini-badge" hidden></span>
             <span id="ticketBriefingEstimatedTime" class="scenario-mini-badge" hidden></span>
+          </div>
+          <div id="ticketBriefingBeginnerBlock" class="ticket-briefing-block beginner-ticket-briefing" hidden>
+            <div class="beginner-ticket-section">
+              <p class="ticket-briefing-label">What Happened?</p>
+              <p id="ticketBriefingBeginnerHappened" class="ticket-briefing-copy"></p>
+            </div>
+            <div class="beginner-ticket-section">
+              <p class="ticket-briefing-label">What This Means</p>
+              <p id="ticketBriefingBeginnerMeaning" class="ticket-briefing-copy"></p>
+            </div>
+            <div class="beginner-ticket-section">
+              <p class="ticket-briefing-label">Try First</p>
+              <p id="ticketBriefingBeginnerTryFirst" class="ticket-briefing-copy"></p>
+            </div>
+          </div>
+          <div id="ticketBriefingVisualBlock" class="ticket-briefing-block" hidden>
+            <p class="ticket-briefing-label">Show Me Visually</p>
+            <div id="ticketBriefingCommandMap" class="beginner-command-meaning-map" hidden></div>
+            <div id="ticketBriefingFolderGuideMap" class="beginner-folder-guide-map" hidden></div>
+          </div>
+          <div id="ticketBriefingMoreToggleBlock" class="ticket-briefing-block ticket-briefing-more-toggle" hidden>
+            <button id="ticketBriefingMoreBtn" class="beginner-secondary-btn" type="button" aria-expanded="false">More ticket details</button>
           </div>
           <div id="ticketBriefingAffectedBlock" class="ticket-briefing-block" hidden>
             <p class="ticket-briefing-label">Affected System</p>

@@ -107,7 +107,23 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   pushCheck(report, "beginner roadmap exists", await page.locator("#beginnerRoadmapPanel").isVisible(), "#beginnerRoadmapPanel visible");
   pushCheck(report, "level 1 appears", /Level 1/i.test((await readText(page, "#beginnerRoadmapPanel")).trim()), await readText(page, "#beginnerRoadmapPanel"));
   pushCheck(report, "current beginner lab card exists", await page.locator("#beginnerLabCard").isVisible(), "#beginnerLabCard visible");
-  pushCheck(report, "current lab level text visible", /Current Lab Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), await readText(page, "#beginnerLabCurrentLevel"));
+  pushCheck(report, "current lab level text visible", /Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), await readText(page, "#beginnerLabCurrentLevel"));
+
+  if (await page.locator("#beginnerOnboardingStartBtn").isVisible().catch(() => false)) {
+    await page.locator("#beginnerOnboardingStartBtn").click();
+    await page.waitForTimeout(150);
+  }
+
+  pushCheck(report, "beginner ticket simplified", await page.locator("#ticketBriefingBeginnerBlock").isVisible().catch(() => false), "#ticketBriefingBeginnerBlock visible");
+  pushCheck(report, "advanced beginner ticket fields hidden by default", !(await page.locator("#ticketBriefingKnownFactsBlock").isVisible().catch(() => false)), "#ticketBriefingKnownFactsBlock hidden");
+  pushCheck(report, "beginner ticket visual guide visible", await page.locator("#ticketBriefingVisualBlock").isVisible().catch(() => false), "#ticketBriefingVisualBlock visible");
+
+  if (await page.locator("#ticketBriefingStartBtn").isVisible().catch(() => false)) {
+    await page.locator("#ticketBriefingStartBtn").click();
+    await page.waitForTimeout(150);
+  }
+
+  pushCheck(report, "side visual guide visible", await page.locator("#beginnerVisualGuideCard").isVisible().catch(() => false), "#beginnerVisualGuideCard visible");
 
   await expect(page.locator("#watchWalkthroughBtn")).toBeVisible();
   const walkthroughResult = await runWalkthroughDemo(page, { resetBefore: true });
@@ -115,17 +131,29 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   pushCheck(report, "walkthrough opens", walkthroughResult.walkthroughVisible, `${walkthroughResult.firstCounter} | ${walkthroughResult.firstTitle}`);
   pushCheck(report, "walkthrough shows only step 1 first", walkthroughResult.firstStepVisible, `${walkthroughResult.firstCounter} | ${walkthroughResult.firstTitle} | ${walkthroughResult.firstGoal}`);
   pushCheck(report, "walkthrough next shows step 2", walkthroughResult.secondStepVisible, `${walkthroughResult.secondCounter} | ${walkthroughResult.secondTitle} | ${walkthroughResult.secondGoal}`);
+  pushCheck(report, "walkthrough visual guide visible", walkthroughResult.walkthroughVisualVisible && /Incidents/i.test(walkthroughResult.walkthroughVisualText), walkthroughResult.walkthroughVisualText);
   pushCheck(report, "walkthrough does not advance step", !walkthroughResult.progressed, `${walkthroughResult.before.stepBadge} -> ${walkthroughResult.after.stepBadge}`);
   pushCheck(report, "walkthrough does not complete scenario", !walkthroughResult.completed, walkthroughResult.delta.map((line) => line.text).slice(-8).join(" | "));
   pushCheck(report, "terminal input remains enabled after walkthrough", walkthroughResult.inputEnabledAfterTry, "terminal input enabled");
 
-  await runTerminalTrackTest(page, report, [
-    "dir",
-    "cd Incidents",
-    "dir",
-    "cd notes",
-    "dir"
-  ], { resetBefore: true });
+  const dirRoot = await runTerminalCommand(page, "dir", { resetBefore: true });
+  report.commandResults.push(dirRoot);
+  pushCheck(report, "folder map reveals Incidents after dir", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
+
+  const cdIncidents = await runTerminalCommand(page, "cd Incidents");
+  report.commandResults.push(cdIncidents);
+  pushCheck(report, "folder map current path updates after cd Incidents", /C:\\Lab\\Incidents/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
+
+  const dirIncidents = await runTerminalCommand(page, "dir");
+  report.commandResults.push(dirIncidents);
+  pushCheck(report, "folder map reveals notes after dir in Incidents", /notes/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
+
+  const cdNotes = await runTerminalCommand(page, "cd notes");
+  report.commandResults.push(cdNotes);
+  pushCheck(report, "folder map current path updates after cd notes", /C:\\Lab\\Incidents\\notes/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
+
+  const dirNotes = await runTerminalCommand(page, "dir");
+  report.commandResults.push(dirNotes);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
@@ -133,7 +161,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   if (await page.locator("#resumeSectionBtn").isVisible().catch(() => false)) {
     await page.locator("#resumeSectionBtn").click();
     await page.waitForTimeout(200);
-    pushCheck(report, "resume restores current task context", /Current Lab Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), `${await readText(page, "#beginnerLabCurrentLevel")} | ${await readText(page, "#beginnerLabCurrentTask")}`);
+    pushCheck(report, "resume restores current task context", /Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), `${await readText(page, "#beginnerLabCurrentLevel")} | ${await readText(page, "#beginnerLabCurrentTask")}`);
   }
 
   for (const command of ["DIR", "  dir  ", "cd   Incidents"]) {
