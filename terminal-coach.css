@@ -4,6 +4,13 @@
   --terminal-visual-keyboard-offset: 0px;
 }
 
+.terminal-page .router-shell,
+.terminal-page .router-shell *,
+.terminal-page .router-shell *::before,
+.terminal-page .router-shell *::after {
+  box-sizing: border-box;
+}
+
 .terminal-page .rack-room {
   width: 100%;
   max-width: 1480px;
@@ -2178,7 +2185,10 @@
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot {
     grid-template-columns: 1fr;
     gap: 10px;
-    padding: 12px 16px 16px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 14px 14px;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-inline-input-slot .beginner-task-strip,
@@ -2194,6 +2204,7 @@
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .beginner-task-strip {
     display: grid;
     gap: 4px;
+    padding: 8px 10px;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .beginner-task-help {
@@ -2202,16 +2213,16 @@
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
     margin-top: 0;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls button {
     width: 100%;
     min-width: 0;
-    min-height: 42px;
-    padding: 9px 10px 9px 28px;
-    font-size: 12px;
+    min-height: 40px;
+    padding: 8px 8px 8px 24px;
+    font-size: 11px;
     line-height: 1.2;
     white-space: normal;
     text-wrap: balance;
@@ -2219,16 +2230,24 @@
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls button::before {
-    left: 9px;
+    left: 8px;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-input-shell {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-prompt-label {
+    max-width: 170px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-run-btn {
-    min-width: 92px;
+    min-width: 78px;
+    padding: 8px 10px 8px 24px;
   }
 }
 
