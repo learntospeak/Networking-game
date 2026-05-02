@@ -6467,10 +6467,15 @@
 
     if (evaluation.success) {
       const nextStep = currentScenario().steps?.[session.stepIndex + (evaluation.advanceBy || 1)] || null;
-      const proofText = String(step.successFeedback || "Good. That command moved the investigation forward.").trim();
+      const proofText = String(evaluation.feedback || step.successFeedback || "Good. That command moved the investigation forward.").trim();
       const explanationText = String(step.explanation || "").trim();
       const whyText = String(step.whyThisMatters || step.completionSummary || "").trim();
-      const nextText = String(step.nextObjective || nextStep?.objective || "Continue with the current task.").trim();
+      const nextText = String(
+        ((evaluation.advanceBy || 1) > 1 ? nextStep?.objective : "")
+        || step.nextObjective
+        || nextStep?.objective
+        || "Continue with the current task."
+      ).trim();
       const realWorldText = String(step.realWorldNote || "").trim();
 
       renderTaskCompleteCard({

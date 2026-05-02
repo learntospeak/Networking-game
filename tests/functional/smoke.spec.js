@@ -140,6 +140,13 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   report.commandResults.push(dirRoot);
   pushCheck(report, "folder map reveals Incidents after dir", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
 
+  const directJump = await runTerminalCommand(page, "cd Incidents\\notes");
+  report.commandResults.push(directJump);
+  pushCheck(report, "direct jump into notes advances beginner task", /List the notes folder contents/i.test((await readText(page, "#beginnerCurrentTaskText")).trim()) || /List the notes folder contents/i.test((await readText(page, "#stepObjective")).trim()), `${await readText(page, "#beginnerCurrentTaskText")} | ${await readText(page, "#stepObjective")}`);
+  pushCheck(report, "direct jump into notes updates current path", /C:\\Lab\\Incidents\\notes/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
+
+  const dirRootAgain = await runTerminalCommand(page, "dir", { resetBefore: true });
+  report.commandResults.push(dirRootAgain);
   const cdIncidents = await runTerminalCommand(page, "cd Incidents");
   report.commandResults.push(cdIncidents);
   pushCheck(report, "folder map current path updates after cd Incidents", /C:\\Lab\\Incidents/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));

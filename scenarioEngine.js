@@ -5041,7 +5041,11 @@
                 }
               ],
               accepts: [
-                cwdMatch("C:/Lab/Incidents")
+                cwdMatch("C:/Lab/Incidents"),
+                cwdMatch("C:/Lab/Incidents/notes", {
+                  advanceBy: 3,
+                  feedback: "You reached the notes folder in one move."
+                })
               ]
             })
           ]
