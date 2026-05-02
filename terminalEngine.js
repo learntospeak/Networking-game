@@ -161,6 +161,9 @@
     beginnerHelpStripText: document.getElementById("beginnerHelpStripText"),
     taskCompleteCard: document.getElementById("taskCompleteCard"),
     taskCompleteOverlay: document.getElementById("taskCompleteOverlay"),
+    taskCompleteSummary: document.getElementById("taskCompleteSummary"),
+    taskCompleteDetails: document.getElementById("taskCompleteDetails"),
+    taskCompleteToggleBtn: document.getElementById("taskCompleteToggleBtn"),
     taskCompleteCloseBtn: document.getElementById("taskCompleteCloseBtn"),
     taskCompleteProof: document.getElementById("taskCompleteProof"),
     taskCompleteWhy: document.getElementById("taskCompleteWhy"),
@@ -244,6 +247,7 @@
     beginnerGuideSeen: false,
     beginnerGuideOpen: false,
     taskCompleteOpen: false,
+    taskCompleteExpanded: false,
     walkthroughActive: false,
     walkthroughStepIndex: 0,
     walkthroughSteps: [],
@@ -2418,15 +2422,37 @@
       return;
     }
     session.taskCompleteOpen = false;
+    session.taskCompleteExpanded = false;
+    els.taskCompleteCard.dataset.mode = "inline";
     els.taskCompleteCard.hidden = true;
     els.taskCompleteCard.setAttribute("aria-hidden", "true");
     if (els.taskCompleteOverlay) {
       els.taskCompleteOverlay.hidden = true;
     }
     document.body.classList.remove("task-complete-open");
+    fillText(els.taskCompleteSummary, "");
+    if (els.taskCompleteDetails) {
+      els.taskCompleteDetails.hidden = true;
+    }
+    if (els.taskCompleteToggleBtn) {
+      els.taskCompleteToggleBtn.textContent = "What did I prove?";
+      els.taskCompleteToggleBtn.setAttribute("aria-expanded", "false");
+    }
     fillText(els.taskCompleteProof, "");
     fillText(els.taskCompleteWhy, "");
     fillText(els.taskCompleteNext, "");
+  }
+
+  function setTaskCompleteExpanded(expanded) {
+    const nextExpanded = Boolean(expanded);
+    session.taskCompleteExpanded = nextExpanded;
+    if (els.taskCompleteDetails) {
+      els.taskCompleteDetails.hidden = !nextExpanded;
+    }
+    if (els.taskCompleteToggleBtn) {
+      els.taskCompleteToggleBtn.textContent = nextExpanded ? "Hide note" : "What did I prove?";
+      els.taskCompleteToggleBtn.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+    }
   }
 
   function closeTaskCompleteCard(options = {}) {
@@ -2442,24 +2468,40 @@
     }
   }
 
-  function renderTaskCompleteCard({ proof = "", why = "", next = "" } = {}) {
+  function renderTaskCompleteCard({ proof = "", why = "", next = "", summary = "" } = {}, options = {}) {
     if (!els.taskCompleteCard) {
       return;
     }
 
-    fillText(els.taskCompleteProof, proof || "Good. That command moved the task forward.", { hideWhenEmpty: false });
-    fillText(els.taskCompleteWhy, why || "This result gave you evidence for the next decision.", { hideWhenEmpty: false });
-    fillText(els.taskCompleteNext, next || "Continue with the current task.", { hideWhenEmpty: false });
+    const modal = Boolean(options.modal);
+    const compactProof = shortCoachCopy(proof || "That command moved the task forward.", "That command moved the task forward.");
+    const compactWhy = shortCoachCopy(why || "This result gave you evidence for the next decision.", "This result gave you evidence for the next decision.");
+    const compactNext = shortCoachCopy(next || "Continue with the current task.", "Continue with the current task.");
+    const compactSummary = shortCoachCopy(summary || `Task complete: ${compactProof}`, `Task complete: ${compactProof}`);
+
+    fillText(els.taskCompleteSummary, compactSummary, { hideWhenEmpty: false });
+    fillText(els.taskCompleteProof, compactProof, { hideWhenEmpty: false });
+    fillText(els.taskCompleteWhy, compactWhy, { hideWhenEmpty: false });
+    fillText(els.taskCompleteNext, compactNext, { hideWhenEmpty: false });
     session.taskCompleteOpen = true;
+    els.taskCompleteCard.dataset.mode = modal ? "modal" : "inline";
     els.taskCompleteCard.hidden = false;
     els.taskCompleteCard.setAttribute("aria-hidden", "false");
     if (els.taskCompleteOverlay) {
-      els.taskCompleteOverlay.hidden = false;
+      els.taskCompleteOverlay.hidden = !modal;
     }
-    document.body.classList.add("task-complete-open");
-    window.setTimeout(() => {
-      els.taskCompleteCloseBtn?.focus({ preventScroll: true });
-    }, 0);
+    document.body.classList.toggle("task-complete-open", modal);
+    setTaskCompleteExpanded(Boolean(options.expanded || modal));
+    if (modal) {
+      window.setTimeout(() => {
+        els.taskCompleteCloseBtn?.focus({ preventScroll: true });
+      }, 0);
+      return;
+    }
+
+    if (!session.ticketBriefingOpen && !session.beginnerGuideOpen) {
+      focusTerminalInputAtEnd();
+    }
   }
 
   function closeBeginnerGuide(options = {}) {
@@ -3383,7 +3425,13 @@
       els.beginnerHelpStrip.hidden = true;
     }
     if (els.beginnerModeBanner) {
-      els.beginnerModeBanner.hidden = !beginnerMode;
+      els.beginnerModeBanner.hidden = !beginnerMode || Boolean(beginnerTrack && session.scenarioStarted);
+    }
+    if (els.beginnerLabCurrentTask) {
+      els.beginnerLabCurrentTask.hidden = Boolean(desktopBeginnerTrack);
+    }
+    if (els.beginnerLabProgressText) {
+      els.beginnerLabProgressText.hidden = Boolean(desktopBeginnerTrack);
     }
 
     if (els.watchWalkthroughBtn) {
@@ -3920,6 +3968,7 @@
     const skipCount = Math.max(1, Number(count) || 1);
     const completedStepNumber = Math.min(scenario.steps.length, session.stepIndex + skipCount);
     const previousStageInfo = currentStageInfo(scenario);
+    const stepPulseLabel = beginnerScenarioTicketMode(scenario) ? "+1 Task" : "Step Complete";
 
     for (let index = 0; index < skipCount; index += 1) {
       if (session.stepIndex >= scenario.steps.length - 1) {
@@ -3937,12 +3986,12 @@
         key: `scenario-step:${currentSectionId()}:${scenario.id}:step-${completedStepNumber}`,
         coins: challengePresentation ? 3 : 2,
         title: challengePresentation ? "Challenge Step" : "Lesson Step",
-        label: "Step Complete",
+        label: stepPulseLabel,
         tone: "step",
         message: `${scenario.title} - Step ${completedStepNumber}`
       });
     } else {
-      NetlabApp?.showProgressPulse?.({ label: "Step Complete", tone: "step" });
+      NetlabApp?.showProgressPulse?.({ label: stepPulseLabel, tone: "step" });
     }
     if (skipCount > 1) {
       printLine("You already collected the deeper evidence, so the coach skipped the redundant intermediate task.", "success");
@@ -6479,6 +6528,7 @@
       const realWorldText = String(step.realWorldNote || "").trim();
 
       renderTaskCompleteCard({
+        summary: `Task complete: ${proofText}`,
         proof: proofText,
         why: [whyText, realWorldText].filter(Boolean).join(" "),
         next: nextText
@@ -6814,6 +6864,15 @@
     if (els.taskCompleteCloseBtn) {
       els.taskCompleteCloseBtn.addEventListener("click", () => {
         closeTaskCompleteCard();
+      });
+    }
+
+    if (els.taskCompleteToggleBtn) {
+      els.taskCompleteToggleBtn.addEventListener("click", () => {
+        if (!session.taskCompleteOpen) {
+          return;
+        }
+        setTaskCompleteExpanded(!session.taskCompleteExpanded);
       });
     }
 

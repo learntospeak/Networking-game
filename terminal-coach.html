@@ -342,12 +342,16 @@
             </div>
           </aside>
           <div id="taskCompleteOverlay" class="task-complete-overlay" hidden></div>
-          <article id="taskCompleteCard" class="task-complete-card" aria-hidden="true" aria-labelledby="taskCompleteTitle" hidden>
+          <article id="taskCompleteCard" class="task-complete-card" data-mode="inline" aria-hidden="true" aria-labelledby="taskCompleteTitle" hidden>
+            <p id="taskCompleteTitle" class="task-complete-kicker">Task note</p>
             <div class="task-complete-head">
-              <p id="taskCompleteTitle" class="task-complete-kicker">Task Complete</p>
-              <button id="taskCompleteCloseBtn" class="task-complete-close" type="button" aria-label="Close task complete notes">Continue</button>
+              <p id="taskCompleteSummary" class="task-complete-summary">Task complete.</p>
+              <div class="task-complete-actions">
+                <button id="taskCompleteToggleBtn" class="task-complete-toggle" type="button" aria-expanded="false" aria-controls="taskCompleteDetails">What did I prove?</button>
+                <button id="taskCompleteCloseBtn" class="task-complete-close" type="button" aria-label="Hide task note">Hide</button>
+              </div>
             </div>
-            <div class="task-complete-grid">
+            <div id="taskCompleteDetails" class="task-complete-grid" hidden>
               <div class="task-complete-block">
                 <p class="task-complete-label">What You Proved</p>
                 <p id="taskCompleteProof" class="task-complete-copy"></p>

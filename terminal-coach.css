@@ -981,15 +981,26 @@
 }
 
 .task-complete-card {
+  position: relative;
+  inset: auto;
+  z-index: 4;
+  width: auto;
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  background: linear-gradient(180deg, rgba(7, 18, 12, 0.97) 0%, rgba(8, 14, 12, 0.99) 100%);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.task-complete-card[data-mode="modal"] {
   position: fixed;
   inset: auto 20px 20px;
   z-index: 89;
   width: min(720px, calc(100vw - 40px));
   margin: 0 auto;
   padding: 16px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(34, 197, 94, 0.24);
-  background: linear-gradient(180deg, rgba(7, 18, 12, 0.97) 0%, rgba(8, 14, 12, 0.99) 100%);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
   max-height: min(70vh, 520px);
   overflow-y: auto;
@@ -1000,31 +1011,49 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+}
+
+.task-complete-summary {
+  margin: 0;
+  color: #dcfce7;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.task-complete-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .task-complete-grid {
   display: grid;
   gap: 12px;
+  margin-top: 12px;
 }
 
+.task-complete-toggle,
 .task-complete-close {
-  min-height: 38px;
+  min-height: 34px;
   margin: 0;
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid #475569;
   background: rgba(8, 12, 18, 0.9);
   color: #e2e8f0;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
 
+.task-complete-toggle:hover,
 .task-complete-close:hover {
   border-color: #7b8796;
   background: rgba(15, 23, 42, 0.95);
 }
 
+.task-complete-toggle:focus-visible,
 .task-complete-close:focus-visible {
   outline: 2px solid rgba(56, 189, 248, 0.36);
   outline-offset: 2px;
@@ -2517,6 +2546,11 @@
   }
 
   .task-complete-card {
+    margin: 10px 10px 0;
+    padding: 12px 12px 14px;
+  }
+
+  .task-complete-card[data-mode="modal"] {
     inset: auto 10px 10px;
     width: calc(100vw - 20px);
     max-height: min(68vh, 460px);
@@ -2528,8 +2562,13 @@
     flex-direction: column;
   }
 
-  .task-complete-close {
+  .task-complete-actions {
     width: 100%;
+  }
+
+  .task-complete-toggle,
+  .task-complete-close {
+    flex: 1 1 0;
   }
 
   .walkthrough-card {

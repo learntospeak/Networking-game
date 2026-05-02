@@ -138,6 +138,9 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
 
   const dirRoot = await runTerminalCommand(page, "dir", { resetBefore: true });
   report.commandResults.push(dirRoot);
+  pushCheck(report, "task complete note is inline, not blocking", await page.locator("#taskCompleteCard").isVisible().catch(() => false) && !(await page.locator("#taskCompleteOverlay").isVisible().catch(() => false)), `${await readText(page, "#taskCompleteSummary")} | overlay visible=${await page.locator("#taskCompleteOverlay").isVisible().catch(() => false)}`);
+  pushCheck(report, "task complete note offers optional details", await page.locator("#taskCompleteToggleBtn").isVisible().catch(() => false), await readText(page, "#taskCompleteToggleBtn"));
+  pushCheck(report, "terminal input stays enabled after task completion", await page.locator("#terminalInput").isEnabled(), "terminal input enabled");
   pushCheck(report, "folder map reveals Incidents after dir", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
 
   const directJump = await runTerminalCommand(page, "cd Incidents\\notes");
