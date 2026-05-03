@@ -106,8 +106,8 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   observePage(page, report);
   await gotoAndStabilize(page, report.url);
 
-  pushCheck(report, "beginner roadmap exists", await page.locator("#beginnerRoadmapPanel").isVisible(), "#beginnerRoadmapPanel visible");
-  pushCheck(report, "level 1 appears", /Level 1/i.test((await readText(page, "#beginnerRoadmapPanel")).trim()), await readText(page, "#beginnerRoadmapPanel"));
+  pushCheck(report, "terminal page does not embed full roadmap", await page.locator("#beginnerRoadmapPanel").count() === 0, "#beginnerRoadmapPanel absent");
+  pushCheck(report, "roadmap link exists", await page.locator('a[href*="beginner-roadmap.html"]').first().isVisible().catch(() => false), "View Roadmap link visible");
   pushCheck(report, "current beginner lab card exists", await page.locator("#beginnerLabCard").isVisible(), "#beginnerLabCard visible");
   pushCheck(report, "current lab level text visible", /Level/i.test((await readText(page, "#beginnerLabCurrentLevel")).trim()), await readText(page, "#beginnerLabCurrentLevel"));
 
@@ -125,24 +125,22 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
     await page.waitForTimeout(150);
   }
 
-  pushCheck(report, "need help button appears", await page.locator("#needHelpBtn").isVisible().catch(() => false), "#needHelpBtn visible");
+  pushCheck(report, "ask coach button appears", await page.locator("#needHelpBtn").isVisible().catch(() => false) && /Ask Coach/i.test(await page.locator("#needHelpBtn").innerText()), "#needHelpBtn visible");
   const helpCommand = await runTerminalCommand(page, "cd notes");
   report.commandResults.push(helpCommand);
   await page.locator("#needHelpBtn").click();
   await expect(page.locator("#helpAssistantCard")).toBeVisible();
-  pushCheck(report, "need help panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
-  await page.locator("#helpIssueType").selectOption("My command didn't work");
+  pushCheck(report, "ask coach panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
+  pushCheck(report, "report problem is secondary", await page.locator("#reportProblemBtn").isVisible().catch(() => false) && !(await page.locator("#helpReportOutput").isVisible().catch(() => false)), "Report button visible, report output hidden");
   await page.locator("#helpUserNote").fill("I typed cd notes and it failed.");
   await page.locator("#generateHelpReportBtn").click();
-  let helpReport = await page.locator("#helpReportOutput").inputValue();
-  pushCheck(report, "beginner report generates", /Beginner Help Report/i.test(helpReport), helpReport.slice(0, 240));
+  const coachText = await readText(page, "#coachMessages");
+  pushCheck(report, "ask coach produces fallback response", /checking what folders exist|current folder|Command Help/i.test(coachText), coachText);
+  await page.locator("#reportProblemBtn").click();
+  await expect(page.locator("#helpReportOutput")).toBeVisible();
+  const helpReport = await page.locator("#helpReportOutput").inputValue();
   pushCheck(report, "copy report button exists", await page.locator("#copyHelpReportBtn").isVisible().catch(() => false), "#copyHelpReportBtn visible");
   pushCheck(report, "report includes current scenario/task/last command", /Incident Folder Triage/i.test(helpReport) && /List the current folder contents/i.test(helpReport) && /cd notes/i.test(helpReport), helpReport);
-  await page.locator("#helpModePro").check();
-  await page.locator("#generateHelpReportBtn").click();
-  helpReport = await page.locator("#helpReportOutput").inputValue();
-  pushCheck(report, "pro report generates", /Pro Debug Report/i.test(helpReport) && /URL:/i.test(helpReport) && /Last 5 commands:/i.test(helpReport), helpReport.slice(0, 360));
-  pushCheck(report, "separate beginner and pro copy buttons exist", await page.locator("#copyBeginnerReportBtn").isVisible().catch(() => false) && await page.locator("#copyProReportBtn").isVisible().catch(() => false), "copy buttons visible");
   await page.locator("#helpAssistantCloseBtn").click();
   await expect(page.locator("#helpAssistantCard")).toBeHidden();
 
@@ -194,7 +192,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
-  pushCheck(report, "resume prompt appears after reload", /Resume Level/i.test((await readText(page, "#appSectionShell")).trim()) || await page.locator("#resumeSectionBtn").isVisible().catch(() => false), await readText(page, "#appSectionShell"));
+  pushCheck(report, "compact resume strip appears after reload", await page.locator("#compactResumeStrip").isVisible().catch(() => false) && /Resume:|Beginner Lab:/i.test(await readText(page, "#appSectionShell")), await readText(page, "#appSectionShell"));
   if (await page.locator("#resumeSectionBtn").isVisible().catch(() => false)) {
     await page.locator("#resumeSectionBtn").click();
     await page.waitForTimeout(200);
@@ -213,6 +211,21 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   }
 
   await finalizeTerminalReport(page, report, testInfo);
+});
+
+test("Beginner roadmap page smoke", async ({ page }, testInfo) => {
+  const report = createSmokeReport("Beginner Roadmap", "/beginner-roadmap.html");
+  observePage(page, report);
+  await gotoAndStabilize(page, report.url);
+
+  pushCheck(report, "beginner-roadmap page exists", await page.locator("#roadmapLevels").isVisible().catch(() => false), "#roadmapLevels visible");
+  const roadmapText = await readText(page, "#roadmapLevels");
+  pushCheck(report, "roadmap page shows levels", /Level 1/i.test(roadmapText) && /Level 10/i.test(roadmapText), roadmapText.slice(0, 500));
+  pushCheck(report, "roadmap links back to terminal lab", await page.locator('a[href*="terminal-coach.html?track=windows"]').first().isVisible().catch(() => false), "terminal lab link visible");
+  pushCheck(report, "request failures absent", report.requestFailures.length === 0, report.requestFailures.join(" | "));
+  pushCheck(report, "console errors absent", report.consoleErrors.length === 0, report.consoleErrors.join(" | "));
+  pushCheck(report, "page errors absent", report.pageErrors.length === 0, report.pageErrors.join(" | "));
+  await attachSmokeData(testInfo, report);
 });
 
 test("Terminal functional smoke: Cisco CLI track", async ({ page }, testInfo) => {
@@ -432,10 +445,10 @@ test("Mobile smoke: terminal, subnetting, and HTTP controls remain usable", asyn
   report.commandResults.push(terminalResult);
   pushCheck(report, "linux mobile terminal command works", terminalResult.delta.length > 0, terminalResult.notes);
   pushCheck(report, "linux mobile terminal input visible", await page.locator("#terminalInput").isVisible(), "#terminalInput visible");
-  pushCheck(report, "mobile need help control present", await page.locator("#needHelpBtn").count() === 1, "#needHelpBtn present");
+  pushCheck(report, "mobile ask coach control present", await page.locator("#needHelpBtn").count() === 1, "#needHelpBtn present");
   if (await page.locator("#needHelpBtn").isVisible().catch(() => false)) {
     await page.locator("#needHelpBtn").click();
-    pushCheck(report, "mobile need help panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
+    pushCheck(report, "mobile ask coach panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
     await page.locator("#helpAssistantCloseBtn").click();
   }
   const jumpTopVisible = await page.locator("#terminalJumpTopBtn").isVisible();

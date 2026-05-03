@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beginner Terminal Roadmap</title>
+  <link rel="stylesheet" href="./style.css?v=20260429micro1">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260503flowcleanup1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="./supabase-config.js?v=20260421sup1" defer></script>
+  <script src="./app-data.js?v=20260429micro1" defer></script>
+  <script src="./stateManager.js?v=20260502guide1" defer></script>
+  <script src="./scenarioEngine.js?v=20260503helpguide1" defer></script>
+  <script src="./beginner-roadmap.js?v=20260503flowcleanup1" defer></script>
+</head>
+<body class="terminal-page roadmap-page">
+  <main class="terminal-layout">
+    <div class="terminal-page-shell">
+      <header class="terminal-hero">
+        <div>
+          <p class="eyebrow">Beginner Terminal Lab</p>
+          <h1>Roadmap</h1>
+          <p class="terminal-intro">Pick up where you left off, or jump back to the terminal work area.</p>
+          <nav class="environment-route-nav" aria-label="Roadmap navigation">
+            <a class="environment-route-link" href="./terminal-coach.html?track=windows&mode=beginner">Back to Terminal Lab</a>
+            <a class="environment-route-link" href="./index.html">Back to Main App</a>
+          </nav>
+        </div>
+      </header>
+
+      <section class="lab-panel roadmap-summary-panel">
+        <div>
+          <p class="app-shell-kicker">Saved Progress</p>
+          <h2 id="roadmapProgressTitle">Loading roadmap...</h2>
+          <p id="roadmapProgressText" class="app-shell-copy">Checking saved beginner lab progress.</p>
+        </div>
+        <div class="app-shell-actions">
+          <a id="roadmapResumeBtn" class="app-action-link" href="./terminal-coach.html?track=windows&mode=beginner&resume=1">Resume Current Level</a>
+          <a class="app-action-link" href="./terminal-coach.html?track=windows&mode=beginner&start=1">Start Over</a>
+        </div>
+      </section>
+
+      <section class="roadmap-levels-shell" aria-labelledby="roadmapLevelsTitle">
+        <div class="mode-panel-head">
+          <div>
+            <h2 id="roadmapLevelsTitle">Levels</h2>
+            <p class="panel-copy">Short milestones for the beginner terminal path.</p>
+          </div>
+        </div>
+        <div id="roadmapLevels" class="roadmap-level-grid"></div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

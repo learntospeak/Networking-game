@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260502beginnerwording1">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260503flowcleanup1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -62,7 +62,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260503helpguide1" defer></script>
+  <script src="./terminalEngine.js?v=20260503flowcleanup1" defer></script>
   <script src="./commandSheet.js?v=20260502coach2" defer></script>
 </head>
 <body class="terminal-page">
@@ -89,6 +89,7 @@
           <nav class="environment-route-nav" aria-label="Learning paths">
             <a id="linuxTrackLink" class="environment-route-link" href="./terminal-coach.html?track=linux">Linux Lab</a>
             <a id="windowsTrackLink" class="environment-route-link" href="./terminal-coach.html?track=windows">Windows Lab</a>
+            <a id="roadmapTrackLink" class="environment-route-link" href="./beginner-roadmap.html">View Roadmap</a>
             <a id="ciscoTrackLink" class="environment-route-link" href="./cisco-cli-lab.html">Cisco CLI</a>
             <a id="challengeTrackLink" class="environment-route-link" href="./challenge-mode.html">Cyber Mode</a>
           </nav>
@@ -402,7 +403,7 @@
               <button id="commandSheetBtn" type="button" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet">Commands</button>
               <button id="hintBtn" type="button">Hint</button>
               <button id="watchWalkthroughBtn" type="button">Walkthrough</button>
-              <button id="needHelpBtn" type="button" aria-haspopup="dialog" aria-controls="helpAssistantCard">Need Help?</button>
+              <button id="needHelpBtn" type="button" aria-haspopup="dialog" aria-controls="helpAssistantCard">Ask Coach</button>
               <button id="previousScenarioBtn" type="button" aria-label="Previous scenario">Previous</button>
               <button id="resetScenarioBtn" type="button" aria-label="Reset current scenario">Reset</button>
               <button id="nextScenarioBtn" type="button" aria-label="Next scenario">Next</button>
@@ -534,39 +535,29 @@
         <div class="help-assistant-shell">
           <div class="help-assistant-head">
             <div>
-              <p class="help-assistant-kicker">Need Help?</p>
-              <h2 id="helpAssistantTitle">Create a Help Report</h2>
+              <p class="help-assistant-kicker">Ask Coach</p>
+              <h2 id="helpAssistantTitle">Terminal Coach</h2>
             </div>
             <button id="helpAssistantCloseBtn" class="help-assistant-close" type="button" aria-label="Close help assistant">Close</button>
           </div>
           <div class="help-assistant-body">
-            <fieldset class="help-assistant-mode" aria-label="Report mode">
-              <label><input id="helpModeBeginner" type="radio" name="helpReportMode" value="beginner" checked> Beginner</label>
-              <label><input id="helpModePro" type="radio" name="helpReportMode" value="pro"> Pro</label>
-            </fieldset>
-            <label class="help-assistant-field" for="helpIssueType">
-              <span>What do you need help with?</span>
-              <select id="helpIssueType">
-                <option>I'm stuck</option>
-                <option>I don't understand the task</option>
-                <option>My command didn't work</option>
-                <option>Something looks broken</option>
-                <option>This is too wordy/confusing</option>
-                <option>I want to report a bug</option>
-                <option>Other</option>
-              </select>
-            </label>
+            <div id="coachQuickChips" class="coach-quick-chips" aria-label="Quick coach prompts">
+              <button type="button" data-coach-chip="I'm stuck">I'm stuck</button>
+              <button type="button" data-coach-chip="Explain this task">Explain this task</button>
+              <button type="button" data-coach-chip="My command failed">My command failed</button>
+            </div>
+            <div id="coachMessages" class="coach-messages" aria-live="polite"></div>
             <label class="help-assistant-field" for="helpUserNote">
-              <span>What happened?</span>
-              <textarea id="helpUserNote" rows="4" placeholder="Describe what happened in your own words."></textarea>
+              <span>Ask Coach</span>
+              <textarea id="helpUserNote" rows="3" placeholder="Tell me what you're stuck on..."></textarea>
             </label>
             <div class="help-assistant-actions">
-              <button id="generateHelpReportBtn" class="help-assistant-primary" type="button">Generate Report</button>
-              <button id="copyHelpReportBtn" class="help-assistant-secondary" type="button">Copy Report</button>
-              <button id="copyBeginnerReportBtn" class="help-assistant-secondary" type="button">Copy Beginner Report</button>
-              <button id="copyProReportBtn" class="help-assistant-secondary" type="button">Copy Pro Report</button>
+              <button id="generateHelpReportBtn" class="help-assistant-primary" type="button">Send</button>
+              <button id="reportProblemBtn" class="help-assistant-secondary" type="button">Report this problem</button>
+              <button id="copyHelpReportBtn" class="help-assistant-secondary" type="button" hidden>Copy Report</button>
             </div>
-            <textarea id="helpReportOutput" class="help-report-output" rows="12" readonly aria-label="Generated help report"></textarea>
+            <p id="coachReportStatus" class="coach-report-status" aria-live="polite"></p>
+            <textarea id="helpReportOutput" class="help-report-output" rows="10" readonly hidden aria-label="Generated help report"></textarea>
           </div>
         </div>
       </aside>

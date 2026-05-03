@@ -1811,6 +1811,36 @@
     linear-gradient(180deg, rgba(8, 12, 18, 0) 0%, rgba(8, 12, 18, 0.92) 18%, rgba(4, 8, 14, 0.995) 100%);
 }
 
+.compact-resume-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(71, 85, 105, 0.64);
+  border-radius: 12px;
+  background: rgba(8, 12, 18, 0.78);
+}
+
+.compact-resume-strip p {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.compact-resume-strip-muted {
+  background: rgba(8, 12, 18, 0.44);
+}
+
+.compact-resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .help-assistant-overlay {
   position: fixed;
   inset: 0;
@@ -1835,10 +1865,10 @@
 }
 
 .help-assistant-shell {
-  width: min(680px, 100%);
-  max-height: min(92vh, 860px);
+  width: min(540px, 100%);
+  max-height: min(86vh, 720px);
   overflow: auto;
-  border-radius: 18px;
+  border-radius: 12px;
   border: 1px solid rgba(71, 85, 105, 0.82);
   background: linear-gradient(180deg, rgba(8, 12, 18, 0.985) 0%, rgba(4, 8, 14, 0.995) 100%);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.52);
@@ -1874,16 +1904,55 @@
   padding: 18px 20px 20px;
 }
 
-.help-assistant-mode {
+.coach-quick-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.help-assistant-mode label,
+.coach-quick-chips button {
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.08);
+  color: #bae6fd;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.coach-messages {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.82);
+  border-radius: 12px;
+  background: rgba(2, 7, 13, 0.74);
+}
+
+.coach-message {
+  width: fit-content;
+  max-width: 92%;
+  padding: 9px 11px;
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.coach-message-coach {
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(71, 85, 105, 0.7);
+}
+
+.coach-message-user {
+  justify-self: end;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.34);
+}
+
 .help-assistant-field span {
   color: #cbd5e1;
   font-size: 13px;
@@ -1922,6 +1991,48 @@
 .help-report-output {
   font-family: "Courier New", monospace;
   font-size: 12px;
+}
+
+.coach-report-status {
+  margin: 0;
+  color: #bbf7d0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.roadmap-page .terminal-page-shell {
+  max-width: 1120px;
+}
+
+.roadmap-summary-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.roadmap-levels-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.roadmap-level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.roadmap-level-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.72);
+  border-radius: 8px;
+  background: rgba(8, 12, 18, 0.78);
+}
+
+.roadmap-level-card.is-current {
+  border-color: rgba(125, 211, 252, 0.58);
 }
 
 .help-assistant-actions {
@@ -3087,6 +3198,31 @@
     justify-content: stretch;
   }
 
+  .compact-resume-strip,
+  .roadmap-summary-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compact-resume-actions,
+  .roadmap-summary-panel .app-shell-actions {
+    justify-content: flex-start;
+  }
+
+  .help-assistant-card {
+    inset: 10px;
+    padding: 0;
+  }
+
+  .help-assistant-shell {
+    max-height: calc(var(--terminal-mobile-viewport-height) - 20px);
+    border-radius: 14px;
+  }
+
+  .coach-messages {
+    max-height: 180px;
+  }
+
   .ticket-briefing-start {
     width: 100%;
   }
@@ -3166,6 +3302,8 @@
   .ticket-briefing-meta,
   .ticket-briefing-block,
   .ticket-briefing-actions,
+  .help-assistant-head,
+  .help-assistant-body,
   .command-sheet-toolbar,
   .command-sheet-results {
     padding-left: 10px;

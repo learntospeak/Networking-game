@@ -207,14 +207,12 @@
     helpAssistantOverlay: document.getElementById("helpAssistantOverlay"),
     helpAssistantCard: document.getElementById("helpAssistantCard"),
     helpAssistantCloseBtn: document.getElementById("helpAssistantCloseBtn"),
-    helpModeBeginner: document.getElementById("helpModeBeginner"),
-    helpModePro: document.getElementById("helpModePro"),
-    helpIssueType: document.getElementById("helpIssueType"),
+    coachMessages: document.getElementById("coachMessages"),
+    coachQuickChips: document.getElementById("coachQuickChips"),
     helpUserNote: document.getElementById("helpUserNote"),
     generateHelpReportBtn: document.getElementById("generateHelpReportBtn"),
+    reportProblemBtn: document.getElementById("reportProblemBtn"),
     copyHelpReportBtn: document.getElementById("copyHelpReportBtn"),
-    copyBeginnerReportBtn: document.getElementById("copyBeginnerReportBtn"),
-    copyProReportBtn: document.getElementById("copyProReportBtn"),
     helpReportOutput: document.getElementById("helpReportOutput"),
     commandSheetBtn: document.getElementById("commandSheetBtn"),
     previousScenarioBtn: document.getElementById("previousScenarioBtn"),
@@ -1879,10 +1877,6 @@
     }
   }
 
-  function currentHelpIssueType() {
-    return els.helpIssueType?.value || "I'm stuck";
-  }
-
   function currentHelpUserNote() {
     return String(els.helpUserNote?.value || "").trim();
   }
@@ -1949,50 +1943,16 @@
     ].filter(Boolean).join(" | ") || "Not available";
   }
 
-  function buildBeginnerHelpReport() {
+  function buildCoachProblemReport(note = currentHelpUserNote()) {
     const scenario = currentScenario();
     const step = currentStep();
-    const note = currentHelpUserNote() || currentHelpIssueType();
-    return [
-      "Beginner Help Report",
-      "",
-      "I'm stuck because:",
-      note,
-      "",
-      "Current problem:",
-      scenario?.title || "Not available",
-      "",
-      "Current task:",
-      step?.objective || "Not available",
-      "",
-      "Last command:",
-      lastSubmittedCommand() || "No command typed yet.",
-      "",
-      "Last result:",
-      lastTerminalResultText(),
-      "",
-      "Possible issue:",
-      possibleConfusionText(),
-      "",
-      "Suggested question:",
-      `"${suggestedQuestionText()}"`
-    ].join("\n");
-  }
-
-  function buildProHelpReport() {
-    const scenario = currentScenario();
-    const step = currentStep();
-    const stageInfo = currentStageInfo();
     const commands = session.reviewStats?.submittedCommands || [];
     const viewport = `${window.innerWidth}x${window.innerHeight}`;
     return [
-      "Pro Debug Report",
-      "",
-      "Issue type:",
-      currentHelpIssueType(),
+      "Coach Problem Report",
       "",
       "User note:",
-      currentHelpUserNote() || "No user note provided.",
+      note || "No user note provided.",
       "",
       "URL:",
       window.location.href,
@@ -2003,8 +1963,8 @@
       "Scenario:",
       `${scenario?.id || "unknown"} - ${scenario?.title || "Not available"}`,
       "",
-      "Task:",
-      `${session.stepIndex + 1}/${totalStepsForScenario(scenario)} - ${step?.objective || "Not available"}`,
+      "Current task:",
+      step?.objective || "Not available",
       "",
       "Stage/level:",
       currentStageLabel(),
@@ -2036,30 +1996,76 @@
       "Visible ticket/problem text:",
       visibleTicketText(scenario, step) || "Not available",
       "",
-      "LocalStorage progress status:",
-      localStorageProgressSummary(),
-      "",
-      "Recent console errors:",
-      session.recentConsoleErrors.join("\n") || "None captured.",
-      "",
       "Likely issue:",
       possibleConfusionText(),
       "",
-      "Suggested developer action:",
-      likelyDeveloperAction()
+      "Recent console errors:",
+      session.recentConsoleErrors.join("\n") || "None captured."
     ].join("\n");
   }
 
-  function selectedHelpReportMode() {
-    return els.helpModePro?.checked ? "pro" : "beginner";
+  function coachFallbackResponse(note = currentHelpUserNote()) {
+    const command = lastSubmittedCommand();
+    const result = lastTerminalResultText();
+    const step = currentStep();
+    const lowerNote = String(note || "").toLowerCase();
+
+    if (/cd\s+notes/i.test(command) && /cannot find|no such/i.test(result)) {
+      return "You tried to move into a folder before checking what folders exist. Try Command Help, or run a command that looks inside the current folder first.";
+    }
+    if (/command failed|didn.t work|failed/.test(lowerNote) && command) {
+      return `Your last command was "${command}". Check the current task, then use Command Help for the command shape before trying again.`;
+    }
+    if (/explain|task|understand/.test(lowerNote) && step?.objective) {
+      return `This task means: ${step.objective} Start with the smallest command that checks what is in front of you.`;
+    }
+    if (step?.objective) {
+      return `Focus on this task first: ${step.objective} If you are unsure, use Hint for the next small step.`;
+    }
+    return "Tell me what you tried, and I can point you toward the next small check.";
   }
 
-  function generateHelpReport(mode = selectedHelpReportMode()) {
-    const report = mode === "pro" ? buildProHelpReport() : buildBeginnerHelpReport();
-    if (els.helpReportOutput) {
-      els.helpReportOutput.value = report;
+  function appendCoachMessage(text, role = "coach") {
+    if (!els.coachMessages || !text) {
+      return;
     }
-    return report;
+    const bubble = document.createElement("div");
+    bubble.className = `coach-message coach-message-${role}`;
+    bubble.textContent = text;
+    els.coachMessages.appendChild(bubble);
+    els.coachMessages.scrollTop = els.coachMessages.scrollHeight;
+  }
+
+  function ensureCoachGreeting() {
+    if (els.coachMessages && !els.coachMessages.children.length) {
+      appendCoachMessage("Tell me where you got stuck. I'll keep it short and use what's on this lab page.", "coach");
+    }
+  }
+
+  function sendCoachMessage(note = currentHelpUserNote()) {
+    const message = String(note || "").trim();
+    if (!message) {
+      appendCoachMessage(coachFallbackResponse("I'm stuck"), "coach");
+      return "";
+    }
+    appendCoachMessage(message, "user");
+    const response = coachFallbackResponse(message);
+    appendCoachMessage(response, "coach");
+    if (els.helpUserNote) {
+      els.helpUserNote.value = "";
+    }
+    return response;
+  }
+
+  function generateHelpReport() {
+    return sendCoachMessage();
+  }
+
+  function showCoachReportStatus(text) {
+    const status = document.getElementById("coachReportStatus");
+    if (status) {
+      status.textContent = text;
+    }
   }
 
   async function copyTextToClipboard(text) {
@@ -2082,23 +2088,29 @@
     return false;
   }
 
-  async function copyHelpReport(mode = selectedHelpReportMode()) {
-    const report = generateHelpReport(mode);
-    const copied = await copyTextToClipboard(report);
-    const button = mode === "pro" ? els.copyProReportBtn : mode === "beginner" ? els.copyBeginnerReportBtn : els.copyHelpReportBtn;
-    if (button) {
-      const original = button.textContent;
-      button.textContent = copied ? "Copied" : "Copy failed";
-      window.setTimeout(() => {
-        button.textContent = original;
-      }, 1200);
+  async function prepareCoachProblemReport() {
+    const report = buildCoachProblemReport();
+    if (els.helpReportOutput) {
+      els.helpReportOutput.value = report;
+      els.helpReportOutput.hidden = false;
     }
+    if (els.copyHelpReportBtn) {
+      els.copyHelpReportBtn.hidden = false;
+    }
+    const copied = await copyTextToClipboard(report);
+    showCoachReportStatus(copied ? "Report copied / ready to send." : "Report ready to send.");
+    return report;
   }
 
-  function syncHelpReportButtons() {
-    const pro = selectedHelpReportMode() === "pro";
+  async function copyHelpReport() {
+    const report = els.helpReportOutput?.value || buildCoachProblemReport();
+    const copied = await copyTextToClipboard(report);
     if (els.copyHelpReportBtn) {
-      els.copyHelpReportBtn.textContent = pro ? "Copy Pro Report" : "Copy Report";
+      const original = els.copyHelpReportBtn.textContent;
+      els.copyHelpReportBtn.textContent = copied ? "Copied" : "Copy failed";
+      window.setTimeout(() => {
+        els.copyHelpReportBtn.textContent = original;
+      }, 1200);
     }
   }
 
@@ -2113,8 +2125,14 @@
       els.helpAssistantOverlay.hidden = false;
     }
     document.body.classList.add("help-assistant-open");
-    syncHelpReportButtons();
-    generateHelpReport();
+    ensureCoachGreeting();
+    if (els.helpReportOutput && !els.helpReportOutput.value) {
+      els.helpReportOutput.hidden = true;
+    }
+    if (els.copyHelpReportBtn && !els.helpReportOutput?.value) {
+      els.copyHelpReportBtn.hidden = true;
+    }
+    showCoachReportStatus("");
     window.setTimeout(() => {
       els.helpUserNote?.focus({ preventScroll: true });
     }, 0);
@@ -4193,6 +4211,15 @@
     return `Resume ${levelTitle}?`;
   }
 
+  function compactResumeText(record, fallbackScenario = currentScenario(), fallbackStep = currentStep()) {
+    const snapshot = record?.state || {};
+    const levelTitle = snapshot.beginnerLevelTitle || currentBeginnerLevel()?.title || "Beginner Terminal Lab";
+    const scenarioTitle = snapshot.scenarioTitle || fallbackScenario?.title || "Current problem";
+    const taskNumber = Number.isFinite(Number(snapshot.stepIndex)) ? Number(snapshot.stepIndex) + 1 : session.stepIndex + 1;
+    const shortLevel = String(levelTitle).replace(/^Level\s+/i, "Level ").replace(/:\s*/g, " · ");
+    return `${shortLevel} · ${scenarioTitle} · Task ${taskNumber || 1}`;
+  }
+
   function renderBeginnerRoadmapMarkup() {
     const levels = beginnerLevelRoadmap("windows");
     if (!levels.length) {
@@ -4264,74 +4291,40 @@
       return;
     }
 
-    const profile = NetlabApp.getActiveProfile();
     const activeScenario = currentScenario();
     const activeStep = currentStep();
     const record = savedProgressRecord || NetlabApp.getSectionProgress(currentSectionId());
     const showResume = Boolean(record && session.resumePromptVisible);
     const beginnerTrack = isBeginnerRoadmapTrack();
-    const currentLevel = currentBeginnerLevel();
-    const recommendedLevel = recommendedBeginnerLevel();
-    const resumeHeading = beginnerTrack
-      ? (showResume ? beginnerResumeHeading(record) : "Beginner Terminal Lab")
-      : `Resume ${sectionLabel()}`;
-    const completionText = record && showResume
-      ? `${record.completedCount}/${record.totalCount || totalScenarios()}`
-      : `${session.completedScenarioIds.size}/${totalScenarios()}`;
-    const lastItem = record?.currentItemLabel || (scenarioUsesChallengePresentation(activeScenario) ? activeScenario.title : `${activeScenario.title} - ${activeStep.objective}`);
-    const accountHref = typeof NetlabApp.buildHubUrl === "function"
-      ? (profile.isGuest ? NetlabApp.buildHubUrl({ auth: "login" }) : NetlabApp.buildHubUrl())
-      : "./index.html#hubAccountPanel";
-    const accountLabel = profile.isGuest ? "Sign In to Sync" : "Manage Account";
-
-    const beginnerBadges = [
-      "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
-      (currentLevel ? "  <span class=\"status-badge status-badge-blue\">" + escapeHtml("Current Level: " + currentLevel.title) + "</span>" : ""),
-      (recommendedLevel ? "  <span class=\"status-badge environment-badge\">" + escapeHtml("Recommended Next: " + recommendedLevel.title) + "</span>" : "")
-    ].filter(Boolean).join("");
-    const standardBadges = [
-      "  <span class=\"status-badge status-badge-blue\">Profile: " + escapeHtml(profile.label) + "</span>",
-      "  <span class=\"status-badge\">Completed: " + escapeHtml(completionText) + "</span>",
-      "  <span class=\"status-badge\">Coins: " + escapeHtml(NetlabApp.getCoinsTotal()) + "</span>",
-      "  <span class=\"status-badge\">Last active: " + escapeHtml(lastItem) + "</span>"
-    ].join("");
-
-    els.appSectionShell.innerHTML = [
-      "<div class=\"app-shell-head\">",
-      "  <div>",
-      "    <p class=\"app-shell-kicker\">Progress</p>",
-      "    <h2>" + escapeHtml(resumeHeading) + "</h2>",
-      "    <p class=\"app-shell-copy\">" + escapeHtml(showResume
-        ? (beginnerTrack
-          ? "Resume your saved level, problem, and task, or choose another level."
-          : "Saved progress is available for this section. Resume the last scenario or restart the track from the beginning.")
-        : (beginnerTrack
-          ? "Choose a level, or continue with the recommended problem."
-          : "Profile: " + profile.label + ". This section saves its current scenario, completed items, and live terminal state so you can return to it later.")) + "</p>",
-      "  </div>",
-      "</div>",
-      "<div class=\"app-shell-badges\">",
-      beginnerTrack ? beginnerBadges : standardBadges,
-      "</div>",
-      "<div class=\"app-shell-actions\">",
-      (showResume ? "  <button id=\"resumeSectionBtn\" class=\"app-action-btn\" type=\"button\">Resume</button>" : ""),
-      "  <a class=\"app-action-link\" href=\"" + escapeHtml(accountHref) + "\">" + escapeHtml(accountLabel) + "</a>",
-      "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
-      (beginnerTrack ? "  <button id=\"chooseLevelBtn\" class=\"app-action-btn\" type=\"button\">Choose Level</button>" : ""),
-      "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
-      "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
-      "</div>",
-      "<p class=\"app-shell-note\">" + escapeHtml(beginnerTrack
-        ? "Last active: " + lastItem + ". Reset Progress clears saved beginner lab progress. " + NetlabApp.getProfileStorageNote()
-        : "Reset Progress clears all saved lab progress for the current profile. " + NetlabApp.getProfileStorageNote()) + "</p>",
-      (beginnerTrack ? renderBeginnerRoadmapMarkup() : "")
-    ].join("");
+    if (beginnerTrack) {
+      const resumeText = compactResumeText(record, activeScenario, activeStep);
+      els.appSectionShell.innerHTML = [
+        `<div id="compactResumeStrip" class="compact-resume-strip${showResume ? "" : " compact-resume-strip-muted"}">`,
+        `  <p><strong>${showResume ? "Resume:" : "Beginner Lab:"}</strong> ${escapeHtml(resumeText)}</p>`,
+        `  <div class="compact-resume-actions">`,
+        showResume ? `    <button id="resumeSectionBtn" class="app-action-btn" type="button">Resume</button>` : "",
+        `    <button id="startOverSectionBtn" class="app-action-btn app-action-btn-muted" type="button">${showResume ? "Start Over" : "Start"}</button>`,
+        `    <a class="app-action-link" href="./beginner-roadmap.html">View Roadmap</a>`,
+        `  </div>`,
+        `</div>`
+      ].join("");
+    } else if (showResume) {
+      const lastItem = record?.currentItemLabel || (scenarioUsesChallengePresentation(activeScenario) ? activeScenario.title : `${activeScenario.title} - ${activeStep.objective}`);
+      els.appSectionShell.innerHTML = [
+        `<div id="compactResumeStrip" class="compact-resume-strip">`,
+        `  <p><strong>Resume:</strong> ${escapeHtml(lastItem)}</p>`,
+        `  <div class="compact-resume-actions">`,
+        `    <button id="resumeSectionBtn" class="app-action-btn" type="button">Resume</button>`,
+        `    <button id="startOverSectionBtn" class="app-action-btn app-action-btn-muted" type="button">Start Over</button>`,
+        `  </div>`,
+        `</div>`
+      ].join("");
+    } else {
+      els.appSectionShell.innerHTML = "";
+    }
 
     const resumeBtn = document.getElementById("resumeSectionBtn");
     const startOverBtn = document.getElementById("startOverSectionBtn");
-    const chooseLevelBtn = document.getElementById("chooseLevelBtn");
-    const toggleSoundBtn = document.getElementById("toggleSoundBtn");
-    const resetProgressBtn = document.getElementById("resetProgressBtn");
 
     if (resumeBtn && record) {
       resumeBtn.addEventListener("click", () => {
@@ -4344,44 +4337,6 @@
         window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
       });
     }
-
-    if (chooseLevelBtn) {
-      chooseLevelBtn.addEventListener("click", () => {
-        const roadmapDisclosure = document.getElementById("beginnerRoadmapDisclosure");
-        if (roadmapDisclosure) {
-          roadmapDisclosure.open = true;
-        }
-        document.getElementById("beginnerRoadmapPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
-
-    if (toggleSoundBtn) {
-      toggleSoundBtn.addEventListener("click", () => {
-        NetlabApp.setSoundEnabled(!NetlabApp.isSoundEnabled());
-        renderSectionShell();
-      });
-    }
-
-    if (resetProgressBtn) {
-      resetProgressBtn.addEventListener("click", () => {
-        if (!window.confirm("Clear all saved progress for the current profile?")) {
-          return;
-        }
-
-        NetlabApp.clearActiveProfileProgress();
-        window.location.href = NetlabApp.buildSectionUrl(currentSectionId(), "start");
-      });
-    }
-
-    els.appSectionShell.querySelectorAll(".beginner-level-launch-btn").forEach((button) => {
-      button.addEventListener("click", () => {
-        const scenarioId = button.getAttribute("data-scenario-id");
-        if (!scenarioId) {
-          return;
-        }
-        loadScenarioById(scenarioId);
-      });
-    });
   }
 
   function escapeHtml(value) {
@@ -7383,23 +7338,28 @@
     if (els.generateHelpReportBtn) {
       els.generateHelpReportBtn.addEventListener("click", () => generateHelpReport());
     }
+    if (els.reportProblemBtn) {
+      els.reportProblemBtn.addEventListener("click", () => prepareCoachProblemReport());
+    }
     if (els.copyHelpReportBtn) {
-      els.copyHelpReportBtn.addEventListener("click", () => copyHelpReport(selectedHelpReportMode()));
+      els.copyHelpReportBtn.addEventListener("click", () => copyHelpReport());
     }
-    if (els.copyBeginnerReportBtn) {
-      els.copyBeginnerReportBtn.addEventListener("click", () => copyHelpReport("beginner"));
-    }
-    if (els.copyProReportBtn) {
-      els.copyProReportBtn.addEventListener("click", () => copyHelpReport("pro"));
-    }
-    [els.helpModeBeginner, els.helpModePro, els.helpIssueType].filter(Boolean).forEach((control) => {
-      control.addEventListener("change", () => {
-        syncHelpReportButtons();
-        generateHelpReport();
+    els.coachQuickChips?.querySelectorAll("[data-coach-chip]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const text = chip.getAttribute("data-coach-chip") || chip.textContent || "";
+        if (els.helpUserNote) {
+          els.helpUserNote.value = text;
+          els.helpUserNote.focus({ preventScroll: true });
+        }
       });
     });
     if (els.helpUserNote) {
-      els.helpUserNote.addEventListener("input", () => generateHelpReport());
+      els.helpUserNote.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          sendCoachMessage();
+        }
+      });
     }
     if (els.walkthroughPrevBtn) {
       els.walkthroughPrevBtn.addEventListener("click", () => {
