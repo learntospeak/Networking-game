@@ -810,104 +810,6 @@
   color: #f8fafc;
 }
 
-.tiny-wins-card {
-  display: grid;
-  gap: 10px;
-}
-
-.terminal-tiny-wins-card {
-  position: relative;
-  z-index: 4;
-  margin: 10px 16px 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  background: rgba(3, 8, 13, 0.9);
-  box-shadow: none;
-}
-
-.terminal-tiny-wins-card h3 {
-  margin: 0;
-  color: #bbf7d0;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.tiny-wins-card[hidden] {
-  display: none !important;
-}
-
-.tiny-wins-list {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tiny-win-item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
-  align-items: start;
-  padding: 7px 9px;
-  border-radius: 10px;
-  border: 1px solid rgba(51, 65, 85, 0.68);
-  background: rgba(3, 8, 13, 0.62);
-}
-
-.tiny-win-item.is-complete {
-  border-color: rgba(34, 197, 94, 0.24);
-}
-
-.tiny-win-status {
-  line-height: 1.4;
-}
-
-.tiny-win-body {
-  min-width: 0;
-}
-
-.tiny-win-label {
-  display: block;
-  color: #e2e8f0;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.tiny-win-item:not(.is-complete) .tiny-win-label {
-  color: #94a3b8;
-}
-
-.tiny-win-details {
-  margin-top: 4px;
-}
-
-.tiny-win-details summary {
-  width: fit-content;
-  color: #7dd3fc;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.tiny-win-detail-grid {
-  display: grid;
-  gap: 4px;
-  margin-top: 7px;
-  color: #cbd5e1;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.tiny-win-detail-grid p {
-  margin: 0;
-}
-
 .terminal-controls {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -2829,27 +2731,6 @@
   .terminal-page.terminal-beginner-mode .beginner-task-strip,
   .terminal-page.terminal-beginner-mode .beginner-help-strip {
     display: none;
-  }
-
-  .tiny-wins-card {
-    gap: 8px;
-  }
-
-  .terminal-tiny-wins-card {
-    margin: 8px 10px 0;
-    padding: 9px 10px;
-  }
-
-  .tiny-wins-list {
-    gap: 6px;
-  }
-
-  .tiny-win-item {
-    padding: 7px 8px;
-  }
-
-  .tiny-win-label {
-    font-size: 12px;
   }
 
   .beginner-mode-banner {

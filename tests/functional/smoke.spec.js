@@ -162,11 +162,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const dirRoot = await runTerminalCommand(page, "dir", { resetBefore: true });
   report.commandResults.push(dirRoot);
   pushCheck(report, "no big task complete popup for beginner task", !(await page.locator("#taskCompleteCard").isVisible().catch(() => false)) && !(await page.locator("#taskCompleteOverlay").isVisible().catch(() => false)), `card=${await page.locator("#taskCompleteCard").isVisible().catch(() => false)} overlay=${await page.locator("#taskCompleteOverlay").isVisible().catch(() => false)}`);
-  pushCheck(report, "tiny wins checklist updates", /✅\s*Looked inside current folder/i.test((await readText(page, "#tinyWinsCard")).trim()) && /✅\s*Found Incidents/i.test((await readText(page, "#tinyWinsCard")).trim()), await readText(page, "#tinyWinsCard"));
-  const firstTinyWinDetails = page.locator("#tinyWinsList details").first();
-  await firstTinyWinDetails.locator("summary").click();
-  const firstTinyWinText = ((await firstTinyWinDetails.textContent()) || "").trim();
-  pushCheck(report, "tiny wins optional details open on request", /What you proved:/i.test(firstTinyWinText), firstTinyWinText);
+  pushCheck(report, "single relevant reward appears in terminal output", /Win: you found what is here/i.test(dirRoot.notes), dirRoot.notes);
   pushCheck(report, "terminal input stays enabled after task completion", await page.locator("#terminalInput").isEnabled(), "terminal input enabled");
   pushCheck(report, "folder map reveals Incidents after dir", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
   pushCheck(report, "dir updates folder visual guide", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
@@ -182,7 +178,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   report.commandResults.push(cdIncidents);
   pushCheck(report, "folder map current path updates after cd Incidents", /C:\\Lab\\Incidents/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
   pushCheck(report, "cd updates current location", /C:\\Lab\\Incidents/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
-  pushCheck(report, "tiny wins marks moved into Incidents", /✅\s*Moved into Incidents/i.test((await readText(page, "#tinyWinsCard")).trim()), await readText(page, "#tinyWinsCard"));
+  pushCheck(report, "single reward matches completed move", /Win: moved into Incidents/i.test(cdIncidents.notes), cdIncidents.notes);
 
   const dirIncidents = await runTerminalCommand(page, "dir");
   report.commandResults.push(dirIncidents);
@@ -191,7 +187,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const cdNotes = await runTerminalCommand(page, "cd notes");
   report.commandResults.push(cdNotes);
   pushCheck(report, "folder map current path updates after cd notes", /C:\\Lab\\Incidents\\notes/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
-  pushCheck(report, "tiny wins marks moved into notes", /✅\s*Moved into notes/i.test((await readText(page, "#tinyWinsCard")).trim()), await readText(page, "#tinyWinsCard"));
+  pushCheck(report, "single reward matches opened notes", /Win: opened notes/i.test(cdNotes.notes), cdNotes.notes);
 
   const dirNotes = await runTerminalCommand(page, "dir");
   report.commandResults.push(dirNotes);

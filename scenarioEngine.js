@@ -10,8 +10,6 @@
       context: config.context || "",
       explanation: config.explanation,
       whyThisMatters: config.whyThisMatters || "",
-      winLabel: config.winLabel || "",
-      winLabels: config.winLabels || [],
       successFeedback: config.successFeedback || "That command moves the task forward.",
       nextObjective: config.nextObjective || "",
       realWorldNote: config.realWorldNote || "",
@@ -4994,7 +4992,6 @@
           steps: [
             step({
               objective: "List the current folder contents.",
-              winLabels: ["Looked inside current folder", "Found Incidents"],
               hints: ["You are trying to see which folders are available first.", "Open Command Help and look for the Windows command that lists files and folders.", "Try `dir`."],
               explanation: "dir lists the files and folders in the current location.",
               whyThisMatters: "Good technicians inspect the environment before moving or changing files.",
@@ -5032,7 +5029,6 @@
           steps: [
             step({
               objective: "Move into the Incidents folder.",
-              winLabel: "Moved into Incidents",
               hints: ["You already proved that Incidents exists.", "Use the Windows change-directory command on the folder you discovered.", "Try `cd Incidents`."],
               explanation: "cd changes the current folder so the prompt and subsequent listings come from the correct location.",
               whyThisMatters: "Navigation should be based on evidence from the previous command, not on a guessed full path.",
@@ -5073,7 +5069,6 @@
           steps: [
             step({
               objective: "List the contents of the Incidents folder.",
-              winLabels: ["Looked inside Incidents", "Found notes"],
               hints: ["You are trying to see what is inside Incidents.", "Use the Windows directory listing command again in the new location.", "Try `dir`."],
               explanation: "A fresh listing in the current folder shows the next available folders and files.",
               whyThisMatters: "The right command does not change, but the meaning changes because you are now in a different folder.",
@@ -5111,7 +5106,6 @@
           steps: [
             step({
               objective: "Move into the notes folder.",
-              winLabel: "Moved into notes",
               hints: ["You already proved that notes exists here.", "Use the Windows change-directory command on notes.", "Try `cd notes`."],
               explanation: "Use the folder name from the listing you just saw.",
               whyThisMatters: "This is the habit we want: observe, decide, move, and confirm.",
@@ -5138,7 +5132,6 @@
             }),
             step({
               objective: "List the notes folder contents.",
-              winLabel: "Verified notes folder",
               hints: ["Verify the folder you entered by listing it.", "Use the same Windows directory listing command one more time.", "Try `dir`."],
               explanation: "A final listing confirms you reached the intended folder and can now see the ticket files.",
               whyThisMatters: "Verification matters even for navigation. You should know you are in the right place before reading or changing files.",

@@ -92,9 +92,6 @@
     beginnerCommandMeaningMap: document.getElementById("beginnerCommandMeaningMap"),
     beginnerFolderGuideMap: document.getElementById("beginnerFolderGuideMap"),
     currentTaskCard: document.getElementById("currentTaskCard"),
-    tinyWinsCard: document.getElementById("tinyWinsCard"),
-    tinyWinsHeading: document.getElementById("tinyWinsHeading"),
-    tinyWinsList: document.getElementById("tinyWinsList"),
     environmentContextTitle: document.getElementById("environmentContextTitle"),
     environmentContextMeta: document.getElementById("environmentContextMeta"),
     progressCard: document.getElementById("progressCard"),
@@ -1766,13 +1763,27 @@
     return nodes.length > 0;
   }
 
-  function shortenWinLabel(text) {
-    const raw = String(text || "").replace(/\s+/g, " ").trim().replace(/[.!?]+$/g, "");
-    if (!raw) {
-      return "Completed task";
+  function tinyRewardText(step = currentStep(), execution = null) {
+    const command = String(execution?.raw || "").trim().toLowerCase();
+    if (/^dir\b/.test(command) && /current folder contents/i.test(step?.objective || "")) {
+      return "Win: you found what is here.";
+    }
+    if (/^dir\b/.test(command) && /Incidents folder/i.test(step?.objective || "")) {
+      return "Win: you found notes.";
+    }
+    if (/^cd\s+incidents\b/.test(command)) {
+      return "Win: moved into Incidents.";
+    }
+    if (/^cd\s+notes\b/.test(command) || /^cd\s+incidents[\\\/]notes\b/.test(command)) {
+      return "Win: opened notes.";
     }
 
-    return raw
+    const raw = String(step?.successFeedback || step?.objective || "Task complete").replace(/\s+/g, " ").trim().replace(/[.!?]+$/g, "");
+    if (!raw) {
+      return "Win: task complete.";
+    }
+
+    const label = raw
       .replace(/^list the current folder contents$/i, "Looked inside current folder")
       .replace(/^list the contents of the incidents folder$/i, "Looked inside Incidents")
       .replace(/^list the notes folder contents$/i, "Verified notes folder")
@@ -1787,64 +1798,7 @@
       .replace(/^(list|display|show|review)\s+/i, "")
       .replace(/^(move|change)\s+into\s+/i, "Moved into ")
       .replace(/^(open|read)\s+/i, "Read ");
-  }
-
-  function winLabelsForStep(step = {}) {
-    if (Array.isArray(step.winLabels) && step.winLabels.length) {
-      return step.winLabels.map(shortenWinLabel);
-    }
-    if (step.winLabel) {
-      return [shortenWinLabel(step.winLabel)];
-    }
-    return [shortenWinLabel(step.successFeedback || step.completionSummary || step.objective)];
-  }
-
-  function tinyWinItems(scenario = currentScenario()) {
-    const steps = Array.isArray(scenario?.steps) ? scenario.steps : [];
-    const items = [];
-    steps.forEach((step, stepIndex) => {
-      winLabelsForStep(step).forEach((label) => {
-        items.push({ label, step, stepIndex });
-      });
-    });
-    return items;
-  }
-
-  function renderTinyWins(scenario = currentScenario()) {
-    if (!els.tinyWinsCard || !els.tinyWinsList) {
-      return;
-    }
-
-    const show = beginnerScenarioTicketMode(scenario) && !scenarioUsesChallengePresentation(scenario);
-    els.tinyWinsCard.hidden = !show;
-    if (!show) {
-      els.tinyWinsList.innerHTML = "";
-      return;
-    }
-
-    const items = tinyWinItems(scenario);
-    const completedStepIndex = Math.max(0, session.stepIndex);
-    els.tinyWinsList.innerHTML = items.map((item, itemIndex) => {
-      const complete = item.stepIndex < completedStepIndex || session.scenarioCompleted;
-      const step = item.step || {};
-      const proof = escapeHtml(shortCoachCopy(step.successFeedback || step.completionSummary || item.label, item.label));
-      const why = escapeHtml(shortCoachCopy(step.whyThisMatters || step.explanation || "You worked from evidence instead of guessing.", "You worked from evidence instead of guessing."));
-      const next = escapeHtml(shortCoachCopy(step.nextObjective || scenario.steps?.[item.stepIndex + 1]?.objective || "Keep going.", "Keep going."));
-      return `<li class="tiny-win-item${complete ? " is-complete" : ""}">`
-        + `<span class="tiny-win-status" aria-hidden="true">${complete ? "✅" : "⬜"}</span>`
-        + `<div class="tiny-win-body">`
-        + `<span class="tiny-win-label">${escapeHtml(item.label)}</span>`
-        + `<details class="tiny-win-details">`
-        + `<summary>What did I prove?</summary>`
-        + `<div class="tiny-win-detail-grid">`
-        + `<p><strong>What you proved:</strong> ${proof}</p>`
-        + `<p><strong>Why it matters:</strong> ${why}</p>`
-        + `<p><strong>Next:</strong> ${next}</p>`
-        + `</div>`
-        + `</details>`
-        + `</div>`
-        + `</li>`;
-    }).join("");
+    return `Win: ${shortCoachCopy(label, label).replace(/[.!?]+$/g, "")}.`;
   }
 
   function renderVisualGuideMap(target, scenario = currentScenario(), options = {}) {
@@ -2852,10 +2806,10 @@
       { hideWhenEmpty: false }
     );
     if (els.beginnerLabProgressText) {
-      const tinyWinsVisible = beginnerScenarioTicketMode(scenario);
       fillText(
         els.beginnerLabProgressText,
-        tinyWinsVisible ? "" : `Progress: ${completedMissions}/${scenarios.length} done · Level ${levelIndexNumber}/${beginnerLevelRoadmap("windows").length}`
+        `Progress: ${completedMissions}/${scenarios.length} done · Level ${levelIndexNumber}/${beginnerLevelRoadmap("windows").length}`,
+        { hideWhenEmpty: false }
       );
     }
   }
@@ -4003,7 +3957,6 @@
     els.scenarioFlex.textContent = allowedApproachText(scenario);
     els.scenarioFlex.hidden = Boolean(beginnerTrack);
     renderBeginnerLabCard(scenario, step);
-    renderTinyWins(scenario);
     renderBeginnerVisualGuide(scenario);
     renderMissionCaseFile(scenario, stageInfo);
     renderMissionReview(scenario);
@@ -7181,7 +7134,7 @@
 
       if (isBeginnerMode()) {
         closeTaskCompleteCard({ restoreFocus: false });
-        printCoachLine("Nice. Progress updated.", "success");
+        printCoachLine(tinyRewardText(step, execution), "success");
       } else {
         renderTaskCompleteCard({
           summary: `Task complete: ${proofText}`,
