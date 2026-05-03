@@ -812,10 +812,12 @@
 
 .terminal-controls {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, 46px);
+  justify-content: start;
   gap: 8px;
   margin-top: 14px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .terminal-page:not(.challenge-page) #previousScenarioBtn,
@@ -1124,26 +1126,46 @@
   text-transform: uppercase;
 }
 
-.terminal-page.terminal-beginner-mode #commandSheetBtn,
-.terminal-page.terminal-beginner-mode #hintBtn,
-.terminal-page.terminal-beginner-mode #watchWalkthroughBtn,
-.terminal-page.terminal-beginner-mode #needHelpBtn {
+.terminal-controls button,
+.terminal-controls .challenge-control-link {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
   min-height: 46px;
-  font-weight: 800;
-}
-
-.terminal-controls button {
-  min-height: 42px;
   margin: 0;
-  padding: 9px 10px 9px 32px;
-  font-size: 13px;
-  line-height: 1.2;
+  padding: 0;
+  border-radius: 12px;
+  font-size: 0;
+  line-height: 1;
+  text-decoration: none;
 }
 
-.terminal-controls button::before {
-  left: 10px;
-  width: 9px;
-  height: 9px;
+.terminal-controls button::before,
+.terminal-controls .challenge-control-link::before {
+  content: attr(data-icon);
+  position: static;
+  display: grid;
+  place-items: center;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none !important;
+  box-shadow: none !important;
+  color: #e5eef8;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.terminal-controls #needHelpBtn::before {
+  font-size: 12px;
+}
+
+.terminal-controls button:disabled::before {
+  opacity: 0.38;
 }
 
 .terminal-panel {
@@ -2549,25 +2571,22 @@
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 44px);
+    justify-content: start;
     gap: 6px;
     margin-top: 0;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls button {
-    width: 100%;
-    min-width: 0;
-    min-height: 40px;
-    padding: 8px 8px 8px 24px;
-    font-size: 11px;
-    line-height: 1.2;
-    white-space: normal;
-    text-wrap: balance;
-    overflow-wrap: anywhere;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls button::before {
-    left: 8px;
+    font-size: 14px;
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode #previousScenarioBtn,
@@ -2831,7 +2850,8 @@
 
   .terminal-page.terminal-beginner-mode .terminal-controls {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 44px);
+    justify-content: start;
     gap: 8px;
     margin: 0 0 10px;
   }

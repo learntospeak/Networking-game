@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Challenge Mode</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260502beginnerticket2">
-  <link rel="stylesheet" href="./challenge-mode.css?v=20260418d">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260503iconcontrols1">
+  <link rel="stylesheet" href="./challenge-mode.css?v=20260503iconcontrols1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -15,7 +15,7 @@
   <script src="./coachEngine.js?v=20260425cmd1" defer></script>
   <script src="./scenarioEngine.js?v=20260502beginnerticket1" defer></script>
   <script src="./challenge-mode.js?v=20260426mobile7" defer></script>
-  <script src="./terminalEngine.js?v=20260502beginnerticket1" defer></script>
+  <script src="./terminalEngine.js?v=20260503iconcontrols1" defer></script>
   <script src="./commandSheet.js?v=20260430beginner1" defer></script>
 </head>
 <body class="terminal-page challenge-page">
@@ -247,12 +247,12 @@
             </div>
 
             <div class="trainer-controls terminal-controls challenge-controls">
-              <button id="commandSheetBtn" type="button" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet">Commands</button>
-              <button id="hintBtn" type="button">Hint</button>
-              <button id="watchWalkthroughBtn" type="button">Watch Walkthrough</button>
-              <button id="startChallengeBtn" type="button">Start Challenge</button>
-              <button id="resetScenarioBtn" type="button" aria-label="Reset current challenge">Reset Challenge</button>
-              <a id="exitChallengeBtn" class="challenge-control-link" href="./index.html">Exit Challenge</a>
+              <button id="commandSheetBtn" type="button" data-icon="?" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet" aria-label="Commands" title="Commands">Commands</button>
+              <button id="hintBtn" type="button" data-icon="!" aria-label="Hint" title="Hint">Hint</button>
+              <button id="watchWalkthroughBtn" type="button" data-icon=">" aria-label="Watch Walkthrough" title="Watch Walkthrough">Watch Walkthrough</button>
+              <button id="startChallengeBtn" type="button" data-icon=">" aria-label="Start Challenge" title="Start Challenge">Start Challenge</button>
+              <button id="resetScenarioBtn" type="button" data-icon="R" aria-label="Reset current challenge" title="Reset current challenge">Reset Challenge</button>
+              <a id="exitChallengeBtn" class="challenge-control-link" data-icon="X" href="./index.html" aria-label="Exit Challenge" title="Exit Challenge">Exit Challenge</a>
             </div>
 
             <div id="terminalDockInputMount" class="terminal-dock-input-mount">

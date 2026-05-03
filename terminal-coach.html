@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Coach</title>
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260503flowcleanup1">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260503iconcontrols1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -62,7 +62,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260503flowcleanup1" defer></script>
+  <script src="./terminalEngine.js?v=20260503iconcontrols1" defer></script>
   <script src="./commandSheet.js?v=20260502coach2" defer></script>
 </head>
 <body class="terminal-page">
@@ -398,13 +398,13 @@
             </div>
 
             <div class="trainer-controls terminal-controls">
-              <button id="commandSheetBtn" type="button" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet">Commands</button>
-              <button id="hintBtn" type="button">Hint</button>
-              <button id="watchWalkthroughBtn" type="button">Walkthrough</button>
-              <button id="needHelpBtn" type="button" aria-haspopup="dialog" aria-controls="helpAssistantCard">Ask Coach</button>
-              <button id="previousScenarioBtn" type="button" aria-label="Previous scenario">Previous</button>
-              <button id="resetScenarioBtn" type="button" aria-label="Reset current scenario">Reset</button>
-              <button id="nextScenarioBtn" type="button" aria-label="Next scenario">Next</button>
+              <button id="commandSheetBtn" type="button" data-icon="?" data-open-command-sheet aria-haspopup="dialog" aria-controls="commandSheet" aria-label="Command Help" title="Command Help">Commands</button>
+              <button id="hintBtn" type="button" data-icon="!" aria-label="Hint" title="Hint">Hint</button>
+              <button id="watchWalkthroughBtn" type="button" data-icon=">" aria-label="Walkthrough" title="Walkthrough">Walkthrough</button>
+              <button id="needHelpBtn" type="button" data-icon="AI" aria-haspopup="dialog" aria-controls="helpAssistantCard" aria-label="Ask Coach" title="Ask Coach">Ask Coach</button>
+              <button id="previousScenarioBtn" type="button" data-icon="<" aria-label="Previous scenario" title="Previous scenario">Previous</button>
+              <button id="resetScenarioBtn" type="button" data-icon="R" aria-label="Reset current scenario" title="Reset current scenario">Reset</button>
+              <button id="nextScenarioBtn" type="button" data-icon=">" aria-label="Next scenario" title="Next scenario">Next</button>
             </div>
 
             <div id="terminalDockInputMount" class="terminal-dock-input-mount">

@@ -4026,7 +4026,10 @@
 
     els.mobileCoachSignal.textContent = els.coachSignal.textContent;
     if (els.commandSheetBtn) {
-      els.commandSheetBtn.textContent = beginnerMode ? "Command Help" : "Commands";
+      const commandLabel = beginnerMode ? "Command Help" : "Commands";
+      els.commandSheetBtn.textContent = commandLabel;
+      els.commandSheetBtn.setAttribute("aria-label", commandLabel);
+      els.commandSheetBtn.title = commandLabel;
     }
     applyBeginnerDisplayLabels(scenario, stageInfo, step);
     if (els.appSectionShell) {
