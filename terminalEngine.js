@@ -1251,6 +1251,83 @@
     return compact.length > 180 ? `${compact.slice(0, 177).trimEnd()}…` : compact;
   }
 
+  function stripTrailingSentencePunctuation(value) {
+    return String(value || "").replace(/\s+/g, " ").trim().replace(/[.!?]+$/g, "");
+  }
+
+  function lowerFirstWord(value) {
+    const text = stripTrailingSentencePunctuation(value);
+    return text ? text.charAt(0).toLowerCase() + text.slice(1) : "";
+  }
+
+  function simpleTicketActionText(scenario = currentScenario(), step = currentStep()) {
+    const objective = stripTrailingSentencePunctuation(
+      scenario?.objective
+      || step?.objective
+      || scenarioObjectiveText(scenario)
+      || "complete the current task"
+    );
+
+    return lowerFirstWord(objective);
+  }
+
+  function simpleTicketCommandText(scenario = currentScenario()) {
+    const commands = Array.isArray(scenario?.commandFocus)
+      ? scenario.commandFocus.map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
+
+    if (!commands.length) {
+      return "the command that matches the task";
+    }
+
+    if (commands.length === 1) {
+      return commands[0];
+    }
+
+    if (commands.length === 2) {
+      return `${commands[0]} and ${commands[1]}`;
+    }
+
+    return `${commands.slice(0, -1).join(", ")}, and ${commands[commands.length - 1]}`;
+  }
+
+  function simpleTicketProblemText(scenario = currentScenario(), step = currentStep()) {
+    const customReport = scenario?.userReport || "";
+    if (customReport) {
+      return normalizedScenarioText(customReport, "");
+    }
+
+    const action = simpleTicketActionText(scenario, step);
+    return normalizedScenarioText(
+      action ? `This lab is asking you to ${action}.` : `This lab is about ${scenario?.title || "the current task"}.`,
+      "This lab gives you one clear task to solve."
+    );
+  }
+
+  function simpleTicketMeaningText(scenario = currentScenario(), step = currentStep()) {
+    const action = simpleTicketActionText(scenario, step);
+    const commandText = simpleTicketCommandText(scenario);
+
+    return normalizedScenarioText(
+      action
+        ? `You need to use ${commandText} to ${action}. Work one command at a time and check the result.`
+        : `Use ${commandText} and check the result before moving on.`,
+      "Use the terminal to find the right clue."
+    );
+  }
+
+  function simpleTicketFirstStepText(scenario = currentScenario(), step = currentStep()) {
+    const objective = stripTrailingSentencePunctuation(step?.objective || "");
+    const commandText = simpleTicketCommandText(scenario);
+
+    return normalizedScenarioText(
+      objective
+        ? `Start with this task: ${objective}. If you are unsure, open Command Help and look for ${commandText}.`
+        : `Open Command Help and look for ${commandText}.`,
+      "Start with the current task and use Command Help if you need it."
+    );
+  }
+
   function beginnerScenarioTicketMode(scenario = currentScenario()) {
     if (!scenario || !isBeginnerMode() || scenarioUsesChallengePresentation(scenario)) {
       return false;
@@ -1261,30 +1338,21 @@
 
   function beginnerTicketPayload(scenario = currentScenario(), step = currentStep()) {
     const custom = scenario?.beginnerTicket || {};
-    const objective = step?.objective || scenarioObjectiveText(scenario) || "the current task";
-    const firstHint = Array.isArray(step?.hints) ? step.hints.find((hint) => String(hint || "").trim()) : "";
 
     return {
       happened: normalizedScenarioText(
         custom.happened
-        || scenario?.userReport
-        || scenario?.summary
-        || scenario?.scenarioIntro
-        || `The problem is about ${scenario?.title || "this task"}.`,
+        || simpleTicketProblemText(scenario, step),
         "The problem gives you a simple task to solve."
       ),
       meaning: normalizedScenarioText(
         custom.meaning
-        || scenario?.summary
-        || scenario?.missionBriefing
-        || scenario?.objective
-        || `Use the terminal to work through ${objective}.`,
+        || simpleTicketMeaningText(scenario, step),
         "Use the terminal to find the right clue."
       ),
       tryFirst: normalizedScenarioText(
         custom.tryFirst
-        || firstHint
-        || `Start with this task: ${objective}`,
+        || simpleTicketFirstStepText(scenario, step),
         "Start with the current task and use Command Help if you need it."
       )
     };
