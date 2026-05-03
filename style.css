@@ -1150,6 +1150,7 @@ button::before {
 .learning-path-card {
   position: relative;
   display: grid;
+  align-content: start;
   gap: 8px;
   min-height: 156px;
   padding: 18px 18px 18px 46px;

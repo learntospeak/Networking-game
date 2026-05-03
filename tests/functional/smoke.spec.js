@@ -192,7 +192,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
-  pushCheck(report, "compact resume strip appears after reload", await page.locator("#compactResumeStrip").isVisible().catch(() => false) && /Resume:|Beginner Lab:/i.test(await readText(page, "#appSectionShell")), await readText(page, "#appSectionShell"));
+  pushCheck(report, "terminal progress shell is removed after reload", await page.locator("#appSectionShell").count() === 0 && await page.locator("#beginnerRoadmapPanel").count() === 0, "progress shell absent");
   if (await page.locator("#resumeSectionBtn").isVisible().catch(() => false)) {
     await page.locator("#resumeSectionBtn").click();
     await page.waitForTimeout(200);
