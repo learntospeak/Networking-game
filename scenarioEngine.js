@@ -1935,6 +1935,17 @@
       shell: "linux",
       objective: "Move through the filesystem, reach the rotated log directory, and inspect the crash traces without leaving the shell.",
       allowedFlexibility: "Absolute and relative paths are both valid as long as you land in the right directory and inspect the right file.",
+      visualGuide: {
+        type: "folder",
+        currentPath: "/home/student",
+        relevantPaths: ["/srv", "/srv/apps", "/srv/apps/api", "/srv/apps/api/logs"],
+        commandMap: [
+          { command: "pwd", icon: "📍", meaning: "show where you are" },
+          { command: "ls", icon: "👀", meaning: "look inside" },
+          { command: "cd", icon: "🚶", meaning: "move into a folder" },
+          { command: "cat", icon: "📄", meaning: "read file" }
+        ]
+      },
       environment: linuxEnv({
         cwd: "/home/student",
         directories: ["/srv/apps/api/logs"],
@@ -5772,6 +5783,21 @@
       simulatedOutput: ["IPv4 Address . . . . . . . . . . : 192.168.56.25", "00-0C-29-5E-11-22"],
       successCondition: "Display adapter configuration and then the local MAC address.",
       feedbackText: "The learner gathered the local network identity before checking remote hosts.",
+      visualGuide: {
+        type: "network",
+        nodes: ["Your PC", "Gateway", "DNS", "Server"],
+        highlightAfter: {
+          ipconfig: "Your PC",
+          getmac: "Your PC",
+          ping: "Gateway",
+          nslookup: "DNS"
+        },
+        commandMap: [
+          { command: "ipconfig", icon: "🖥️", meaning: "check network settings" },
+          { command: "getmac", icon: "🔎", meaning: "check adapter address" },
+          { command: "ping", icon: "📡", meaning: "check if something replies" }
+        ]
+      },
       environment: {
         cwd: "C:/Lab"
       },

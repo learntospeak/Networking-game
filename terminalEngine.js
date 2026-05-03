@@ -203,6 +203,19 @@
     terminalInput: document.getElementById("terminalInput"),
     hintBtn: document.getElementById("hintBtn"),
     watchWalkthroughBtn: document.getElementById("watchWalkthroughBtn"),
+    needHelpBtn: document.getElementById("needHelpBtn"),
+    helpAssistantOverlay: document.getElementById("helpAssistantOverlay"),
+    helpAssistantCard: document.getElementById("helpAssistantCard"),
+    helpAssistantCloseBtn: document.getElementById("helpAssistantCloseBtn"),
+    helpModeBeginner: document.getElementById("helpModeBeginner"),
+    helpModePro: document.getElementById("helpModePro"),
+    helpIssueType: document.getElementById("helpIssueType"),
+    helpUserNote: document.getElementById("helpUserNote"),
+    generateHelpReportBtn: document.getElementById("generateHelpReportBtn"),
+    copyHelpReportBtn: document.getElementById("copyHelpReportBtn"),
+    copyBeginnerReportBtn: document.getElementById("copyBeginnerReportBtn"),
+    copyProReportBtn: document.getElementById("copyProReportBtn"),
+    helpReportOutput: document.getElementById("helpReportOutput"),
     commandSheetBtn: document.getElementById("commandSheetBtn"),
     previousScenarioBtn: document.getElementById("previousScenarioBtn"),
     resetScenarioBtn: document.getElementById("resetScenarioBtn"),
@@ -255,10 +268,42 @@
     walkthroughSource: "",
     walkthroughLevelId: "",
     beginnerTicketDetailsOpen: false,
-    beginnerRoadmapExpanded: true
+    beginnerRoadmapExpanded: true,
+    helpAssistantOpen: false,
+    recentConsoleErrors: []
   };
   let savedProgressRecord = null;
   const mobilePanelRegistry = [];
+
+  function captureConsoleError(args) {
+    const text = args.map((item) => {
+      if (item instanceof Error) {
+        return item.message || String(item);
+      }
+      if (typeof item === "string") {
+        return item;
+      }
+      try {
+        return JSON.stringify(item);
+      } catch (error) {
+        return String(item);
+      }
+    }).join(" ");
+    if (!text) {
+      return;
+    }
+    session.recentConsoleErrors.push(text);
+    session.recentConsoleErrors = session.recentConsoleErrors.slice(-5);
+  }
+
+  if (window.console && typeof window.console.error === "function" && !window.console.__netlabHelpCapture) {
+    const originalConsoleError = window.console.error.bind(window.console);
+    window.console.error = (...args) => {
+      captureConsoleError(args);
+      originalConsoleError(...args);
+    };
+    window.console.__netlabHelpCapture = true;
+  }
 
   function cancelScheduledFrame(id) {
     if (id) {
@@ -1362,14 +1407,32 @@
     if (scenario?.shell === "cmd") {
       return [
         { command: "dir", icon: "👀", meaning: "Look inside" },
-        { command: "cd", icon: "🚶", meaning: "Move here" }
+        { command: "cd", icon: "🚶", meaning: "Move here" },
+        { command: "type", icon: "📄", meaning: "Read file" },
+        { command: "ipconfig", icon: "🖥️", meaning: "Check PC settings" },
+        { command: "ping", icon: "📡", meaning: "Check reply" }
       ];
     }
 
     return [
       { command: "ls", icon: "👀", meaning: "Look inside" },
-      { command: "cd", icon: "🚶", meaning: "Move here" }
+      { command: "cd", icon: "🚶", meaning: "Move here" },
+      { command: "cat", icon: "📄", meaning: "Read file" }
     ];
+  }
+
+  function normalizeGuideType(type) {
+    const value = String(type || "").trim().toLowerCase();
+    if (value === "folder" || value === "folder-guide") {
+      return "folder-map";
+    }
+    if (value === "network" || value === "network-check") {
+      return "network";
+    }
+    if (value === "command-map" || value === "commands") {
+      return "command-map";
+    }
+    return value || "command-map";
   }
 
   function visualGuideConfig(scenario = currentScenario()) {
@@ -1378,17 +1441,31 @@
     }
 
     const custom = scenario.visualGuide;
-    if (custom && custom.type === "folder-map") {
+    const customType = normalizeGuideType(custom?.type);
+    if (custom && customType === "folder-map") {
       return {
         type: "folder-map",
-        root: custom.root || scenario.environment?.cwd || "",
+        root: custom.root || custom.currentPath || scenario.environment?.cwd || "",
         relevantPaths: Array.isArray(custom.relevantPaths) ? custom.relevantPaths : [],
+        nodes: Array.isArray(custom.nodes) ? custom.nodes : [],
         commandMap: Array.isArray(custom.commandMap) && custom.commandMap.length ? custom.commandMap : defaultVisualCommandMap(scenario)
       };
     }
 
-    if (!beginnerScenarioTicketMode(scenario)) {
-      return null;
+    if (custom && customType === "network") {
+      return {
+        type: "network",
+        nodes: Array.isArray(custom.nodes) && custom.nodes.length ? custom.nodes : ["Your PC", "Gateway", "DNS", "Server"],
+        highlightAfter: custom.highlightAfter || {},
+        commandMap: Array.isArray(custom.commandMap) && custom.commandMap.length ? custom.commandMap : defaultVisualCommandMap(scenario)
+      };
+    }
+
+    if (custom && customType === "command-map") {
+      return {
+        type: "command-map",
+        commandMap: Array.isArray(custom.commandMap) && custom.commandMap.length ? custom.commandMap : defaultVisualCommandMap(scenario)
+      };
     }
 
     const focus = Array.isArray(scenario.commandFocus)
@@ -1405,6 +1482,10 @@
       relevantPaths: [],
       commandMap: defaultVisualCommandMap(scenario)
     };
+  }
+
+  function visualGuideSupported(scenario = currentScenario()) {
+    return Boolean(visualGuideConfig(scenario));
   }
 
   function normalizedPathKey(path) {
@@ -1475,7 +1556,7 @@
 
   function folderGuideSnapshot(scenario = currentScenario(), commands = session.reviewStats?.submittedCommands || []) {
     const config = visualGuideConfig(scenario);
-    if (!config) {
+    if (!config || config.type !== "folder-map") {
       return null;
     }
 
@@ -1488,7 +1569,10 @@
       rootPath,
       currentPath,
       listedDirectories,
-      relevantPathKeys: new Set((config.relevantPaths || []).map((path) => normalizedPathKey(StateManager.normalizePath(state, path)))),
+      relevantPathKeys: new Set([
+        ...(config.relevantPaths || []),
+        ...(config.nodes || []).filter((node) => node?.highlight).map((node) => node.path || node.label)
+      ].map((path) => normalizedPathKey(StateManager.normalizePath(state, path)))),
       commandMap: config.commandMap || defaultVisualCommandMap(scenario)
     };
   }
@@ -1504,6 +1588,16 @@
       .filter(Boolean);
 
     return folderGuideSnapshot(scenario, commands);
+  }
+
+  function guideCommandsForDisplay() {
+    if (session.walkthroughActive && session.walkthroughSteps.length) {
+      return session.walkthroughSteps
+        .slice(0, session.walkthroughStepIndex + 1)
+        .map((entry) => String(entry?.command || "").trim())
+        .filter(Boolean);
+    }
+    return session.reviewStats?.submittedCommands || [];
   }
 
   function displayGuidePath(state, path) {
@@ -1612,6 +1706,396 @@
       `<p class="folder-guide-current">📍 You are here: ${escapeHtml(displayGuidePath(snapshot.state, snapshot.currentPath))}</p>`
       + `<div class="folder-guide-tree">${folderGuideRows(snapshot, snapshot.rootPath).join("")}</div>`;
     return true;
+  }
+
+  function commandMatchesGuide(rawCommand, commandKey) {
+    const command = String(rawCommand || "").trim().toLowerCase();
+    const key = String(commandKey || "").trim().toLowerCase();
+    return Boolean(command && key && (command === key || command.startsWith(`${key} `)));
+  }
+
+  function lastNetworkHighlight(config, commands = guideCommandsForDisplay()) {
+    const highlightAfter = config?.highlightAfter || {};
+    const entries = Object.entries(highlightAfter);
+    for (let index = commands.length - 1; index >= 0; index -= 1) {
+      const command = commands[index];
+      const match = entries.find(([key]) => commandMatchesGuide(command, key));
+      if (match) {
+        return String(match[1] || "");
+      }
+    }
+    return "";
+  }
+
+  function networkNodeLabel(node) {
+    return typeof node === "string" ? node : String(node?.label || "");
+  }
+
+  function networkNodeIcon(node, index) {
+    if (typeof node !== "string" && node?.icon) {
+      return node.icon;
+    }
+    return ["🖥️", "📡", "🌐", "🖥️"][index] || "•";
+  }
+
+  function renderNetworkGuideMap(target, scenario = currentScenario(), config = visualGuideConfig(scenario), commands = guideCommandsForDisplay()) {
+    if (!target || !config || config.type !== "network") {
+      return false;
+    }
+
+    const highlight = lastNetworkHighlight(config, commands);
+    const nodes = Array.isArray(config.nodes) ? config.nodes : [];
+    target.hidden = !nodes.length;
+    target.innerHTML = `<div class="beginner-network-guide-map">${
+      nodes.map((node, index) => {
+        const label = networkNodeLabel(node);
+        const active = highlight && label.toLowerCase() === highlight.toLowerCase();
+        const note = active ? `<span class="network-guide-note">This changed</span>` : "";
+        const row = `<div class="network-guide-row${active ? " is-highlighted" : ""}">`
+          + `<span class="network-guide-icon">${escapeHtml(networkNodeIcon(node, index))}</span>`
+          + `<span class="network-guide-label">${escapeHtml(label)}</span>`
+          + note
+          + `</div>`;
+        const arrow = index < nodes.length - 1 ? `<div class="network-guide-arrow">↓</div>` : "";
+        return row + arrow;
+      }).join("")
+    }</div>`;
+    return nodes.length > 0;
+  }
+
+  function renderVisualGuideMap(target, scenario = currentScenario(), options = {}) {
+    const config = visualGuideConfig(scenario);
+    if (!target || !config) {
+      if (target) {
+        target.hidden = true;
+        target.innerHTML = "";
+      }
+      return false;
+    }
+
+    if (config.type === "folder-map") {
+      const snapshot = options.snapshot || folderGuideSnapshot(scenario, options.commands || guideCommandsForDisplay());
+      return renderFolderGuideMap(target, scenario, snapshot);
+    }
+
+    if (config.type === "network") {
+      return renderNetworkGuideMap(target, scenario, config, options.commands || guideCommandsForDisplay());
+    }
+
+    target.hidden = true;
+    target.innerHTML = "";
+    return false;
+  }
+
+  function lastSubmittedCommand() {
+    const commands = session.reviewStats?.submittedCommands || [];
+    return commands[commands.length - 1] || "";
+  }
+
+  function lastTerminalResultText() {
+    const lastCommand = lastSubmittedCommand();
+    if (!lastCommand) {
+      return "No command has been typed yet.";
+    }
+
+    const commandLine = `${getPromptLabel()} ${lastCommand}`;
+    let commandIndex = -1;
+    for (let index = session.terminalEntries.length - 1; index >= 0; index -= 1) {
+      const entry = session.terminalEntries[index];
+      if (entry?.type === "command" && String(entry.text || "").trim() === commandLine.trim()) {
+        commandIndex = index;
+        break;
+      }
+    }
+
+    const resultEntries = commandIndex >= 0
+      ? session.terminalEntries.slice(commandIndex + 1)
+      : session.terminalEntries.slice(-6);
+    const resultText = resultEntries
+      .filter((entry) => entry?.type !== "command")
+      .map((entry) => String(entry?.text || "").trim())
+      .filter(Boolean)
+      .slice(0, 8)
+      .join("\n");
+
+    return resultText || "The command did not print any output.";
+  }
+
+  function visibleTicketText(scenario = currentScenario(), step = currentStep()) {
+    const beginnerTicket = beginnerScenarioTicketMode(scenario) ? beginnerTicketPayload(scenario, step) : null;
+    return [
+      beginnerTicket?.happened,
+      beginnerTicket?.meaning,
+      beginnerTicket?.tryFirst,
+      scenario?.summary,
+      scenario?.missionBriefing,
+      step?.objective
+    ].filter(Boolean).join("\n");
+  }
+
+  function currentWorkingDirectoryText() {
+    try {
+      return session.state ? StateManager.displayPath(session.state, session.state.cwd) : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function currentHelpIssueType() {
+    return els.helpIssueType?.value || "I'm stuck";
+  }
+
+  function currentHelpUserNote() {
+    return String(els.helpUserNote?.value || "").trim();
+  }
+
+  function possibleConfusionText() {
+    const command = lastSubmittedCommand();
+    const result = lastTerminalResultText();
+    const step = currentStep();
+    const scenario = currentScenario();
+
+    if (/cd\s+notes/i.test(command) && /cannot find|no such/i.test(result)) {
+      return "You tried to open the notes folder before finding where it is.";
+    }
+    if (command && /cannot find|no such|not recognized|not available|invalid|syntax/i.test(result)) {
+      return "The command did not match what this task is asking for yet.";
+    }
+    if (step?.objective) {
+      return `The current task is asking for: ${step.objective}`;
+    }
+    return scenario?.summary || "The task may need a clearer first step.";
+  }
+
+  function suggestedQuestionText() {
+    const command = lastSubmittedCommand();
+    const step = currentStep();
+    const shell = shellLabel();
+    return `I am using a beginner ${shell} lab. The task says "${step?.objective || "complete the current task"}"${command ? `, but "${command}" did not solve it` : ""}. What should I check first?`;
+  }
+
+  function localStorageProgressSummary() {
+    try {
+      const keys = Object.keys(window.localStorage || {})
+        .filter((key) => /netlab|progress|terminal/i.test(key))
+        .slice(0, 8);
+      if (!keys.length) {
+        return "No matching local progress keys found.";
+      }
+      return keys.map((key) => {
+        const value = window.localStorage.getItem(key) || "";
+        return `${key}: ${value ? "present" : "empty"}`;
+      }).join("\n");
+    } catch (error) {
+      return "Storage status unavailable.";
+    }
+  }
+
+  function likelyDeveloperAction() {
+    const command = lastSubmittedCommand();
+    if (/cd\s+notes/i.test(command)) {
+      return "Make the current task say \"Look at what folders are here first\" and ensure the visual guide highlights the current folder.";
+    }
+    if (/ipconfig|ping|nslookup|tracert/i.test(command)) {
+      return "Check whether the network visual guide highlights the layer the learner just tested.";
+    }
+    return "Check whether the task wording, hint, and visual guide all point to the same first action.";
+  }
+
+  function currentStageLabel() {
+    const stageInfo = currentStageInfo();
+    const level = currentBeginnerLevel();
+    return [
+      level?.title,
+      stageInfo ? `${stageInfo.stage.title} (${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount})` : ""
+    ].filter(Boolean).join(" | ") || "Not available";
+  }
+
+  function buildBeginnerHelpReport() {
+    const scenario = currentScenario();
+    const step = currentStep();
+    const note = currentHelpUserNote() || currentHelpIssueType();
+    return [
+      "Beginner Help Report",
+      "",
+      "I'm stuck because:",
+      note,
+      "",
+      "Current problem:",
+      scenario?.title || "Not available",
+      "",
+      "Current task:",
+      step?.objective || "Not available",
+      "",
+      "Last command:",
+      lastSubmittedCommand() || "No command typed yet.",
+      "",
+      "Last result:",
+      lastTerminalResultText(),
+      "",
+      "Possible issue:",
+      possibleConfusionText(),
+      "",
+      "Suggested question:",
+      `"${suggestedQuestionText()}"`
+    ].join("\n");
+  }
+
+  function buildProHelpReport() {
+    const scenario = currentScenario();
+    const step = currentStep();
+    const stageInfo = currentStageInfo();
+    const commands = session.reviewStats?.submittedCommands || [];
+    const viewport = `${window.innerWidth}x${window.innerHeight}`;
+    return [
+      "Pro Debug Report",
+      "",
+      "Issue type:",
+      currentHelpIssueType(),
+      "",
+      "User note:",
+      currentHelpUserNote() || "No user note provided.",
+      "",
+      "URL:",
+      window.location.href,
+      "",
+      "Track/mode:",
+      `${pageConfig.environmentCategory || "unknown"} / ${pageConfig.uiMode || (isBeginnerMode() ? "beginner" : "standard")}`,
+      "",
+      "Scenario:",
+      `${scenario?.id || "unknown"} - ${scenario?.title || "Not available"}`,
+      "",
+      "Task:",
+      `${session.stepIndex + 1}/${totalStepsForScenario(scenario)} - ${step?.objective || "Not available"}`,
+      "",
+      "Stage/level:",
+      currentStageLabel(),
+      "",
+      "Current cwd:",
+      currentWorkingDirectoryText() || "Not available",
+      "",
+      "Last 5 commands:",
+      commands.slice(-5).join("\n") || "No commands typed yet.",
+      "",
+      "Last output:",
+      lastTerminalResultText(),
+      "",
+      "Hint level:",
+      String(session.hintLevel),
+      "",
+      "Walkthrough active:",
+      session.walkthroughActive ? "yes" : "no",
+      "",
+      "Task complete note open:",
+      session.taskCompleteOpen ? "yes" : "no",
+      "",
+      "Viewport:",
+      viewport,
+      "",
+      "Timestamp:",
+      new Date().toISOString(),
+      "",
+      "Visible ticket/problem text:",
+      visibleTicketText(scenario, step) || "Not available",
+      "",
+      "LocalStorage progress status:",
+      localStorageProgressSummary(),
+      "",
+      "Recent console errors:",
+      session.recentConsoleErrors.join("\n") || "None captured.",
+      "",
+      "Likely issue:",
+      possibleConfusionText(),
+      "",
+      "Suggested developer action:",
+      likelyDeveloperAction()
+    ].join("\n");
+  }
+
+  function selectedHelpReportMode() {
+    return els.helpModePro?.checked ? "pro" : "beginner";
+  }
+
+  function generateHelpReport(mode = selectedHelpReportMode()) {
+    const report = mode === "pro" ? buildProHelpReport() : buildBeginnerHelpReport();
+    if (els.helpReportOutput) {
+      els.helpReportOutput.value = report;
+    }
+    return report;
+  }
+
+  async function copyTextToClipboard(text) {
+    if (!text) {
+      return false;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (error) {
+      // Fall back to selecting the report field below.
+    }
+    if (els.helpReportOutput) {
+      els.helpReportOutput.focus();
+      els.helpReportOutput.select();
+      return document.execCommand?.("copy") || false;
+    }
+    return false;
+  }
+
+  async function copyHelpReport(mode = selectedHelpReportMode()) {
+    const report = generateHelpReport(mode);
+    const copied = await copyTextToClipboard(report);
+    const button = mode === "pro" ? els.copyProReportBtn : mode === "beginner" ? els.copyBeginnerReportBtn : els.copyHelpReportBtn;
+    if (button) {
+      const original = button.textContent;
+      button.textContent = copied ? "Copied" : "Copy failed";
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1200);
+    }
+  }
+
+  function syncHelpReportButtons() {
+    const pro = selectedHelpReportMode() === "pro";
+    if (els.copyHelpReportBtn) {
+      els.copyHelpReportBtn.textContent = pro ? "Copy Pro Report" : "Copy Report";
+    }
+  }
+
+  function openHelpAssistant() {
+    if (!els.helpAssistantCard) {
+      return;
+    }
+    session.helpAssistantOpen = true;
+    els.helpAssistantCard.hidden = false;
+    els.helpAssistantCard.setAttribute("aria-hidden", "false");
+    if (els.helpAssistantOverlay) {
+      els.helpAssistantOverlay.hidden = false;
+    }
+    document.body.classList.add("help-assistant-open");
+    syncHelpReportButtons();
+    generateHelpReport();
+    window.setTimeout(() => {
+      els.helpUserNote?.focus({ preventScroll: true });
+    }, 0);
+  }
+
+  function closeHelpAssistant(options = {}) {
+    if (!els.helpAssistantCard) {
+      return;
+    }
+    session.helpAssistantOpen = false;
+    els.helpAssistantCard.hidden = true;
+    els.helpAssistantCard.setAttribute("aria-hidden", "true");
+    if (els.helpAssistantOverlay) {
+      els.helpAssistantOverlay.hidden = true;
+    }
+    document.body.classList.remove("help-assistant-open");
+    if (options.restoreFocus !== false) {
+      focusTerminalInputAtEnd();
+    }
   }
 
   function missionProgressText(scenario = currentScenario(), completedStepCount = session.stepIndex) {
@@ -1989,11 +2473,21 @@
       { hideWhenEmpty: false }
     );
 
-    const walkthroughSnapshot = walkthroughFolderGuideSnapshot(currentScenario());
+    const walkthroughConfig = visualGuideConfig(currentScenario());
+    const walkthroughCommands = guideCommandsForDisplay();
+    const walkthroughSnapshot = walkthroughConfig?.type === "folder-map"
+      ? walkthroughFolderGuideSnapshot(currentScenario())
+      : null;
+    const walkthroughHasVisual = walkthroughConfig?.type === "folder-map"
+      ? Boolean(walkthroughSnapshot)
+      : Boolean(walkthroughConfig && walkthroughConfig.type !== "command-map");
     if (els.walkthroughVisualBlock) {
-      els.walkthroughVisualBlock.hidden = !walkthroughSnapshot;
+      els.walkthroughVisualBlock.hidden = !walkthroughHasVisual;
     }
-    renderFolderGuideMap(els.walkthroughFolderGuideMap, currentScenario(), walkthroughSnapshot);
+    renderVisualGuideMap(els.walkthroughFolderGuideMap, currentScenario(), {
+      snapshot: walkthroughSnapshot,
+      commands: walkthroughCommands
+    });
 
     if (els.walkthroughPrevBtn) {
       els.walkthroughPrevBtn.disabled = session.walkthroughStepIndex <= 0;
@@ -2285,7 +2779,7 @@
       return;
     }
 
-    const showGuide = beginnerScenarioTicketMode(scenario) && Boolean(visualGuideConfig(scenario));
+    const showGuide = Boolean(visualGuideConfig(scenario));
     els.beginnerVisualGuideCard.hidden = !showGuide;
     if (!showGuide) {
       if (els.beginnerVisualCurrentPath) {
@@ -2302,16 +2796,17 @@
       return;
     }
 
-    const snapshot = folderGuideSnapshot(scenario);
+    const config = visualGuideConfig(scenario);
+    const snapshot = config?.type === "folder-map" ? folderGuideSnapshot(scenario) : null;
     if (els.beginnerVisualCurrentPath) {
       fillText(
         els.beginnerVisualCurrentPath,
-        snapshot ? `You are here: ${displayGuidePath(snapshot.state, snapshot.currentPath)}` : "",
+        snapshot ? `You are here: ${displayGuidePath(snapshot.state, snapshot.currentPath)}` : "Look at the highlighted step.",
         { hideWhenEmpty: false }
       );
     }
-    renderCommandMeaningMap(els.beginnerCommandMeaningMap, snapshot?.commandMap || visualGuideConfig(scenario)?.commandMap || []);
-    renderFolderGuideMap(els.beginnerFolderGuideMap, scenario, snapshot);
+    renderCommandMeaningMap(els.beginnerCommandMeaningMap, snapshot?.commandMap || config?.commandMap || []);
+    renderVisualGuideMap(els.beginnerFolderGuideMap, scenario, { snapshot });
   }
 
   function ticketBriefingPayload(scenario = currentScenario()) {
@@ -2423,13 +2918,14 @@
         els.ticketBriefingMeta.hidden = true;
       }
 
-      const snapshot = folderGuideSnapshot(scenario);
-      const hasVisualGuide = Boolean(snapshot);
+      const config = visualGuideConfig(scenario);
+      const snapshot = config?.type === "folder-map" ? folderGuideSnapshot(scenario) : null;
+      const hasVisualGuide = Boolean(config);
       if (els.ticketBriefingVisualBlock) {
         els.ticketBriefingVisualBlock.hidden = !hasVisualGuide;
       }
-      renderCommandMeaningMap(els.ticketBriefingCommandMap, snapshot?.commandMap || visualGuideConfig(scenario)?.commandMap || []);
-      renderFolderGuideMap(els.ticketBriefingFolderGuideMap, scenario, snapshot);
+      renderCommandMeaningMap(els.ticketBriefingCommandMap, snapshot?.commandMap || config?.commandMap || []);
+      renderVisualGuideMap(els.ticketBriefingFolderGuideMap, scenario, { snapshot });
 
       const advancedBlocks = ticketBriefingAdvancedBlocks().filter((block) => !naturalHiddenState.get(block));
       const showAdvanced = session.beginnerTicketDetailsOpen;
@@ -3108,6 +3604,7 @@
       !els.terminalInput
       || session.ticketBriefingOpen
       || session.beginnerGuideOpen
+      || session.helpAssistantOpen
       || document.body.classList.contains("command-sheet-open")
       || document.body.classList.contains("terminal-mobile-menu-open")
       || document.body.classList.contains("terminal-mobile-info-open")
@@ -6834,6 +7331,36 @@
     } else {
       console.warn("[WalkthroughDebug] no walkthrough button found");
     }
+    if (els.needHelpBtn) {
+      els.needHelpBtn.addEventListener("click", openHelpAssistant);
+    }
+    if (els.helpAssistantCloseBtn) {
+      els.helpAssistantCloseBtn.addEventListener("click", () => closeHelpAssistant());
+    }
+    if (els.helpAssistantOverlay) {
+      els.helpAssistantOverlay.addEventListener("click", () => closeHelpAssistant());
+    }
+    if (els.generateHelpReportBtn) {
+      els.generateHelpReportBtn.addEventListener("click", () => generateHelpReport());
+    }
+    if (els.copyHelpReportBtn) {
+      els.copyHelpReportBtn.addEventListener("click", () => copyHelpReport(selectedHelpReportMode()));
+    }
+    if (els.copyBeginnerReportBtn) {
+      els.copyBeginnerReportBtn.addEventListener("click", () => copyHelpReport("beginner"));
+    }
+    if (els.copyProReportBtn) {
+      els.copyProReportBtn.addEventListener("click", () => copyHelpReport("pro"));
+    }
+    [els.helpModeBeginner, els.helpModePro, els.helpIssueType].filter(Boolean).forEach((control) => {
+      control.addEventListener("change", () => {
+        syncHelpReportButtons();
+        generateHelpReport();
+      });
+    });
+    if (els.helpUserNote) {
+      els.helpUserNote.addEventListener("input", () => generateHelpReport());
+    }
     if (els.walkthroughPrevBtn) {
       els.walkthroughPrevBtn.addEventListener("click", () => {
         if (!session.walkthroughActive) {
@@ -7044,6 +7571,11 @@
 
       if (session.walkthroughActive) {
         closeWalkthrough();
+        return;
+      }
+
+      if (session.helpAssistantOpen) {
+        closeHelpAssistant();
         return;
       }
 

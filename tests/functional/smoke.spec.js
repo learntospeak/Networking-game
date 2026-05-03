@@ -55,6 +55,8 @@ test("Terminal functional smoke: Linux track", async ({ page }, testInfo) => {
   observePage(page, report);
   await gotoAndStabilize(page, report.url);
 
+  pushCheck(report, "first Linux visual guide appears", await page.locator("#beginnerVisualGuideCard").isVisible().catch(() => false), "#beginnerVisualGuideCard visible");
+
   await runTerminalTrackTest(page, report, [
     "pwd",
     "ls",
@@ -123,6 +125,27 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
     await page.waitForTimeout(150);
   }
 
+  pushCheck(report, "need help button appears", await page.locator("#needHelpBtn").isVisible().catch(() => false), "#needHelpBtn visible");
+  const helpCommand = await runTerminalCommand(page, "cd notes");
+  report.commandResults.push(helpCommand);
+  await page.locator("#needHelpBtn").click();
+  await expect(page.locator("#helpAssistantCard")).toBeVisible();
+  pushCheck(report, "need help panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
+  await page.locator("#helpIssueType").selectOption("My command didn't work");
+  await page.locator("#helpUserNote").fill("I typed cd notes and it failed.");
+  await page.locator("#generateHelpReportBtn").click();
+  let helpReport = await page.locator("#helpReportOutput").inputValue();
+  pushCheck(report, "beginner report generates", /Beginner Help Report/i.test(helpReport), helpReport.slice(0, 240));
+  pushCheck(report, "copy report button exists", await page.locator("#copyHelpReportBtn").isVisible().catch(() => false), "#copyHelpReportBtn visible");
+  pushCheck(report, "report includes current scenario/task/last command", /Incident Folder Triage/i.test(helpReport) && /List the current folder contents/i.test(helpReport) && /cd notes/i.test(helpReport), helpReport);
+  await page.locator("#helpModePro").check();
+  await page.locator("#generateHelpReportBtn").click();
+  helpReport = await page.locator("#helpReportOutput").inputValue();
+  pushCheck(report, "pro report generates", /Pro Debug Report/i.test(helpReport) && /URL:/i.test(helpReport) && /Last 5 commands:/i.test(helpReport), helpReport.slice(0, 360));
+  pushCheck(report, "separate beginner and pro copy buttons exist", await page.locator("#copyBeginnerReportBtn").isVisible().catch(() => false) && await page.locator("#copyProReportBtn").isVisible().catch(() => false), "copy buttons visible");
+  await page.locator("#helpAssistantCloseBtn").click();
+  await expect(page.locator("#helpAssistantCard")).toBeHidden();
+
   pushCheck(report, "side visual guide visible", await page.locator("#beginnerVisualGuideCard").isVisible().catch(() => false), "#beginnerVisualGuideCard visible");
 
   await expect(page.locator("#watchWalkthroughBtn")).toBeVisible();
@@ -142,6 +165,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   pushCheck(report, "task complete note offers optional details", await page.locator("#taskCompleteToggleBtn").isVisible().catch(() => false), await readText(page, "#taskCompleteToggleBtn"));
   pushCheck(report, "terminal input stays enabled after task completion", await page.locator("#terminalInput").isEnabled(), "terminal input enabled");
   pushCheck(report, "folder map reveals Incidents after dir", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
+  pushCheck(report, "dir updates folder visual guide", /Incidents/i.test((await readText(page, "#beginnerFolderGuideMap")).trim()), await readText(page, "#beginnerFolderGuideMap"));
 
   const directJump = await runTerminalCommand(page, "cd Incidents\\notes");
   report.commandResults.push(directJump);
@@ -153,6 +177,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const cdIncidents = await runTerminalCommand(page, "cd Incidents");
   report.commandResults.push(cdIncidents);
   pushCheck(report, "folder map current path updates after cd Incidents", /C:\\Lab\\Incidents/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
+  pushCheck(report, "cd updates current location", /C:\\Lab\\Incidents/i.test((await readText(page, "#beginnerVisualCurrentPath")).trim()), await readText(page, "#beginnerVisualCurrentPath"));
 
   const dirIncidents = await runTerminalCommand(page, "dir");
   report.commandResults.push(dirIncidents);
@@ -195,6 +220,7 @@ test("Terminal functional smoke: Cisco CLI track", async ({ page }, testInfo) =>
 
   await assertVisible(page, "#terminalInput");
   await assertVisible(page, "#scenarioTitle");
+  pushCheck(report, "unsupported Cisco visual guide hidden", !(await page.locator("#beginnerVisualGuideCard").isVisible().catch(() => false)), "#beginnerVisualGuideCard hidden or absent");
 
   const sequence = [
     "enable",
@@ -404,6 +430,12 @@ test("Mobile smoke: terminal, subnetting, and HTTP controls remain usable", asyn
   report.commandResults.push(terminalResult);
   pushCheck(report, "linux mobile terminal command works", terminalResult.delta.length > 0, terminalResult.notes);
   pushCheck(report, "linux mobile terminal input visible", await page.locator("#terminalInput").isVisible(), "#terminalInput visible");
+  pushCheck(report, "mobile need help control present", await page.locator("#needHelpBtn").count() === 1, "#needHelpBtn present");
+  if (await page.locator("#needHelpBtn").isVisible().catch(() => false)) {
+    await page.locator("#needHelpBtn").click();
+    pushCheck(report, "mobile need help panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
+    await page.locator("#helpAssistantCloseBtn").click();
+  }
   const jumpTopVisible = await page.locator("#terminalJumpTopBtn").isVisible();
   const jumpLatestVisible = await page.locator("#terminalJumpLatestBtn").isVisible();
   pushCheck(report, "mobile terminal history controls render predictably", jumpTopVisible === jumpLatestVisible, `top=${jumpTopVisible} latest=${jumpLatestVisible}`);
