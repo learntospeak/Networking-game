@@ -812,10 +812,16 @@
 
 .terminal-controls {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
   min-width: 0;
+}
+
+.terminal-page:not(.challenge-page) #previousScenarioBtn,
+.terminal-page:not(.challenge-page) #resetScenarioBtn,
+.terminal-page:not(.challenge-page) #nextScenarioBtn {
+  display: none;
 }
 
 .beginner-mode-banner,
@@ -1118,13 +1124,10 @@
   text-transform: uppercase;
 }
 
-.terminal-page.terminal-beginner-mode .terminal-controls {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .terminal-page.terminal-beginner-mode #commandSheetBtn,
 .terminal-page.terminal-beginner-mode #hintBtn,
-.terminal-page.terminal-beginner-mode #watchWalkthroughBtn {
+.terminal-page.terminal-beginner-mode #watchWalkthroughBtn,
+.terminal-page.terminal-beginner-mode #needHelpBtn {
   min-height: 46px;
   font-weight: 800;
 }

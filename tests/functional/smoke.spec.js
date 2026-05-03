@@ -254,7 +254,7 @@ test("Terminal functional smoke: Cisco CLI track", async ({ page }, testInfo) =>
   }
 
   for (const command of ["interface   fa0/0", "INTERFACE FA0/0", "interface fastethernet0/0"]) {
-    await page.locator("#resetScenarioBtn").click();
+    await page.evaluate(() => document.getElementById("resetScenarioBtn")?.click());
     await page.waitForTimeout(250);
     await runTerminalCommand(page, "enable");
     await runTerminalCommand(page, "configure terminal");
@@ -262,7 +262,7 @@ test("Terminal functional smoke: Cisco CLI track", async ({ page }, testInfo) =>
     report.commandResults.push(result);
   }
 
-  await page.locator("#resetScenarioBtn").click();
+  await page.evaluate(() => document.getElementById("resetScenarioBtn")?.click());
   await page.waitForTimeout(250);
   for (const command of ["show fake command", "asdfgh"]) {
     const result = await runTerminalCommand(page, command);

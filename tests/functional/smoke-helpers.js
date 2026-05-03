@@ -150,10 +150,14 @@ async function waitForTerminalMutation(page, previousCount, command) {
 
 async function resetTerminalScenario(page) {
   const reset = page.locator("#resetScenarioBtn");
-  if (await reset.isVisible()) {
+  if (await reset.count()) {
     await dismissTicketBriefingIfPresent(page);
     await dismissTaskCompleteIfPresent(page);
-    await reset.click();
+    if (await reset.isVisible()) {
+      await reset.click();
+    } else {
+      await page.evaluate(() => document.getElementById("resetScenarioBtn")?.click());
+    }
     await page.waitForTimeout(250);
     await dismissTicketBriefingIfPresent(page);
     await dismissTaskCompleteIfPresent(page);
