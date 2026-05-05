@@ -3906,16 +3906,18 @@
     document.body.dataset.environmentCategory = activeCategory;
     syncTrackLinks(activeCategory);
 
-    if (els.pageKicker && pageConfig.pageKicker) {
-      els.pageKicker.textContent = pageConfig.pageKicker;
+    if (els.pageKicker) {
+      els.pageKicker.textContent = pageConfig.pageKicker || "";
+      els.pageKicker.hidden = !pageConfig.pageKicker;
     }
 
     if (els.pageTitle && pageConfig.pageTitle) {
       els.pageTitle.textContent = pageConfig.pageTitle;
     }
 
-    if (els.pageIntro && pageConfig.pageIntro) {
-      els.pageIntro.textContent = pageConfig.pageIntro;
+    if (els.pageIntro) {
+      els.pageIntro.textContent = pageConfig.pageIntro || "";
+      els.pageIntro.hidden = !pageConfig.pageIntro;
     }
   }
 

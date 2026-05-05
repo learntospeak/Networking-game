@@ -38,6 +38,29 @@
   text-transform: uppercase;
 }
 
+.terminal-page .router-top {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
+  align-items: center;
+}
+
+.terminal-page .router-top > div:first-child {
+  grid-column: 2;
+  text-align: center;
+}
+
+.terminal-page .router-top .router-leds {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.terminal-page .router-brand {
+  margin: 0;
+  color: #22c55e;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
 .terminal-header {
   display: flex;
   align-items: center;
