@@ -125,7 +125,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
     await page.waitForTimeout(150);
   }
 
-  pushCheck(report, "ask coach button appears", await page.locator("#needHelpBtn").isVisible().catch(() => false) && /Ask Coach/i.test(await page.locator("#needHelpBtn").innerText()), "#needHelpBtn visible");
+  pushCheck(report, "ask coach button removed", await page.locator("#needHelpBtn").count() === 0, "#needHelpBtn absent");
   const helpCommand = await runTerminalCommand(page, "cd notes");
   report.commandResults.push(helpCommand);
   await page.evaluate(() => {
@@ -180,22 +180,6 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const nonAdmin = await runTerminalCommand(page, "ask admin log bug should not work");
   report.commandResults.push(nonAdmin);
   pushCheck(report, "non-admin cannot use admin commands", /not available/i.test(nonAdmin.notes), nonAdmin.notes);
-  await page.locator("#needHelpBtn").click();
-  await expect(page.locator("#helpAssistantCard")).toBeVisible();
-  pushCheck(report, "ask coach panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
-  pushCheck(report, "report problem is secondary", await page.locator("#reportProblemBtn").isVisible().catch(() => false) && !(await page.locator("#helpReportOutput").isVisible().catch(() => false)), "Report button visible, report output hidden");
-  await page.locator("#helpUserNote").fill("I typed cd notes and it failed.");
-  await page.locator("#generateHelpReportBtn").click();
-  const coachText = await readText(page, "#coachMessages");
-  pushCheck(report, "ask coach produces fallback response", /checking what folders exist|current folder|Command Help/i.test(coachText), coachText);
-  await page.locator("#reportProblemBtn").click();
-  await expect(page.locator("#helpReportOutput")).toBeVisible();
-  const helpReport = await page.locator("#helpReportOutput").inputValue();
-  pushCheck(report, "copy report button exists", await page.locator("#copyHelpReportBtn").isVisible().catch(() => false), "#copyHelpReportBtn visible");
-  pushCheck(report, "report includes current scenario/task/last command", /Incident Folder Triage/i.test(helpReport) && /List the current folder contents/i.test(helpReport) && /cd notes/i.test(helpReport), helpReport);
-  await page.locator("#helpAssistantCloseBtn").click();
-  await expect(page.locator("#helpAssistantCard")).toBeHidden();
-
   pushCheck(report, "side visual guide visible", await page.locator("#beginnerVisualGuideCard").isVisible().catch(() => false), "#beginnerVisualGuideCard visible");
 
   await expect(page.locator("#watchWalkthroughBtn")).toBeVisible();
@@ -497,12 +481,7 @@ test("Mobile smoke: terminal, subnetting, and HTTP controls remain usable", asyn
   report.commandResults.push(terminalResult);
   pushCheck(report, "linux mobile terminal command works", terminalResult.delta.length > 0, terminalResult.notes);
   pushCheck(report, "linux mobile terminal input visible", await page.locator("#terminalInput").isVisible(), "#terminalInput visible");
-  pushCheck(report, "mobile ask coach control present", await page.locator("#needHelpBtn").count() === 1, "#needHelpBtn present");
-  if (await page.locator("#needHelpBtn").isVisible().catch(() => false)) {
-    await page.locator("#needHelpBtn").click();
-    pushCheck(report, "mobile ask coach panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");
-    await page.locator("#helpAssistantCloseBtn").click();
-  }
+  pushCheck(report, "mobile ask coach button removed", await page.locator("#needHelpBtn").count() === 0, "#needHelpBtn absent");
   const jumpTopVisible = await page.locator("#terminalJumpTopBtn").isVisible();
   const jumpLatestVisible = await page.locator("#terminalJumpLatestBtn").isVisible();
   pushCheck(report, "mobile terminal history controls render predictably", jumpTopVisible === jumpLatestVisible, `top=${jumpTopVisible} latest=${jumpLatestVisible}`);
