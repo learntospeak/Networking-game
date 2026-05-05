@@ -23,7 +23,6 @@
     challengeTrackLink: document.getElementById("challengeTrackLink"),
     terminalNavLink: document.querySelector(".terminal-nav-link"),
     challengeSelectorPanel: document.querySelector(".challenge-selector-panel"),
-    terminalMetaPanel: document.querySelector(".terminal-meta-panel"),
     scenarioPanel: document.querySelector(".scenario-panel"),
     scenarioCountBadge: document.getElementById("scenarioCountBadge"),
     stepCountBadge: document.getElementById("stepCountBadge"),
@@ -381,7 +380,6 @@
     [
       els.appSectionShell,
       els.challengeSelectorPanel,
-      els.terminalMetaPanel,
       els.scenarioPanel
     ].filter(Boolean).forEach((element, index) => {
       if (!element.parentNode) {
@@ -4392,16 +4390,18 @@
       els.mobileInfoOverlay.querySelector("#terminalMobileInfoTitle").textContent = beginnerMode ? "Beginner Guide" : "Instructions";
     }
 
-    els.scenarioCountBadge.textContent = challengePresentation
-      ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
-      : beginnerTrack && level
-        ? `Level ${levelNumber}`
-        : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
-    if (challengePresentation) {
+    if (els.scenarioCountBadge) {
+      els.scenarioCountBadge.textContent = challengePresentation
+        ? `Challenge ${session.scenarioIndex + 1} / ${totalScenarios()}`
+        : beginnerTrack && level
+          ? `Level ${levelNumber}`
+          : `Scenario ${session.scenarioIndex + 1} / ${totalScenarios()}`;
+    }
+    if (els.stepCountBadge && challengePresentation) {
       els.stepCountBadge.textContent = stageInfo
         ? `Stage ${stageInfo.stageIndex + 1} / ${stageInfo.stageCount} · Mission ${stageInfo.missionStepIndex + 1} / ${stageInfo.missionStepCount}`
         : "Challenge Active";
-    } else {
+    } else if (els.stepCountBadge) {
       els.stepCountBadge.textContent = beginnerTrack && stageInfo
         ? `Part ${stageInfo.stageIndex + 1}/${stageInfo.stageCount} · Task ${stageInfo.stageStepIndex + 1}/${stageInfo.stageStepCount}`
         : stageInfo
@@ -4411,7 +4411,9 @@
     if (els.environmentBadge) {
       els.environmentBadge.textContent = environmentLabel;
     }
-    els.shellBadge.textContent = shellLabel();
+    if (els.shellBadge) {
+      els.shellBadge.textContent = shellLabel();
+    }
     setCurrentLayer(scenario.layer || "application");
     syncScenarioLayerBadges(scenario);
     syncPageIdentity(scenario);
@@ -4490,9 +4492,6 @@
     applyBeginnerDisplayLabels(scenario, stageInfo, step);
     if (els.appSectionShell) {
       els.appSectionShell.hidden = Boolean(desktopBeginnerTrack && session.scenarioStarted);
-    }
-    if (els.terminalMetaPanel) {
-      els.terminalMetaPanel.hidden = Boolean(desktopBeginnerTrack && session.scenarioStarted);
     }
     if (els.currentTaskCard) {
       els.currentTaskCard.hidden = beginnerTrack;

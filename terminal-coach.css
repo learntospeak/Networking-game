@@ -132,8 +132,10 @@
   margin-top: 0;
 }
 
-.terminal-shell > .environment-route-nav {
-  margin-bottom: 22px;
+.terminal-panel > .environment-route-nav {
+  justify-content: center;
+  width: 100%;
+  margin: 14px auto 0;
 }
 
 .environment-route-link {
@@ -251,10 +253,6 @@
   border-color: rgba(192, 132, 252, 0.34);
   background: rgba(28, 14, 38, 0.92);
   color: #d8b4fe;
-}
-
-.terminal-meta-panel {
-  margin-bottom: 18px;
 }
 
 .terminal-layout {
@@ -2493,14 +2491,12 @@
   .terminal-page .rack-room,
   .terminal-shell,
   .app-section-shell,
-  .terminal-meta-panel,
   .terminal-layout {
     margin-inline: auto;
   }
 
   .terminal-header,
   .app-section-shell,
-  .terminal-meta-panel,
   .terminal-layout {
     max-width: 1360px;
   }
@@ -2516,8 +2512,7 @@
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-header,
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-section-shell,
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-meta-panel {
+  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-section-shell {
     max-width: 1320px;
   }
 
@@ -2542,13 +2537,6 @@
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-stage-title,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .scenario-card .scenario-stage-briefing {
-    display: none;
-  }
-
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-meta-panel .panel-copy,
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #environmentBadge,
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #shellBadge,
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode #currentLayerBadge {
     display: none;
   }
 
@@ -2738,8 +2726,8 @@
   .terminal-shell > .router-top,
   .terminal-shell > .terminal-header,
   .terminal-shell > .app-section-shell,
-  .terminal-shell > .terminal-meta-panel,
   .terminal-shell > .challenge-selector-panel,
+  .terminal-panel > .environment-route-nav,
   .terminal-layout > .scenario-panel,
   .terminal-page .router-ports {
     display: none;
