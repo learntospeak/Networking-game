@@ -4954,7 +4954,7 @@
     if (scenarioHasStages(scenario)) {
       printLine("=== Mission Complete ===", "review");
       printReviewLine(beginnerTrack ? "You finished the problem." : "You resolved the incident path and completed the mission objectives.");
-      printReviewLine(beginnerTrack ? "Open the review panel to see how you did." : "Open the Mission Review panel to see your performance breakdown.");
+      printReviewLine(beginnerTrack ? "Open the review page below the terminal to see how you did." : "Open the Mission Review page below the terminal to see your performance breakdown.");
     } else {
       printReviewLine("Scenario complete. You reached the objective with live command input.");
     }

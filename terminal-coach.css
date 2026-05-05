@@ -769,6 +769,19 @@
   background: linear-gradient(180deg, rgba(8, 12, 18, 0.98) 0%, rgba(12, 18, 26, 0.99) 100%);
 }
 
+.mission-review-page {
+  width: min(100%, 1320px);
+  margin: 22px auto 0;
+}
+
+.mission-review-page[hidden] {
+  display: none !important;
+}
+
+.mission-review-page .mission-review-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
 .mission-review-overall {
   margin: 0 0 14px;
   color: #f8fafc;

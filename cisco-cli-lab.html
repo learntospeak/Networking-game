@@ -160,49 +160,6 @@
               <p id="progressSummary">0 scenarios completed in this session.</p>
             </article>
 
-            <article id="missionReviewCard" class="support-card mission-review-card" hidden>
-              <h3>Mission Review</h3>
-              <p id="missionReviewOverall" class="mission-review-overall"></p>
-              <div id="missionReviewCategories" class="mission-review-grid">
-                <div class="mission-review-item">
-                  <p class="mission-case-label">Troubleshooting Logic</p>
-                  <p id="reviewTroubleshootingScore" class="mission-review-score"></p>
-                  <p id="reviewTroubleshootingFeedback" class="mission-case-copy"></p>
-                </div>
-                <div class="mission-review-item">
-                  <p class="mission-case-label">Command Accuracy</p>
-                  <p id="reviewAccuracyScore" class="mission-review-score"></p>
-                  <p id="reviewAccuracyFeedback" class="mission-case-copy"></p>
-                </div>
-                <div class="mission-review-item">
-                  <p class="mission-case-label">Efficiency</p>
-                  <p id="reviewEfficiencyScore" class="mission-review-score"></p>
-                  <p id="reviewEfficiencyFeedback" class="mission-case-copy"></p>
-                </div>
-                <div class="mission-review-item">
-                  <p class="mission-case-label">Verification</p>
-                  <p id="reviewVerificationScore" class="mission-review-score"></p>
-                  <p id="reviewVerificationFeedback" class="mission-case-copy"></p>
-                </div>
-                <div class="mission-review-item">
-                  <p class="mission-case-label">Risk Awareness</p>
-                  <p id="reviewRiskScore" class="mission-review-score"></p>
-                  <p id="reviewRiskFeedback" class="mission-case-copy"></p>
-                </div>
-              </div>
-              <div class="mission-case-block">
-                <p class="mission-case-label">What You Did Well</p>
-                <ul id="missionReviewStrengths" class="mission-case-list"></ul>
-              </div>
-              <div class="mission-case-block">
-                <p class="mission-case-label">Improve Next Time</p>
-                <ul id="missionReviewImprovements" class="mission-case-list"></ul>
-              </div>
-              <div class="mission-case-block">
-                <p class="mission-case-label">Real-World Takeaway</p>
-                <p id="missionReviewTakeaway" class="mission-case-copy"></p>
-              </div>
-            </article>
           </div>
         </aside>
 
@@ -253,6 +210,50 @@
           </div>
         </section>
       </div>
+
+      <article id="missionReviewCard" class="support-card mission-review-card mission-review-page" hidden>
+        <h3>Mission Review</h3>
+        <p id="missionReviewOverall" class="mission-review-overall"></p>
+        <div id="missionReviewCategories" class="mission-review-grid">
+          <div class="mission-review-item">
+            <p class="mission-case-label">Troubleshooting Logic</p>
+            <p id="reviewTroubleshootingScore" class="mission-review-score"></p>
+            <p id="reviewTroubleshootingFeedback" class="mission-case-copy"></p>
+          </div>
+          <div class="mission-review-item">
+            <p class="mission-case-label">Command Accuracy</p>
+            <p id="reviewAccuracyScore" class="mission-review-score"></p>
+            <p id="reviewAccuracyFeedback" class="mission-case-copy"></p>
+          </div>
+          <div class="mission-review-item">
+            <p class="mission-case-label">Efficiency</p>
+            <p id="reviewEfficiencyScore" class="mission-review-score"></p>
+            <p id="reviewEfficiencyFeedback" class="mission-case-copy"></p>
+          </div>
+          <div class="mission-review-item">
+            <p class="mission-case-label">Verification</p>
+            <p id="reviewVerificationScore" class="mission-review-score"></p>
+            <p id="reviewVerificationFeedback" class="mission-case-copy"></p>
+          </div>
+          <div class="mission-review-item">
+            <p class="mission-case-label">Risk Awareness</p>
+            <p id="reviewRiskScore" class="mission-review-score"></p>
+            <p id="reviewRiskFeedback" class="mission-case-copy"></p>
+          </div>
+        </div>
+        <div class="mission-case-block">
+          <p class="mission-case-label">What You Did Well</p>
+          <ul id="missionReviewStrengths" class="mission-case-list"></ul>
+        </div>
+        <div class="mission-case-block">
+          <p class="mission-case-label">Improve Next Time</p>
+          <ul id="missionReviewImprovements" class="mission-case-list"></ul>
+        </div>
+        <div class="mission-case-block">
+          <p class="mission-case-label">Real-World Takeaway</p>
+          <p id="missionReviewTakeaway" class="mission-case-copy"></p>
+        </div>
+      </article>
 
       <div id="ticketBriefingOverlay" class="ticket-briefing-overlay" hidden></div>
       <aside id="ticketBriefingCard" class="ticket-briefing-card" aria-hidden="true" aria-labelledby="ticketBriefingTitle" hidden>
