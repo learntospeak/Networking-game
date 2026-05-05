@@ -135,7 +135,7 @@
 .terminal-panel > .environment-route-nav {
   justify-content: center;
   width: 100%;
-  margin: 14px auto 0;
+  margin: 14px auto 22px;
 }
 
 .environment-route-link {
