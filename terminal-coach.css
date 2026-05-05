@@ -147,13 +147,18 @@
   padding: 0 14px 0 28px;
   border-radius: 999px;
   border: 1px solid #334155;
-  background: rgba(8, 12, 18, 0.88);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(7, 11, 16, 0.98) 100%);
   color: #cbd5e1;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-decoration: none;
   text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 8px 16px rgba(0, 0, 0, 0.32);
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease, background 160ms ease;
 }
 
 .environment-route-link::before {
@@ -169,7 +174,13 @@
 .environment-route-link.is-active {
   border-color: #38bdf8;
   color: #f8fafc;
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.16);
+  background: linear-gradient(180deg, rgba(14, 116, 144, 0.72) 0%, rgba(8, 47, 73, 0.96) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(2, 6, 23, 0.72),
+    0 0 0 1px rgba(56, 189, 248, 0.24),
+    0 0 18px rgba(56, 189, 248, 0.28),
+    0 10px 18px rgba(0, 0, 0, 0.38);
 }
 
 .environment-route-link.is-active::before {
@@ -177,6 +188,46 @@
   box-shadow:
     0 0 0 2px rgba(56, 189, 248, 0.16),
     0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+.environment-route-link:hover {
+  border-color: #64748b;
+  color: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.58),
+    0 10px 18px rgba(0, 0, 0, 0.38);
+}
+
+.terminal-nav-link.environment-route-link {
+  border-color: rgba(248, 113, 113, 0.72);
+  background: linear-gradient(180deg, rgba(127, 29, 29, 0.92) 0%, rgba(69, 10, 10, 0.98) 100%);
+  color: #fee2e2;
+  box-shadow:
+    inset 0 1px 0 rgba(254, 202, 202, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(248, 113, 113, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.34);
+}
+
+.terminal-nav-link.environment-route-link::before {
+  background: #f87171;
+  box-shadow:
+    0 0 0 2px rgba(248, 113, 113, 0.16),
+    0 0 12px rgba(248, 113, 113, 0.48);
+}
+
+.terminal-nav-link.environment-route-link:hover {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, rgba(153, 27, 27, 0.96) 0%, rgba(69, 10, 10, 0.99) 100%);
+  color: #fff7f7;
+  box-shadow:
+    inset 0 1px 0 rgba(254, 202, 202, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(248, 113, 113, 0.16),
+    0 0 18px rgba(248, 113, 113, 0.22),
+    0 10px 18px rgba(0, 0, 0, 0.4);
 }
 
 .lab-panel {
