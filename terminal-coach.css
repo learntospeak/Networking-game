@@ -811,9 +811,10 @@
 }
 
 .terminal-controls {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, 46px);
-  justify-content: start;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
   gap: 8px;
   margin-top: 14px;
   min-width: 0;
@@ -2565,8 +2566,10 @@
   }
 
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .terminal-controls {
-    grid-template-columns: repeat(4, 44px);
-    justify-content: start;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
     gap: 6px;
     margin-top: 0;
   }
