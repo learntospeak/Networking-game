@@ -2732,6 +2732,18 @@
   }
 }
 
+@media (min-width: 1181px) {
+  .terminal-layout {
+    align-items: stretch;
+  }
+
+  .terminal-layout > .scenario-panel,
+  .terminal-layout > .terminal-panel {
+    height: auto;
+    min-height: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .terminal-page {
     --terminal-mobile-dock-space: 0px;
