@@ -132,6 +132,10 @@
   margin-top: 0;
 }
 
+.terminal-shell > .environment-route-nav {
+  margin-bottom: 22px;
+}
+
 .environment-route-link {
   position: relative;
   display: inline-flex;
