@@ -820,12 +820,6 @@
   max-width: 100%;
 }
 
-.terminal-page:not(.challenge-page) #previousScenarioBtn,
-.terminal-page:not(.challenge-page) #resetScenarioBtn,
-.terminal-page:not(.challenge-page) #nextScenarioBtn {
-  display: none;
-}
-
 .beginner-mode-banner,
 .beginner-task-strip,
 .beginner-help-strip {
@@ -2856,6 +2850,7 @@
     margin: 0 0 10px;
   }
 
+  .terminal-page.terminal-beginner-mode #startScenarioBtn,
   .terminal-page.terminal-beginner-mode #previousScenarioBtn,
   .terminal-page.terminal-beginner-mode #resetScenarioBtn,
   .terminal-page.terminal-beginner-mode #nextScenarioBtn {

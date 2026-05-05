@@ -215,6 +215,7 @@
     copyHelpReportBtn: document.getElementById("copyHelpReportBtn"),
     helpReportOutput: document.getElementById("helpReportOutput"),
     commandSheetBtn: document.getElementById("commandSheetBtn"),
+    startScenarioBtn: document.getElementById("startScenarioBtn"),
     previousScenarioBtn: document.getElementById("previousScenarioBtn"),
     resetScenarioBtn: document.getElementById("resetScenarioBtn"),
     nextScenarioBtn: document.getElementById("nextScenarioBtn"),
@@ -492,17 +493,25 @@
   }
 
   function syncMobileAppBarActions() {
+    const showStartBtn = Boolean(!session.scenarioStarted || pageConfig.autoStart === false);
+    const startPreviewMode = !session.scenarioStarted;
+    const startLabel = startPreviewMode ? "Start" : "Restart";
+    const startTargetLabel = startPreviewMode
+      ? (scenarioUsesChallengePresentation(currentScenario()) ? "selected challenge" : "selected problem")
+      : (scenarioUsesChallengePresentation(currentScenario()) ? "current challenge" : "current problem");
+
+    if (els.startScenarioBtn) {
+      els.startScenarioBtn.hidden = !showStartBtn;
+      els.startScenarioBtn.textContent = startLabel;
+      els.startScenarioBtn.setAttribute("aria-label", `${startLabel} ${startTargetLabel}`);
+      els.startScenarioBtn.title = `${startLabel} ${startTargetLabel}`;
+    }
+
     if (!els.mobilePrevBtn || !els.mobileNextBtn || !els.mobileHomeBtn || !els.mobileMenuBtn) {
       return;
     }
 
     const challengeSelectionMode = shouldPreviewMobileSelection();
-    const showStartBtn = Boolean(!session.scenarioStarted || pageConfig.autoStart === false);
-    const startPreviewMode = !session.scenarioStarted;
-    const startLabel = startPreviewMode ? "Start" : "Restart";
-    const startTargetLabel = startPreviewMode
-      ? (scenarioUsesChallengePresentation(currentScenario()) ? "selected challenge" : "selected mission")
-      : (scenarioUsesChallengePresentation(currentScenario()) ? "current challenge" : "current mission");
 
     els.mobilePrevBtn.setAttribute("aria-label", challengeSelectionMode ? "Previous challenge" : "Previous lesson");
     els.mobileNextBtn.setAttribute("aria-label", challengeSelectionMode ? "Next challenge" : "Next lesson");
@@ -7724,6 +7733,9 @@
     }
     if (els.previousScenarioBtn) {
       els.previousScenarioBtn.addEventListener("click", previousScenario);
+    }
+    if (els.startScenarioBtn) {
+      els.startScenarioBtn.addEventListener("click", startOrRestartScenario);
     }
     if (els.resetScenarioBtn) {
       els.resetScenarioBtn.addEventListener("click", resetScenario);
