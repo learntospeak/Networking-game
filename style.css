@@ -2605,15 +2605,18 @@ h3 {
   content: "";
   position: absolute;
   left: 50%;
-  top: -28px;
+  top: -58px;
   transform: translateX(-50%);
-  width: 14px;
-  height: 30px;
-  border-radius: 999px;
+  width: 16px;
+  height: 62px;
+  border-radius: 999px 999px 6px 6px;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 42%, rgba(0, 0, 0, 0.26)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 34%, rgba(0, 0, 0, 0.28)),
     linear-gradient(180deg, #93c5fd 0%, #2563eb 100%);
-  box-shadow: 0 0 8px rgba(37, 99, 235, 0.28);
+  box-shadow:
+    inset 3px 0 4px rgba(255, 255, 255, 0.16),
+    inset -4px 0 5px rgba(0, 0, 0, 0.22),
+    0 0 8px rgba(37, 99, 235, 0.28);
   z-index: -1;
 }
 
@@ -2793,9 +2796,9 @@ h3 {
   }
 
   .port.connected .cable::after {
-    top: -22px;
-    width: 10px;
-    height: 24px;
+    top: -44px;
+    width: 12px;
+    height: 46px;
   }
 
   .hub-utility-grid {
