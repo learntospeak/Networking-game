@@ -1,4 +1,5 @@
 const { test, expect } = require("@playwright/test");
+const fs = require("fs");
 const {
   attachSmokeData,
   assertVisible,
@@ -125,7 +126,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
     await page.waitForTimeout(150);
   }
 
-  pushCheck(report, "ask coach button removed", await page.locator("#needHelpBtn").count() === 0, "#needHelpBtn absent");
+  pushCheck(report, "ask coach button appears", await page.locator("#needHelpBtn").isVisible().catch(() => false) && /Ask Coach/i.test(await page.locator("#needHelpBtn").innerText()), "#needHelpBtn visible");
   const helpCommand = await runTerminalCommand(page, "cd notes");
   report.commandResults.push(helpCommand);
   await page.evaluate(() => {
@@ -133,18 +134,31 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
       .filter((key) => key.startsWith("netlab:ai-coach-usage") || key === "netlab:ai-coach-local-faults")
       .forEach((key) => window.localStorage.removeItem(key));
   });
-  const aiExplain = await runTerminalCommand(page, "ask explain this like I'm 8");
-  report.commandResults.push(aiExplain);
-  pushCheck(report, "terminal-native ai coach answers inline", /\[AI Coach\]/i.test(aiExplain.notes) && /computer detective|clues/i.test(aiExplain.notes), aiExplain.notes);
+  await page.locator("#needHelpBtn").click();
+  await expect(page.locator("#terminalPrompt")).toHaveText("Coach>");
+  pushCheck(report, "ask coach button enters coach mode", /Command/i.test(await page.locator("#needHelpBtn").innerText()), await readText(page, "#terminalPrompt"));
+  const messyCoach = await runTerminalCommand(page, "i dont get it");
+  report.commandResults.push(messyCoach);
+  pushCheck(report, "messy natural question works in coach mode", /\[Coach\]/i.test(messyCoach.notes) && /task|asking|start/i.test(messyCoach.notes), messyCoach.notes);
+  const exitCoach = await runTerminalCommand(page, "exit");
+  report.commandResults.push(exitCoach);
+  await expect(page.locator("#terminalPrompt")).not.toHaveText("Coach>");
+  pushCheck(report, "coach mode can return to command mode", /Back to command mode/i.test(exitCoach.notes), exitCoach.notes);
   const aiOutput = await runTerminalCommand(page, "ask explain the output");
   report.commandResults.push(aiOutput);
-  pushCheck(report, "terminal-native ai coach uses last output", /cd notes/i.test(aiOutput.notes) && /output/i.test(aiOutput.notes), aiOutput.notes);
+  pushCheck(report, "ask routes to coach and uses last output", /\[Coach\]/i.test(aiOutput.notes) && /cd notes/i.test(aiOutput.notes) && /output/i.test(aiOutput.notes), aiOutput.notes);
   const aiNext = await runTerminalCommand(page, "ask what should I try next");
   report.commandResults.push(aiNext);
   pushCheck(report, "terminal-native ai coach tracks free usage", /current task|next/i.test(aiNext.notes), aiNext.notes);
+  const naturalSuggestion = await runTerminalCommand(page, "wat do i do now");
+  report.commandResults.push(naturalSuggestion);
+  pushCheck(report, "natural-language command mode gets coach suggestion", /Looks like you may be asking for help/i.test(naturalSuggestion.notes), naturalSuggestion.notes);
+  const normalCommandStillWorks = await runTerminalCommand(page, "dir");
+  report.commandResults.push(normalCommandStillWorks);
+  pushCheck(report, "normal terminal commands still work", normalCommandStillWorks.delta.length > 0 && !/Looks like you may be asking for help/i.test(normalCommandStillWorks.notes), normalCommandStillWorks.notes);
   const aiLimit = await runTerminalCommand(page, "ask give me a hint without the answer");
   report.commandResults.push(aiLimit);
-  pushCheck(report, "free user gets 3 ai uses per day", /3 free AI helps today|Upgrade/i.test(aiLimit.notes), aiLimit.notes);
+  pushCheck(report, "free user gets 3 ai uses per day", /3 free AI helps today|upgrade/i.test(aiLimit.notes), aiLimit.notes);
   const usageSnapshot = await page.evaluate(() => {
     const key = Object.keys(window.localStorage || {}).find((item) => item.startsWith("netlab:ai-coach-usage"));
     return key ? JSON.parse(window.localStorage.getItem(key)) : null;
@@ -156,7 +170,7 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   });
   const paidAsk = await runTerminalCommand(page, "ask what should I try next");
   report.commandResults.push(paidAsk);
-  pushCheck(report, "paid user gets unlimited ai uses", !/3 free AI helps today/i.test(paidAsk.notes) && /\[AI Coach\]/i.test(paidAsk.notes), paidAsk.notes);
+  pushCheck(report, "paid user gets unlimited ai uses", !/3 free AI helps today/i.test(paidAsk.notes) && /\[Coach\]/i.test(paidAsk.notes), paidAsk.notes);
   await page.evaluate(() => {
     window.NetlabApp.getActiveProfile = () => ({ id: "admin-smoke", label: "Admin Smoke", isGuest: false, plan: "admin", isPaid: true, isAdmin: true });
     window.__smokeOriginalSupabaseClient = window.NetlabSupabase?.client || null;
@@ -180,6 +194,12 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const nonAdmin = await runTerminalCommand(page, "ask admin log bug should not work");
   report.commandResults.push(nonAdmin);
   pushCheck(report, "non-admin cannot use admin commands", /not available/i.test(nonAdmin.notes), nonAdmin.notes);
+  const frontendSource = [
+    fs.readFileSync("terminalEngine.js", "utf8"),
+    fs.readFileSync("terminal-coach.html", "utf8"),
+    fs.readFileSync("supabase-config.js", "utf8")
+  ].join("\n");
+  pushCheck(report, "no OpenAI API key appears in frontend source", !/sk-[A-Za-z0-9_-]{20,}|OPENAI_API_KEY\s*=/.test(frontendSource), "no OpenAI secret pattern found");
   pushCheck(report, "side visual guide visible", await page.locator("#beginnerVisualGuideCard").isVisible().catch(() => false), "#beginnerVisualGuideCard visible");
 
   await expect(page.locator("#watchWalkthroughBtn")).toBeVisible();
@@ -481,7 +501,7 @@ test("Mobile smoke: terminal, subnetting, and HTTP controls remain usable", asyn
   report.commandResults.push(terminalResult);
   pushCheck(report, "linux mobile terminal command works", terminalResult.delta.length > 0, terminalResult.notes);
   pushCheck(report, "linux mobile terminal input visible", await page.locator("#terminalInput").isVisible(), "#terminalInput visible");
-  pushCheck(report, "mobile ask coach button removed", await page.locator("#needHelpBtn").count() === 0, "#needHelpBtn absent");
+  pushCheck(report, "mobile ask coach button remains in existing controls", await page.locator("#needHelpBtn").count() === 1, "#needHelpBtn present");
   const jumpTopVisible = await page.locator("#terminalJumpTopBtn").isVisible();
   const jumpLatestVisible = await page.locator("#terminalJumpLatestBtn").isVisible();
   pushCheck(report, "mobile terminal history controls render predictably", jumpTopVisible === jumpLatestVisible, `top=${jumpTopVisible} latest=${jumpLatestVisible}`);

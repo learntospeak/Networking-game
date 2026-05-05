@@ -269,6 +269,7 @@
     beginnerTicketDetailsOpen: false,
     beginnerRoadmapExpanded: true,
     helpAssistantOpen: false,
+    coachMode: false,
     recentConsoleErrors: []
   };
   let savedProgressRecord = null;
@@ -506,6 +507,7 @@
       els.startScenarioBtn.setAttribute("aria-label", `${startLabel} ${startTargetLabel}`);
       els.startScenarioBtn.title = `${startLabel} ${startTargetLabel}`;
     }
+    syncCoachModeControl();
 
     if (!els.mobilePrevBtn || !els.mobileNextBtn || !els.mobileHomeBtn || !els.mobileMenuBtn) {
       return;
@@ -2056,6 +2058,7 @@
 
   function activeAiCoachAccount() {
     const profile = NetlabApp?.getActiveProfile?.() || {};
+    // TODO: Replace metadata-based paid/admin checks with canonical Supabase subscription data when billing is connected.
     const isAdmin = Boolean(profile.isAdmin || profile.plan === "admin");
     const isPaid = Boolean(isAdmin || profile.isPaid || profile.plan === "paid");
     return {
@@ -2112,6 +2115,52 @@
     return /^ask(?:\s+|$)/i.test(String(rawInput || "").trim());
   }
 
+  function isCoachModeExit(rawInput) {
+    return /^(?:exit|quit|cmd|command|command mode|back)$/i.test(String(rawInput || "").trim());
+  }
+
+  function terminalCommandWords() {
+    return new Set([
+      "enable", "disable", "configure", "exit", "end", "show", "pwd", "ls", "dir", "cd", "mkdir", "touch",
+      "cat", "type", "echo", "find", "grep", "findstr", "tree", "cp", "copy", "xcopy", "mv", "move", "rm",
+      "rmdir", "rd", "del", "erase", "ren", "rename", "more", "attrib", "hostname", "whoami", "systeminfo",
+      "set", "ver", "date", "time", "cls", "prompt", "write", "tar", "wget", "ps", "tasklist", "kill",
+      "taskkill", "ping", "tracert", "traceroute", "pathping", "nslookup", "ipconfig", "netstat", "arp",
+      "route", "getmac", "sc", "net", "wmic", "driverquery", "query", "where", "fc", "shutdown", "interface",
+      "ip", "no", "description", "schtasks", "nmap", "searchsploit", "python", "nc", "telnet", "msfconsole"
+    ]);
+  }
+
+  function looksLikeTerminalCommand(rawInput) {
+    const parsed = parseInput(rawInput);
+    const command = String(parsed.primary?.command || "").toLowerCase();
+    if (!command) {
+      return false;
+    }
+    return terminalCommandWords().has(command);
+  }
+
+  function looksLikeNaturalCoachQuestion(rawInput) {
+    const text = String(rawInput || "").trim();
+    const lower = text.toLowerCase();
+    if (!text || isAiCoachCommand(text) || looksLikeTerminalCommand(text)) {
+      return false;
+    }
+    if (/[?]$/.test(text)) {
+      return true;
+    }
+    if (/^(?:i\s+)?(?:dont|don't|do not|dunno|idk|not sure|stuck|confused)\b/.test(lower)) {
+      return true;
+    }
+    if (/^(?:wat|what|why|how|where|when|can|could|should|explain|help)\b/.test(lower)) {
+      return true;
+    }
+    if (/^hey\b/.test(lower) && /\b(?:what|why|how|where|explain|mean|do i do|help)\b/.test(lower)) {
+      return true;
+    }
+    return /\b(?:dont get|don't get|do i do|do now|did .* fail|does .* mean|map a drive|type this|type commands|asking me|check next|explain.*easier|help me)\b/.test(lower);
+  }
+
   function limitAiCoachAnswer(text) {
     const compact = String(text || "I can help, but I need a little more detail about where you got stuck.")
       .replace(/\s+/g, " ")
@@ -2133,21 +2182,64 @@
   function aiCoachContext() {
     const scenario = currentScenario();
     const step = currentStep();
+    const level = currentBeginnerLevel();
+    const visualSnapshot = folderGuideSnapshot(scenario);
     return {
-      scenario,
-      step,
+      pageUrl: window.location.href,
+      trackMode: `${pageConfig.environmentCategory || "unknown"} / ${pageConfig.uiMode || (isBeginnerMode() ? "beginner" : "standard")}`,
+      level: level?.title || "",
       scenarioTitle: scenario?.title || "current lab",
       task: step?.objective || scenario?.objective || "complete the current task",
       cwd: currentWorkingDirectoryText() || "Not available",
       lastCommand: lastSubmittedCommand(),
       lastOutput: lastTerminalResultText(),
-      shell: shellLabel()
+      visibleProblemText: visibleTicketText(scenario, step) || "",
+      visualGuideState: visualSnapshot ? `current path ${visualSnapshot.currentPath || ""}`.trim() : "",
+      hintLevel: session.hintLevel,
+      shell: shellLabel(),
+      step
     };
+  }
+
+  function buildAiCoachPayload(question) {
+    const context = aiCoachContext();
+    return {
+      pageUrl: context.pageUrl,
+      trackMode: context.trackMode,
+      level: context.level,
+      scenarioTitle: context.scenarioTitle,
+      currentTask: context.task,
+      currentPath: context.cwd,
+      lastCommand: context.lastCommand,
+      lastOutput: context.lastOutput,
+      visibleProblemText: context.visibleProblemText,
+      visualGuideState: context.visualGuideState,
+      hintLevel: context.hintLevel,
+      question: String(question || "").trim()
+    };
+  }
+
+  async function requestBackendAiCoach(question) {
+    // TODO: Connect Supabase Edge Function for real AI Coach. Do not put OpenAI/API keys in frontend code.
+    void buildAiCoachPayload(question);
+    return null;
   }
 
   function fallbackAiCoachResponse(question) {
     const ctx = aiCoachContext();
     const lower = String(question || "").toLowerCase();
+
+    if (/where.*type|type.*where|where do i type/.test(lower)) {
+      return "Type lab commands in the terminal input at the bottom, beside the prompt. If the prompt says Coach>, you are asking for help; type exit to go back to command mode.";
+    }
+
+    if (/map.*drive|network drive|shared folder|share name/.test(lower)) {
+      return "You are trying to connect a shared folder so Windows treats it like a drive letter. In CMD, that usually uses the net use command. Look for the drive letter and share path in the task, then follow that pattern.";
+    }
+
+    if (/i\s*(?:dont|don't|do not)\s*(?:get|understand|know)|idk|stuck|confused|wat do i do/.test(lower)) {
+      return `This task is asking you to ${lowerFirstWord(ctx.task)}. Start by checking what the current task names, then use one command that gathers evidence instead of guessing.`;
+    }
 
     if (/make.*similar challenge|similar challenge|make.*harder|extend/.test(lower)) {
       return `Try this: You are in ${ctx.cwd}. Solve a similar problem to "${ctx.task}" without guessing the final answer first. Start by checking what evidence is available, then use one command to narrow the cause.`;
@@ -2309,13 +2401,52 @@
 
     const allowed = canUseAiCoach(account);
     if (!allowed.ok) {
-      printAiCoachResponse("You've used your 3 free AI helps today. Upgrade for unlimited help.");
+      printAiCoachResponse("You've used your 3 free AI helps today. Come back tomorrow or upgrade for unlimited help.");
       return true;
     }
 
     recordAiCoachUsage(account);
-    printAiCoachResponse(fallbackAiCoachResponse(question || "help me with this task"));
+    const backendResponse = await requestBackendAiCoach(question);
+    printAiCoachResponse(backendResponse || fallbackAiCoachResponse(question || "help me with this task"));
     return true;
+  }
+
+  function syncCoachModeControl() {
+    if (!els.needHelpBtn) {
+      return;
+    }
+    els.needHelpBtn.textContent = session.coachMode ? "Command" : "Ask Coach";
+    els.needHelpBtn.setAttribute("aria-pressed", session.coachMode ? "true" : "false");
+    els.needHelpBtn.setAttribute("aria-label", session.coachMode ? "Return to command mode" : "Ask Coach");
+    els.needHelpBtn.title = session.coachMode ? "Return to command mode" : "Ask Coach";
+  }
+
+  function enterCoachMode() {
+    session.coachMode = true;
+    syncCoachModeControl();
+    updatePrompt();
+    printAiCoachResponse("Coach mode is on. Ask your question in plain English, or type exit to return to command mode.");
+    focusTerminalInputAtEnd();
+  }
+
+  function exitCoachMode() {
+    session.coachMode = false;
+    syncCoachModeControl();
+    updatePrompt();
+    printAiCoachResponse("Back to command mode. Type terminal commands at the normal prompt.");
+    focusTerminalInputAtEnd();
+  }
+
+  function toggleCoachMode() {
+    if (session.coachMode) {
+      exitCoachMode();
+    } else {
+      enterCoachMode();
+    }
+  }
+
+  function printNaturalLanguageSuggestion() {
+    printAiCoachResponse("Looks like you may be asking for help. Press Ask Coach or type ask followed by your question.");
   }
 
   function coachFallbackResponse(note = currentHelpUserNote()) {
@@ -4023,7 +4154,7 @@
   }
 
   function printAiCoachResponse(text, type = "coach") {
-    printLine("[AI Coach]", type);
+    printLine("[Coach]", type);
     printLines(limitAiCoachAnswer(text), type);
   }
 
@@ -4085,6 +4216,10 @@
     return `[${getLayerLabel()}] ${StateManager.getPrompt(session.state)}`;
   }
 
+  function currentInputPromptLabel() {
+    return session.coachMode ? "Coach>" : getPromptLabel();
+  }
+
   function syncLayerElement(element, layer, text) {
     if (!element) return;
     element.dataset.layer = layer;
@@ -4144,7 +4279,7 @@
   }
 
   function updatePrompt() {
-    els.terminalPrompt.textContent = getPromptLabel();
+    els.terminalPrompt.textContent = currentInputPromptLabel();
   }
 
   function shellLabel() {
@@ -4724,7 +4859,7 @@
       printCoachLine("Need help? Open Commands or use Hint.");
       return;
     }
-    printCoachLine(isBeginnerMode() ? "Need help? Use Command Help, Hint, or Walkthrough." : "Need help? Open Commands or use Hint.");
+    printCoachLine(isBeginnerMode() ? "Need help? Press Ask Coach or type ask followed by your question." : "Need help? Press Ask Coach, open Commands, or use Hint.");
   }
 
   function resetScenarioState() {
@@ -4739,6 +4874,7 @@
     session.reviewStats = createReviewStats();
     session.ticketBriefingSeen = false;
     session.ticketBriefingOpen = false;
+    session.coachMode = false;
     session.beginnerTicketDetailsOpen = false;
     clearTaskCompleteCard();
   }
@@ -7507,17 +7643,20 @@
       closeWalkthrough({ restoreFocus: false });
     }
 
-    if (!session.scenarioStarted) {
-      els.terminalInput.value = "";
-      printLine(isBeginnerMode() ? "Pick a problem and press Start first." : "Start the selected challenge before issuing commands.", "coach");
+    syncTerminalHistoryState(true);
+    printLine(`${currentInputPromptLabel()} ${rawInput}`, "command");
+    pushHistory(rawInput);
+    els.terminalInput.value = "";
+
+    if (session.coachMode) {
+      if (isCoachModeExit(rawInput)) {
+        exitCoachMode();
+      } else {
+        await handleAiCoachCommand(`ask ${rawInput}`);
+      }
       renderPanel();
       return;
     }
-
-    syncTerminalHistoryState(true);
-    printLine(`${getPromptLabel()} ${rawInput}`, "command");
-    pushHistory(rawInput);
-    els.terminalInput.value = "";
 
     if (isAiCoachCommand(rawInput)) {
       await handleAiCoachCommand(rawInput);
@@ -7529,6 +7668,19 @@
       }
       return;
     }
+
+    if (looksLikeNaturalCoachQuestion(rawInput)) {
+      printNaturalLanguageSuggestion();
+      renderPanel();
+      return;
+    }
+
+    if (!session.scenarioStarted) {
+      printLine(isBeginnerMode() ? "Pick a problem and press Start first." : "Start the selected challenge before issuing commands.", "coach");
+      renderPanel();
+      return;
+    }
+
 
     if (!session.reviewStats) {
       session.reviewStats = createReviewStats();
@@ -7660,7 +7812,7 @@
       console.warn("[WalkthroughDebug] no walkthrough button found");
     }
     if (els.needHelpBtn) {
-      els.needHelpBtn.addEventListener("click", openHelpAssistant);
+      els.needHelpBtn.addEventListener("click", toggleCoachMode);
     }
     if (els.helpAssistantCloseBtn) {
       els.helpAssistantCloseBtn.addEventListener("click", () => closeHelpAssistant());
