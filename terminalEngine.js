@@ -272,6 +272,10 @@
   };
   let savedProgressRecord = null;
   const mobilePanelRegistry = [];
+  const AI_COACH_FREE_DAILY_LIMIT = 3;
+  const AI_COACH_USAGE_STORAGE_PREFIX = "netlab:ai-coach-usage";
+  const AI_COACH_GUEST_ID_STORAGE_KEY = "netlab:ai-coach-guest-id";
+  const AI_COACH_LOCAL_FAULTS_STORAGE_KEY = "netlab:ai-coach-local-faults";
 
   function captureConsoleError(args) {
     const text = args.map((item) => {
@@ -1844,8 +1848,10 @@
       }
     }
 
+    const entriesAfterCommand = commandIndex >= 0 ? session.terminalEntries.slice(commandIndex + 1) : [];
+    const nextCommandOffset = entriesAfterCommand.findIndex((entry) => entry?.type === "command");
     const resultEntries = commandIndex >= 0
-      ? session.terminalEntries.slice(commandIndex + 1)
+      ? entriesAfterCommand.slice(0, nextCommandOffset >= 0 ? nextCommandOffset : entriesAfterCommand.length)
       : session.terminalEntries.slice(-6);
     const resultText = resultEntries
       .filter((entry) => entry?.type !== "command")
@@ -2002,6 +2008,305 @@
       "Recent console errors:",
       session.recentConsoleErrors.join("\n") || "None captured."
     ].join("\n");
+  }
+
+  function todayKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function loadLocalJson(key, fallback) {
+    try {
+      const raw = window.localStorage?.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function saveLocalJson(key, value) {
+    try {
+      window.localStorage?.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function getAiCoachGuestId() {
+    try {
+      let guestId = window.localStorage?.getItem(AI_COACH_GUEST_ID_STORAGE_KEY) || "";
+      if (!guestId) {
+        guestId = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        window.localStorage?.setItem(AI_COACH_GUEST_ID_STORAGE_KEY, guestId);
+      }
+      return guestId;
+    } catch (error) {
+      return "guest-local";
+    }
+  }
+
+  function activeAiCoachAccount() {
+    const profile = NetlabApp?.getActiveProfile?.() || {};
+    const isAdmin = Boolean(profile.isAdmin || profile.plan === "admin");
+    const isPaid = Boolean(isAdmin || profile.isPaid || profile.plan === "paid");
+    return {
+      userId: profile.isGuest === false && profile.id ? String(profile.id) : getAiCoachGuestId(),
+      plan: isAdmin ? "admin" : isPaid ? "paid" : "free",
+      isAdmin,
+      isPaid,
+      isGuest: profile.isGuest !== false
+    };
+  }
+
+  function aiCoachUsageKey(account = activeAiCoachAccount(), date = todayKey()) {
+    return `${AI_COACH_USAGE_STORAGE_PREFIX}:${account.userId}:${date}`;
+  }
+
+  function getAiCoachUsage(account = activeAiCoachAccount(), date = todayKey()) {
+    const usage = loadLocalJson(aiCoachUsageKey(account, date), null) || {};
+    return {
+      userId: account.userId,
+      date,
+      count: Number.isFinite(Number(usage.count)) ? Number(usage.count) : 0,
+      plan: account.plan
+    };
+  }
+
+  function recordAiCoachUsage(account = activeAiCoachAccount()) {
+    const usage = getAiCoachUsage(account);
+    const updated = {
+      userId: account.userId,
+      date: usage.date,
+      count: usage.count + 1,
+      plan: account.plan
+    };
+    saveLocalJson(aiCoachUsageKey(account, usage.date), updated);
+    return updated;
+  }
+
+  function canUseAiCoach(account = activeAiCoachAccount()) {
+    if (account.isPaid || account.isAdmin) {
+      return { ok: true, usage: getAiCoachUsage(account) };
+    }
+    const usage = getAiCoachUsage(account);
+    return {
+      ok: usage.count < AI_COACH_FREE_DAILY_LIMIT,
+      usage
+    };
+  }
+
+  function cleanAiCoachQuestion(rawInput) {
+    return String(rawInput || "").replace(/^ask\b/i, "").trim();
+  }
+
+  function isAiCoachCommand(rawInput) {
+    return /^ask(?:\s+|$)/i.test(String(rawInput || "").trim());
+  }
+
+  function limitAiCoachAnswer(text) {
+    const compact = String(text || "I can help, but I need a little more detail about where you got stuck.")
+      .replace(/\s+/g, " ")
+      .trim();
+    const sentences = compact.match(/[^.!?]+[.!?]?/g) || [compact];
+    const limited = sentences.slice(0, 4).join(" ").trim();
+    return limited.length > 420 ? `${limited.slice(0, 417).trimEnd()}...` : limited;
+  }
+
+  function nonAnswerHint(step = currentStep()) {
+    const hints = Array.isArray(step?.hints) ? step.hints : [];
+    const safeHint = hints.find((hint) => !/try\s+`[^`]+`/i.test(String(hint || ""))) || hints[0] || "";
+    if (safeHint) {
+      return String(safeHint).replace(/try\s+`[^`]+`\.?/ig, "Use the command family that matches the task.").trim();
+    }
+    return "Look at the current task, then run the smallest command that gathers evidence before changing anything.";
+  }
+
+  function aiCoachContext() {
+    const scenario = currentScenario();
+    const step = currentStep();
+    return {
+      scenario,
+      step,
+      scenarioTitle: scenario?.title || "current lab",
+      task: step?.objective || scenario?.objective || "complete the current task",
+      cwd: currentWorkingDirectoryText() || "Not available",
+      lastCommand: lastSubmittedCommand(),
+      lastOutput: lastTerminalResultText(),
+      shell: shellLabel()
+    };
+  }
+
+  function fallbackAiCoachResponse(question) {
+    const ctx = aiCoachContext();
+    const lower = String(question || "").toLowerCase();
+
+    if (/make.*similar challenge|similar challenge|make.*harder|extend/.test(lower)) {
+      return `Try this: You are in ${ctx.cwd}. Solve a similar problem to "${ctx.task}" without guessing the final answer first. Start by checking what evidence is available, then use one command to narrow the cause.`;
+    }
+
+    if (/like i.?m 8|like im 8|explain.*8/.test(lower)) {
+      return `You are being a computer detective. The lab gives you a small problem, and your job is to use commands to find clues. Right now, you are trying to ${lowerFirstWord(ctx.task)}.`;
+    }
+
+    if (/explain.*output|what.*output|output.*mean/.test(lower)) {
+      if (!ctx.lastCommand) {
+        return "There is no previous lab command to explain yet. Run one command first, then ask me to explain the output.";
+      }
+      return `Your last command was "${ctx.lastCommand}". The output says: ${ctx.lastOutput} Use that result to decide whether you proved the current task or only gathered background evidence.`;
+    }
+
+    if (/why.*fail|command.*fail|didn.?t work|not work/.test(lower)) {
+      if (!ctx.lastCommand) {
+        return "No lab command has failed yet. Try the task command first, then ask why it failed if the output looks wrong.";
+      }
+      return `The command "${ctx.lastCommand}" did not finish the task because the result does not match the current objective yet. Compare the output with what the task asks for, then adjust the target, folder, or command type.`;
+    }
+
+    if (/hint|without.*answer|no answer/.test(lower)) {
+      return `${nonAnswerHint(ctx.step)} I will keep the exact solution back unless you ask for it directly.`;
+    }
+
+    if (/next|try/.test(lower)) {
+      return `Next, focus on this task: ${ctx.task} Use one command that checks evidence in your current location: ${ctx.cwd}.`;
+    }
+
+    if (/explain|what.*doing|what.*asking|task/.test(lower)) {
+      return `This lab is asking you to ${lowerFirstWord(ctx.task)}. You are using ${ctx.shell} to gather evidence one step at a time. Do not guess the fix until the command output supports it.`;
+    }
+
+    return `Focus on the current task: ${ctx.task} Use the last output as evidence, then make one small command choice that narrows the problem.`;
+  }
+
+  function buildAdminFaultPayload(kind, description) {
+    const scenario = currentScenario();
+    const step = currentStep();
+    return {
+      kind,
+      page_url: window.location.href,
+      track_mode: `${pageConfig.environmentCategory || "unknown"} / ${pageConfig.uiMode || (isBeginnerMode() ? "beginner" : "standard")}`,
+      scenario_title: scenario?.title || "",
+      current_task: step?.objective || "",
+      current_cwd: currentWorkingDirectoryText() || "",
+      last_command: lastSubmittedCommand(),
+      last_terminal_output: lastTerminalResultText(),
+      timestamp: new Date().toISOString(),
+      viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+      admin_description: description || "No description provided."
+    };
+  }
+
+  function adminFaultReportText(payload) {
+    return [
+      "Admin Fault Report",
+      `Type: ${payload.kind}`,
+      `URL: ${payload.page_url}`,
+      `Track/mode: ${payload.track_mode}`,
+      `Scenario: ${payload.scenario_title}`,
+      `Task: ${payload.current_task}`,
+      `CWD: ${payload.current_cwd}`,
+      `Last command: ${payload.last_command || "None"}`,
+      `Last output: ${payload.last_terminal_output || "None"}`,
+      `Viewport: ${payload.viewport_size}`,
+      `Timestamp: ${payload.timestamp}`,
+      `Description: ${payload.admin_description}`
+    ].join("\n");
+  }
+
+  function saveLocalAdminFault(payload) {
+    const faults = loadLocalJson(AI_COACH_LOCAL_FAULTS_STORAGE_KEY, []);
+    const nextFaults = Array.isArray(faults) ? faults.slice(-49) : [];
+    nextFaults.push(payload);
+    saveLocalJson(AI_COACH_LOCAL_FAULTS_STORAGE_KEY, nextFaults);
+    return nextFaults;
+  }
+
+  async function storeAdminFault(payload) {
+    const supabase = window.NetlabSupabase?.client || null;
+    if (supabase?.from) {
+      try {
+        const { error } = await supabase.from("app_fault_reports").insert(payload);
+        if (!error) {
+          saveLocalAdminFault({ ...payload, stored: "supabase" });
+          return { stored: "supabase" };
+        }
+      } catch (error) {
+        // Local fallback below keeps the report available when the table or policy is not ready.
+      }
+    }
+
+    saveLocalAdminFault({ ...payload, stored: "local" });
+    if (els.helpReportOutput) {
+      els.helpReportOutput.value = adminFaultReportText(payload);
+      els.helpReportOutput.hidden = false;
+    }
+    if (els.copyHelpReportBtn) {
+      els.copyHelpReportBtn.hidden = false;
+    }
+    return { stored: "local" };
+  }
+
+  function listLocalAdminFaults() {
+    const faults = loadLocalJson(AI_COACH_LOCAL_FAULTS_STORAGE_KEY, []);
+    return Array.isArray(faults) ? faults : [];
+  }
+
+  async function handleAdminAiCoachCommand(question, account) {
+    if (!account.isAdmin) {
+      printAiCoachResponse("That command is not available for this account.");
+      return true;
+    }
+
+    recordAiCoachUsage(account);
+    const logMatch = question.match(/^admin\s+log\s+(fault|bug|confusion)\s+(.+)/i);
+    if (logMatch) {
+      const payload = buildAdminFaultPayload(logMatch[1].toLowerCase(), logMatch[2].trim());
+      const result = await storeAdminFault(payload);
+      printAiCoachResponse(result.stored === "supabase"
+        ? "Logged. The fault report was saved to Supabase."
+        : "Logged locally. The Supabase table or policy was not ready, so I placed a copyable report in the help report field.");
+      return true;
+    }
+
+    if (/^admin\s+faults\b/i.test(question)) {
+      const faults = listLocalAdminFaults();
+      printAiCoachResponse(faults.length
+        ? `Local fault log has ${faults.length} item(s). Latest: ${faults[faults.length - 1].kind} - ${faults[faults.length - 1].admin_description}`
+        : "No local admin faults are stored in this browser yet.");
+      return true;
+    }
+
+    if (/^admin\s+summarize\s+faults\b/i.test(question)) {
+      const faults = listLocalAdminFaults();
+      const counts = faults.reduce((acc, fault) => {
+        acc[fault.kind || "fault"] = (acc[fault.kind || "fault"] || 0) + 1;
+        return acc;
+      }, {});
+      const summary = Object.keys(counts).map((key) => `${key}: ${counts[key]}`).join(", ");
+      printAiCoachResponse(summary ? `Local fault summary: ${summary}. Latest issue: ${faults[faults.length - 1].admin_description}` : "No local faults to summarize yet.");
+      return true;
+    }
+
+    printAiCoachResponse("Admin commands available here are log fault, log bug, log confusion, faults, and summarize faults.");
+    return true;
+  }
+
+  async function handleAiCoachCommand(rawInput) {
+    const question = cleanAiCoachQuestion(rawInput);
+    const account = activeAiCoachAccount();
+
+    if (/^admin\b/i.test(question)) {
+      return handleAdminAiCoachCommand(question, account);
+    }
+
+    const allowed = canUseAiCoach(account);
+    if (!allowed.ok) {
+      printAiCoachResponse("You've used your 3 free AI helps today. Upgrade for unlimited help.");
+      return true;
+    }
+
+    recordAiCoachUsage(account);
+    printAiCoachResponse(fallbackAiCoachResponse(question || "help me with this task"));
+    return true;
   }
 
   function coachFallbackResponse(note = currentHelpUserNote()) {
@@ -3706,6 +4011,11 @@
 
   function printCoachLine(text, type = "coach") {
     printTaggedLine("Coach", text, type);
+  }
+
+  function printAiCoachResponse(text, type = "coach") {
+    printLine("[AI Coach]", type);
+    printLines(limitAiCoachAnswer(text), type);
   }
 
   function printHintLine(text) {
@@ -7169,7 +7479,7 @@
     renderPanel();
   }
 
-  function runSubmittedCommand(event) {
+  async function runSubmittedCommand(event) {
     event.preventDefault();
     const rawInput = els.terminalInput.value.trim();
     if (!rawInput) return;
@@ -7199,6 +7509,17 @@
     printLine(`${getPromptLabel()} ${rawInput}`, "command");
     pushHistory(rawInput);
     els.terminalInput.value = "";
+
+    if (isAiCoachCommand(rawInput)) {
+      await handleAiCoachCommand(rawInput);
+      renderPanel();
+      if (isMobileTerminalLayout() && !session.ticketBriefingOpen && !session.beginnerGuideOpen) {
+        window.requestAnimationFrame(() => {
+          focusTerminalInputAtEnd();
+        });
+      }
+      return;
+    }
 
     if (!session.reviewStats) {
       session.reviewStats = createReviewStats();

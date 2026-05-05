@@ -128,6 +128,58 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   pushCheck(report, "ask coach button appears", await page.locator("#needHelpBtn").isVisible().catch(() => false) && /Ask Coach/i.test(await page.locator("#needHelpBtn").innerText()), "#needHelpBtn visible");
   const helpCommand = await runTerminalCommand(page, "cd notes");
   report.commandResults.push(helpCommand);
+  await page.evaluate(() => {
+    Object.keys(window.localStorage || {})
+      .filter((key) => key.startsWith("netlab:ai-coach-usage") || key === "netlab:ai-coach-local-faults")
+      .forEach((key) => window.localStorage.removeItem(key));
+  });
+  const aiExplain = await runTerminalCommand(page, "ask explain this like I'm 8");
+  report.commandResults.push(aiExplain);
+  pushCheck(report, "terminal-native ai coach answers inline", /\[AI Coach\]/i.test(aiExplain.notes) && /computer detective|clues/i.test(aiExplain.notes), aiExplain.notes);
+  const aiOutput = await runTerminalCommand(page, "ask explain the output");
+  report.commandResults.push(aiOutput);
+  pushCheck(report, "terminal-native ai coach uses last output", /cd notes/i.test(aiOutput.notes) && /output/i.test(aiOutput.notes), aiOutput.notes);
+  const aiNext = await runTerminalCommand(page, "ask what should I try next");
+  report.commandResults.push(aiNext);
+  pushCheck(report, "terminal-native ai coach tracks free usage", /current task|next/i.test(aiNext.notes), aiNext.notes);
+  const aiLimit = await runTerminalCommand(page, "ask give me a hint without the answer");
+  report.commandResults.push(aiLimit);
+  pushCheck(report, "free user gets 3 ai uses per day", /3 free AI helps today|Upgrade/i.test(aiLimit.notes), aiLimit.notes);
+  const usageSnapshot = await page.evaluate(() => {
+    const key = Object.keys(window.localStorage || {}).find((item) => item.startsWith("netlab:ai-coach-usage"));
+    return key ? JSON.parse(window.localStorage.getItem(key)) : null;
+  });
+  pushCheck(report, "ai usage record stores user date count plan", usageSnapshot?.count === 3 && usageSnapshot?.plan === "free" && Boolean(usageSnapshot?.userId) && Boolean(usageSnapshot?.date), JSON.stringify(usageSnapshot));
+  await page.evaluate(() => {
+    window.__smokeOriginalGetActiveProfile = window.NetlabApp.getActiveProfile;
+    window.NetlabApp.getActiveProfile = () => ({ id: "paid-smoke", label: "Paid Smoke", isGuest: false, plan: "paid", isPaid: true, isAdmin: false });
+  });
+  const paidAsk = await runTerminalCommand(page, "ask what should I try next");
+  report.commandResults.push(paidAsk);
+  pushCheck(report, "paid user gets unlimited ai uses", !/3 free AI helps today/i.test(paidAsk.notes) && /\[AI Coach\]/i.test(paidAsk.notes), paidAsk.notes);
+  await page.evaluate(() => {
+    window.NetlabApp.getActiveProfile = () => ({ id: "admin-smoke", label: "Admin Smoke", isGuest: false, plan: "admin", isPaid: true, isAdmin: true });
+    window.__smokeOriginalSupabaseClient = window.NetlabSupabase?.client || null;
+    if (window.NetlabSupabase) {
+      window.NetlabSupabase.client = null;
+    }
+  });
+  const adminLog = await runTerminalCommand(page, "ask admin log fault smoke test fault");
+  report.commandResults.push(adminLog);
+  pushCheck(report, "admin user can log a fault", /Logged locally|saved to Supabase/i.test(adminLog.notes), adminLog.notes);
+  const localFaultCount = await page.evaluate(() => JSON.parse(window.localStorage.getItem("netlab:ai-coach-local-faults") || "[]").length);
+  pushCheck(report, "admin fault stored locally when backend unavailable", localFaultCount > 0, String(localFaultCount));
+  await page.evaluate(() => {
+    if (window.__smokeOriginalGetActiveProfile) {
+      window.NetlabApp.getActiveProfile = window.__smokeOriginalGetActiveProfile;
+    }
+    if (window.NetlabSupabase) {
+      window.NetlabSupabase.client = window.__smokeOriginalSupabaseClient;
+    }
+  });
+  const nonAdmin = await runTerminalCommand(page, "ask admin log bug should not work");
+  report.commandResults.push(nonAdmin);
+  pushCheck(report, "non-admin cannot use admin commands", /not available/i.test(nonAdmin.notes), nonAdmin.notes);
   await page.locator("#needHelpBtn").click();
   await expect(page.locator("#helpAssistantCard")).toBeVisible();
   pushCheck(report, "ask coach panel opens", await page.locator("#helpAssistantCard").isVisible().catch(() => false), "#helpAssistantCard visible");

@@ -116,9 +116,20 @@
     }
 
     const metadata = user.user_metadata || {};
+    const appMetadata = user.app_metadata || {};
     const email = String(user.email || "").trim();
     const preferredLabel = String(metadata.display_name || metadata.username || "").trim();
     const fallbackLabel = email.includes("@") ? email.split("@")[0] : "Learner";
+    const rawPlan = String(metadata.plan || metadata.subscription_plan || appMetadata.plan || appMetadata.subscription_plan || "").trim().toLowerCase();
+    const roles = []
+      .concat(metadata.roles || [])
+      .concat(appMetadata.roles || [])
+      .concat(metadata.role || "")
+      .concat(appMetadata.role || "")
+      .map((role) => String(role || "").trim().toLowerCase())
+      .filter(Boolean);
+    const isAdmin = Boolean(metadata.is_admin || metadata.admin || appMetadata.is_admin || appMetadata.admin || roles.includes("admin"));
+    const isPaid = Boolean(isAdmin || ["paid", "pro", "premium", "subscriber", "subscribed"].includes(rawPlan) || metadata.is_paid || appMetadata.is_paid);
 
     return {
       id: user.id,
@@ -126,7 +137,10 @@
       email: email,
       label: preferredLabel || email || fallbackLabel,
       authType: "supabase",
-      isGuest: false
+      isGuest: false,
+      plan: isAdmin ? "admin" : isPaid ? "paid" : "free",
+      isPaid: isPaid,
+      isAdmin: isAdmin
     };
   }
 
