@@ -194,6 +194,26 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const nonAdmin = await runTerminalCommand(page, "ask admin log bug should not work");
   report.commandResults.push(nonAdmin);
   pushCheck(report, "non-admin cannot use admin commands", /not available/i.test(nonAdmin.notes), nonAdmin.notes);
+  const terminalErrorStart = await runTerminalCommand(page, "log error smoke local terminal error");
+  report.commandResults.push(terminalErrorStart);
+  const terminalErrorPassword = await runTerminalCommand(page, "Passwordlog");
+  report.commandResults.push(terminalErrorPassword);
+  pushCheck(report, "terminal log error stores with password", /Logged terminal error ERR-/i.test(terminalErrorPassword.notes), terminalErrorPassword.notes);
+  pushCheck(report, "terminal log error password is masked", !terminalErrorPassword.delta.some((line) => /Passwordlog/.test(line.text)), terminalErrorPassword.notes);
+  const storedErrorId = await page.evaluate(() => {
+    const faults = JSON.parse(window.localStorage.getItem("netlab:ai-coach-local-faults") || "[]");
+    return faults.find((fault) => fault.source_command === "log error" && /smoke local terminal error/i.test(fault.admin_description || ""))?.report_id || "";
+  });
+  pushCheck(report, "terminal log error can be retrieved from local storage", /^ERR-/.test(storedErrorId), storedErrorId);
+  const terminalErrorsList = await runTerminalCommand(page, "log errors");
+  report.commandResults.push(terminalErrorsList);
+  pushCheck(report, "terminal log errors command lists stored errors", storedErrorId && terminalErrorsList.notes.includes(storedErrorId), terminalErrorsList.notes);
+  if (storedErrorId) {
+    await runTerminalCommand(page, `log error update ${storedErrorId} smoke updated terminal error`);
+    const terminalErrorUpdatePassword = await runTerminalCommand(page, "Passwordlog");
+    report.commandResults.push(terminalErrorUpdatePassword);
+    pushCheck(report, "terminal log error update works", new RegExp(`Updated logged error ${storedErrorId}`, "i").test(terminalErrorUpdatePassword.notes), terminalErrorUpdatePassword.notes);
+  }
   const frontendSource = [
     fs.readFileSync("terminalEngine.js", "utf8"),
     fs.readFileSync("terminal-coach.html", "utf8"),

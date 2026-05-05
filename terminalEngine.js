@@ -269,6 +269,7 @@
     beginnerRoadmapExpanded: true,
     helpAssistantOpen: false,
     coachMode: false,
+    errorLogFlow: null,
     recentConsoleErrors: []
   };
   let savedProgressRecord = null;
@@ -277,6 +278,7 @@
   const AI_COACH_USAGE_STORAGE_PREFIX = "netlab:ai-coach-usage";
   const AI_COACH_GUEST_ID_STORAGE_KEY = "netlab:ai-coach-guest-id";
   const AI_COACH_LOCAL_FAULTS_STORAGE_KEY = "netlab:ai-coach-local-faults";
+  const ADMIN_ERROR_LOG_PASSWORD = "Passwordlog";
 
   function captureConsoleError(args) {
     const text = args.map((item) => {
@@ -2349,6 +2351,156 @@
     return Array.isArray(faults) ? faults : [];
   }
 
+  function saveAllLocalAdminFaults(faults) {
+    saveLocalJson(AI_COACH_LOCAL_FAULTS_STORAGE_KEY, Array.isArray(faults) ? faults.slice(-50) : []);
+  }
+
+  function createAdminErrorReportId() {
+    return `ERR-${new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14)}`;
+  }
+
+  function localErrorReports() {
+    return listLocalAdminFaults().filter((fault) => fault.kind === "error" || fault.source_command === "log error");
+  }
+
+  function printLocalErrorReports() {
+    const reports = localErrorReports();
+    if (!reports.length) {
+      printCoachLine("No logged terminal errors are stored in this browser yet.");
+      return;
+    }
+
+    const latest = reports.slice(-5).reverse().map((report) => {
+      const id = report.report_id || "no-id";
+      const text = report.admin_description || "No description.";
+      return `${id}: ${text}`;
+    });
+    printCoachLine(`Stored terminal errors (${reports.length}). Latest:`);
+    printLines(latest, "coach");
+  }
+
+  function saveTerminalErrorReport(description) {
+    const payload = {
+      ...buildAdminFaultPayload("error", description),
+      report_id: createAdminErrorReportId(),
+      source_command: "log error",
+      stored: "local",
+      auth_method: "terminal-admin-passcode"
+    };
+    saveLocalAdminFault(payload);
+    return payload;
+  }
+
+  function updateTerminalErrorReport(reportId, description) {
+    const faults = listLocalAdminFaults();
+    const normalizedId = String(reportId || "").trim().toLowerCase();
+    const index = faults.findIndex((fault) => String(fault.report_id || "").toLowerCase() === normalizedId);
+    if (index < 0) {
+      return null;
+    }
+
+    const previousDescription = faults[index].admin_description || "";
+    faults[index] = {
+      ...faults[index],
+      admin_description: description,
+      previous_admin_description: previousDescription,
+      updated_at: new Date().toISOString(),
+      updated_via: "log error update"
+    };
+    saveAllLocalAdminFaults(faults);
+    return faults[index];
+  }
+
+  function beginTerminalErrorLogFlow(description = "") {
+    session.errorLogFlow = {
+      mode: "create",
+      awaiting: "password",
+      description: String(description || "").trim()
+    };
+    printCoachLine("Admin error logging started. Enter the admin password.");
+  }
+
+  function beginTerminalErrorUpdateFlow(reportId, description = "") {
+    session.errorLogFlow = {
+      mode: "update",
+      awaiting: "password",
+      reportId: String(reportId || "").trim(),
+      description: String(description || "").trim()
+    };
+    printCoachLine(`Admin update started for ${session.errorLogFlow.reportId}. Enter the admin password.`);
+  }
+
+  function handleTerminalErrorLogCommand(rawInput) {
+    const input = String(rawInput || "").trim();
+    const updateMatch = input.match(/^log\s+error\s+update\s+(\S+)(?:\s+(.+))?$/i);
+    if (updateMatch) {
+      beginTerminalErrorUpdateFlow(updateMatch[1], updateMatch[2] || "");
+      return true;
+    }
+
+    if (/^(log\s+errors|show\s+errors|list\s+errors)$/i.test(input)) {
+      printLocalErrorReports();
+      return true;
+    }
+
+    const createMatch = input.match(/^log\s+error(?:\s+(.+))?$/i);
+    if (createMatch) {
+      beginTerminalErrorLogFlow(createMatch[1] || "");
+      return true;
+    }
+
+    return false;
+  }
+
+  function handleTerminalErrorLogFlow(rawInput) {
+    if (!session.errorLogFlow) {
+      return false;
+    }
+
+    const value = String(rawInput || "").trim();
+    if (/^(cancel|exit|quit)$/i.test(value)) {
+      session.errorLogFlow = null;
+      printCoachLine("Admin error logging cancelled.");
+      return true;
+    }
+
+    if (session.errorLogFlow.awaiting === "password") {
+      if (value !== ADMIN_ERROR_LOG_PASSWORD) {
+        session.errorLogFlow = null;
+        printCoachLine("Password incorrect. Admin error logging cancelled.", "error");
+        return true;
+      }
+
+      if (!session.errorLogFlow.description) {
+        session.errorLogFlow.awaiting = "description";
+        printCoachLine("Password accepted. Describe the error to log.");
+        return true;
+      }
+    } else if (session.errorLogFlow.awaiting === "description") {
+      session.errorLogFlow.description = value;
+    }
+
+    if (!session.errorLogFlow.description) {
+      printCoachLine("Add a short error description, or type cancel.");
+      session.errorLogFlow.awaiting = "description";
+      return true;
+    }
+
+    if (session.errorLogFlow.mode === "update") {
+      const updated = updateTerminalErrorReport(session.errorLogFlow.reportId, session.errorLogFlow.description);
+      session.errorLogFlow = null;
+      printCoachLine(updated
+        ? `Updated logged error ${updated.report_id}.`
+        : "I could not find that logged error ID in local storage.");
+      return true;
+    }
+
+    const payload = saveTerminalErrorReport(session.errorLogFlow.description);
+    session.errorLogFlow = null;
+    printCoachLine(`Logged terminal error ${payload.report_id}. Use "log errors" to retrieve it, or "log error update ${payload.report_id} <new text>" to update it.`);
+    return true;
+  }
+
   async function handleAdminAiCoachCommand(question, account) {
     if (!account.isAdmin) {
       printAiCoachResponse("That command is not available for this account.");
@@ -4217,6 +4369,12 @@
   }
 
   function currentInputPromptLabel() {
+    if (session.errorLogFlow?.awaiting === "password") {
+      return "Password>";
+    }
+    if (session.errorLogFlow?.awaiting === "description") {
+      return "Error>";
+    }
     return session.coachMode ? "Coach>" : getPromptLabel();
   }
 
@@ -7645,9 +7803,19 @@
     }
 
     syncTerminalHistoryState(true);
-    printLine(`${currentInputPromptLabel()} ${rawInput}`, "command");
-    pushHistory(rawInput);
+    const isPasswordEntry = session.errorLogFlow?.awaiting === "password";
+    const displayInput = isPasswordEntry ? "********" : rawInput;
+    printLine(`${currentInputPromptLabel()} ${displayInput}`, "command");
+    if (!isPasswordEntry) {
+      pushHistory(rawInput);
+    }
     els.terminalInput.value = "";
+
+    if (session.errorLogFlow) {
+      handleTerminalErrorLogFlow(rawInput);
+      renderPanel();
+      return;
+    }
 
     if (session.coachMode) {
       if (isCoachModeExit(rawInput)) {
@@ -7655,6 +7823,11 @@
       } else {
         await handleAiCoachCommand(`ask ${rawInput}`);
       }
+      renderPanel();
+      return;
+    }
+
+    if (handleTerminalErrorLogCommand(rawInput)) {
       renderPanel();
       return;
     }
