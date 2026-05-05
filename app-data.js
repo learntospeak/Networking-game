@@ -118,9 +118,12 @@
     const metadata = user.user_metadata || {};
     const appMetadata = user.app_metadata || {};
     const email = String(user.email || "").trim();
+    const emailKey = email.toLowerCase();
     const preferredLabel = String(metadata.display_name || metadata.username || "").trim();
     const fallbackLabel = email.includes("@") ? email.split("@")[0] : "Learner";
     const rawPlan = String(metadata.plan || metadata.subscription_plan || appMetadata.plan || appMetadata.subscription_plan || "").trim().toLowerCase();
+    // TODO: Replace this temporary tester allowlist with canonical Supabase subscription data.
+    const paidTesterEmails = new Set(["mexecute41@hotmail.com"]);
     const roles = []
       .concat(metadata.roles || [])
       .concat(appMetadata.roles || [])
@@ -129,7 +132,7 @@
       .map((role) => String(role || "").trim().toLowerCase())
       .filter(Boolean);
     const isAdmin = Boolean(metadata.is_admin || metadata.admin || appMetadata.is_admin || appMetadata.admin || roles.includes("admin"));
-    const isPaid = Boolean(isAdmin || ["paid", "pro", "premium", "subscriber", "subscribed"].includes(rawPlan) || metadata.is_paid || appMetadata.is_paid);
+    const isPaid = Boolean(isAdmin || paidTesterEmails.has(emailKey) || ["paid", "pro", "premium", "subscriber", "subscribed"].includes(rawPlan) || metadata.is_paid || appMetadata.is_paid);
 
     return {
       id: user.id,
