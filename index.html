@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminal Troubleshooting Lab</title>
-  <link rel="stylesheet" href="./style.css?v=20260502home2">
+  <link rel="stylesheet" href="./style.css?v=20260506hub1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
-  <script src="./index.js?v=20260425auth1" defer></script>
+  <script src="./index.js?v=20260506hub1" defer></script>
 </head>
 <body>
   <div class="rack-room">
@@ -26,21 +26,15 @@
       <h1>Terminal Troubleshooting Lab</h1>
 
       <section class="hub-page-top">
-        <section class="hub-hero-panel">
-          <p class="hub-hero-kicker">Terminal Tickets First</p>
+        <section id="hubResumePanel" class="hub-hero-panel">
           <h2>Practise terminal troubleshooting in your browser.</h2>
           <p class="hub-hero-copy">Start with guided Windows CMD tickets, then move into Linux, Cisco CLI, and cyber investigation labs when you are ready.</p>
           <div class="hub-hero-actions">
             <a class="app-action-btn hub-hero-action-primary" href="./terminal-coach.html?track=windows&amp;mode=beginner">Start Beginner Terminal Lab</a>
           </div>
-          <p class="hub-hero-secondary-row">
-            <a class="hub-hero-secondary-link" href="#learningPathsPanel">Already know the basics? Choose another lab below.</a>
-          </p>
-          <div id="hubQuickStats" class="hub-hero-stats"></div>
+          <div id="hubResumeContent" class="hub-resume-content" hidden></div>
         </section>
       </section>
-
-      <section id="hubResumePanel" class="hub-section-panel app-shell-panel hub-resume-panel"></section>
 
       <section id="practiceSection">
         <section id="learningPathsPanel" class="learning-paths-panel learning-hub-panel">

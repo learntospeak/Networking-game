@@ -22,7 +22,6 @@ body:not(.terminal-page) .router-shell,
 body:not(.terminal-page) #practiceSection,
 body:not(.terminal-page) .hub-page-top,
 body:not(.terminal-page) .hub-hero-panel,
-body:not(.terminal-page) .hub-hero-stats,
 body:not(.terminal-page) .hub-section-panel,
 body:not(.terminal-page) .app-shell-panel,
 body:not(.terminal-page) .app-shell-head,
@@ -49,7 +48,6 @@ body:not(.terminal-page) .learning-path-card {
 
 body:not(.terminal-page) .status-badge,
 body:not(.terminal-page) .app-shell-copy,
-body:not(.terminal-page) .app-shell-note,
 body:not(.terminal-page) .hub-hero-copy,
 body:not(.terminal-page) .learning-path-copy,
 body:not(.terminal-page) .learning-path-status,
@@ -110,8 +108,7 @@ body:not(.terminal-page) .reference-labs-panel {
   padding: 16px 18px;
 }
 
-.subnet-dashboard-page .app-shell-copy,
-.subnet-dashboard-page .app-shell-note {
+.subnet-dashboard-page .app-shell-copy {
   font-size: 13px;
   line-height: 1.55;
 }
@@ -807,17 +804,8 @@ button::before {
   width: 100%;
 }
 
-.hub-hero-kicker {
-  margin: 0;
-  color: #67e8f9;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
 .hub-hero-panel h2 {
-  margin: 10px 0 0;
+  margin: 0;
   font-size: 31px;
   line-height: 1.2;
   color: #f8fafc;
@@ -848,52 +836,10 @@ button::before {
   border-color: rgba(34, 197, 94, 0.34);
 }
 
-.hub-hero-secondary-row {
-  margin: 12px 0 0;
-}
-
-.hub-hero-secondary-link {
-  color: #93c5fd;
-  font-size: 14px;
-  line-height: 1.5;
-  text-decoration: none;
-}
-
-.hub-hero-secondary-link:hover,
-.hub-hero-secondary-link:focus-visible {
-  color: #bfdbfe;
-  text-decoration: underline;
-}
-
-.hub-hero-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.hub-resume-content {
   margin-top: 18px;
-}
-
-.hub-hero-stat {
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(71, 85, 105, 0.72);
-  background: rgba(4, 8, 15, 0.62);
-}
-
-.hub-hero-stat-value {
-  display: block;
-  color: #f8fafc;
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.hub-hero-stat-label {
-  display: block;
-  margin-top: 6px;
-  color: #cbd5e1;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding-top: 16px;
+  border-top: 1px solid rgba(71, 85, 105, 0.56);
 }
 
 .hub-account-panel {
@@ -2001,7 +1947,6 @@ button::before {
     0 0 14px rgba(245, 158, 11, 0.46);
 }
 
-.app-shell-note,
 .app-shell-error {
   margin: 12px 0 0;
   line-height: 1.6;
@@ -2032,10 +1977,6 @@ button::before {
   border-color: rgba(248, 113, 113, 0.42);
   background: rgba(127, 29, 29, 0.22);
   color: #fecaca;
-}
-
-.app-shell-note {
-  color: #94a3b8;
 }
 
 .app-shell-error {
@@ -2746,10 +2687,6 @@ h3 {
     font-size: 26px;
   }
 
-  .hub-hero-stats {
-    grid-template-columns: 1fr;
-  }
-
   .hub-account-panel,
   .hub-resume-panel {
     text-align: left;
@@ -2891,7 +2828,6 @@ body.merge-page:not(.http-flow-page) {
 
 .subnet-dashboard-page .status-badge,
 .subnet-dashboard-page .app-shell-copy,
-.subnet-dashboard-page .app-shell-note,
 .subnet-dashboard-page .subnet-dashboard-subtitle,
 .subnet-dashboard-page .subnet-mode-card-copy,
 .subnet-dashboard-page .subnet-reference-card-copy,
@@ -3168,8 +3104,7 @@ body.merge-page:not(.http-flow-page) {
   }
 
   .subnet-dashboard-page .subnet-dashboard-subtitle,
-  .subnet-dashboard-page .app-shell-copy,
-  .subnet-dashboard-page .app-shell-note {
+  .subnet-dashboard-page .app-shell-copy {
     font-size: 13px;
     line-height: 1.5;
   }

@@ -2665,11 +2665,6 @@
     line-height: 1.5;
   }
 
-  .terminal-page[data-environment-category="windows"].terminal-beginner-mode .app-shell-note {
-    font-size: 12px;
-    line-height: 1.45;
-  }
-
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .support-card,
   .terminal-page[data-environment-category="windows"].terminal-beginner-mode .support-card-primary {
     padding: 14px 16px;

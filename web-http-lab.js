@@ -1742,8 +1742,7 @@ const screens = [
       "  <button id=\"startOverSectionBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
       "  <button id=\"toggleSoundBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Sound: " + escapeHtml(NetlabApp.isSoundEnabled() ? "On" : "Off") + "</button>",
       "  <button id=\"resetProgressBtn\" class=\"app-action-btn app-action-btn-muted\" type=\"button\">Reset Progress</button>",
-      "</div>",
-      "<p class=\"app-shell-note\">Reset Progress clears all saved web lab progress for the current profile. " + escapeHtml(NetlabApp.getProfileStorageNote()) + "</p>"
+      "</div>"
     ].join("");
 
     const resumeBtn = document.getElementById("resumeSectionBtn");

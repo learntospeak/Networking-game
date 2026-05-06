@@ -44,8 +44,7 @@
 
   async function init() {
     els.accountPanel = document.getElementById("hubAccountPanel");
-    els.resumePanel = document.getElementById("hubResumePanel");
-    els.quickStats = document.getElementById("hubQuickStats");
+    els.resumePanel = document.getElementById("hubResumeContent") || document.getElementById("hubResumePanel");
     els.cardProgressSlots = Array.from(document.querySelectorAll("[data-progress-slot]"));
 
     renderLoadingState();
@@ -83,31 +82,9 @@
   }
 
   function renderAll() {
-    renderQuickStats();
     renderAccountPanel();
     renderResumePanel();
     renderCardProgress();
-  }
-
-  function renderQuickStats() {
-    if (!els.quickStats) {
-      return;
-    }
-
-    const stats = NetlabApp.getDashboardStats();
-    els.quickStats.innerHTML = [
-      renderHeroStat("Labs In Progress", stats.startedSections),
-      renderHeroStat("Items Complete", stats.completedItems)
-    ].join("");
-  }
-
-  function renderHeroStat(label, value) {
-    return [
-      "<div class=\"hub-hero-stat\">",
-      "  <span class=\"hub-hero-stat-value\">" + escapeHtml(String(value)) + "</span>",
-      "  <span class=\"hub-hero-stat-label\">" + escapeHtml(label) + "</span>",
-      "</div>"
-    ].join("");
   }
 
   function normalizeAuthErrorMessage(message) {
@@ -351,7 +328,6 @@
       return;
     }
 
-    const profile = NetlabApp.getActiveProfile();
     const lastProgress = NetlabApp.getLastActiveProgress();
 
     if (!lastProgress) {
@@ -373,8 +349,7 @@
       "<div class=\"app-shell-actions\">",
       "  <a class=\"app-action-link\" href=\"" + escapeHtml(NetlabApp.buildSectionUrl(lastProgress.sectionId, "resume")) + "\">Resume</a>",
       "  <button id=\"startOverLastBtn\" class=\"app-action-btn\" type=\"button\">Start Over</button>",
-      "</div>",
-      "<p class=\"app-shell-note\">" + escapeHtml(profile.label + " · " + NetlabApp.getProfileStorageNote()) + "</p>"
+      "</div>"
     ].join("");
 
     const startOverBtn = document.getElementById("startOverLastBtn");
