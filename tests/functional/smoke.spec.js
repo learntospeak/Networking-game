@@ -208,6 +208,9 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
   const terminalErrorsList = await runTerminalCommand(page, "log errors");
   report.commandResults.push(terminalErrorsList);
   pushCheck(report, "terminal log errors command lists stored errors", storedErrorId && terminalErrorsList.notes.includes(storedErrorId), terminalErrorsList.notes);
+  const terminalErrorsPush = await runTerminalCommand(page, "push errors");
+  report.commandResults.push(terminalErrorsPush);
+  pushCheck(report, "terminal push errors command responds", /Pushed|Could not push|No local terminal errors/i.test(terminalErrorsPush.notes), terminalErrorsPush.notes);
   if (storedErrorId) {
     await runTerminalCommand(page, `log error update ${storedErrorId} smoke updated terminal error`);
     const terminalErrorUpdatePassword = await runTerminalCommand(page, "Passwordlog");

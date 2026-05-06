@@ -2434,20 +2434,41 @@
     return { stored: "local" };
   }
 
-  async function syncPendingAdminFaults() {
+  function isTerminalErrorReport(fault) {
+    return fault?.kind === "error" || fault?.source_command === "log error";
+  }
+
+  async function syncPendingAdminFaults(options = {}) {
     const faults = listLocalAdminFaults();
-    const pending = faults.filter((fault) => fault.stored !== "supabase" && fault.report_id);
-    let synced = 0;
+    const pending = faults.filter((fault) => {
+      if (fault.stored === "supabase" || !fault.report_id) {
+        return false;
+      }
+      return options.onlyErrors ? isTerminalErrorReport(fault) : true;
+    });
+    const summary = {
+      pending: pending.length,
+      synced: 0,
+      failed: 0,
+      errors: []
+    };
 
     for (const fault of pending) {
-      const result = await uploadAdminFaultToCloud(fault);
-      if (result.stored === "supabase") {
+      const upload = await uploadAdminFaultToCloud(fault);
+      if (upload.stored === "supabase") {
         mergeLocalAdminFault({ ...fault, stored: "supabase", synced_at: new Date().toISOString(), sync_error: "" });
-        synced += 1;
+        summary.synced += 1;
+      } else {
+        const message = upload.error || "Cloud sync unavailable";
+        mergeLocalAdminFault({ ...fault, stored: "local", sync_error: message });
+        summary.failed += 1;
+        if (summary.errors.length < 3) {
+          summary.errors.push(`${fault.report_id}: ${message}`);
+        }
       }
     }
 
-    return synced;
+    return summary;
   }
 
   function listLocalAdminFaults() {
@@ -2464,7 +2485,7 @@
   }
 
   function localErrorReports() {
-    return listLocalAdminFaults().filter((fault) => fault.kind === "error" || fault.source_command === "log error");
+    return listLocalAdminFaults().filter(isTerminalErrorReport);
   }
 
   async function fetchCloudAdminErrors(limit = 10) {
@@ -2501,8 +2522,8 @@
   }
 
   async function printLocalErrorReports() {
-    const localReports = localErrorReports();
     await syncPendingAdminFaults();
+    const localReports = localErrorReports();
     const cloudResult = await fetchCloudAdminErrors(10);
     const cloudReports = cloudResult.reports || [];
     const combined = [...cloudReports, ...localReports]
@@ -2521,6 +2542,38 @@
     printLines(combined.map(formatErrorReportLine), "coach");
     if (!cloudResult.available) {
       printCoachLine("Cloud logs are shown after signing in with an admin account and creating the Supabase table.", "dim");
+    }
+  }
+
+  async function printAdminErrorPushResult() {
+    const localReports = localErrorReports();
+    const pending = localReports.filter((fault) => fault.stored !== "supabase" && fault.report_id);
+
+    if (!localReports.length) {
+      printCoachLine("No local terminal errors are stored in this browser yet.");
+      return;
+    }
+
+    if (!pending.length) {
+      printCoachLine("No local terminal errors need pushing. Everything stored here is already marked as synced.");
+      return;
+    }
+
+    const summary = await syncPendingAdminFaults({ onlyErrors: true });
+    if (summary.synced && !summary.failed) {
+      printCoachLine(`Pushed ${summary.synced} local terminal error${summary.synced === 1 ? "" : "s"} to Supabase.`);
+      printCoachLine("Run \"log errors\" to refresh the cloud/local list.", "dim");
+      return;
+    }
+
+    if (summary.synced) {
+      printCoachLine(`Pushed ${summary.synced} of ${summary.pending} local terminal errors to Supabase. ${summary.failed} still failed.`, "warning");
+    } else {
+      printCoachLine(`Could not push ${summary.pending} local terminal error${summary.pending === 1 ? "" : "s"} to Supabase.`, "error");
+    }
+
+    if (summary.errors.length) {
+      printLines(summary.errors.map((error) => `Sync failed: ${error}`), "dim");
     }
   }
 
@@ -2583,6 +2636,11 @@
 
     if (/^(log\s+errors|show\s+errors|list\s+errors)$/i.test(input)) {
       await printLocalErrorReports();
+      return true;
+    }
+
+    if (/^(push|sync|upload)\s+(?:local\s+)?(?:errors?|error\s+logs?|terminal\s+errors?|terminal\s+error\s+logs?)$/i.test(input)) {
+      await printAdminErrorPushResult();
       return true;
     }
 
