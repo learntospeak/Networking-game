@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web &amp; HTTP Lab</title>
+  <link rel="stylesheet" href="./style.css?v=20260429micro1">
+  <link rel="stylesheet" href="./protocol-flow.css?v=20260427mobile1">
+  <link rel="stylesheet" href="./web-http-lab.css?v=20260429httpflow10">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  >
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="./supabase-config.js?v=20260421sup1" defer></script>
+  <script src="./app-data.js?v=20260425sync1" defer></script>
+  <script src="./web-http-lab-data.js?v=20260425simple1" defer></script>
+  <script src="./web-http-lab.js?v=20260506hub1" defer></script>
+</head>
+<body class="flow-page http-flow-page">
+  <div class="rack-room">
+    <div class="router-shell flow-shell http-flow-shell">
+      <div class="router-top">
+        <div>
+          <div class="router-brand">NET-LAB WEB REQUEST PANEL</div>
+          <div class="flow-subbrand">HTTP/HTTPS learning flow</div>
+        </div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <main class="http-stage-shell">
+        <div class="http-shell-nav" aria-label="HTTP lab navigation">
+          <a class="http-shell-link is-home" href="./index.html">Home</a>
+          <a class="http-shell-link is-exit" href="./index.html">Exit Lab</a>
+        </div>
+
+        <section class="flow-panel http-screen" aria-live="polite">
+          <div class="http-screen-top">
+            <p id="httpStepKicker" class="flow-kicker">Step 1 of 6</p>
+            <h1 id="httpScreenTitle" class="http-screen-title">Browser to Server Flow</h1>
+            <p id="httpScreenMeta" class="http-screen-meta">Big picture</p>
+          </div>
+
+          <div id="httpScreenVisual" class="display-panel http-screen-visual"></div>
+          <div id="httpScreenActions" class="http-screen-actions">
+            <div id="httpActionFeedback" class="http-action-feedback" hidden></div>
+            <div id="httpAnswerGrid" class="http-answer-grid" hidden></div>
+            <div class="http-nav-row">
+              <button id="httpBackBtn" class="http-back-btn" type="button">Back</button>
+              <button id="httpNextBtn" class="http-next-btn" type="button">Next</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

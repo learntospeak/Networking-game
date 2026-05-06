@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subnetting Lab</title>
+  <link rel="stylesheet" href="./style.css?v=20260429micro1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="./supabase-config.js?v=20260421sup1" defer></script>
+  <script src="./app-data.js?v=20260429micro1" defer></script>
+  <script src="./script.js?v=20260506hub1" defer></script>
+</head>
+<body class="subnet-dashboard-page">
+  <div class="rack-room">
+    <div class="router-shell subnet-dashboard-shell">
+      <div class="router-top">
+        <div class="router-brand">NET-LAB SWITCH PANEL</div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <div class="subnet-mobile-appbar">
+        <div class="subnet-mobile-appbar-copy">
+          <p id="subnetMobileAppbarTitle" class="subnet-mobile-appbar-title">Subnetting Lab</p>
+        </div>
+        <div class="subnet-mobile-appbar-actions">
+          <button id="subnetMobileHomeBtn" class="subnet-mobile-appbar-btn" type="button" aria-label="Home">&#8962;</button>
+          <button id="subnetMobileMenuBtn" class="subnet-mobile-appbar-btn" type="button" aria-label="Open subnetting menu" aria-expanded="false">&#9776;</button>
+        </div>
+      </div>
+
+      <header class="subnet-dashboard-header">
+        <div class="subnet-dashboard-head-copy">
+          <p class="subnet-dashboard-kicker">Addressing Workspace</p>
+          <h1>Subnetting Lab</h1>
+          <p class="subnet-dashboard-subtitle">Practice calculations, review references, or run a timed exam.</p>
+        </div>
+        <a class="hub-section-jump page-back-link" href="./index.html">Back to Main App</a>
+      </header>
+
+      <div class="subnet-dashboard-workspace">
+        <aside class="subnet-dashboard-actions">
+          <section id="appSectionShell" class="hub-section-panel app-shell-panel"></section>
+
+          <div id="topButtons" hidden>
+            <button id="practiceToggle" class="section-btn active" type="button">Practice</button>
+            <button id="cheatSheetToggle" class="section-btn" type="button">Cheat Sheet</button>
+          </div>
+
+          <section class="hub-section-panel subnet-dashboard-panel subnet-mode-panel" hidden>
+            <div class="subnet-panel-head">
+              <div>
+                <p class="subnet-panel-kicker">Actions</p>
+                <h2>Choose a Mode</h2>
+              </div>
+            </div>
+
+            <div class="subnet-mode-card-stack">
+              <button id="dashboardPracticeCard" class="subnet-mode-card is-active" type="button">
+                <span class="subnet-mode-card-title">Practice</span>
+                <span class="subnet-mode-card-copy">Work one subnetting prompt at a time.</span>
+              </button>
+
+              <button id="dashboardWalkthroughCard" class="subnet-mode-card" type="button">
+                <span class="subnet-mode-card-title">Reference</span>
+                <span class="subnet-mode-card-copy">Open masks, hosts, and quick rules on demand.</span>
+              </button>
+
+              <button id="dashboardExamCard" class="subnet-mode-card subnet-mode-card-exam" type="button">
+                <span class="subnet-mode-card-title">Exam</span>
+                <span class="subnet-mode-card-copy">Run a timed subnetting set from this session.</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="hub-section-panel subnet-dashboard-panel subnet-session-panel scoreboard">
+            <div class="subnet-panel-head">
+              <div>
+                <p class="subnet-panel-kicker">Session</p>
+                <h2>Session</h2>
+              </div>
+            </div>
+
+            <div class="subnet-session-row">
+              <article class="subnet-session-stat">
+                <span class="subnet-session-label">Streak</span>
+                <span id="streak" class="subnet-session-value">0</span>
+              </article>
+              <article class="subnet-session-stat">
+                <span class="subnet-session-label">Correct</span>
+                <span id="correct" class="subnet-session-value">0</span>
+              </article>
+              <article class="subnet-session-stat">
+                <span class="subnet-session-label">Wrong</span>
+                <span id="wrong" class="subnet-session-value">0</span>
+              </article>
+            </div>
+          </section>
+
+          <details id="referencePanelDisclosure" class="subnet-reference-disclosure">
+            <summary class="subnet-reference-summary">
+              <span class="subnet-panel-kicker">Reference</span>
+              <span class="subnet-reference-summary-title">Open Reference</span>
+              <span class="subnet-reference-summary-copy">Masks, host counts, quick rules, commands, and security notes.</span>
+            </summary>
+
+            <section id="referencePanel" class="hub-section-panel subnet-dashboard-panel subnet-reference-panel">
+              <div class="subnet-panel-head">
+                <div>
+                  <p class="subnet-panel-kicker">Reference</p>
+                  <h2>Reference</h2>
+                </div>
+              </div>
+
+              <div class="subnet-reference-grid">
+                <button class="subnet-reference-card" type="button" data-reference-card="cidrMasks">
+                  <span class="subnet-reference-card-title">CIDR / Masks</span>
+                  <span class="subnet-reference-card-copy">Prefix and mask pairs.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="hostCounts">
+                  <span class="subnet-reference-card-title">Host Counts</span>
+                  <span class="subnet-reference-card-copy">Usable hosts by prefix.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="blockSizes">
+                  <span class="subnet-reference-card-title">Block Sizes</span>
+                  <span class="subnet-reference-card-copy">Subnet increments by prefix.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="quickRules">
+                  <span class="subnet-reference-card-title">Quick Rules</span>
+                  <span class="subnet-reference-card-copy">Network, broadcast, and usable ranges.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="commands">
+                  <span class="subnet-reference-card-title">Commands</span>
+                  <span class="subnet-reference-card-copy">Core Cisco review commands.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="switchMgmt">
+                  <span class="subnet-reference-card-title">Switch Mgmt</span>
+                  <span class="subnet-reference-card-copy">Management IP and gateway rules.</span>
+                </button>
+                <button class="subnet-reference-card" type="button" data-reference-card="security">
+                  <span class="subnet-reference-card-title">Security</span>
+                  <span class="subnet-reference-card-copy">Remote access security reminders.</span>
+                </button>
+              </div>
+            </section>
+          </details>
+        </aside>
+
+        <main class="subnet-dashboard-main">
+          <div id="practiceSection">
+            <section class="hub-section-panel subnetting-section-panel subnetting-lab-panel subnet-practice-panel">
+              <div class="hub-section-head subnet-practice-head">
+                <div>
+                  <p class="subnet-panel-kicker">Task</p>
+                  <h3>Practice Workspace</h3>
+                  <p>Pick a mode, solve the prompt, and move on.</p>
+                </div>
+                <a class="hub-section-jump" href="./protocol-merge.html">Open Protocol Lab</a>
+              </div>
+
+              <div class="subnet-mode-groups">
+                <section class="subnet-mode-group">
+                  <p class="subnet-group-label">Addressing</p>
+                  <div id="modeButtons" class="subnet-mode-button-grid">
+                    <button class="mode-btn" data-mode="cidrToHosts" type="button">Hosts</button>
+                    <button class="mode-btn" data-mode="hostsToCidr" type="button">Network Bits</button>
+                    <button class="mode-btn" data-mode="cidrToMask" type="button">Subnet Mask</button>
+                    <button class="mode-btn" data-mode="bitsToValue" type="button">Bits Value</button>
+                    <button class="mode-btn" data-mode="networkAddress" type="button">Network Address</button>
+                    <button class="mode-btn" data-mode="broadcastAddress" type="button">Broadcast</button>
+                    <button class="mode-btn" data-mode="usableRange" type="button">Usable Range</button>
+                    <button class="mode-btn" data-mode="hostRequirement" type="button">Hosts Required</button>
+                  </div>
+                </section>
+
+                <section class="subnet-mode-group">
+                  <p class="subnet-group-label">Operations</p>
+                  <div id="extraButtons" class="subnet-mode-button-grid subnet-mode-button-grid-compact">
+                    <button class="mode-btn" data-mode="commandQuiz" type="button">Commands</button>
+                    <button class="mode-btn" data-mode="securityQuiz" type="button">Security</button>
+                  </div>
+                </section>
+
+                <div class="subnet-mode-inline-actions">
+                  <div id="examModeRow">
+                    <button id="examModeBtn" class="section-btn exam-btn subnet-inline-action" type="button">Exam</button>
+                  </div>
+
+                  <div id="protocolMergeRow">
+                    <a id="protocolMergeLink" class="section-btn panel-link protocol-link subnet-inline-action" href="./protocol-merge.html">Protocol Lab</a>
+                  </div>
+                </div>
+              </div>
+
+              <div id="subnetQuestionPanel" class="display-panel subnet-question-panel">
+                <div class="subnet-question-head">
+                  <div>
+                    <p class="subnet-panel-kicker">Active Prompt</p>
+                    <h2 id="question" class="question-placeholder">Select a mode to begin</h2>
+                  </div>
+                  <div class="subnet-question-progress">
+                    <p id="subnetProgressBadge" class="subnet-progress-badge">Completed 0 / 10 modes</p>
+                    <p id="examStatus" hidden></p>
+                  </div>
+                </div>
+                <div id="diagram"></div>
+                <div class="subnet-mobile-action-dock">
+                  <div id="answers"></div>
+
+                  <div class="subnet-feedback-stack">
+                    <p id="hint" class="hint"></p>
+                    <p id="feedback"></p>
+                  </div>
+
+                  <div id="actionButtons">
+                    <button id="hintBtn" type="button" hidden>Hint</button>
+                    <button id="nextBtn" type="button" hidden>Next</button>
+                    <button id="restartExamBtn" type="button" hidden>Restart Exam</button>
+                    <button id="exitExamBtn" type="button" hidden>Exit Exam</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+
+      <div id="cheatSheetSection" hidden>
+        <section id="referenceTopic-cidrMasks" class="subnet-reference-topic">
+          <h3>CIDR / Masks</h3>
+          <ul class="subnet-reference-list">
+            <li>/24 = 255.255.255.0</li>
+            <li>/25 = 255.255.255.128</li>
+            <li>/26 = 255.255.255.192</li>
+            <li>/27 = 255.255.255.224</li>
+            <li>/28 = 255.255.255.240</li>
+            <li>/29 = 255.255.255.248</li>
+            <li>/30 = 255.255.255.252</li>
+          </ul>
+        </section>
+
+        <section id="referenceTopic-hostCounts" class="subnet-reference-topic">
+          <h3>Host Counts</h3>
+          <ul class="subnet-reference-list">
+            <li>/24 = 254 hosts</li>
+            <li>/25 = 126 hosts</li>
+            <li>/26 = 62 hosts</li>
+            <li>/27 = 30 hosts</li>
+            <li>/28 = 14 hosts</li>
+            <li>/29 = 6 hosts</li>
+            <li>/30 = 2 hosts</li>
+          </ul>
+        </section>
+
+        <section id="referenceTopic-blockSizes" class="subnet-reference-topic">
+          <h3>Block Sizes</h3>
+          <ul class="subnet-reference-list">
+            <li>/25 = 128</li>
+            <li>/26 = 64</li>
+            <li>/27 = 32</li>
+            <li>/28 = 16</li>
+            <li>/29 = 8</li>
+            <li>/30 = 4</li>
+          </ul>
+        </section>
+
+        <section id="referenceTopic-quickRules" class="subnet-reference-topic">
+          <h3>Quick Rules</h3>
+          <ul class="subnet-reference-list">
+            <li>Network = first address in the subnet</li>
+            <li>Broadcast = last address in the subnet</li>
+            <li>First usable = network + 1</li>
+            <li>Last usable = broadcast - 1</li>
+            <li>Usable range = everything in between</li>
+          </ul>
+        </section>
+
+        <section id="referenceTopic-commands" class="subnet-reference-topic">
+          <h3>Commands</h3>
+          <ul class="subnet-reference-list">
+            <li>show run = current active config</li>
+            <li>show start = saved startup config</li>
+            <li>show version = IOS version and system details</li>
+            <li>show interface = interface details, errors, bandwidth</li>
+            <li>show flash = files stored in flash memory</li>
+          </ul>
+        </section>
+
+        <section id="referenceTopic-switchMgmt" class="subnet-reference-topic">
+          <h3>Switch Mgmt</h3>
+          <ul class="subnet-reference-list">
+            <li>A normal switch IP is for remote management only.</li>
+            <li>A normal switch is not the default gateway.</li>
+            <li>Switch management IP is usually on a virtual interface.</li>
+          </ul>
+        </section>
+
+        <section id="referenceTopic-security" class="subnet-reference-topic">
+          <h3>Security</h3>
+          <ul class="subnet-reference-list">
+            <li>SSH = secure and encrypted</li>
+            <li>Telnet = insecure and clear text</li>
+          </ul>
+        </section>
+      </div>
+
+      <div id="referenceModal" class="subnet-reference-modal" hidden>
+        <div class="subnet-reference-modal-backdrop" data-reference-close></div>
+        <div class="subnet-reference-modal-shell" role="dialog" aria-modal="true" aria-labelledby="referenceModalTitle">
+          <div class="subnet-reference-modal-head">
+            <div>
+              <p class="subnet-panel-kicker">Reference</p>
+              <h3 id="referenceModalTitle">Reference</h3>
+            </div>
+            <button id="referenceModalCloseBtn" class="subnet-reference-close" type="button">Close</button>
+          </div>
+          <div id="referenceModalBody" class="subnet-reference-modal-body"></div>
+        </div>
+      </div>
+
+      <div id="subnetMobileMenuOverlay" class="subnet-mobile-menu-overlay" hidden>
+        <div class="subnet-mobile-overlay-backdrop" data-subnet-mobile-menu-close></div>
+        <section class="subnet-mobile-menu-panel" role="dialog" aria-modal="true" aria-labelledby="subnetMobileMenuTitle">
+          <div class="subnet-mobile-overlay-head">
+            <h2 id="subnetMobileMenuTitle">Menu</h2>
+            <button id="subnetMobileMenuCloseBtn" class="subnet-mobile-overlay-close" type="button">Close</button>
+          </div>
+          <div class="subnet-mobile-menu-body">
+            <div class="subnet-mobile-menu-actions">
+              <button id="subnetMobileModesBtn" class="subnet-mobile-menu-action" type="button">Choose Mode</button>
+              <button id="subnetMobileInfoBtn" class="subnet-mobile-menu-action" type="button">Progress</button>
+              <button id="subnetMobileReferenceBtn" class="subnet-mobile-menu-action" type="button">Reference</button>
+            </div>
+            <a class="subnet-mobile-menu-link" href="./index.html">Back to Main App</a>
+          </div>
+        </section>
+      </div>
+
+      <div id="subnetMobileInfoOverlay" class="subnet-mobile-info-overlay" hidden>
+        <div class="subnet-mobile-overlay-backdrop" data-subnet-mobile-info-close></div>
+        <section class="subnet-mobile-info-panel" role="dialog" aria-modal="true" aria-labelledby="subnetMobileInfoTitle">
+          <div class="subnet-mobile-overlay-head">
+            <h2 id="subnetMobileInfoTitle">Lab Info</h2>
+            <button id="subnetMobileInfoCloseBtn" class="subnet-mobile-overlay-close" type="button">Close</button>
+          </div>
+          <div id="subnetMobileInfoScroll" class="subnet-mobile-info-scroll"></div>
+        </section>
+      </div>
+
+      <p class="subnet-dashboard-note">Main task first. Reference stays secondary until you open it.</p>
+
+      <div class="router-ports" aria-hidden="true">
+        <div class="port connected"><span class="cable"></span></div>
+        <div class="port connected"><span class="cable cable-green"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port connected"><span class="cable cable-yellow"></span></div>
+        <div class="port"></div>
+        <div class="port active"></div>
+        <div class="port"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Confirmation</title>
+  <link rel="stylesheet" href="./style.css?v=20260429micro1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="./supabase-config.js?v=20260421sup1" defer></script>
+  <script src="./app-data.js?v=20260429micro1" defer></script>
+  <script src="./auth-confirmed.js?v=20260422auth2" defer></script>
+</head>
+<body>
+  <div class="rack-room">
+    <div class="router-shell auth-confirm-shell">
+      <div class="router-top">
+        <div class="router-brand">NET-LAB ACCOUNT PANEL</div>
+        <div class="router-leds" aria-hidden="true">
+          <span class="led led-green led-blink"></span>
+          <span class="led led-yellow led-blink-slow"></span>
+          <span class="led led-green"></span>
+          <span class="led led-red"></span>
+        </div>
+      </div>
+
+      <h1>Email Confirmation</h1>
+
+      <section class="hub-section-panel app-shell-panel auth-confirm-panel">
+        <div class="app-shell-head">
+          <div>
+            <p id="authConfirmKicker" class="app-shell-kicker">Account</p>
+            <h2 id="authConfirmTitle">Checking confirmation link...</h2>
+            <p id="authConfirmCopy" class="app-shell-copy">Please wait while the app checks the confirmation response.</p>
+          </div>
+        </div>
+
+        <div id="authConfirmBadges" class="app-shell-badges"></div>
+        <div id="authConfirmBanner" class="app-shell-banner app-shell-banner-info" hidden></div>
+
+        <div class="app-shell-actions">
+          <a class="app-action-link" href="./index.html">Return to App</a>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
