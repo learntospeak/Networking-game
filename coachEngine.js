@@ -202,6 +202,10 @@
 
     const matchedSuccess = accepts.find((rule) => matchRule(rule, execution, state));
     if (matchedSuccess) {
+      if (execution.status && execution.status !== "ok" && !matchedSuccess.allowError) {
+        return buildMistakeMessage(step, execution, state, attempts, getClassificationForExecution(execution), null);
+      }
+
       return {
         success: true,
         source: "success",

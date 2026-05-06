@@ -2378,7 +2378,31 @@
     try {
       const { error } = await supabase
         .from(ADMIN_ERROR_LOGS_TABLE)
-        .upsert(normalizeAdminFaultForCloud(payload), { onConflict: "report_id" });
+        .insert(normalizeAdminFaultForCloud(payload));
+
+      if (!error) {
+        return { stored: "supabase" };
+      }
+      if (error.code === "23505") {
+        return { stored: "supabase" };
+      }
+      return { stored: "local", error: error.message || String(error) };
+    } catch (error) {
+      return { stored: "local", error: error.message || String(error) };
+    }
+  }
+
+  async function updateAdminFaultInCloud(payload) {
+    const supabase = window.NetlabSupabase?.client || null;
+    if (!supabase?.from || !payload?.report_id) {
+      return { stored: "local", error: "Supabase client unavailable" };
+    }
+
+    try {
+      const { error } = await supabase
+        .from(ADMIN_ERROR_LOGS_TABLE)
+        .update(normalizeAdminFaultForCloud(payload))
+        .eq("report_id", payload.report_id);
 
       if (!error) {
         return { stored: "supabase" };
@@ -2608,7 +2632,7 @@
     if (session.errorLogFlow.mode === "update") {
       const updated = updateTerminalErrorReport(session.errorLogFlow.reportId, session.errorLogFlow.description);
       if (updated) {
-        const result = await uploadAdminFaultToCloud(updated);
+        const result = await updateAdminFaultInCloud(updated);
         if (result.stored === "supabase") {
           mergeLocalAdminFault({ ...updated, stored: "supabase", synced_at: new Date().toISOString(), sync_error: "" });
         }
@@ -5658,6 +5682,26 @@
       return {
         ip: normalized,
         hostname: session.state.host,
+        reachable: true,
+        ports: []
+      };
+    }
+
+    const matchingAdapterGateway = (session.state.networkAdapters || []).find((adapter) => adapter.gateway === normalized);
+    if (matchingAdapterGateway) {
+      return {
+        ip: normalized,
+        hostname: normalized,
+        reachable: true,
+        ports: []
+      };
+    }
+
+    const matchingAdapterDns = (session.state.networkAdapters || []).find((adapter) => (adapter.dns || []).includes(normalized));
+    if (matchingAdapterDns) {
+      return {
+        ip: normalized,
+        hostname: normalized,
         reachable: true,
         ports: []
       };
