@@ -278,6 +278,7 @@
   const AI_COACH_USAGE_STORAGE_PREFIX = "netlab:ai-coach-usage";
   const AI_COACH_GUEST_ID_STORAGE_KEY = "netlab:ai-coach-guest-id";
   const AI_COACH_LOCAL_FAULTS_STORAGE_KEY = "netlab:ai-coach-local-faults";
+  const ADMIN_ERROR_LOGS_TABLE = "admin_error_logs";
   const ADMIN_ERROR_LOG_PASSWORD = "Passwordlog";
 
   function captureConsoleError(args) {
@@ -2281,8 +2282,12 @@
   function buildAdminFaultPayload(kind, description) {
     const scenario = currentScenario();
     const step = currentStep();
+    const account = activeAiCoachAccount();
     return {
       kind,
+      report_id: kind === "error" ? createAdminErrorReportId() : `FLT-${new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14)}`,
+      user_id: account.isGuest ? null : account.userId,
+      profile_label: NetlabApp?.getActiveProfile?.()?.label || "",
       page_url: window.location.href,
       track_mode: `${pageConfig.environmentCategory || "unknown"} / ${pageConfig.uiMode || (isBeginnerMode() ? "beginner" : "standard")}`,
       scenario_title: scenario?.title || "",
@@ -2292,6 +2297,7 @@
       last_terminal_output: lastTerminalResultText(),
       timestamp: new Date().toISOString(),
       viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+      user_agent: window.navigator?.userAgent || "",
       admin_description: description || "No description provided."
     };
   }
@@ -2308,9 +2314,51 @@
       `Last command: ${payload.last_command || "None"}`,
       `Last output: ${payload.last_terminal_output || "None"}`,
       `Viewport: ${payload.viewport_size}`,
+      `Device: ${payload.user_agent || "Unknown"}`,
       `Timestamp: ${payload.timestamp}`,
       `Description: ${payload.admin_description}`
     ].join("\n");
+  }
+
+  function normalizeAdminFaultForCloud(payload) {
+    const userId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(payload.user_id || ""))
+      ? payload.user_id
+      : null;
+    return {
+      report_id: payload.report_id || createAdminErrorReportId(),
+      kind: payload.kind || "fault",
+      admin_description: payload.admin_description || "No description provided.",
+      page_url: payload.page_url || window.location.href,
+      track_mode: payload.track_mode || "",
+      scenario_title: payload.scenario_title || "",
+      current_task: payload.current_task || "",
+      current_cwd: payload.current_cwd || "",
+      last_command: payload.last_command || "",
+      last_terminal_output: payload.last_terminal_output || "",
+      viewport_size: payload.viewport_size || "",
+      user_agent: payload.user_agent || window.navigator?.userAgent || "",
+      source_command: payload.source_command || "",
+      auth_method: payload.auth_method || "",
+      profile_label: payload.profile_label || "",
+      user_id: userId,
+      client_timestamp: payload.timestamp || new Date().toISOString()
+    };
+  }
+
+  function mergeLocalAdminFault(report) {
+    if (!report?.report_id) {
+      return;
+    }
+
+    const faults = listLocalAdminFaults();
+    const index = faults.findIndex((fault) => fault.report_id === report.report_id);
+    if (index >= 0) {
+      faults[index] = { ...faults[index], ...report };
+      saveAllLocalAdminFaults(faults);
+      return;
+    }
+
+    saveLocalAdminFault(report);
   }
 
   function saveLocalAdminFault(payload) {
@@ -2321,21 +2369,37 @@
     return nextFaults;
   }
 
-  async function storeAdminFault(payload) {
+  async function uploadAdminFaultToCloud(payload) {
     const supabase = window.NetlabSupabase?.client || null;
-    if (supabase?.from) {
-      try {
-        const { error } = await supabase.from("app_fault_reports").insert(payload);
-        if (!error) {
-          saveLocalAdminFault({ ...payload, stored: "supabase" });
-          return { stored: "supabase" };
-        }
-      } catch (error) {
-        // Local fallback below keeps the report available when the table or policy is not ready.
-      }
+    if (!supabase?.from) {
+      return { stored: "local", error: "Supabase client unavailable" };
     }
 
-    saveLocalAdminFault({ ...payload, stored: "local" });
+    try {
+      const { error } = await supabase
+        .from(ADMIN_ERROR_LOGS_TABLE)
+        .upsert(normalizeAdminFaultForCloud(payload), { onConflict: "report_id" });
+
+      if (!error) {
+        return { stored: "supabase" };
+      }
+      return { stored: "local", error: error.message || String(error) };
+    } catch (error) {
+      return { stored: "local", error: error.message || String(error) };
+    }
+  }
+
+  async function storeAdminFault(payload) {
+    const localPayload = { ...payload, stored: "local_pending" };
+    mergeLocalAdminFault(localPayload);
+    const result = await uploadAdminFaultToCloud(localPayload);
+
+    if (result.stored === "supabase") {
+      mergeLocalAdminFault({ ...localPayload, stored: "supabase", synced_at: new Date().toISOString() });
+      return { stored: "supabase" };
+    }
+
+    mergeLocalAdminFault({ ...localPayload, stored: "local", sync_error: result.error || "Cloud sync unavailable" });
     if (els.helpReportOutput) {
       els.helpReportOutput.value = adminFaultReportText(payload);
       els.helpReportOutput.hidden = false;
@@ -2344,6 +2408,22 @@
       els.copyHelpReportBtn.hidden = false;
     }
     return { stored: "local" };
+  }
+
+  async function syncPendingAdminFaults() {
+    const faults = listLocalAdminFaults();
+    const pending = faults.filter((fault) => fault.stored !== "supabase" && fault.report_id);
+    let synced = 0;
+
+    for (const fault of pending) {
+      const result = await uploadAdminFaultToCloud(fault);
+      if (result.stored === "supabase") {
+        mergeLocalAdminFault({ ...fault, stored: "supabase", synced_at: new Date().toISOString(), sync_error: "" });
+        synced += 1;
+      }
+    }
+
+    return synced;
   }
 
   function listLocalAdminFaults() {
@@ -2363,32 +2443,71 @@
     return listLocalAdminFaults().filter((fault) => fault.kind === "error" || fault.source_command === "log error");
   }
 
-  function printLocalErrorReports() {
-    const reports = localErrorReports();
-    if (!reports.length) {
+  async function fetchCloudAdminErrors(limit = 10) {
+    const account = activeAiCoachAccount();
+    const supabase = window.NetlabSupabase?.client || null;
+    if (!account.isAdmin || !supabase?.from) {
+      return { reports: [], available: false };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from(ADMIN_ERROR_LOGS_TABLE)
+        .select("report_id, kind, admin_description, track_mode, scenario_title, profile_label, source_command, client_timestamp, created_at, stored_from")
+        .or("kind.eq.error,source_command.eq.log error")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        return { reports: [], available: false, error: error.message || String(error) };
+      }
+
+      return { reports: Array.isArray(data) ? data : [], available: true };
+    } catch (error) {
+      return { reports: [], available: false, error: error.message || String(error) };
+    }
+  }
+
+  function formatErrorReportLine(report) {
+    const id = report.report_id || "no-id";
+    const text = report.admin_description || "No description.";
+    const source = report.stored === "supabase" || report.created_at ? "cloud" : "local";
+    const context = [report.track_mode, report.scenario_title].filter(Boolean).join(" - ");
+    return `${id} [${source}]: ${text}${context ? ` (${context})` : ""}`;
+  }
+
+  async function printLocalErrorReports() {
+    const localReports = localErrorReports();
+    await syncPendingAdminFaults();
+    const cloudResult = await fetchCloudAdminErrors(10);
+    const cloudReports = cloudResult.reports || [];
+    const combined = [...cloudReports, ...localReports]
+      .filter((report, index, reports) => reports.findIndex((item) => item.report_id && item.report_id === report.report_id) === index)
+      .slice(0, 10);
+
+    if (!combined.length) {
       printCoachLine("No logged terminal errors are stored in this browser yet.");
+      if (cloudResult.error) {
+        printCoachLine(`Cloud log check unavailable: ${cloudResult.error}`, "dim");
+      }
       return;
     }
 
-    const latest = reports.slice(-5).reverse().map((report) => {
-      const id = report.report_id || "no-id";
-      const text = report.admin_description || "No description.";
-      return `${id}: ${text}`;
-    });
-    printCoachLine(`Stored terminal errors (${reports.length}). Latest:`);
-    printLines(latest, "coach");
+    printCoachLine(`Stored terminal errors (${combined.length}). Latest:`);
+    printLines(combined.map(formatErrorReportLine), "coach");
+    if (!cloudResult.available) {
+      printCoachLine("Cloud logs are shown after signing in with an admin account and creating the Supabase table.", "dim");
+    }
   }
 
-  function saveTerminalErrorReport(description) {
+  async function saveTerminalErrorReport(description) {
     const payload = {
       ...buildAdminFaultPayload("error", description),
-      report_id: createAdminErrorReportId(),
       source_command: "log error",
-      stored: "local",
       auth_method: "terminal-admin-passcode"
     };
-    saveLocalAdminFault(payload);
-    return payload;
+    const result = await storeAdminFault(payload);
+    return { ...payload, stored: result.stored };
   }
 
   function updateTerminalErrorReport(reportId, description) {
@@ -2430,7 +2549,7 @@
     printCoachLine(`Admin update started for ${session.errorLogFlow.reportId}. Enter the admin password.`);
   }
 
-  function handleTerminalErrorLogCommand(rawInput) {
+  async function handleTerminalErrorLogCommand(rawInput) {
     const input = String(rawInput || "").trim();
     const updateMatch = input.match(/^log\s+error\s+update\s+(\S+)(?:\s+(.+))?$/i);
     if (updateMatch) {
@@ -2439,7 +2558,7 @@
     }
 
     if (/^(log\s+errors|show\s+errors|list\s+errors)$/i.test(input)) {
-      printLocalErrorReports();
+      await printLocalErrorReports();
       return true;
     }
 
@@ -2452,7 +2571,7 @@
     return false;
   }
 
-  function handleTerminalErrorLogFlow(rawInput) {
+  async function handleTerminalErrorLogFlow(rawInput) {
     if (!session.errorLogFlow) {
       return false;
     }
@@ -2488,6 +2607,12 @@
 
     if (session.errorLogFlow.mode === "update") {
       const updated = updateTerminalErrorReport(session.errorLogFlow.reportId, session.errorLogFlow.description);
+      if (updated) {
+        const result = await uploadAdminFaultToCloud(updated);
+        if (result.stored === "supabase") {
+          mergeLocalAdminFault({ ...updated, stored: "supabase", synced_at: new Date().toISOString(), sync_error: "" });
+        }
+      }
       session.errorLogFlow = null;
       printCoachLine(updated
         ? `Updated logged error ${updated.report_id}.`
@@ -2495,9 +2620,13 @@
       return true;
     }
 
-    const payload = saveTerminalErrorReport(session.errorLogFlow.description);
+    const payload = await saveTerminalErrorReport(session.errorLogFlow.description);
     session.errorLogFlow = null;
-    printCoachLine(`Logged terminal error ${payload.report_id}. Use "log errors" to retrieve it, or "log error update ${payload.report_id} <new text>" to update it.`);
+    printCoachLine(
+      payload.stored === "supabase"
+        ? `Logged terminal error ${payload.report_id} to cloud. Use "log errors" to retrieve it.`
+        : `Logged terminal error ${payload.report_id} locally. It will sync when Supabase is available.`
+    );
     return true;
   }
 
@@ -2519,14 +2648,18 @@
     }
 
     if (/^admin\s+faults\b/i.test(question)) {
+      await syncPendingAdminFaults();
       const faults = listLocalAdminFaults();
-      printAiCoachResponse(faults.length
-        ? `Local fault log has ${faults.length} item(s). Latest: ${faults[faults.length - 1].kind} - ${faults[faults.length - 1].admin_description}`
+      const cloudResult = await fetchCloudAdminErrors(5);
+      const latestCloud = cloudResult.reports?.[0];
+      printAiCoachResponse(faults.length || latestCloud
+        ? `Fault log has ${faults.length} local item(s)${cloudResult.available ? ` and ${cloudResult.reports.length} cloud item(s)` : ""}. Latest: ${(latestCloud || faults[faults.length - 1]).kind || "fault"} - ${(latestCloud || faults[faults.length - 1]).admin_description}`
         : "No local admin faults are stored in this browser yet.");
       return true;
     }
 
     if (/^admin\s+summarize\s+faults\b/i.test(question)) {
+      await syncPendingAdminFaults();
       const faults = listLocalAdminFaults();
       const counts = faults.reduce((acc, fault) => {
         acc[fault.kind || "fault"] = (acc[fault.kind || "fault"] || 0) + 1;
@@ -5190,24 +5323,13 @@
     }
     const nextStageInfo = currentStageInfo(scenario);
     if (previousStageInfo && nextStageInfo && previousStageInfo.stage.id !== nextStageInfo.stage.id) {
-      if (previousStageInfo.stage.completionSummary) {
-        printStageLine(`${beginnerTrack ? "Section Complete" : "Stage Complete"}: ${previousStageInfo.stage.title}`);
-        printStageLine(previousStageInfo.stage.completionSummary);
-      }
-      printLine(`--- ${beginnerTrack ? "Part" : "Stage"} ${nextStageInfo.stageIndex + 1}: ${nextStageInfo.stage.title} ---`, "stage");
-      printStageLine(`Next ${beginnerTrack ? "part" : "stage"}: ${nextStageInfo.stage.title}`);
-      if (nextStageInfo.stage.briefing) {
-        printStageLine(`Goal: ${nextStageInfo.stage.briefing}`);
-      }
+      printStageLine(`${beginnerTrack ? "Section" : "Stage"} complete: ${previousStageInfo.stage.title}. Next: ${nextStageInfo.stage.title}.`);
     }
     if (challengePresentation) {
       printCoachLine("Progress recorded. Keep investigating and let the evidence drive the next move.");
       renderPanel();
       persistSectionProgress();
       return;
-    }
-    if (currentStep().context) {
-      printLine(`Context: ${currentStep().context}`, "dim");
     }
     printCoachLine(`${beginnerTrack ? "Next step" : "Next objective"}: ${currentStep().objective}`);
     renderPanel();
@@ -7709,7 +7831,6 @@
     if (evaluation.success) {
       const nextStep = currentScenario().steps?.[session.stepIndex + (evaluation.advanceBy || 1)] || null;
       const proofText = String(evaluation.feedback || step.successFeedback || "Good. That command moved the investigation forward.").trim();
-      const explanationText = String(step.explanation || "").trim();
       const whyText = String(step.whyThisMatters || step.completionSummary || "").trim();
       const nextText = String(
         ((evaluation.advanceBy || 1) > 1 ? nextStep?.objective : "")
@@ -7729,18 +7850,7 @@
           why: [whyText, realWorldText].filter(Boolean).join(" "),
           next: nextText
         });
-        printLine("[Task Complete]", "success");
-        printCoachLine(`What you proved: ${proofText}`, "success");
-        if (explanationText && explanationText !== proofText) {
-          printCoachLine(`Command note: ${explanationText}`, "dim");
-        }
-        if (whyText) {
-          printCoachLine(`Why it matters: ${whyText}`, "dim");
-        }
-        if (realWorldText) {
-          printCoachLine(`Real-world note: ${realWorldText}`, "dim");
-        }
-        printCoachLine(`Next: ${nextText}`, "dim");
+        printCoachLine(`Task complete. Next: ${nextText}`, "success");
         if (evaluation.coach) {
           printCoachLine(evaluation.coach);
         }
@@ -7827,7 +7937,7 @@
     els.terminalInput.value = "";
 
     if (session.errorLogFlow) {
-      handleTerminalErrorLogFlow(rawInput);
+      await handleTerminalErrorLogFlow(rawInput);
       renderPanel();
       return;
     }
@@ -7842,7 +7952,7 @@
       return;
     }
 
-    if (handleTerminalErrorLogCommand(rawInput)) {
+    if (await handleTerminalErrorLogCommand(rawInput)) {
       renderPanel();
       return;
     }
@@ -8364,6 +8474,10 @@
     if (NetlabApp?.whenReady) {
       await NetlabApp.whenReady();
     }
+
+    syncPendingAdminFaults().catch((error) => {
+      console.warn("[TerminalDebug] admin error log sync skipped", error);
+    });
 
     if (NetlabApp?.getLaunchAction() === "start") {
       NetlabApp.resetSectionProgress(currentSectionId());
