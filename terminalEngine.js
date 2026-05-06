@@ -4438,6 +4438,21 @@
 
   function updatePrompt() {
     els.terminalPrompt.textContent = currentInputPromptLabel();
+    syncTerminalInputPrivacy();
+  }
+
+  function syncTerminalInputPrivacy() {
+    if (!els.terminalInput) {
+      return;
+    }
+
+    const passwordEntry = session.errorLogFlow?.awaiting === "password";
+    const inputType = passwordEntry ? "password" : "text";
+    if (els.terminalInput.type !== inputType) {
+      els.terminalInput.type = inputType;
+    }
+    els.terminalInput.autocomplete = passwordEntry ? "new-password" : "off";
+    els.terminalInput.setAttribute("aria-label", passwordEntry ? "Admin password" : "Terminal command");
   }
 
   function shellLabel() {
