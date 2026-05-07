@@ -6,7 +6,7 @@
   <title>Terminal Coach</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="stylesheet" href="./style.css?v=20260429micro1">
-  <link rel="stylesheet" href="./terminal-coach.css?v=20260503iconcontrols1">
+  <link rel="stylesheet" href="./terminal-coach.css?v=20260507flicker1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="./supabase-config.js?v=20260421sup1" defer></script>
   <script src="./app-data.js?v=20260429micro1" defer></script>
@@ -16,10 +16,26 @@
   <script src="./scenarioEngine.js?v=20260503helpguide1" defer></script>
   <script>
     (() => {
+      const terminalTrackStorageKey = "netlab:terminal-track";
       const params = new URLSearchParams(window.location.search);
       const requestedTrack = (params.get("track") || "").toLowerCase();
       const requestedMode = (params.get("mode") || "").toLowerCase();
-      const track = requestedTrack === "windows" ? "windows" : "linux";
+      let savedTrack = "";
+      try {
+        savedTrack = window.localStorage?.getItem(terminalTrackStorageKey) || "";
+      } catch (error) {
+        savedTrack = "";
+      }
+      const explicitTrack = requestedTrack === "windows" || requestedTrack === "linux"
+        ? requestedTrack
+        : "";
+      const storedTrack = savedTrack === "windows" || savedTrack === "linux" ? savedTrack : "";
+      const track = explicitTrack || storedTrack || "linux";
+      try {
+        window.localStorage?.setItem(terminalTrackStorageKey, track);
+      } catch (error) {
+        // Ignore storage failures; the query string still selects the track.
+      }
       const beginnerMode = requestedMode === "beginner"
         || (track === "windows" && requestedMode !== "advanced" && requestedMode !== "standard");
 
@@ -63,7 +79,7 @@
       };
     })();
   </script>
-  <script src="./terminalEngine.js?v=20260506push1" defer></script>
+  <script src="./terminalEngine.js?v=20260507flicker1" defer></script>
   <script src="./commandSheet.js?v=20260502coach2" defer></script>
 </head>
 <body class="terminal-page">
@@ -318,16 +334,16 @@
           <div class="terminal-mobile-dock">
             <div class="terminal-mobile-context">
               <div class="terminal-mobile-context-head">
-                <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Linux Terminal Learning</p>
+                <p id="mobileEnvironmentBadge" class="terminal-mobile-track">Terminal Learning</p>
                 <button id="mobileContextToggleBtn" class="terminal-mobile-context-toggle" type="button" aria-expanded="true" aria-controls="mobileScenarioTitle mobileStepObjective mobileMachineContext mobileCoachSignal">Hide Context</button>
               </div>
               <p id="mobileLayerBadge" class="terminal-mobile-layer" data-layer="network">Layer: NETWORK</p>
-              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Log Triage on a Linux Host</p>
+              <p id="mobileScenarioTitle" class="terminal-mobile-scenario">Loading selected lab</p>
               <p id="mobileStageTitle" class="terminal-mobile-stage" hidden></p>
               <p id="mobileStageBriefing" class="terminal-mobile-briefing" hidden></p>
-              <p id="mobileStepObjective" class="terminal-mobile-objective">Identify your working directory before you move deeper into the host.</p>
-              <p id="mobileMachineContext" class="terminal-mobile-machine">Linux Host | /home/student</p>
-              <p id="mobileCoachSignal" class="terminal-mobile-signal">Work from evidence. Good operators confirm context before they act.</p>
+              <p id="mobileStepObjective" class="terminal-mobile-objective">Loading the selected terminal scenario.</p>
+              <p id="mobileMachineContext" class="terminal-mobile-machine">Loading terminal context</p>
+              <p id="mobileCoachSignal" class="terminal-mobile-signal">Loading guidance.</p>
             </div>
 
             <div class="terminal-history-nav" aria-label="Terminal history shortcuts">
