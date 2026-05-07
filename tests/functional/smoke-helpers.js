@@ -29,6 +29,31 @@ function createSmokeReport(pageName, url) {
   };
 }
 
+function addLabHealth(report, updates = {}) {
+  const health = report.labHealth || {
+    pagesTested: [],
+    commandsTested: [],
+    acceptedVariations: [],
+    rejectedReasonableAlternatives: [],
+    textNoiseFailures: [],
+    modalBlockingFailures: [],
+    mobileFailures: []
+  };
+
+  for (const key of Object.keys(health)) {
+    const values = Array.isArray(updates[key]) ? updates[key] : [];
+    values.forEach((value) => {
+      const text = String(value || "").trim();
+      if (text && !health[key].includes(text)) {
+        health[key].push(text);
+      }
+    });
+  }
+
+  report.labHealth = health;
+  return health;
+}
+
 function pushCheck(report, name, ok, details = "") {
   report.checks.push({ name, ok: Boolean(ok), details: details || "" });
 }
@@ -375,11 +400,15 @@ async function getVisibleSubnetAnswers(page) {
 }
 
 module.exports = {
+  addLabHealth,
   attachSmokeData,
   assertVisible,
   checkNoHorizontalOverflow,
+  classifyTerminalAcceptance,
   computeSubnetAnswer,
   createSmokeReport,
+  dismissTaskCompleteIfPresent,
+  dismissTicketBriefingIfPresent,
   gotoAndStabilize,
   getTerminalSnapshot,
   getVisibleSubnetAnswers,
@@ -387,6 +416,7 @@ module.exports = {
   pushCheck,
   pushWarning,
   readText,
+  resetTerminalScenario,
   runTerminalCommand,
   runWalkthroughDemo,
   clickSubnetAnswer

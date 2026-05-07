@@ -56,6 +56,31 @@ class SmokeReporter {
       results: this.results
     };
 
+    const labHealth = {
+      pagesTested: [],
+      commandsTested: [],
+      acceptedVariations: [],
+      rejectedReasonableAlternatives: [],
+      textNoiseFailures: [],
+      modalBlockingFailures: [],
+      mobileFailures: []
+    };
+
+    const mergeHealth = (source = {}) => {
+      Object.keys(labHealth).forEach((key) => {
+        const values = Array.isArray(source[key]) ? source[key] : [];
+        values.forEach((value) => {
+          const text = String(value || "").trim();
+          if (text && !labHealth[key].includes(text)) {
+            labHealth[key].push(text);
+          }
+        });
+      });
+    };
+
+    this.results.forEach((result) => mergeHealth(result.smokeData?.labHealth));
+    payload.labHealth = labHealth;
+
     fs.writeFileSync(
       path.join(reportsDir, "smoke-report.json"),
       JSON.stringify(payload, null, 2),
@@ -179,6 +204,14 @@ class SmokeReporter {
     console.log(`- Failed: ${summary.failed}`);
     console.log(`- JSON report: ${path.join("reports", "smoke-report.json")}`);
     console.log(`- HTML report: ${path.join("reports", "smoke-report.html")}`);
+    console.log("\nLab health summary");
+    console.log(`- Pages tested: ${labHealth.pagesTested.join(", ") || "none recorded"}`);
+    console.log(`- Commands tested: ${labHealth.commandsTested.join(", ") || "none recorded"}`);
+    console.log(`- Accepted variations: ${labHealth.acceptedVariations.join(", ") || "none recorded"}`);
+    console.log(`- Rejected reasonable alternatives: ${labHealth.rejectedReasonableAlternatives.join(", ") || "none"}`);
+    console.log(`- Text-noise failures: ${labHealth.textNoiseFailures.join(", ") || "none"}`);
+    console.log(`- Modal/blocking failures: ${labHealth.modalBlockingFailures.join(", ") || "none"}`);
+    console.log(`- Mobile failures: ${labHealth.mobileFailures.join(", ") || "none"}`);
   }
 }
 
