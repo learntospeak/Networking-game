@@ -4577,7 +4577,30 @@
     if (typeof els.terminalInput.setSelectionRange === "function") {
       els.terminalInput.setSelectionRange(valueLength, valueLength);
     }
+    if (!isMobileTerminalLayout()) {
+      (els.terminalForm || els.terminalInput).scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
     scheduleMobileTerminalReveal(0);
+  }
+
+  function routeTerminalWheelToOutput(event) {
+    if (!els.terminalOutput || event.defaultPrevented || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+      return;
+    }
+
+    const target = event.target;
+    if (target?.closest?.("button, a, input, textarea, select, summary, details, .scenario-panel, .command-sheet, .walkthrough-card, .help-assistant-card")) {
+      return;
+    }
+
+    const before = els.terminalOutput.scrollTop;
+    const maxScroll = Math.max(0, els.terminalOutput.scrollHeight - els.terminalOutput.clientHeight);
+    const next = Math.max(0, Math.min(maxScroll, before + event.deltaY));
+    if (next !== before) {
+      els.terminalOutput.scrollTop = next;
+      syncTerminalHistoryState();
+      event.preventDefault();
+    }
   }
 
   function shouldIgnoreTerminalTap(target) {
@@ -8228,12 +8251,10 @@
 
     renderPanel();
     persistSectionProgress();
-    if (isMobileTerminalLayout() && !session.ticketBriefingOpen && !session.beginnerGuideOpen) {
+    if (!session.ticketBriefingOpen && !session.beginnerGuideOpen && document.activeElement === els.terminalInput) {
       window.requestAnimationFrame(() => {
         focusTerminalInputAtEnd();
       });
-    } else if (document.activeElement === els.terminalInput) {
-      scheduleMobileTerminalReveal(0);
     }
   }
 
@@ -8558,6 +8579,9 @@
         }
         focusTerminalInputAtEnd();
       });
+    }
+    if (els.terminalPanel) {
+      els.terminalPanel.addEventListener("wheel", routeTerminalWheelToOutput, { passive: false });
     }
 
     if (els.terminalJumpTopBtn) {

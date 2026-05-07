@@ -5268,8 +5268,13 @@
       role: "Junior Support Technician",
       estimatedTime: "8-15 minutes",
       scenarioType: "Troubleshooting",
-      missionBriefing: "A user reports they can reach an internal server by IP address but cannot use the expected hostname. Your job is to confirm local configuration, test gateway reachability, isolate whether the failure is DNS or routing, and leave a clear ticket note before escalation.",
-      summary: "Work through local Windows network checks, prove the hostname failure path, and record a concise diagnosis.",
+      missionBriefing: "A user reports they can reach the internal server IP 192.168.56.20 but cannot use the hostname intranet.lab. Your job is to confirm local configuration, test gateway reachability, isolate whether the failure is DNS or routing, and leave a clear ticket note before escalation.",
+      summary: "Use the ticket facts hostname intranet.lab and service IP 192.168.56.20 to prove whether DNS or reachability is failing.",
+      beginnerTicket: {
+        happened: "The user can reach service IP 192.168.56.20, but hostname intranet.lab does not work.",
+        meaning: "You are checking whether the name is broken while the IP path still works.",
+        tryFirst: "Start with this PC's network settings, then test the gateway, hostname, and service IP."
+      },
       learningObjectives: [
         "Confirm local Windows network configuration before chasing the wider network",
         "Separate gateway reachability from hostname resolution",
@@ -5280,6 +5285,21 @@
         "Prove the gateway responds",
         "Show the hostname lookup fails while the target IP remains reachable",
         "Record the DNS-focused conclusion in a ticket note"
+      ],
+      knownFacts: [
+        "Reported hostname: intranet.lab",
+        "Known service IP from the ticket: 192.168.56.20",
+        "Default gateway and DNS server shown by ipconfig: 192.168.56.1"
+      ],
+      userReport: "I can reach the internal service by IP address 192.168.56.20, but intranet.lab does not open.",
+      symptoms: [
+        "Hostname intranet.lab fails",
+        "Service IP 192.168.56.20 is the known target from the ticket",
+        "Workstation should use DNS server 192.168.56.1"
+      ],
+      constraints: [
+        "Use the hostname and IP given in the ticket instead of guessing hidden values",
+        "Prove each layer before writing the ticket note"
       ],
       environmentNotes: "This is a simulated Windows support environment. The goal is to prove whether the reported fault belongs to DNS, routing, or the target service before you escalate.",
       verificationRequired: true,
@@ -5313,7 +5333,7 @@
         },
         {
           command: "nslookup intranet.lab",
-          explanation: "This is the key separation point. If the hostname fails while gateway and IP tests succeed, DNS becomes the leading suspect.",
+          explanation: "Use the reported hostname from the ticket. If intranet.lab fails while gateway and IP tests succeed, DNS becomes the leading suspect.",
           output: [
             "Server:  192.168.56.1",
             "Address: 192.168.56.1",
@@ -5368,13 +5388,13 @@
         {
           id: "dns-evidence",
           title: "Evidence Gathering",
-          briefing: "Now isolate the reported hostname failure directly so you know whether the problem belongs to DNS or to general connectivity.",
+          briefing: "Now test the reported hostname intranet.lab, then compare it with the known service IP 192.168.56.20 from the ticket.",
           completionSummary: "You gathered the direct hostname evidence needed to treat DNS as the leading issue.",
           steps: [
             step({
-              objective: "Test the internal hostname lookup.",
-              hints: ["The reported hostname is intranet.lab.", "Use the DNS lookup command from Commands -> Windows CMD.", "Try `nslookup intranet.lab`."],
-              explanation: "A failed lookup here shows the problem is happening at the name-resolution step rather than at the first local network hop.",
+              objective: "Test the reported hostname intranet.lab with nslookup.",
+              hints: ["The ticket says the hostname is intranet.lab.", "Use the DNS lookup command from Commands -> Windows CMD.", "Try `nslookup intranet.lab`."],
+              explanation: "A failed lookup for the reported hostname shows the problem is happening at the name-resolution step rather than at the first local network hop.",
               whyThisMatters: "This is the point where you stop saying 'the internet is broken' and start saying what exact part of the path is failing.",
               successFeedback: "You showed that the internal hostname does not resolve.",
               nextObjective: "Confirm the route and the target IP path are still viable.",
@@ -5392,8 +5412,8 @@
               accepts: [rawMatch(/^route\s+print$/i)]
             }),
             step({
-              objective: "Test the target service IP directly.",
-              hints: ["The service IP is 192.168.56.20.", "Use a direct reachability test against the server IP.", "Try `ping 192.168.56.20`."],
+              objective: "Test the known service IP 192.168.56.20 directly.",
+              hints: ["The ticket gives service IP 192.168.56.20.", "Use a direct reachability test against that server IP.", "Try `ping 192.168.56.20`."],
               explanation: "If the IP responds while the hostname still fails, the evidence strongly favors DNS rather than routing or total service loss.",
               whyThisMatters: "This separates 'cannot find the server by name' from 'cannot reach the server at all'.",
               successFeedback: "You proved the target IP remains reachable even though the hostname fails.",
