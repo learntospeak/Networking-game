@@ -51,6 +51,25 @@ async function runTerminalTrackTest(page, report, commands, options = {}) {
   }
 }
 
+async function loadTerminalScenarioById(page, id) {
+  await page.evaluate((scenarioId) => window.TerminalEngine?.loadScenarioById?.(scenarioId), id);
+  await page.waitForTimeout(250);
+  const ticketStart = page.locator("#ticketBriefingStartBtn");
+  if (await ticketStart.isVisible().catch(() => false)) {
+    await ticketStart.click();
+    await page.waitForTimeout(150);
+  }
+  const startButton = page.locator("#startScenarioBtn");
+  if (await startButton.isVisible().catch(() => false)) {
+    await startButton.click();
+    await page.waitForTimeout(200);
+  }
+  if (await ticketStart.isVisible().catch(() => false)) {
+    await ticketStart.click();
+    await page.waitForTimeout(150);
+  }
+}
+
 test("Terminal functional smoke: Linux track", async ({ page }, testInfo) => {
   const report = createSmokeReport("Linux Terminal Lab", "/terminal-coach.html?track=linux");
   observePage(page, report);
@@ -103,6 +122,7 @@ test("Terminal functional smoke: Linux track", async ({ page }, testInfo) => {
 });
 
 test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) => {
+  test.setTimeout(120000);
   const report = createSmokeReport("Windows CMD Lab", "/terminal-coach.html?track=windows");
   observePage(page, report);
   await gotoAndStabilize(page, report.url);
@@ -287,6 +307,60 @@ test("Terminal functional smoke: Windows CMD track", async ({ page }, testInfo) 
     const result = await runTerminalCommand(page, command, { resetBefore: true });
     report.commandResults.push(result);
     recordInvalidCommandOutcome(report, "Windows", result);
+  }
+
+  await loadTerminalScenarioById(page, "win-ipconfig-and-getmac-audit");
+  pushCheck(report, "command family intro appears for ipconfig mission", await page.locator("#commandFamilyIntroCard").isVisible().catch(() => false) && /ipconfig/i.test(await readText(page, "#commandFamilyIntroCard")), await readText(page, "#commandFamilyIntroCard"));
+  const ipconfigChipText = await readText(page, "#commandFamilyChipList");
+  pushCheck(report, "variation chips appear", /ipconfig \/all/i.test(ipconfigChipText) && /ipconfig \/flushdns/i.test(ipconfigChipText), ipconfigChipText);
+  await page.getByRole("button", { name: "ipconfig /all" }).first().click();
+  pushCheck(report, "variation chip fills terminal input", await page.locator("#terminalInput").inputValue() === "ipconfig /all", await page.locator("#terminalInput").inputValue());
+
+  for (const command of ["ipconfig", "ipconfig /all", "ipconfig /displaydns", "ipconfig /flushdns", "ipconfig"]) {
+    const result = await runTerminalCommand(page, command);
+    report.commandResults.push(result);
+    pushCheck(report, `${command} accepted`, result.accepted, result.notes);
+  }
+  pushCheck(report, "tiny wins update for ipconfig", /Verified settings|Cleared DNS cache|Viewed DNS cache/i.test(report.commandResults.slice(-5).map((item) => item.notes).join(" | ")), report.commandResults.slice(-5).map((item) => item.notes).join(" | "));
+
+  const familyWalkthrough = await runWalkthroughDemo(page, { resetBefore: true });
+  pushCheck(report, "command family walkthrough still works one step at a time", familyWalkthrough.firstStepVisible && familyWalkthrough.secondStepVisible && !familyWalkthrough.progressed, `${familyWalkthrough.firstCounter} -> ${familyWalkthrough.secondCounter}`);
+
+  await loadTerminalScenarioById(page, "win-netstat-connection-audit");
+  for (const command of ["netstat", "netstat -a", "netstat -ano", "netstat -ano | findstr :445"]) {
+    const result = await runTerminalCommand(page, command);
+    report.commandResults.push(result);
+    pushCheck(report, `${command} accepted`, result.accepted, result.notes);
+  }
+  const altNetstat = await runTerminalCommand(page, "netstat -aon", { resetBefore: true });
+  report.commandResults.push(altNetstat);
+  pushCheck(report, "valid netstat alternative accepted", altNetstat.accepted, altNetstat.notes);
+
+  await loadTerminalScenarioById(page, "win-arp-and-route-review");
+  for (const command of ["arp -a", "arp -d", "route print", "route print -4", "route add", "route delete", "route print"]) {
+    const result = await runTerminalCommand(page, command);
+    report.commandResults.push(result);
+    pushCheck(report, `${command} accepted`, result.accepted, result.notes);
+  }
+  const routeAlt = await runTerminalCommand(page, "netstat -r", { resetBefore: true });
+  report.commandResults.push(routeAlt);
+  pushCheck(report, "valid route alternative accepted", routeAlt.accepted, routeAlt.notes);
+
+  await loadTerminalScenarioById(page, "win-nslookup-fileserver");
+  for (const command of ["nslookup fileserver", "nslookup 192.168.56.20", "nslookup fileserver 192.168.56.1"]) {
+    const result = await runTerminalCommand(page, command);
+    report.commandResults.push(result);
+    pushCheck(report, `${command} accepted`, result.accepted, result.notes);
+  }
+  const nslookupAlt = await runTerminalCommand(page, "nslookup fileserver", { resetBefore: true });
+  report.commandResults.push(nslookupAlt);
+  pushCheck(report, "valid nslookup alternative accepted", nslookupAlt.accepted, nslookupAlt.notes);
+
+  await loadTerminalScenarioById(page, "win-tracert-and-pathping-web-lab");
+  for (const command of ["tracert web-lab", "tracert -d web-lab", "tracert -h 5 web-lab", "tracert -4 web-lab"]) {
+    const result = await runTerminalCommand(page, command);
+    report.commandResults.push(result);
+    pushCheck(report, `${command} accepted`, result.accepted, result.notes);
   }
 
   await finalizeTerminalReport(page, report, testInfo);

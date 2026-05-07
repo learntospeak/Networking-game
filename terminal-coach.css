@@ -484,6 +484,89 @@
   gap: 12px;
 }
 
+.command-family-intro-card {
+  display: grid;
+  gap: 10px;
+}
+
+.command-family-intro-card[hidden] {
+  display: none;
+}
+
+.command-family-intro-head {
+  display: grid;
+  gap: 4px;
+}
+
+.command-family-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.command-family-use,
+.command-family-chip-note {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.command-family-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.command-family-chip {
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  border-radius: 8px;
+  background: rgba(7, 11, 16, 0.92);
+  color: #e2e8f0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 9px;
+}
+
+.command-family-chip:hover,
+.command-family-chip:focus-visible {
+  border-color: rgba(125, 211, 252, 0.85);
+  color: #f8fafc;
+  outline: none;
+}
+
+.command-family-examples {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.command-family-examples summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.command-family-example-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.command-family-example {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(3, 8, 13, 0.72);
+}
+
+.command-family-example code {
+  color: #f8fafc;
+  font-weight: 800;
+}
+
 .beginner-visual-current {
   color: #bfdbfe;
   font-weight: 600;

@@ -91,6 +91,13 @@
     beginnerCommandMeaningMap: document.getElementById("beginnerCommandMeaningMap"),
     beginnerFolderGuideMap: document.getElementById("beginnerFolderGuideMap"),
     currentTaskCard: document.getElementById("currentTaskCard"),
+    commandFamilyIntroCard: document.getElementById("commandFamilyIntroCard"),
+    commandFamilyIntroTitle: document.getElementById("commandFamilyIntroTitle"),
+    commandFamilyIntroUse: document.getElementById("commandFamilyIntroUse"),
+    commandFamilyChipList: document.getElementById("commandFamilyChipList"),
+    commandFamilyChipNote: document.getElementById("commandFamilyChipNote"),
+    commandFamilyExamples: document.getElementById("commandFamilyExamples"),
+    commandFamilyExamplesList: document.getElementById("commandFamilyExamplesList"),
     environmentContextTitle: document.getElementById("environmentContextTitle"),
     environmentContextMeta: document.getElementById("environmentContextMeta"),
     progressCard: document.getElementById("progressCard"),
@@ -1702,6 +1709,89 @@
       + `<span class="beginner-command-chip-copy">${escapeHtml(entry.meaning)}</span>`
       + `</div>`
     )).join("");
+  }
+
+  function commandFamilyEntries(scenario = currentScenario()) {
+    const raw = Array.isArray(scenario?.commandFamilyIntros) && scenario.commandFamilyIntros.length
+      ? scenario.commandFamilyIntros
+      : (scenario?.commandFamilyIntro || []);
+    return (Array.isArray(raw) ? raw : [raw])
+      .filter((entry) => entry && String(entry.family || entry.base || "").trim());
+  }
+
+  function currentCommandFamilyIntro(scenario = currentScenario(), step = currentStep()) {
+    const entries = commandFamilyEntries(scenario);
+    if (!entries.length) {
+      return null;
+    }
+
+    const stepFamily = String(step?.commandFamily || "").trim().toLowerCase();
+    if (stepFamily) {
+      const matched = entries.find((entry) => {
+        const family = String(entry.family || entry.base || "").trim().toLowerCase();
+        return family === stepFamily;
+      });
+      if (matched) {
+        return matched;
+      }
+    }
+
+    return entries[0];
+  }
+
+  function renderCommandFamilyIntro(scenario = currentScenario(), step = currentStep()) {
+    const intro = currentCommandFamilyIntro(scenario, step);
+    const show = Boolean(intro && (isBeginnerMode() || /beginner|intermediate/i.test(`${scenario?.level || ""} ${scenario?.difficulty || ""}`)));
+
+    if (!els.commandFamilyIntroCard) {
+      return;
+    }
+
+    els.commandFamilyIntroCard.hidden = !show;
+    if (!show) {
+      return;
+    }
+
+    const family = String(intro.family || intro.base || "").trim();
+    const base = String(intro.base || family).trim();
+    const variations = Array.isArray(intro.variations) ? intro.variations : [];
+    const examples = Array.isArray(intro.examples) && intro.examples.length ? intro.examples : variations.slice(0, 4);
+    const currentTask = String(step?.objective || "").trim();
+    const where = variations.length ? "Variations are shown below." : "Use the command that matches the task.";
+
+    fillText(els.commandFamilyIntroTitle, `Command family: ${family}`, { hideWhenEmpty: false });
+    fillText(
+      els.commandFamilyIntroUse,
+      `${intro.use || `Use ${base} for this task.`}${currentTask ? ` ${where}` : ""}`,
+      { hideWhenEmpty: false }
+    );
+    fillText(els.commandFamilyChipNote, `First try: ${intro.firstTry || base}`, { hideWhenEmpty: false });
+
+    if (els.commandFamilyChipList) {
+      els.commandFamilyChipList.innerHTML = variations.map((item) => {
+        const command = String(item.command || "").trim();
+        const meaning = String(item.meaning || "").trim();
+        const safety = String(item.safety || "").trim();
+        if (!command) {
+          return "";
+        }
+        const label = safety ? `${meaning} ${safety}`.trim() : meaning;
+        return `<button class="command-family-chip" type="button" data-command-family-chip="${escapeHtml(command)}" data-command-family-meaning="${escapeHtml(label)}">${escapeHtml(command)}</button>`;
+      }).join("");
+    }
+
+    if (els.commandFamilyExamples && els.commandFamilyExamplesList) {
+      els.commandFamilyExamples.hidden = !examples.length;
+      els.commandFamilyExamplesList.innerHTML = examples.map((item) => {
+        const command = String(item.command || "").trim();
+        const meaning = String(item.meaning || "").trim();
+        const safety = String(item.safety || "").trim();
+        if (!command) {
+          return "";
+        }
+        return `<div class="command-family-example"><code>${escapeHtml(command)}</code><span>${escapeHtml([meaning, safety].filter(Boolean).join(" "))}</span></div>`;
+      }).join("");
+    }
   }
 
   function renderFolderGuideMap(target, scenario = currentScenario(), snapshot = folderGuideSnapshot(scenario)) {
@@ -4822,6 +4912,7 @@
     els.scenarioFlex.hidden = Boolean(beginnerTrack);
     renderBeginnerLabCard(scenario, step);
     renderBeginnerVisualGuide(scenario);
+    renderCommandFamilyIntro(scenario, step);
     renderMissionCaseFile(scenario, stageInfo);
     renderMissionReview(scenario);
     if (els.environmentSummary) {
@@ -6966,7 +7057,7 @@
   }
 
   function executeTracert(parsed) {
-    const targetValue = parsed.args[0];
+    const targetValue = parsed.args.find((arg) => !/^-\w+$/i.test(arg) && !/^\d+$/.test(arg));
     if (!targetValue) return errorResult("Unable to resolve target system name.", "syntax_error");
     const target = resolveNetworkTarget(targetValue);
     if (!target || !target.reachable) return errorResult(`Unable to resolve target system name ${targetValue}.`);
@@ -7017,8 +7108,8 @@
     const query = parsed.args[0];
     if (!query) return errorResult("*** Can't find server address", "syntax_error");
     const adapter = (session.state.networkAdapters || [])[0] || {};
-    const server = (adapter.dns || [])[0] || adapter.gateway || "192.168.56.1";
-    const target = resolveNetworkTarget(query);
+    const server = parsed.args[1] || (adapter.dns || [])[0] || adapter.gateway || "192.168.56.1";
+    const target = resolveNetworkTarget(query) || (session.state.targets || []).find((item) => String(item.ip) === String(query));
     const resolved = target?.reachable ? target.ip : null;
 
     if (!resolved) {
@@ -7040,19 +7131,48 @@
   }
 
   function executeIpconfig(parsed) {
+    if (hasFlag(parsed, "/DISPLAYDNS")) {
+      return okResult([
+        "Windows IP Configuration",
+        "",
+        "fileserver",
+        "    Record Name . . . . . : fileserver",
+        "    Record Type . . . . . : 1",
+        "    A (Host) Record . . . : 192.168.56.20"
+      ]);
+    }
+
+    if (hasFlag(parsed, "/FLUSHDNS")) {
+      return okResult("Windows IP Configuration\n\nSuccessfully flushed the DNS Resolver Cache.");
+    }
+
+    if (hasFlag(parsed, "/RELEASE") || hasFlag(parsed, "/RENEW") || hasFlag(parsed, "/RENEW4") || hasFlag(parsed, "/RENEW6") || hasFlag(parsed, "/REGISTERDNS")) {
+      return okResult("Simulated lab action complete. On a real computer, this can change network behaviour.");
+    }
+
     return okResult(formatIpconfigOutput(hasFlag(parsed, "/ALL")));
   }
 
   function executeNetstat(parsed) {
+    if (hasFlag(parsed, "-r", "-R")) {
+      return okResult(formatRoutePrintOutput());
+    }
     return okResult(formatNetstatOutput(hasFlag(parsed, "-o", "-O")));
   }
 
-  function executeArp() {
+  function executeArp(parsed) {
+    if (hasFlag(parsed, "-d", "-D")) {
+      return okResult("Simulated lab action complete. On a real computer, this can change network behaviour.");
+    }
     return okResult(formatArpOutput());
   }
 
   function executeRoute(parsed) {
-    if (String(parsed.args[0] || "").toLowerCase() !== "print") {
+    const action = String(parsed.args[0] || "").toLowerCase();
+    if (action === "add" || action === "delete") {
+      return okResult("Simulated lab action complete. On a real computer, this can change network behaviour.");
+    }
+    if (action !== "print") {
       return errorResult("The syntax of this command is:\nROUTE [-f] [-p] [command [destination] [MASK netmask] [gateway] [METRIC metric]]", "syntax_error");
     }
     return okResult(formatRoutePrintOutput());
@@ -8238,6 +8358,21 @@
           els.helpUserNote.focus({ preventScroll: true });
         }
       });
+    });
+    els.commandFamilyChipList?.addEventListener("click", (event) => {
+      const chip = event.target?.closest?.("[data-command-family-chip]");
+      if (!chip) {
+        return;
+      }
+
+      const command = chip.getAttribute("data-command-family-chip") || "";
+      const meaning = chip.getAttribute("data-command-family-meaning") || "Command filled. Press Run when ready.";
+      if (els.terminalInput && command) {
+        els.terminalInput.value = command;
+        els.terminalInput.focus({ preventScroll: true });
+        els.terminalInput.setSelectionRange(command.length, command.length);
+      }
+      fillText(els.commandFamilyChipNote, meaning, { hideWhenEmpty: false });
     });
     if (els.helpUserNote) {
       els.helpUserNote.addEventListener("keydown", (event) => {

@@ -6,6 +6,7 @@
   function step(config) {
     return {
       objective: config.objective,
+      commandFamily: config.commandFamily || "",
       hints: config.hints || [],
       context: config.context || "",
       explanation: config.explanation,
@@ -541,6 +542,92 @@
   function rawMatch(regex, extras = {}) {
     return { raw: regex, ...extras };
   }
+
+  const WINDOWS_COMMAND_FAMILIES = {
+    ipconfig: {
+      family: "ipconfig",
+      base: "ipconfig",
+      use: "Use it to check this computer's network settings.",
+      firstTry: "ipconfig",
+      variations: [
+        { command: "ipconfig", meaning: "quick network view" },
+        { command: "ipconfig /all", meaning: "detailed network view" },
+        { command: "ipconfig /release", meaning: "drop current network lease", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." },
+        { command: "ipconfig /renew", meaning: "ask for a new lease", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." },
+        { command: "ipconfig /renew4", meaning: "ask for a new IPv4 lease", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." },
+        { command: "ipconfig /renew6", meaning: "ask for a new IPv6 lease", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." },
+        { command: "ipconfig /flushdns", meaning: "clear saved DNS answers", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." },
+        { command: "ipconfig /displaydns", meaning: "show saved DNS answers" },
+        { command: "ipconfig /registerdns", meaning: "refresh DNS registration", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." }
+      ]
+    },
+    netstat: {
+      family: "netstat",
+      base: "netstat",
+      use: "Use it to inspect connections, ports, and process IDs.",
+      firstTry: "netstat",
+      variations: [
+        { command: "netstat", meaning: "quick connection list" },
+        { command: "netstat -a", meaning: "show all connections and listeners" },
+        { command: "netstat -n", meaning: "show numbers instead of names" },
+        { command: "netstat -o", meaning: "show process IDs" },
+        { command: "netstat -ano", meaning: "all, numeric, with process IDs" },
+        { command: "netstat -r", meaning: "show route table" },
+        { command: "netstat -s", meaning: "show protocol stats" },
+        { command: "netstat -ano | findstr :445", meaning: "filter for one port" }
+      ]
+    },
+    route: {
+      family: "route",
+      base: "route print",
+      use: "Use it to inspect the route table and gateways.",
+      firstTry: "route print",
+      variations: [
+        { command: "route print", meaning: "show route table" },
+        { command: "route print -4", meaning: "show IPv4 routes" },
+        { command: "route print -6", meaning: "show IPv6 routes" },
+        { command: "route add", meaning: "add a route", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." },
+        { command: "route delete", meaning: "delete a route", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." }
+      ]
+    },
+    arp: {
+      family: "arp",
+      base: "arp -a",
+      use: "Use it to inspect IP-to-MAC address mappings.",
+      firstTry: "arp -a",
+      variations: [
+        { command: "arp -a", meaning: "show ARP cache" },
+        { command: "arp -d", meaning: "delete ARP entries", safety: "In this lab this is simulated. On a real computer, this can change network behaviour." }
+      ]
+    },
+    nslookup: {
+      family: "nslookup",
+      base: "nslookup hostname",
+      use: "Use it to ask DNS what a name or IP address resolves to.",
+      firstTry: "nslookup fileserver",
+      variations: [
+        { command: "nslookup fileserver", meaning: "hostname to IP address" },
+        { command: "nslookup 192.168.56.20", meaning: "IP address to name" },
+        { command: "nslookup fileserver 192.168.56.1", meaning: "ask a specific DNS server" },
+        { command: "set type=A", meaning: "look for A records" },
+        { command: "set type=MX", meaning: "look for mail records" },
+        { command: "set type=NS", meaning: "look for name servers" }
+      ]
+    },
+    tracert: {
+      family: "tracert",
+      base: "tracert hostname",
+      use: "Use it to see the path from your PC to a target.",
+      firstTry: "tracert web-lab",
+      variations: [
+        { command: "tracert web-lab", meaning: "trace by hostname" },
+        { command: "tracert -d web-lab", meaning: "skip name lookups" },
+        { command: "tracert -h 5 web-lab", meaning: "limit hops" },
+        { command: "tracert -4 web-lab", meaning: "force IPv4" },
+        { command: "tracert -6 web-lab", meaning: "force IPv6" }
+      ]
+    }
+  };
 
   function cwdMatch(target, extras = {}) {
     return {
@@ -2897,6 +2984,8 @@
       shell: "linux",
       scenarioIntro: config.scenarioIntro || "",
       commandFocus: config.commandFocus || [],
+      commandFamilyIntro: config.commandFamilyIntro || null,
+      commandFamilyIntros: config.commandFamilyIntros || [],
       acceptedCommands: config.acceptedCommands || [],
       simulatedOutput: config.simulatedOutput || [],
       successCondition: config.successCondition || "",
@@ -2964,6 +3053,8 @@
       shell: "cmd",
       scenarioIntro: config.scenarioIntro || "",
       commandFocus: config.commandFocus || [],
+      commandFamilyIntro: config.commandFamilyIntro || null,
+      commandFamilyIntros: config.commandFamilyIntros || [],
       acceptedCommands: config.acceptedCommands || [],
       simulatedOutput: config.simulatedOutput || [],
       successCondition: config.successCondition || "",
@@ -5773,48 +5864,145 @@
     }),
     windowsLessonScenario({
       id: "win-ipconfig-and-getmac-audit",
-      title: "Audit the Local Adapter",
+      title: "Ipconfig Family: Local Network Settings",
       category: "Networking",
       difficulty: "Beginner",
-      objective: "Review the local IP configuration, then confirm the adapter MAC address.",
-      scenarioIntro: "Networking lessons should start with the learner's own host context. This pairs the local IP configuration view with the MAC-address check so the analyst box identity stays clear.",
-      commandFocus: ["ipconfig", "getmac"],
-      acceptedCommands: ["ipconfig /all", "getmac"],
-      simulatedOutput: ["IPv4 Address . . . . . . . . . . : 192.168.56.25", "00-0C-29-5E-11-22"],
-      successCondition: "Display adapter configuration and then the local MAC address.",
-      feedbackText: "The learner gathered the local network identity before checking remote hosts.",
+      objective: "Use the ipconfig family in layers: quick view, detailed view, DNS cache, clear cache, then verify settings.",
+      scenarioIntro: "Start with the base ipconfig command, then add one option at a time so each variation has a clear job.",
+      commandFocus: ["ipconfig"],
+      commandFamilyIntro: WINDOWS_COMMAND_FAMILIES.ipconfig,
+      acceptedCommands: ["ipconfig", "ipconfig /all", "ipconfig /displaydns", "ipconfig /flushdns"],
+      simulatedOutput: ["IPv4 Address . . . . . . . . . . : 192.168.56.25", "DNS Servers . . . . . . . . . . : 192.168.56.1", "Successfully flushed the DNS Resolver Cache."],
+      successCondition: "Run the ipconfig family from base view through DNS cache verification.",
+      feedbackText: "The learner used ipconfig variations without needing hidden command knowledge.",
       visualGuide: {
         type: "network",
-        nodes: ["Your PC", "Gateway", "DNS", "Server"],
+        nodes: ["Your PC settings", "Gateway", "DNS"],
         highlightAfter: {
-          ipconfig: "Your PC",
-          getmac: "Your PC",
-          ping: "Gateway",
-          nslookup: "DNS"
+          ipconfig: "Your PC settings"
         },
         commandMap: [
-          { command: "ipconfig", icon: "🖥️", meaning: "check network settings" },
-          { command: "getmac", icon: "🔎", meaning: "check adapter address" },
-          { command: "ping", icon: "📡", meaning: "check if something replies" }
+          { command: "ipconfig", icon: "🖥️", meaning: "quick PC settings" },
+          { command: "ipconfig /all", icon: "🔎", meaning: "detailed PC settings" },
+          { command: "ipconfig /displaydns", icon: "📄", meaning: "saved DNS answers" },
+          { command: "ipconfig /flushdns", icon: "🧹", meaning: "clear DNS cache" }
         ]
       },
+      walkthrough: [
+        {
+          title: "Base ipconfig",
+          goal: "See basic IP settings.",
+          command: "ipconfig",
+          output: ["IPv4 Address . . . . . . . . . . : 192.168.56.25"],
+          explanation: "This proves the quick local network view. Next variation: ipconfig /all."
+        },
+        {
+          title: "Detailed ipconfig",
+          goal: "Find DNS and adapter details.",
+          command: "ipconfig /all",
+          output: ["DNS Servers . . . . . . . . . . : 192.168.56.1"],
+          explanation: "This proves the DNS server. Next variation: ipconfig /displaydns."
+        },
+        {
+          title: "Display DNS cache",
+          goal: "See saved DNS answers.",
+          command: "ipconfig /displaydns",
+          output: ["Record Name . . . . . : fileserver"],
+          explanation: "This proves saved DNS answers are visible. Next variation: ipconfig /flushdns."
+        },
+        {
+          title: "Flush DNS cache",
+          goal: "Clear saved DNS answers.",
+          command: "ipconfig /flushdns",
+          output: ["Successfully flushed the DNS Resolver Cache."],
+          explanation: "This proves the simulated clear action ran. Next variation: ipconfig."
+        },
+        {
+          title: "Verify settings",
+          goal: "Check the quick view again.",
+          command: "ipconfig",
+          output: ["IPv4 Address . . . . . . . . . . : 192.168.56.25"],
+          explanation: "This verifies the next check after clearing saved DNS answers."
+        }
+      ],
       environment: {
         cwd: "C:/Lab"
       },
       steps: [
         step({
-          objective: "Display the local adapter configuration with full detail.",
-          hints: ["Use ipconfig with the all-details flag.", "You want the adapter, IP, and gateway details.", "Try `ipconfig /all`."],
-          explanation: "ipconfig /all is the normal Windows starting point when you need local addressing context.",
-          successFeedback: "You reviewed the adapter configuration.",
-          accepts: [rawMatch(/^ipconfig(?:\s+\/all)?$/i)]
+          objective: "Use the ipconfig family. Run the base command to see basic IP settings. Variations are shown in the Command Family Intro.",
+          commandFamily: "ipconfig",
+          hints: ["Start with the base command.", "Use the chip labelled ipconfig if you want it filled in.", "Try `ipconfig`."],
+          explanation: "The base ipconfig command gives the quick local network view.",
+          successFeedback: "Checked basic network info.",
+          walkthrough: [{
+            title: "Base ipconfig",
+            goal: "See the quick local network view.",
+            command: "ipconfig",
+            output: ["IPv4 Address . . . . . . . . . . : 192.168.56.25", "Default Gateway . . . . . . . . : 192.168.56.1"],
+            explanation: "This proves the PC has an IP address and gateway. Next variation: ipconfig /all."
+          }],
+          accepts: [rawMatch(/^ipconfig$/i)]
         }),
         step({
-          objective: "Display the adapter MAC address.",
-          hints: ["Now check the physical address directly.", "Use the MAC-address command.", "Try `getmac`."],
-          explanation: "The MAC address is part of the local host identity and often appears in switch, DHCP, or ARP context later.",
-          successFeedback: "You confirmed the local MAC address.",
-          accepts: [rawMatch(/^getmac$/i)]
+          objective: "Use the ipconfig family. Run the detailed version to find DNS server and MAC/address details.",
+          commandFamily: "ipconfig",
+          hints: ["You need the detailed ipconfig version.", "Look at the variation chips.", "Try `ipconfig /all`."],
+          explanation: "ipconfig /all adds DNS, DHCP, and physical-address detail.",
+          successFeedback: "Found DNS server.",
+          walkthrough: [{
+            title: "Detailed ipconfig",
+            goal: "Find DNS and adapter details.",
+            command: "ipconfig /all",
+            output: ["Physical Address. . . . . . . . . : 00-0C-29-5E-11-22", "DNS Servers . . . . . . . . . . : 192.168.56.1"],
+            explanation: "This proves which DNS server and adapter identity the PC is using. Next variation: ipconfig /displaydns."
+          }],
+          accepts: [rawMatch(/^ipconfig\s+\/all$/i)]
+        }),
+        step({
+          objective: "Use the ipconfig family. You need the version that shows saved DNS answers.",
+          commandFamily: "ipconfig",
+          hints: ["Look for the DNS cache variation.", "The chip says displaydns.", "Try `ipconfig /displaydns`."],
+          explanation: "ipconfig /displaydns shows cached name answers.",
+          successFeedback: "Viewed DNS cache.",
+          walkthrough: [{
+            title: "Display DNS cache",
+            goal: "See saved DNS answers.",
+            command: "ipconfig /displaydns",
+            output: ["Record Name . . . . . : fileserver", "A (Host) Record . . . : 192.168.56.20"],
+            explanation: "This proves the PC has a saved DNS answer. Next variation: ipconfig /flushdns."
+          }],
+          accepts: [rawMatch(/^ipconfig\s+\/displaydns$/i)]
+        }),
+        step({
+          objective: "Use the ipconfig family. Clear saved DNS answers in this simulated lab.",
+          commandFamily: "ipconfig",
+          hints: ["Look for the clear-DNS variation.", "This is simulated in the lab.", "Try `ipconfig /flushdns`."],
+          explanation: "ipconfig /flushdns clears the resolver cache in this simulated lab.",
+          successFeedback: "Cleared DNS cache.",
+          walkthrough: [{
+            title: "Flush DNS cache",
+            goal: "Clear saved DNS answers.",
+            command: "ipconfig /flushdns",
+            output: ["Successfully flushed the DNS Resolver Cache."],
+            explanation: "This proves the cache-clear action ran. Next variation: verify with ipconfig again."
+          }],
+          accepts: [rawMatch(/^ipconfig\s+\/flushdns$/i)]
+        }),
+        step({
+          objective: "Verify with the ipconfig family. Run ipconfig again to confirm settings are still visible.",
+          commandFamily: "ipconfig",
+          hints: ["Use a safe verification command.", "The base command is enough.", "Try `ipconfig`."],
+          explanation: "A final quick view verifies the local network settings remain readable.",
+          successFeedback: "Verified settings.",
+          walkthrough: [{
+            title: "Verify settings",
+            goal: "Check the quick view again.",
+            command: "ipconfig",
+            output: ["IPv4 Address . . . . . . . . . . : 192.168.56.25"],
+            explanation: "This verifies the next check after clearing saved DNS answers."
+          }],
+          accepts: [rawMatch(/^ipconfig$/i), rawMatch(/^nslookup\s+(?:fileserver|web-lab)$/i)]
         })
       ]
     }),
@@ -5846,117 +6034,314 @@
     }),
     windowsLessonScenario({
       id: "win-tracert-and-pathping-web-lab",
-      title: "Trace the Path to Web-Lab",
+      title: "Tracert Family: Trace the Path",
       category: "Networking",
       difficulty: "Intermediate",
-      objective: "Trace the route to web-lab, then run pathping to collect the same path with packet-loss context.",
-      scenarioIntro: "When ping succeeds but a learner still needs route context, tracert and pathping are the next Windows-native steps. This lesson intentionally keeps both commands on the same target so the difference in purpose stays clear.",
-      commandFocus: ["tracert", "pathping"],
-      acceptedCommands: ["tracert web-lab", "pathping web-lab"],
-      simulatedOutput: ["Tracing route to web-lab [192.168.56.10]", "Hop  RTT    Lost/Sent = Pct"],
-      successCondition: "Run both tracert and pathping against web-lab.",
-      feedbackText: "The learner saw both the route path and the packet-loss-oriented follow-up.",
+      objective: "Use the tracert family in layers: normal trace, no-name lookup trace, hop limit, then verify reachability.",
+      scenarioIntro: "Use tracert when ping is not enough and you need to see the path to a target.",
+      commandFocus: ["tracert"],
+      commandFamilyIntro: WINDOWS_COMMAND_FAMILIES.tracert,
+      acceptedCommands: ["tracert web-lab", "tracert -d web-lab", "tracert -h 5 web-lab", "tracert -4 web-lab"],
+      simulatedOutput: ["Tracing route to web-lab [192.168.56.10]", "Trace complete."],
+      successCondition: "Run layered tracert variations against web-lab.",
+      feedbackText: "The learner used tracert variations to inspect and verify the path.",
+      visualGuide: {
+        type: "network",
+        nodes: ["Your PC", "Gateway", "DNS/Server"],
+        highlightAfter: {
+          tracert: "DNS/Server",
+          ping: "Gateway"
+        },
+        commandMap: [
+          { command: "tracert", icon: "🛣️", meaning: "show path" },
+          { command: "tracert -d", icon: "🔢", meaning: "skip names" },
+          { command: "tracert -h 5", icon: "5", meaning: "limit hops" }
+        ]
+      },
       environment: {
         cwd: "C:/Lab",
         targets: selectTargets("web-lab")
       },
       steps: [
         step({
-          objective: "Trace the route to web-lab.",
-          hints: ["Start with the route-trace command.", "The target can be web-lab or 192.168.56.10.", "Try `tracert web-lab`."],
-          explanation: "tracert shows the hop path without turning immediately into deeper network tooling.",
+          objective: "Use the tracert family. Run a normal trace to web-lab.",
+          commandFamily: "tracert",
+          hints: ["Start with the base tracert shape.", "The target is web-lab.", "Try `tracert web-lab`."],
+          explanation: "tracert shows the hop path without deeper tooling.",
           successFeedback: "You traced the route to web-lab.",
+          walkthrough: [{
+            title: "Normal trace",
+            goal: "Show the path to web-lab.",
+            command: "tracert web-lab",
+            output: ["1  192.168.56.1", "2  192.168.56.10", "Trace complete."],
+            explanation: "This proves the path reaches the server. Next variation: tracert -d."
+          }],
           accepts: [rawMatch(/^tracert\s+(?:web-lab|192\.168\.56\.10)$/i)]
         }),
         step({
-          objective: "Run pathping against the same host for additional path quality context.",
-          hints: ["Now use the combined trace and loss command.", "Keep the same target so you can compare the workflow.", "Try `pathping web-lab`."],
-          explanation: "pathping extends the route idea by adding packet-loss statistics along the path.",
-          successFeedback: "You ran pathping against the same target.",
-          accepts: [rawMatch(/^pathping\s+(?:web-lab|192\.168\.56\.10)$/i)]
+          objective: "Use the tracert family. Run the version that skips name lookups.",
+          commandFamily: "tracert",
+          hints: ["Look for the no-name lookup variation.", "It uses -d.", "Try `tracert -d web-lab`."],
+          explanation: "tracert -d keeps the output numeric and often faster.",
+          successFeedback: "Traced path without name lookups.",
+          walkthrough: [{
+            title: "No-name trace",
+            goal: "Trace using numeric hops.",
+            command: "tracert -d web-lab",
+            output: ["1  192.168.56.1", "2  192.168.56.10"],
+            explanation: "This proves the route without waiting for hop names. Next variation: tracert -h 5."
+          }],
+          accepts: [rawMatch(/^tracert\s+-d\s+(?:web-lab|192\.168\.56\.10)$/i)]
+        }),
+        step({
+          objective: "Use the tracert family. Limit the trace to 5 hops.",
+          commandFamily: "tracert",
+          hints: ["Look for the hop-limit variation.", "The limit is 5.", "Try `tracert -h 5 web-lab`."],
+          explanation: "A hop limit keeps a trace bounded during troubleshooting.",
+          successFeedback: "Limited the trace depth.",
+          accepts: [rawMatch(/^tracert\s+-h\s+5\s+(?:web-lab|192\.168\.56\.10)$/i)]
+        }),
+        step({
+          objective: "Verify the path check with tracert -4 or a normal tracert.",
+          commandFamily: "tracert",
+          hints: ["Use a verification variation.", "IPv4 is fine in this lab.", "Try `tracert -4 web-lab`."],
+          explanation: "A final trace verifies the path using the intended address family.",
+          successFeedback: "Verified the traced path.",
+          accepts: [rawMatch(/^tracert\s+-4\s+(?:web-lab|192\.168\.56\.10)$/i), rawMatch(/^tracert\s+(?:web-lab|192\.168\.56\.10)$/i), rawMatch(/^ping\s+(?:web-lab|192\.168\.56\.10)$/i)]
         })
       ]
     }),
     windowsLessonScenario({
       id: "win-nslookup-fileserver",
-      title: "Resolve the File Server Name",
+      title: "Nslookup Family: Resolve Names",
       category: "Networking",
       difficulty: "Beginner",
-      objective: "Resolve the file server hostname through DNS before you test any share path assumptions.",
-      scenarioIntro: "This lesson keeps DNS resolution separate from reachability. The learner should know the Windows name-resolution step before moving into share or route tasks.",
+      objective: "Use nslookup variations to resolve a hostname, reverse-check an IP, and query a specific DNS server.",
+      scenarioIntro: "DNS checks are easier when the learner can see the nslookup variations before the task asks for them.",
       commandFocus: ["nslookup"],
-      acceptedCommands: ["nslookup fileserver"],
+      commandFamilyIntro: WINDOWS_COMMAND_FAMILIES.nslookup,
+      acceptedCommands: ["nslookup fileserver", "nslookup 192.168.56.20", "nslookup fileserver 192.168.56.1"],
       simulatedOutput: ["Name:    fileserver", "Address: 192.168.56.20"],
-      successCondition: "Resolve fileserver to its IP address with nslookup.",
-      feedbackText: "The learner separated DNS evidence from later SMB or connectivity checks.",
+      successCondition: "Resolve names with the layered nslookup family.",
+      feedbackText: "The learner separated DNS evidence from reachability evidence.",
+      visualGuide: {
+        type: "network",
+        nodes: ["Name", "DNS", "IP address"],
+        highlightAfter: {
+          nslookup: "IP address"
+        },
+        commandMap: [
+          { command: "nslookup fileserver", icon: "DNS", meaning: "name to IP" },
+          { command: "nslookup 192.168.56.20", icon: "IP", meaning: "IP to name" }
+        ]
+      },
       environment: {
         cwd: "C:/Lab",
         targets: selectTargets("fileserver")
       },
       steps: [
         step({
-          objective: "Resolve fileserver with DNS.",
-          hints: ["Use the Windows DNS lookup command.", "The hostname is fileserver.", "Try `nslookup fileserver`."],
+          objective: "Use the nslookup family. Resolve fileserver to an IP address.",
+          commandFamily: "nslookup",
+          hints: ["Start with hostname to IP.", "The hostname is fileserver.", "Try `nslookup fileserver`."],
           explanation: "nslookup is the Windows-native way to confirm name resolution directly from the shell.",
           successFeedback: "You resolved the file server name.",
+          walkthrough: [{
+            title: "Hostname lookup",
+            goal: "Resolve fileserver to an IP address.",
+            command: "nslookup fileserver",
+            output: ["Name:    fileserver", "Address: 192.168.56.20"],
+            explanation: "This proves DNS can turn the name into an IP. Next variation: nslookup 192.168.56.20."
+          }],
           accepts: [rawMatch(/^nslookup\s+fileserver$/i)]
+        }),
+        step({
+          objective: "Use the nslookup family. Reverse-check the file server IP address.",
+          commandFamily: "nslookup",
+          hints: ["Now query the IP address.", "The file server IP is 192.168.56.20.", "Try `nslookup 192.168.56.20`."],
+          explanation: "An IP lookup can confirm the address belongs to the expected name.",
+          successFeedback: "Reverse-checked the IP address.",
+          accepts: [rawMatch(/^nslookup\s+192\.168\.56\.20$/i)]
+        }),
+        step({
+          objective: "Use the nslookup family. Ask the known DNS server directly.",
+          commandFamily: "nslookup",
+          hints: ["Add the DNS server after the hostname.", "The DNS server is 192.168.56.1.", "Try `nslookup fileserver 192.168.56.1`."],
+          explanation: "Specifying the DNS server proves which resolver answered.",
+          successFeedback: "Queried a specific DNS server.",
+          accepts: [rawMatch(/^nslookup\s+fileserver\s+192\.168\.56\.1$/i), rawMatch(/^nslookup\s+fileserver$/i)]
         })
       ]
     }),
     windowsLessonScenario({
       id: "win-netstat-connection-audit",
-      title: "Audit Listening Sockets",
+      title: "Netstat Family: Connections and Ports",
       category: "Networking",
       difficulty: "Intermediate",
-      objective: "Show current network connections with owning PIDs so you can tie sockets back to processes.",
-      scenarioIntro: "Once the learner understands host and route context, it makes sense to inspect active Windows connections. Use netstat with PID detail so the result can support later process investigation.",
+      objective: "Use the netstat family in layers: list connections, show listeners, add process IDs, then filter one port.",
+      scenarioIntro: "Netstat variations build from a quick connection view into process and port evidence.",
       commandFocus: ["netstat"],
-      acceptedCommands: ["netstat -ano"],
+      commandFamilyIntro: WINDOWS_COMMAND_FAMILIES.netstat,
+      acceptedCommands: ["netstat", "netstat -a", "netstat -ano", "netstat -ano | findstr :445"],
       simulatedOutput: ["Proto  Local Address          Foreign Address        State           PID", "TCP    0.0.0.0:445          0.0.0.0:0              LISTENING       4"],
-      successCondition: "Display netstat output with the owning process IDs.",
+      successCondition: "Display netstat output with listening ports and owning process IDs.",
       feedbackText: "The learner connected network sockets to processes instead of treating them as anonymous ports.",
+      visualGuide: {
+        type: "network",
+        nodes: ["Computer", "open ports", "process ID"],
+        highlightAfter: {
+          netstat: "process ID"
+        },
+        commandMap: [
+          { command: "netstat", icon: "NET", meaning: "connections" },
+          { command: "netstat -a", icon: "A", meaning: "listeners" },
+          { command: "netstat -ano", icon: "PID", meaning: "process IDs" }
+        ]
+      },
       environment: {
         cwd: "C:/Lab"
       },
       steps: [
         step({
-          objective: "Display current connections and listening ports with PIDs.",
-          hints: ["Use netstat with the all, numeric, and owning-process flags.", "You want the PID column visible.", "Try `netstat -ano`."],
-          explanation: "netstat becomes much more useful once the learner can tie each socket back to a PID.",
-          successFeedback: "You displayed the connection table with PIDs.",
+          objective: "Use the netstat family. Run the base command to list current connections.",
+          commandFamily: "netstat",
+          hints: ["Start with the base command.", "The netstat chip can fill it in.", "Try `netstat`."],
+          explanation: "The base command gives a quick connection list.",
+          successFeedback: "Listed connections.",
+          walkthrough: [{
+            title: "Base netstat",
+            goal: "List current connections.",
+            command: "netstat",
+            output: ["Proto  Local Address          Foreign Address        State", "TCP    192.168.56.25:49712  192.168.56.10:443  ESTABLISHED"],
+            explanation: "This proves which connections exist. Next variation: netstat -a."
+          }],
+          accepts: [rawMatch(/^netstat$/i)]
+        }),
+        step({
+          objective: "Use the netstat family. Show listening ports too.",
+          commandFamily: "netstat",
+          hints: ["Look for the all/listeners variation.", "It uses -a.", "Try `netstat -a`."],
+          explanation: "netstat -a includes listening ports.",
+          successFeedback: "Found listening ports.",
+          accepts: [rawMatch(/^netstat\s+-a$/i)]
+        }),
+        step({
+          objective: "Use the netstat family. Add numeric addresses and process IDs.",
+          commandFamily: "netstat",
+          hints: ["You need all, numeric, and owning-process flags.", "Flag order can vary.", "Try `netstat -ano`."],
+          explanation: "netstat -ano ties sockets to process IDs.",
+          successFeedback: "Found process ID.",
           accepts: [rawMatch(/^netstat\s+-ano$/i), rawMatch(/^netstat\s+-aon$/i), rawMatch(/^netstat\s+-oan$/i)]
+        }),
+        step({
+          objective: "Use the netstat family. Filter the PID view to port 445.",
+          commandFamily: "netstat",
+          hints: ["Use netstat -ano, then findstr for :445.", "This filters one port.", "Try `netstat -ano | findstr :445`."],
+          explanation: "Filtering keeps the table focused on one port.",
+          successFeedback: "Matched port to process.",
+          accepts: [rawMatch(/^netstat\s+-(?:ano|aon|oan)\s*\|\s*findstr\s+:445$/i)]
         })
       ]
     }),
     windowsLessonScenario({
       id: "win-arp-and-route-review",
-      title: "Review Local Layer-2 and Route Clues",
+      title: "ARP and Route Families: Neighbor and Gateway Clues",
       category: "Networking",
       difficulty: "Intermediate",
-      objective: "Inspect the ARP cache first, then print the route table so you can explain both the local neighbor and routing context.",
-      scenarioIntro: "Learners often mix layer-2 and layer-3 evidence together. This lesson separates ARP cache evidence from route-table evidence while keeping both on the same Windows host.",
+      objective: "Use arp to inspect IP-to-MAC mappings, then route print to inspect gateways and route choices.",
+      scenarioIntro: "ARP and route answer different questions. ARP maps nearby IPs to MAC addresses; route print shows where traffic goes next.",
       commandFocus: ["arp", "route print"],
-      acceptedCommands: ["arp -a", "route print"],
+      commandFamilyIntros: [WINDOWS_COMMAND_FAMILIES.arp, WINDOWS_COMMAND_FAMILIES.route],
+      acceptedCommands: ["arp -a", "arp -d", "route print", "route print -4", "route add", "route delete"],
       simulatedOutput: ["Interface: 192.168.56.25 --- 0x6", "IPv4 Route Table"],
       successCondition: "Run arp -a and then route print on the current Windows host.",
       feedbackText: "The learner collected both neighbor-table and route-table evidence without mixing the two concepts.",
+      visualGuide: {
+        type: "network",
+        nodes: ["IP address", "MAC address", "route table", "gateway"],
+        highlightAfter: {
+          arp: "MAC address",
+          route: "gateway",
+          netstat: "route table"
+        },
+        commandMap: [
+          { command: "arp -a", icon: "ARP", meaning: "IP to MAC" },
+          { command: "route print", icon: "RT", meaning: "route table" }
+        ]
+      },
       environment: {
         cwd: "C:/Lab"
       },
       steps: [
         step({
-          objective: "Review the ARP cache on the current Windows host.",
-          hints: ["Start with the ARP cache listing.", "This is the local neighbor table view.", "Try `arp -a`."],
+          objective: "Use the arp family. Review the ARP cache on the current Windows host.",
+          commandFamily: "arp",
+          hints: ["Start with the ARP cache listing.", "This is the local IP-to-MAC view.", "Try `arp -a`."],
           explanation: "ARP shows which IP-to-MAC mappings the host already knows on the local segment.",
-          successFeedback: "You reviewed the ARP cache.",
-          accepts: [rawMatch(/^arp(?:\s+-a)?$/i)]
+          successFeedback: "Mapped IP address to MAC address.",
+          walkthrough: [{
+            title: "ARP cache",
+            goal: "Show IP-to-MAC mappings.",
+            command: "arp -a",
+            output: ["192.168.56.1    08-00-27-AA-BB-CC    dynamic"],
+            explanation: "This proves the local neighbor mapping. Next family: route print."
+          }],
+          accepts: [rawMatch(/^arp\s+-a$/i), rawMatch(/^arp$/i)]
         }),
         step({
-          objective: "Print the current route table.",
-          hints: ["Now move from local neighbor data to routing data.", "Use the route command with print.", "Try `route print`."],
+          objective: "Use the arp family. Try the simulated delete variation so you know it exists.",
+          commandFamily: "arp",
+          hints: ["This is simulated in the lab.", "Look for the arp delete variation.", "Try `arp -d`."],
+          explanation: "arp -d removes cached ARP entries on a real computer, so this lab only simulates it.",
+          successFeedback: "Practised simulated ARP delete.",
+          accepts: [rawMatch(/^arp\s+-d$/i)]
+        }),
+        step({
+          objective: "Use the route family. Print the current route table.",
+          commandFamily: "route",
+          hints: ["Now move from local neighbor data to routing data.", "Use route with print.", "Try `route print`."],
           explanation: "route print shows the network paths the host will actually prefer once traffic leaves the local segment.",
-          successFeedback: "You printed the route table.",
-          accepts: [rawMatch(/^route\s+print$/i)]
+          successFeedback: "Opened route table.",
+          walkthrough: [{
+            title: "Route table",
+            goal: "Show destinations and gateways.",
+            command: "route print",
+            output: ["Network Destination        Netmask          Gateway", "0.0.0.0                    0.0.0.0          192.168.56.1"],
+            explanation: "This proves the default gateway. Next variation: route print -4."
+          }],
+          accepts: [rawMatch(/^route\s+print$/i), rawMatch(/^netstat\s+-r$/i)]
+        }),
+        step({
+          objective: "Use the route family. Show IPv4 routes only.",
+          commandFamily: "route",
+          hints: ["Look for the IPv4 route variation.", "It adds -4.", "Try `route print -4`."],
+          explanation: "route print -4 narrows the table to IPv4 routes.",
+          successFeedback: "Filtered IPv4 routes.",
+          accepts: [rawMatch(/^route\s+print\s+-4$/i), rawMatch(/^route\s+print$/i), rawMatch(/^netstat\s+-r$/i)]
+        }),
+        step({
+          objective: "Use the route family. Try the simulated route add variation.",
+          commandFamily: "route",
+          hints: ["This is simulated in the lab.", "Look for route add in the variations.", "Try `route add`."],
+          explanation: "route add can change real routing, so this lab only simulates it.",
+          successFeedback: "Practised simulated route add.",
+          accepts: [rawMatch(/^route\s+add(?:\s+.*)?$/i)]
+        }),
+        step({
+          objective: "Use the route family. Try the simulated route delete variation.",
+          commandFamily: "route",
+          hints: ["This is simulated in the lab.", "Look for route delete in the variations.", "Try `route delete`."],
+          explanation: "route delete can change real routing, so this lab only simulates it.",
+          successFeedback: "Practised simulated route delete.",
+          accepts: [rawMatch(/^route\s+delete(?:\s+.*)?$/i)]
+        }),
+        step({
+          objective: "Use the route family. Verify the route table with route print or netstat -r.",
+          commandFamily: "route",
+          hints: ["Both commands can show route-table evidence.", "Use the chips if you want the route version.", "Try `route print`."],
+          explanation: "route print and netstat -r can both show route-table evidence.",
+          successFeedback: "Verified gateway route.",
+          accepts: [rawMatch(/^route\s+print(?:\s+-4|\s+-6)?$/i), rawMatch(/^netstat\s+-r$/i)]
         })
       ]
     }),
